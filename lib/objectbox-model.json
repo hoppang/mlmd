@@ -1,0 +1,100 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:3014340625497478550",
+      "lastPropertyId": "6:2147283445462106961",
+      "name": "ActivityEntity",
+      "properties": [
+        {
+          "id": "1:4693112843845237037",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8664221998494237186",
+          "name": "type",
+          "type": 9
+        },
+        {
+          "id": "3:21500456046779489",
+          "name": "time",
+          "type": 10
+        },
+        {
+          "id": "4:8818483730579662998",
+          "name": "details",
+          "type": 9
+        },
+        {
+          "id": "5:4969781922129048019",
+          "name": "lastModified",
+          "type": 10
+        },
+        {
+          "id": "6:2147283445462106961",
+          "name": "diaryId",
+          "indexId": "1:4296004632891135973",
+          "type": 11,
+          "flags": 520,
+          "relationTarget": "DiaryEntity"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "2:7784148166755830454",
+      "lastPropertyId": "5:6225454372744249316",
+      "name": "DiaryEntity",
+      "properties": [
+        {
+          "id": "1:4920149699993225483",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5934905229092552166",
+          "name": "date",
+          "type": 10
+        },
+        {
+          "id": "3:7334882726399196966",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "4:3139534169329158746",
+          "name": "content",
+          "type": 9
+        },
+        {
+          "id": "5:6225454372744249316",
+          "name": "lastModified",
+          "type": 10
+        }
+      ],
+      "relations": [
+        {
+          "id": "1:6838825628405302824",
+          "name": "activities",
+          "targetId": "1:3014340625497478550"
+        }
+      ]
+    }
+  ],
+  "lastEntityId": "2:7784148166755830454",
+  "lastIndexId": "1:4296004632891135973",
+  "lastRelationId": "1:6838825628405302824",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}
