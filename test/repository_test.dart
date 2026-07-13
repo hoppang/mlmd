@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:objectbox/objectbox.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/activity_entity.dart';

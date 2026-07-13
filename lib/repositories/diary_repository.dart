@@ -52,3 +52,46 @@ final diaryRepositoryProvider = Provider<DiaryRepository>((ref) {
   final obxHelper = ref.watch(objectBoxProvider);
   return DiaryRepositoryImpl(obxHelper);
 });
+
+/// 일기 목록의 상태와 변경을 관리하는 Riverpod Notifier
+class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
+  @override
+  List<DiaryEntity> build() {
+    final repo = ref.watch(diaryRepositoryProvider);
+    return repo.getDiaries();
+  }
+
+  void addDiary(String content) {
+    final repo = ref.read(diaryRepositoryProvider);
+    final now = DateTime.now();
+    final newDiary = DiaryEntity(
+      date: now,
+      title: '일기 (${_formatDateTime(now)})',
+      content: content,
+      lastModified: now,
+    );
+    repo.saveDiary(newDiary);
+    state = repo.getDiaries();
+  }
+
+  void updateDiary(DiaryEntity diary, String newContent) {
+    final repo = ref.read(diaryRepositoryProvider);
+    diary.content = newContent;
+    repo.saveDiary(diary); // saveDiary가 자동으로 lastModified를 갱신합니다.
+    state = repo.getDiaries();
+  }
+
+  void deleteDiary(int id) {
+    final repo = ref.read(diaryRepositoryProvider);
+    repo.deleteDiary(id);
+    state = repo.getDiaries();
+  }
+
+  String _formatDateTime(DateTime dt) {
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+final diaryListProvider = NotifierProvider<DiaryListNotifier, List<DiaryEntity>>(DiaryListNotifier.new);
+

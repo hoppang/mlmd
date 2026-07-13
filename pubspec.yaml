@@ -50,8 +50,10 @@ dependencies:
   shelf: ^1.4.2
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
+  path: ^1.9.0
   path_provider: ^2.1.6
   share_plus: ^13.2.0
+
 
 dev_dependencies:
   flutter_test:

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_entity.dart';
-import '../models/diary_entity.dart';
 import '../data/objectbox_helper.dart';
+
 
 /// 활동 로그 CRUD 처리를 위한 Repository 인터페이스
 abstract class ActivityRepository {
