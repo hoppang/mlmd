@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/diary_entity.dart';
 import '../data/objectbox_helper.dart';
+import '../services/embedding_service.dart';
 
 /// 일기 CRUD 처리를 위한 Repository 인터페이스
 abstract class DiaryRepository {
@@ -63,12 +64,15 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
 
   void addDiary(String title, String content) {
     final repo = ref.read(diaryRepositoryProvider);
+    final embeddingService = ref.read(embeddingServiceProvider);
+    final embedding = embeddingService.getEmbedding(content);
     final now = DateTime.now();
     final newDiary = DiaryEntity(
       date: now,
       title: title,
       content: content,
       lastModified: now,
+      embedding: embedding,
     );
     repo.saveDiary(newDiary);
     state = repo.getDiaries();
@@ -76,8 +80,11 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
 
   void updateDiary(DiaryEntity diary, String newTitle, String newContent) {
     final repo = ref.read(diaryRepositoryProvider);
+    final embeddingService = ref.read(embeddingServiceProvider);
+    final embedding = embeddingService.getEmbedding(newContent);
     diary.title = newTitle;
     diary.content = newContent;
+    diary.embedding = embedding;
     repo.saveDiary(diary); // saveDiary가 자동으로 lastModified를 갱신합니다.
     state = repo.getDiaries();
   }

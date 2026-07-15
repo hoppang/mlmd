@@ -15,6 +15,10 @@ class DiaryEntity {
   @Property(type: PropertyType.date)
   DateTime lastModified;
 
+  @HnswIndex(dimensions: 384)
+  @Property(type: PropertyType.floatVector)
+  List<double>? embedding;
+
   final activities = ToMany<ActivityEntity>();
 
   DiaryEntity({
@@ -23,5 +27,6 @@ class DiaryEntity {
     required this.title,
     required this.content,
     required this.lastModified,
+    this.embedding,
   });
 }

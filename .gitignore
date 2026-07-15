@@ -122,3 +122,10 @@ app.*.symbols
 .idea/
 *.iml
 .metadata
+
+# ML Models (Ignore everything except README.md)
+/assets/models/*
+!/assets/models/README.md
+
+# ONNX Runtime DLL for Windows
+/windows/onnxruntime/

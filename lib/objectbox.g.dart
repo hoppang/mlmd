@@ -72,7 +72,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(2, 7784148166755830454),
     name: 'DiaryEntity',
-    lastPropertyId: const obx_int.IdUid(5, 6225454372744249316),
+    lastPropertyId: const obx_int.IdUid(6, 5901673729773360223),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -104,6 +104,14 @@ final _entities = <obx_int.ModelEntity>[
         name: 'lastModified',
         type: 10,
         flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 5901673729773360223),
+        name: 'embedding',
+        type: 28,
+        flags: 8,
+        indexId: const obx_int.IdUid(2, 6229927242462545823),
+        hnswParams: obx_int.ModelHnswParams(dimensions: 384),
       ),
     ],
     relations: <obx_int.ModelRelation>[
@@ -161,7 +169,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
     lastEntityId: const obx_int.IdUid(2, 7784148166755830454),
-    lastIndexId: const obx_int.IdUid(1, 4296004632891135973),
+    lastIndexId: const obx_int.IdUid(2, 6229927242462545823),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -246,12 +254,16 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectToFB: (DiaryEntity object, fb.Builder fbb) {
         final titleOffset = fbb.writeString(object.title);
         final contentOffset = fbb.writeString(object.content);
-        fbb.startTable(6);
+        final embeddingOffset = object.embedding == null
+            ? null
+            : fbb.writeListFloat32(object.embedding!);
+        fbb.startTable(7);
         fbb.addInt64(0, object.id);
         fbb.addInt64(1, object.date.millisecondsSinceEpoch);
         fbb.addOffset(2, titleOffset);
         fbb.addOffset(3, contentOffset);
         fbb.addInt64(4, object.lastModified.millisecondsSinceEpoch);
+        fbb.addOffset(5, embeddingOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -276,12 +288,17 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final lastModifiedParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
         );
+        final embeddingParam = const fb.ListReader<double>(
+          fb.Float32Reader(),
+          lazy: false,
+        ).vTableGetNullable(buffer, rootOffset, 14);
         final object = DiaryEntity(
           id: idParam,
           date: dateParam,
           title: titleParam,
           content: contentParam,
           lastModified: lastModifiedParam,
+          embedding: embeddingParam,
         );
         obx_int.InternalToManyAccess.setRelInfo<DiaryEntity>(
           object.activities,
@@ -354,6 +371,11 @@ class DiaryEntity_ {
   /// See [DiaryEntity.lastModified].
   static final lastModified = obx.QueryDateProperty<DiaryEntity>(
     _entities[1].properties[4],
+  );
+
+  /// See [DiaryEntity.embedding].
+  static final embedding = obx.QueryHnswProperty<DiaryEntity>(
+    _entities[1].properties[5],
   );
 
   /// see [DiaryEntity.activities]

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/objectbox_helper.dart';
 import 'models/diary_entity.dart';
 import 'repositories/diary_repository.dart';
+import 'services/embedding_service.dart';
 
 void main() async {
   // Flutter의 바인딩을 먼저 초기화합니다.
@@ -11,11 +12,16 @@ void main() async {
   // 1. ObjectBoxHelper 비동기 초기화
   final obxHelper = await ObjectBoxHelper.create();
 
+  // 2. EmbeddingService 비동기 초기화 (모델 로딩 및 토크나이저 준비)
+  final embeddingService = EmbeddingService();
+  await embeddingService.init();
+
   runApp(
     ProviderScope(
       overrides: [
-        // 2. Riverpod 프로바이더 오버라이드 등록
+        // 3. Riverpod 프로바이더 오버라이드 등록
         objectBoxProvider.overrideWithValue(obxHelper),
+        embeddingServiceProvider.overrideWithValue(embeddingService),
       ],
       child: const MyApp(),
     ),

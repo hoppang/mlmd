@@ -57,6 +57,25 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# Download and copy onnxruntime.dll if not present
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime/onnxruntime.dll")
+  message(STATUS "Downloading ONNX Runtime 1.23.0 DLL...")
+  file(DOWNLOAD
+    "https://github.com/microsoft/onnxruntime/releases/download/v1.23.0/onnxruntime-win-x64-1.23.0.zip"
+    "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime.zip"
+    SHOW_PROGRESS
+  )
+  message(STATUS "Extracting ONNX Runtime 1.23.0 DLL...")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E tar xf "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime.zip"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+  file(COPY "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime-win-x64-1.23.0/lib/onnxruntime.dll"
+    DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime"
+  )
+  file(REMOVE "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime.zip")
+  file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime-win-x64-1.23.0")
+endif()
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
@@ -86,6 +105,11 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+# Install onnxruntime.dll next to executable
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime/onnxruntime.dll"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
 
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
