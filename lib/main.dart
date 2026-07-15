@@ -195,26 +195,30 @@ class DiaryFormDialog extends ConsumerStatefulWidget {
 }
 
 class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
-  late final TextEditingController _controller;
+  late final TextEditingController _titleController;
+  late final TextEditingController _contentController;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.diary?.content);
+    _titleController = TextEditingController(text: widget.diary?.title);
+    _contentController = TextEditingController(text: widget.diary?.content);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _titleController.dispose();
+    _contentController.dispose();
     super.dispose();
   }
 
   void _onConfirm() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+    if (title.isEmpty || content.isEmpty) return;
 
     if (widget.diary != null) {
-      ref.read(diaryListProvider.notifier).updateDiary(widget.diary!, text);
+      ref.read(diaryListProvider.notifier).updateDiary(widget.diary!, title, content);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('일기가 수정되었습니다.'),
@@ -222,7 +226,7 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
         ),
       );
     } else {
-      ref.read(diaryListProvider.notifier).addDiary(text);
+      ref.read(diaryListProvider.notifier).addDiary(title, content);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('새 일기가 추가되었습니다.'),
@@ -283,20 +287,43 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
       ),
       content: SizedBox(
         width: 400,
-        child: TextField(
-          controller: _controller,
-          maxLines: 6,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: '오늘 하루 어떤 일이 있었나요? 자유롭게 입력해 주세요.',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _titleController,
+              autofocus: !isEdit,
+              decoration: InputDecoration(
+                hintText: '제목을 입력해 주세요.',
+                labelText: '제목',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+                ),
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _contentController,
+              maxLines: 6,
+              autofocus: isEdit,
+              decoration: InputDecoration(
+                hintText: '오늘 하루 어떤 일이 있었나요? 자유롭게 입력해 주세요.',
+                labelText: '내용',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
       actions: [

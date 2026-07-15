@@ -61,12 +61,12 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     return repo.getDiaries();
   }
 
-  void addDiary(String content) {
+  void addDiary(String title, String content) {
     final repo = ref.read(diaryRepositoryProvider);
     final now = DateTime.now();
     final newDiary = DiaryEntity(
       date: now,
-      title: '일기 (${_formatDateTime(now)})',
+      title: title,
       content: content,
       lastModified: now,
     );
@@ -74,8 +74,9 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     state = repo.getDiaries();
   }
 
-  void updateDiary(DiaryEntity diary, String newContent) {
+  void updateDiary(DiaryEntity diary, String newTitle, String newContent) {
     final repo = ref.read(diaryRepositoryProvider);
+    diary.title = newTitle;
     diary.content = newContent;
     repo.saveDiary(diary); // saveDiary가 자동으로 lastModified를 갱신합니다.
     state = repo.getDiaries();
