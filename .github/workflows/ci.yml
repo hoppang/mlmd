@@ -27,6 +27,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create dummy asset files
+        run: |
+          mkdir -p assets/models
+          touch assets/models/model_quantized.onnx
+          touch assets/models/tokenizer.json
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
