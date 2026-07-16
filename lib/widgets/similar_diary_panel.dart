@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../models/diary_entity.dart';
 import '../repositories/diary_repository.dart';
 
@@ -81,6 +82,7 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -91,7 +93,7 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
               child: TextField(
                 controller: _queryController,
                 decoration: InputDecoration(
-                  hintText: '지난 기록을 찾아봅니다.',
+                  hintText: loc.searchHint,
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -135,7 +137,7 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
         if (_results.isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(
-            '유사한 일기 ${_results.length}건',
+            loc.similarCount(_results.length),
             style: TextStyle(
               fontSize: 13,
               color: Colors.grey.shade600,
@@ -151,7 +153,7 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
           const SizedBox(height: 12),
           Center(
             child: Text(
-              '유사한 일기가 없습니다.',
+              loc.noSimilarDiary,
               style: TextStyle(color: Colors.grey.shade500),
             ),
           ),

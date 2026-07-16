@@ -1,0 +1,40 @@
+{
+  "@@locale": "ja",
+  "appTitle": "ふくちゃん日記",
+  "noDiaryTitle": "作成された日記がありません。",
+  "noDiaryDesc": "下の＋ボタンを押して最初の日記を書いてみましょう。",
+  "newDiary": "新しい日記を作成",
+  "editDiary": "日記を編集",
+  "titleLabel": "タイトル (任意)",
+  "titleHint": "空白の場合、AIが自動でタイトルを生成します。",
+  "contentLabel": "内容",
+  "contentHint": "今日一日どんなことがありましたか？自由に書いてください。",
+  "delete": "削除",
+  "cancel": "キャンセル",
+  "confirm": "確認",
+  "edit": "修正",
+  "diaryAdded": "新しい日記が追加されました。",
+  "diaryUpdated": "日記が修正されました。",
+  "diaryDeleted": "日記が削除されました。",
+  "deleteConfirmTitle": "日記の削除",
+  "deleteConfirmDesc": "本当にこの日記を削除しますか？削除後は元に戻せません。",
+  "searchHint": "過去の記録を検索します。",
+  "similarCount": "類似した日記 {count}件",
+  "@similarCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noSimilarDiary": "類似した日記はありません。",
+  "settings": "設定",
+  "settingsTitle": "設定",
+  "languageSetting": "言語設定",
+  "languageSystem": "システム設定",
+  "languageKorean": "한국어(Korean)",
+  "languageEnglish": "English",
+  "languageJapanese": "日本語(Japanese)",
+  "close": "閉じる",
+  "llmModelError": "モデルファイルが見つかりません。タイトルの自動生成が無効になっています。"
+}

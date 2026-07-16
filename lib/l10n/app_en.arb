@@ -1,0 +1,40 @@
+{
+  "@@locale": "en",
+  "appTitle": "My Little Miracle's Diary",
+  "noDiaryTitle": "No diaries written yet.",
+  "noDiaryDesc": "Tap the + button below to write your first diary.",
+  "newDiary": "New Diary",
+  "editDiary": "Edit Diary",
+  "titleLabel": "Title (Optional)",
+  "titleHint": "If left empty, AI will automatically generate a title.",
+  "contentLabel": "Content",
+  "contentHint": "How was your day? Feel free to write anything.",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "edit": "Edit",
+  "diaryAdded": "A new diary has been added.",
+  "diaryUpdated": "The diary has been updated.",
+  "diaryDeleted": "The diary has been deleted.",
+  "deleteConfirmTitle": "Delete Diary",
+  "deleteConfirmDesc": "Are you sure you want to delete this diary? This action cannot be undone.",
+  "searchHint": "Search past records.",
+  "similarCount": "{count} similar diaries",
+  "@similarCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noSimilarDiary": "No similar diaries found.",
+  "settings": "Settings",
+  "settingsTitle": "Settings",
+  "languageSetting": "Language",
+  "languageSystem": "System Default",
+  "languageKorean": "한국어(Korean)",
+  "languageEnglish": "English",
+  "languageJapanese": "日本語(Japanese)",
+  "close": "Close",
+  "llmModelError": "Model file not found. Auto title generation is disabled."
+}

@@ -3,7 +3,6 @@ import '../models/diary_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
-import 'dart:math';
 
 /// 유사 검색 결과 모델
 class SimilarDiaryResult {

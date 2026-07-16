@@ -35,6 +35,12 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # 다국어 및 설정 유지
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+  shared_preferences: ^2.3.2
+
   # 데이터베이스
   objectbox: ^5.3.2
   objectbox_flutter_libs: ^5.3.2
@@ -88,6 +94,7 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   assets:

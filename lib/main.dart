@@ -3,12 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'data/objectbox_helper.dart';
 import 'models/diary_entity.dart';
 import 'repositories/diary_repository.dart';
 import 'services/embedding_service.dart';
 import 'services/llm_title_service.dart';
 import 'widgets/similar_diary_panel.dart';
+import 'providers/locale_provider.dart';
 
 void main() async {
   // Flutter의 바인딩을 먼저 초기화합니다.
@@ -28,25 +33,23 @@ void main() async {
   // 3. EmbeddingService 비동기 초기화 (모델 로딩 및 토크나이저 준비)
   final embeddingService = EmbeddingService();
   await embeddingService.init();
+  
+  // 4. SharedPreferences 비동기 초기화
+  final prefs = await SharedPreferences.getInstance();
 
   runApp(
     ProviderScope(
       overrides: [
-        // 4. Riverpod 프로바이더 오버라이드 등록
+        // Riverpod 프로바이더 오버라이드 등록
         objectBoxProvider.overrideWithValue(obxHelper),
         embeddingServiceProvider.overrideWithValue(embeddingService),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
       child: const MyApp(),
     ),
   );
 }
 
-/// Qwen3 모델이 flutter_gemma에 등록되어 있지 않으면 로컬 파일에서 등록합니다.
-///
-/// 탐색 순서:
-///   1. Windows: %USERPROFILE%\Downloads\Qwen3-0.6B.litertlm
-///   2. Android: /sdcard/Download/Qwen3-0.6B.litertlm
-///   3. 없으면 경고 출력 후 스킵 (앱은 정상 실행, 제목 생성만 비활성화)
 Future<void> _registerModelIfNeeded() async {
   // 플랫폼별 탐색 경로
   final candidatePaths = <String>[
@@ -69,14 +72,12 @@ Future<void> _registerModelIfNeeded() async {
   if (foundPath == null) {
     print('[LLM] 모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다.');
     print('[LLM] 다음 위치에 파일을 놓아주세요: ${candidatePaths.join(", ")}');
-    // 잘못된 이전 등록 제거
     if (FlutterGemma.hasActiveModel()) {
       await FlutterGemma.clearActiveInferenceIdentity();
     }
     return;
   }
 
-  // 기존 등록(잘못된 fileType 포함) 초기화 후 재등록
   if (FlutterGemma.hasActiveModel()) {
     print('[LLM] 기존 모델 등록 초기화 (fileType 재설정)...');
     await FlutterGemma.clearActiveInferenceIdentity();
@@ -85,8 +86,8 @@ Future<void> _registerModelIfNeeded() async {
   print('[LLM] 모델 파일 발견: $foundPath — 등록 중...');
   try {
     await FlutterGemma.installModel(
-      modelType: ModelType.gemma4, // 혹은 flutter_gemma 버전에 따라 ModelType.gemma
-      fileType: ModelFileType.litertlm, // .litertlm 파일은 반드시 litertlm 타입
+      modelType: ModelType.gemma4,
+      fileType: ModelFileType.litertlm,
     ).fromFile(foundPath).install();
     print('[LLM] 모델 등록 완료.');
   } catch (e) {
@@ -94,14 +95,30 @@ Future<void> _registerModelIfNeeded() async {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localeProvider.notifier).locale;
+    // Watch localeProvider to trigger rebuilds when language changes
+    ref.watch(localeProvider);
+
     return MaterialApp(
-      title: 'MLMD App',
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       debugShowCheckedModeBanner: false,
+      locale: locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ko'),
+        Locale('en'),
+        Locale('ja'),
+      ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.teal,
@@ -132,19 +149,91 @@ class DiaryDemoPage extends ConsumerWidget {
     );
   }
 
+  void _showSettingsDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, child) {
+            final currentMode = ref.watch(localeProvider);
+            final loc = AppLocalizations.of(context)!;
+
+            return AlertDialog(
+              title: Text(loc.settingsTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(loc.languageSetting, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<AppLocaleMode>(
+                    value: currentMode,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: AppLocaleMode.system,
+                        child: Text(loc.languageSystem),
+                      ),
+                      DropdownMenuItem(
+                        value: AppLocaleMode.korean,
+                        child: Text(loc.languageKorean),
+                      ),
+                      DropdownMenuItem(
+                        value: AppLocaleMode.english,
+                        child: Text(loc.languageEnglish),
+                      ),
+                      DropdownMenuItem(
+                        value: AppLocaleMode.japanese,
+                        child: Text(loc.languageJapanese),
+                      ),
+                    ],
+                    onChanged: (mode) {
+                      if (mode != null) {
+                        ref.read(localeProvider.notifier).setLocale(mode);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(loc.close, style: const TextStyle(color: Colors.grey)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final diaries = ref.watch(diaryListProvider);
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'MLMD - 일기 목록',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        title: Text(
+          loc.appTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.teal.shade700,
         elevation: 4,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () => _showSettingsDialog(context, ref),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -166,18 +255,18 @@ class DiaryDemoPage extends ConsumerWidget {
                           color: Colors.teal.shade200,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          '작성된 일기가 없습니다.',
-                          style: TextStyle(
+                        Text(
+                          loc.noDiaryTitle,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.grey,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          '하단의 + 버튼을 눌러 첫 일기를 작성해 보세요.',
-                          style: TextStyle(color: Colors.grey),
+                        Text(
+                          loc.noDiaryDesc,
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
@@ -259,7 +348,7 @@ class DiaryDemoPage extends ConsumerWidget {
         backgroundColor: Colors.teal.shade600,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('새 일기 작성'),
+        label: Text(loc.newDiary),
       ),
     );
   }
@@ -298,6 +387,7 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
   }
 
   void _onConfirm() async {
+    final loc = AppLocalizations.of(context)!;
     final content = _contentController.text.trim();
     if (content.isEmpty) return;
 
@@ -307,9 +397,11 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
     if (title.isEmpty) {
       setState(() => _isGeneratingTitle = true);
       try {
+        final currentLocale = Localizations.localeOf(context).languageCode;
         title = await LlmTitleService().generate(
           content,
           fallback: content.length > 20 ? content.substring(0, 20) : content,
+          languageCode: currentLocale,
         );
       } finally {
         if (mounted) setState(() => _isGeneratingTitle = false);
@@ -321,16 +413,16 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
     if (widget.diary != null) {
       ref.read(diaryListProvider.notifier).updateDiary(widget.diary!, title, content);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('일기가 수정되었습니다.'),
+        SnackBar(
+          content: Text(loc.diaryUpdated),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
       ref.read(diaryListProvider.notifier).addDiary(title, content);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('새 일기가 추가되었습니다.'),
+        SnackBar(
+          content: Text(loc.diaryAdded),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -339,15 +431,16 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
   }
 
   void _onDelete() {
+    final loc = AppLocalizations.of(context)!;
     showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('일기 삭제'),
-        content: const Text('이 일기를 정말 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.'),
+        title: Text(loc.deleteConfirmTitle),
+        content: Text(loc.deleteConfirmDesc),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소', style: TextStyle(color: Colors.grey)),
+            child: Text(loc.cancel, style: const TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -355,7 +448,7 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
               backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
             ),
-            child: const Text('삭제'),
+            child: Text(loc.delete),
           ),
         ],
       ),
@@ -365,8 +458,8 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
         ref.read(diaryListProvider.notifier).deleteDiary(widget.diary!.id);
         Navigator.pop(context); // 수정 대화상자 닫기
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('일기가 삭제되었습니다.'),
+          SnackBar(
+            content: Text(loc.diaryDeleted),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -377,13 +470,14 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.diary != null;
+    final loc = AppLocalizations.of(context)!;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
       title: Text(
-        isEdit ? '일기 수정' : '새 일기 작성',
+        isEdit ? loc.editDiary : loc.newDiary,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       content: SizedBox(
@@ -397,8 +491,8 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
                 controller: _titleController,
                 autofocus: !isEdit,
                 decoration: InputDecoration(
-                  hintText: '비워두면 AI가 자동으로 제목을 생성합니다.',
-                  labelText: '제목 (선택)',
+                  hintText: loc.titleHint,
+                  labelText: loc.titleLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -424,8 +518,8 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
                 maxLines: 6,
                 autofocus: isEdit,
                 decoration: InputDecoration(
-                  hintText: '오늘 하루 어떤 일이 있었나요? 자유롭게 입력해 주세요.',
-                  labelText: '내용',
+                  hintText: loc.contentHint,
+                  labelText: loc.contentLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -446,12 +540,12 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
               TextButton.icon(
                 onPressed: _onDelete,
                 icon: const Icon(Icons.delete_outline, color: Colors.red),
-                label: const Text('삭제', style: TextStyle(color: Colors.red)),
+                label: Text(loc.delete, style: const TextStyle(color: Colors.red)),
               ),
             const Spacer(),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('취소', style: TextStyle(color: Colors.grey)),
+              child: Text(loc.cancel, style: const TextStyle(color: Colors.grey)),
             ),
             const SizedBox(width: 8),
             ElevatedButton(
@@ -472,7 +566,7 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
                         color: Colors.white,
                       ),
                     )
-                  : Text(isEdit ? '수정' : '확인'),
+                  : Text(isEdit ? loc.edit : loc.confirm),
             ),
           ],
         ),
@@ -480,4 +574,3 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
     );
   }
 }
-
