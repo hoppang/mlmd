@@ -50,7 +50,12 @@ class DiaryRepositoryImpl implements DiaryRepository {
 
   @override
   List<DiaryEntity> getDiaries() {
-    return _obxHelper.diaryBox.getAll();
+    final query = _obxHelper.diaryBox.query()
+      .order(DiaryEntity_.date, flags: Order.descending)
+      .build();
+    final diaries = query.find();
+    query.close();
+    return diaries;
   }
 
   @override
