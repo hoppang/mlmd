@@ -142,10 +142,12 @@ class MyApp extends ConsumerWidget {
 class DiaryDemoPage extends ConsumerWidget {
   const DiaryDemoPage({super.key});
 
-  void _showFormDialog(BuildContext context, [DiaryEntity? diary]) {
-    showDialog(
-      context: context,
-      builder: (context) => DiaryFormDialog(diary: diary),
+  void _navigateToFormPage(BuildContext context, [DiaryEntity? diary]) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DiaryFormPage(diary: diary),
+      ),
     );
   }
 
@@ -219,6 +221,17 @@ class DiaryDemoPage extends ConsumerWidget {
     final diaries = ref.watch(diaryListProvider);
     final loc = AppLocalizations.of(context)!;
 
+    final now = DateTime.now();
+    DiaryEntity? todayDiary;
+    for (final diary in diaries) {
+      if (diary.date.year == now.year &&
+          diary.date.month == now.month &&
+          diary.date.day == now.day) {
+        todayDiary = diary;
+        break;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -240,7 +253,7 @@ class DiaryDemoPage extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: SimilarDiaryPanel(
-              onDiaryTap: (diary) => _showFormDialog(context, diary),
+              onDiaryTap: (diary) => _navigateToFormPage(context, diary),
             ),
           ),
           Expanded(
@@ -281,7 +294,7 @@ class DiaryDemoPage extends ConsumerWidget {
                         child: Card(
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
-                            onTap: () => _showFormDialog(context, diary),
+                            onTap: () => _navigateToFormPage(context, diary),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Column(
@@ -344,30 +357,30 @@ class DiaryDemoPage extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showFormDialog(context),
+        onPressed: () => _navigateToFormPage(context, todayDiary),
         backgroundColor: Colors.teal.shade600,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: Text(loc.newDiary),
+        icon: Icon(todayDiary != null ? Icons.edit : Icons.add),
+        label: Text(todayDiary != null ? loc.edit : loc.newDiary),
       ),
     );
   }
 }
 
-/// 일기 작성 및 수정을 위한 다이얼로그
-class DiaryFormDialog extends ConsumerStatefulWidget {
+/// 일기 작성 및 수정을 위한 페이지
+class DiaryFormPage extends ConsumerStatefulWidget {
   final DiaryEntity? diary;
 
-  const DiaryFormDialog({
+  const DiaryFormPage({
     super.key,
     this.diary,
   });
 
   @override
-  ConsumerState<DiaryFormDialog> createState() => _DiaryFormDialogState();
+  ConsumerState<DiaryFormPage> createState() => _DiaryFormPageState();
 }
 
-class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
+class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
   bool _isGeneratingTitle = false;
@@ -456,7 +469,7 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
       if (!mounted) return;
       if (confirmed == true) {
         ref.read(diaryListProvider.notifier).deleteDiary(widget.diary!.id);
-        Navigator.pop(context); // 수정 대화상자 닫기
+        Navigator.pop(context); // 수정 페이지 닫기
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(loc.diaryDeleted),
@@ -472,54 +485,62 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
     final isEdit = widget.diary != null;
     final loc = AppLocalizations.of(context)!;
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          isEdit ? loc.editDiary : loc.newDiary,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          if (isEdit)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: _onDelete,
+            ),
+        ],
       ),
-      title: Text(
-        isEdit ? loc.editDiary : loc.newDiary,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      content: SizedBox(
-        width: 400,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _titleController,
-                autofocus: !isEdit,
-                decoration: InputDecoration(
-                  hintText: loc.titleHint,
-                  labelText: loc.titleLabel,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
-                  ),
-                  suffixIcon: _isGeneratingTitle
-                      ? const Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : null,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _titleController,
+              autofocus: !isEdit,
+              decoration: InputDecoration(
+                hintText: loc.titleHint,
+                labelText: loc.titleLabel,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+                ),
+                suffixIcon: _isGeneratingTitle
+                    ? const Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
               ),
-              const SizedBox(height: 16),
-              TextField(
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: TextField(
                 controller: _contentController,
-                maxLines: 6,
+                maxLines: null,
+                expands: true,
                 autofocus: isEdit,
+                textAlignVertical: TextAlignVertical.top,
                 decoration: InputDecoration(
                   hintText: loc.contentHint,
                   labelText: loc.contentLabel,
+                  alignLabelWithHint: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -529,48 +550,26 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        Row(
-          children: [
-            if (isEdit)
-              TextButton.icon(
-                onPressed: _onDelete,
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                label: Text(loc.delete, style: const TextStyle(color: Colors.red)),
-              ),
-            const Spacer(),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(loc.cancel, style: const TextStyle(color: Colors.grey)),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: _isGeneratingTitle ? null : _onConfirm,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal.shade600,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: _isGeneratingTitle
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(isEdit ? loc.edit : loc.confirm),
             ),
           ],
         ),
-      ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isGeneratingTitle ? null : _onConfirm,
+        backgroundColor: Colors.teal.shade600,
+        foregroundColor: Colors.white,
+        icon: _isGeneratingTitle
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Icon(Icons.check),
+        label: Text(isEdit ? loc.edit : loc.confirm),
+      ),
     );
   }
 }
