@@ -14,15 +14,14 @@ import 'services/embedding_service.dart';
 import 'services/llm_title_service.dart';
 import 'widgets/similar_diary_panel.dart';
 import 'providers/locale_provider.dart';
+import 'utils/logger.dart';
 
 void main() async {
   // Flutter의 바인딩을 먼저 초기화합니다.
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. flutter_gemma 초기화 (LiteRT-LM 엔진 등록)
-  await FlutterGemma.initialize(
-    inferenceEngines: [LiteRtLmEngine()],
-  );
+  await FlutterGemma.initialize(inferenceEngines: [LiteRtLmEngine()]);
 
   // 1-1. Qwen3 모델 미등록 시 로컬 파일에서 자동 등록
   await _registerModelIfNeeded();
@@ -33,7 +32,7 @@ void main() async {
   // 3. EmbeddingService 비동기 초기화 (모델 로딩 및 토크나이저 준비)
   final embeddingService = EmbeddingService();
   await embeddingService.init();
-  
+
   // 4. SharedPreferences 비동기 초기화
   final prefs = await SharedPreferences.getInstance();
 
@@ -70,8 +69,8 @@ Future<void> _registerModelIfNeeded() async {
   }
 
   if (foundPath == null) {
-    print('[LLM] 모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다.');
-    print('[LLM] 다음 위치에 파일을 놓아주세요: ${candidatePaths.join(", ")}');
+    logger.w('[LLM] 모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다.');
+    logger.i('[LLM] 다음 위치에 파일을 놓아주세요: ${candidatePaths.join(", ")}');
     if (FlutterGemma.hasActiveModel()) {
       await FlutterGemma.clearActiveInferenceIdentity();
     }
@@ -79,19 +78,19 @@ Future<void> _registerModelIfNeeded() async {
   }
 
   if (FlutterGemma.hasActiveModel()) {
-    print('[LLM] 기존 모델 등록 초기화 (fileType 재설정)...');
+    logger.i('[LLM] 기존 모델 등록 초기화 (fileType 재설정)...');
     await FlutterGemma.clearActiveInferenceIdentity();
   }
 
-  print('[LLM] 모델 파일 발견: $foundPath — 등록 중...');
+  logger.i('[LLM] 모델 파일 발견: $foundPath — 등록 중...');
   try {
     await FlutterGemma.installModel(
       modelType: ModelType.gemma4,
       fileType: ModelFileType.litertlm,
     ).fromFile(foundPath).install();
-    print('[LLM] 모델 등록 완료.');
+    logger.i('[LLM] 모델 등록 완료.');
   } catch (e) {
-    print('[LLM] 모델 등록 실패: $e');
+    logger.e('[LLM] 모델 등록 실패: $e');
   }
 }
 
@@ -114,11 +113,7 @@ class MyApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('ko'),
-        Locale('en'),
-        Locale('ja'),
-      ],
+      supportedLocales: const [Locale('ko'), Locale('en'), Locale('ja')],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.teal,
@@ -145,9 +140,7 @@ class DiaryDemoPage extends ConsumerWidget {
   void _navigateToFormPage(BuildContext context, [DiaryEntity? diary]) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => DiaryFormPage(diary: diary),
-      ),
+      MaterialPageRoute(builder: (context) => DiaryFormPage(diary: diary)),
     );
   }
 
@@ -161,21 +154,35 @@ class DiaryDemoPage extends ConsumerWidget {
             final loc = AppLocalizations.of(context)!;
 
             return AlertDialog(
-              title: Text(loc.settingsTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                loc.settingsTitle,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(loc.languageSetting, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+                  Text(
+                    loc.languageSetting,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<AppLocaleMode>(
-                    value: currentMode,
+                    initialValue: currentMode,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
                     items: [
                       DropdownMenuItem(
@@ -206,7 +213,10 @@ class DiaryDemoPage extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text(loc.close, style: const TextStyle(color: Colors.grey)),
+                  child: Text(
+                    loc.close,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                 ),
               ],
             );
@@ -236,7 +246,10 @@ class DiaryDemoPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           loc.appTitle,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: Colors.teal.shade700,
         elevation: 4,
@@ -301,7 +314,8 @@ class DiaryDemoPage extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Expanded(
                                         child: Text(
@@ -322,10 +336,14 @@ class DiaryDemoPage extends ConsumerWidget {
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.teal.shade50,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Text(
-                                          diary.lastModified.toString().substring(0, 10),
+                                          diary.lastModified
+                                              .toString()
+                                              .substring(0, 10),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.teal.shade700,
@@ -371,10 +389,7 @@ class DiaryDemoPage extends ConsumerWidget {
 class DiaryFormPage extends ConsumerStatefulWidget {
   final DiaryEntity? diary;
 
-  const DiaryFormPage({
-    super.key,
-    this.diary,
-  });
+  const DiaryFormPage({super.key, this.diary});
 
   @override
   ConsumerState<DiaryFormPage> createState() => _DiaryFormPageState();
@@ -424,7 +439,9 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
     if (!mounted) return;
 
     if (widget.diary != null) {
-      ref.read(diaryListProvider.notifier).updateDiary(widget.diary!, title, content);
+      ref
+          .read(diaryListProvider.notifier)
+          .updateDiary(widget.diary!, title, content);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(loc.diaryUpdated),
@@ -546,7 +563,10 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+                    borderSide: BorderSide(
+                      color: Colors.teal.shade600,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),

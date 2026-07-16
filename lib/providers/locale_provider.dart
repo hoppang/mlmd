@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum AppLocaleMode {
-  system,
-  korean,
-  english,
-  japanese
-}
+enum AppLocaleMode { system, korean, english, japanese }
 
 // SharedPreferences provider (initialized in main.dart)
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {

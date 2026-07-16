@@ -90,30 +90,35 @@ class DiaryRepositoryImpl implements DiaryRepository {
     // L2 제곱 거리 → 유사도 % 변환
     // 벡터가 정규화되어 있을 때, L2 제곱 거리(D^2) = 2 - 2 * CosSim
     // 따라서 CosSim = 1 - (D^2 / 2)
-    return withScores.map((item) {
-      final distance = item.score;
-      final cosSim = 1.0 - (distance / 2.0);
-      
-      // E5 같은 밀집 임베딩(dense embedding) 모델은 의미가 전혀 달라도 
-      // 코사인 유사도가 0.8 이상으로 매우 높게 나오는 특성이 있습니다.
-      // 사용자 체감상 직관적인 퍼센티지(0~100%)로 보정하기 위해 0.82를 0%의 기준으로 삼습니다.
-      double mapped = (cosSim - 0.82) / (1.0 - 0.82) * 100.0;
-      
-      // [키워드 검색(Lexical) 보정]
-      // 의미론적 검색(Vector)의 한계로 인해, 단어가 정확히 일치해도 100%가 나오지 않는 문제를 해결합니다.
-      // 실제 텍스트에 검색어가 그대로 포함되어 있다면 확정적으로 가산점을 주어 최상단에 노출되도록 합니다.
-      final exactMatch = item.object.title.contains(query) || item.object.content.contains(query);
-      if (exactMatch) {
-        mapped += 50.0; 
-      }
+    return withScores
+        .map((item) {
+          final distance = item.score;
+          final cosSim = 1.0 - (distance / 2.0);
 
-      final clamped = mapped.clamp(0.0, 100.0);
+          // E5 같은 밀집 임베딩(dense embedding) 모델은 의미가 전혀 달라도
+          // 코사인 유사도가 0.8 이상으로 매우 높게 나오는 특성이 있습니다.
+          // 사용자 체감상 직관적인 퍼센티지(0~100%)로 보정하기 위해 0.82를 0%의 기준으로 삼습니다.
+          double mapped = (cosSim - 0.82) / (1.0 - 0.82) * 100.0;
 
-      return SimilarDiaryResult(
-        diary: item.object,
-        similarityPercent: clamped,
-      );
-    }).where((result) => result.similarityPercent > 0.0).toList()
+          // [키워드 검색(Lexical) 보정]
+          // 의미론적 검색(Vector)의 한계로 인해, 단어가 정확히 일치해도 100%가 나오지 않는 문제를 해결합니다.
+          // 실제 텍스트에 검색어가 그대로 포함되어 있다면 확정적으로 가산점을 주어 최상단에 노출되도록 합니다.
+          final exactMatch =
+              item.object.title.contains(query) ||
+              item.object.content.contains(query);
+          if (exactMatch) {
+            mapped += 50.0;
+          }
+
+          final clamped = mapped.clamp(0.0, 100.0);
+
+          return SimilarDiaryResult(
+            diary: item.object,
+            similarityPercent: clamped,
+          );
+        })
+        .where((result) => result.similarityPercent > 0.0)
+        .toList()
       ..sort((a, b) => b.similarityPercent.compareTo(a.similarityPercent));
   }
 }
@@ -171,8 +176,9 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     repo.deleteDiary(id);
     state = repo.getDiaries();
   }
-
 }
 
-final diaryListProvider = NotifierProvider<DiaryListNotifier, List<DiaryEntity>>(DiaryListNotifier.new);
-
+final diaryListProvider =
+    NotifierProvider<DiaryListNotifier, List<DiaryEntity>>(
+      DiaryListNotifier.new,
+    );

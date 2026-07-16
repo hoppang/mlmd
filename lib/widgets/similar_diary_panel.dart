@@ -65,10 +65,15 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
     try {
       var results = ref
           .read(diaryListProvider.notifier)
-          .searchSimilar(query, limit: widget.maxResults + (widget.excludeDiaryId != null ? 1 : 0));
-      
+          .searchSimilar(
+            query,
+            limit: widget.maxResults + (widget.excludeDiaryId != null ? 1 : 0),
+          );
+
       if (widget.excludeDiaryId != null) {
-        results = results.where((r) => r.diary.id != widget.excludeDiaryId).toList();
+        results = results
+            .where((r) => r.diary.id != widget.excludeDiaryId)
+            .toList();
         if (results.length > widget.maxResults) {
           results = results.sublist(0, widget.maxResults);
         }
@@ -145,10 +150,10 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
             ),
           ),
           const SizedBox(height: 8),
-          ..._results.map((result) => _SimilarDiaryCard(
-                result: result,
-                onTap: widget.onDiaryTap,
-              )),
+          ..._results.map(
+            (result) =>
+                _SimilarDiaryCard(result: result, onTap: widget.onDiaryTap),
+          ),
         ] else if (!_isSearching && _queryController.text.isNotEmpty) ...[
           const SizedBox(height: 12),
           Center(
@@ -181,7 +186,8 @@ class _SimilarDiaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final diary = result.diary;
     final percent = result.similarityPercent;
-    final dateStr = '${diary.date.year}-'
+    final dateStr =
+        '${diary.date.year}-'
         '${diary.date.month.toString().padLeft(2, '0')}-'
         '${diary.date.day.toString().padLeft(2, '0')}';
 
@@ -197,67 +203,67 @@ class _SimilarDiaryCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            // 유사도 배지
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _badgeColor(percent),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '${percent.toStringAsFixed(0)}%',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+              // 유사도 배지
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _badgeColor(percent),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${percent.toStringAsFixed(0)}%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
+              const SizedBox(width: 10),
 
-            // 일기 내용
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          diary.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+              // 일기 내용
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            diary.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Text(
-                        dateStr,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
+                        Text(
+                          dateStr,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    diary.content,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
+                      ],
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      diary.content,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

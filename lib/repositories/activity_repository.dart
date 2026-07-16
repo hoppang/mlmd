@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_entity.dart';
 import '../data/objectbox_helper.dart';
 
-
 /// 활동 로그 CRUD 처리를 위한 Repository 인터페이스
 abstract class ActivityRepository {
   /// 모든 활동 목록을 반환합니다.
@@ -52,7 +51,9 @@ class ActivityRepositoryImpl implements ActivityRepository {
   int saveActivity(ActivityEntity activity, int diaryId) {
     final diary = _obxHelper.diaryBox.get(diaryId);
     if (diary == null) {
-      throw Exception("상위 DiaryEntity(ID: $diaryId)를 찾을 수 없어 Activity를 저장할 수 없습니다.");
+      throw Exception(
+        "상위 DiaryEntity(ID: $diaryId)를 찾을 수 없어 Activity를 저장할 수 없습니다.",
+      );
     }
 
     // 1. 관계 매핑
