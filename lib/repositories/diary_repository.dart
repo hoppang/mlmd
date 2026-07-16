@@ -1,7 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/diary_entity.dart';
 import '../data/objectbox_helper.dart';
+import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
+import 'dart:math';
+
+/// 유사 검색 결과 모델
+class SimilarDiaryResult {
+  final DiaryEntity diary;
+
+  /// 유사도 (0.0 ~ 100.0 %)
+  final double similarityPercent;
+
+  const SimilarDiaryResult({
+    required this.diary,
+    required this.similarityPercent,
+  });
+}
 
 /// 일기 CRUD 처리를 위한 Repository 인터페이스
 abstract class DiaryRepository {
@@ -17,6 +32,15 @@ abstract class DiaryRepository {
 
   /// 지정한 ID의 일기를 삭제합니다.
   bool deleteDiary(int id);
+
+  /// 쿼리 텍스트와 의미적으로 유사한 일기를 HNSW 벡터 검색으로 조회합니다.
+  /// [embeddingService]로 쿼리를 임베딩한 뒤 가장 가까운 [limit]개를 반환합니다.
+  /// 반환값은 유사도(%) 내림차순으로 정렬됩니다.
+  List<SimilarDiaryResult> searchSimilar(
+    String query,
+    EmbeddingService embeddingService, {
+    int limit = 5,
+  });
 }
 
 /// DiaryRepository의 ObjectBox 구현체
@@ -45,6 +69,37 @@ class DiaryRepositoryImpl implements DiaryRepository {
   @override
   bool deleteDiary(int id) {
     return _obxHelper.diaryBox.remove(id);
+  }
+
+  @override
+  List<SimilarDiaryResult> searchSimilar(
+    String query,
+    EmbeddingService embeddingService, {
+    int limit = 5,
+  }) {
+    final queryVector = embeddingService.getQueryEmbedding(query);
+    if (queryVector == null || queryVector.isEmpty) return [];
+
+    // ObjectBox HNSW: nearestNeighborsF32는 L2 제곱 거리(score)를 반환
+    final obxQuery = _obxHelper.diaryBox
+        .query(DiaryEntity_.embedding.nearestNeighborsF32(queryVector, limit))
+        .build();
+
+    final withScores = obxQuery.findWithScores();
+    obxQuery.close();
+
+    // L2 제곱 거리 → 유사도 % 변환
+    // 거리 0 → 100%, 거리 증가 → 감소. exp(-d) 기반으로 자연스럽게 감소
+    return withScores.map((item) {
+      final distance = item.score; // L2 제곱 거리
+      final similarity = exp(-distance / 2.0) * 100.0;
+      final clamped = similarity.clamp(0.0, 100.0);
+      return SimilarDiaryResult(
+        diary: item.object,
+        similarityPercent: clamped,
+      );
+    }).toList()
+      ..sort((a, b) => b.similarityPercent.compareTo(a.similarityPercent));
   }
 }
 
@@ -78,6 +133,13 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     state = repo.getDiaries();
   }
 
+  /// 현재 텍스트 쿼리와 유사한 일기를 검색합니다.
+  List<SimilarDiaryResult> searchSimilar(String query, {int limit = 5}) {
+    final repo = ref.read(diaryRepositoryProvider);
+    final embeddingService = ref.read(embeddingServiceProvider);
+    return repo.searchSimilar(query, embeddingService, limit: limit);
+  }
+
   void updateDiary(DiaryEntity diary, String newTitle, String newContent) {
     final repo = ref.read(diaryRepositoryProvider);
     final embeddingService = ref.read(embeddingServiceProvider);
@@ -95,10 +157,6 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     state = repo.getDiaries();
   }
 
-  String _formatDateTime(DateTime dt) {
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
 }
 
 final diaryListProvider = NotifierProvider<DiaryListNotifier, List<DiaryEntity>>(DiaryListNotifier.new);

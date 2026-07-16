@@ -1,31 +1,96 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 import 'data/objectbox_helper.dart';
 import 'models/diary_entity.dart';
 import 'repositories/diary_repository.dart';
 import 'services/embedding_service.dart';
+import 'services/llm_title_service.dart';
 
 void main() async {
   // Flutter의 바인딩을 먼저 초기화합니다.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. ObjectBoxHelper 비동기 초기화
+  // 1. flutter_gemma 초기화 (LiteRT-LM 엔진 등록)
+  await FlutterGemma.initialize(
+    inferenceEngines: [LiteRtLmEngine()],
+  );
+
+  // 1-1. Qwen3 모델 미등록 시 로컬 파일에서 자동 등록
+  await _registerModelIfNeeded();
+
+  // 2. ObjectBoxHelper 비동기 초기화
   final obxHelper = await ObjectBoxHelper.create();
 
-  // 2. EmbeddingService 비동기 초기화 (모델 로딩 및 토크나이저 준비)
+  // 3. EmbeddingService 비동기 초기화 (모델 로딩 및 토크나이저 준비)
   final embeddingService = EmbeddingService();
   await embeddingService.init();
 
   runApp(
     ProviderScope(
       overrides: [
-        // 3. Riverpod 프로바이더 오버라이드 등록
+        // 4. Riverpod 프로바이더 오버라이드 등록
         objectBoxProvider.overrideWithValue(obxHelper),
         embeddingServiceProvider.overrideWithValue(embeddingService),
       ],
       child: const MyApp(),
     ),
   );
+}
+
+/// Qwen3 모델이 flutter_gemma에 등록되어 있지 않으면 로컬 파일에서 등록합니다.
+///
+/// 탐색 순서:
+///   1. Windows: %USERPROFILE%\Downloads\Qwen3-0.6B.litertlm
+///   2. Android: /sdcard/Download/Qwen3-0.6B.litertlm
+///   3. 없으면 경고 출력 후 스킵 (앱은 정상 실행, 제목 생성만 비활성화)
+Future<void> _registerModelIfNeeded() async {
+  // 플랫폼별 탐색 경로
+  final candidatePaths = <String>[
+    if (Platform.isWindows)
+      '${Platform.environment['USERPROFILE']}\\Downloads\\gemma4-e2b-it.litertlm',
+    if (Platform.isAndroid) '/sdcard/Download/gemma4-e2b-it.litertlm',
+    if (Platform.isMacOS)
+      '${Platform.environment['HOME']}/Downloads/gemma4-e2b-it.litertlm',
+  ];
+
+  // 로컬 파일 탐색
+  String? foundPath;
+  for (final p in candidatePaths) {
+    if (await File(p).exists()) {
+      foundPath = p;
+      break;
+    }
+  }
+
+  if (foundPath == null) {
+    print('[LLM] 모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다.');
+    print('[LLM] 다음 위치에 파일을 놓아주세요: ${candidatePaths.join(", ")}');
+    // 잘못된 이전 등록 제거
+    if (FlutterGemma.hasActiveModel()) {
+      await FlutterGemma.clearActiveInferenceIdentity();
+    }
+    return;
+  }
+
+  // 기존 등록(잘못된 fileType 포함) 초기화 후 재등록
+  if (FlutterGemma.hasActiveModel()) {
+    print('[LLM] 기존 모델 등록 초기화 (fileType 재설정)...');
+    await FlutterGemma.clearActiveInferenceIdentity();
+  }
+
+  print('[LLM] 모델 파일 발견: $foundPath — 등록 중...');
+  try {
+    await FlutterGemma.installModel(
+      modelType: ModelType.gemma4, // 혹은 flutter_gemma 버전에 따라 ModelType.gemma
+      fileType: ModelFileType.litertlm, // .litertlm 파일은 반드시 litertlm 타입
+    ).fromFile(foundPath).install();
+    print('[LLM] 모델 등록 완료.');
+  } catch (e) {
+    print('[LLM] 모델 등록 실패: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -203,6 +268,7 @@ class DiaryFormDialog extends ConsumerStatefulWidget {
 class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
+  bool _isGeneratingTitle = false;
 
   @override
   void initState() {
@@ -218,10 +284,26 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
     super.dispose();
   }
 
-  void _onConfirm() {
-    final title = _titleController.text.trim();
+  void _onConfirm() async {
     final content = _contentController.text.trim();
-    if (title.isEmpty || content.isEmpty) return;
+    if (content.isEmpty) return;
+
+    String title = _titleController.text.trim();
+
+    // 제목 미입력 시 LLM으로 자동 생성
+    if (title.isEmpty) {
+      setState(() => _isGeneratingTitle = true);
+      try {
+        title = await LlmTitleService().generate(
+          content,
+          fallback: content.length > 20 ? content.substring(0, 20) : content,
+        );
+      } finally {
+        if (mounted) setState(() => _isGeneratingTitle = false);
+      }
+    }
+
+    if (!mounted) return;
 
     if (widget.diary != null) {
       ref.read(diaryListProvider.notifier).updateDiary(widget.diary!, title, content);
@@ -301,8 +383,8 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
               controller: _titleController,
               autofocus: !isEdit,
               decoration: InputDecoration(
-                hintText: '제목을 입력해 주세요.',
-                labelText: '제목',
+                hintText: '비워두면 AI가 자동으로 제목을 생성합니다.',
+                labelText: '제목 (선택)',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -310,6 +392,16 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
                 ),
+                suffixIcon: _isGeneratingTitle
+                    ? const Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
               ),
             ),
             const SizedBox(height: 16),
@@ -348,7 +440,7 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
             ),
             const SizedBox(width: 8),
             ElevatedButton(
-              onPressed: _onConfirm,
+              onPressed: _isGeneratingTitle ? null : _onConfirm,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.teal.shade600,
                 foregroundColor: Colors.white,
@@ -356,7 +448,16 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(isEdit ? '수정' : '확인'),
+              child: _isGeneratingTitle
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(isEdit ? '수정' : '확인'),
             ),
           ],
         ),
