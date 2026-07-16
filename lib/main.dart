@@ -8,6 +8,7 @@ import 'models/diary_entity.dart';
 import 'repositories/diary_repository.dart';
 import 'services/embedding_service.dart';
 import 'services/llm_title_service.dart';
+import 'widgets/similar_diary_panel.dart';
 
 void main() async {
   // Flutter의 바인딩을 먼저 초기화합니다.
@@ -145,102 +146,114 @@ class DiaryDemoPage extends ConsumerWidget {
         elevation: 4,
         centerTitle: true,
       ),
-      body: diaries.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.book_outlined,
-                    size: 64,
-                    color: Colors.teal.shade200,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '작성된 일기가 없습니다.',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: SimilarDiaryPanel(
+              onDiaryTap: (diary) => _showFormDialog(context, diary),
+            ),
+          ),
+          Expanded(
+            child: diaries.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.book_outlined,
+                          size: 64,
+                          color: Colors.teal.shade200,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          '작성된 일기가 없습니다.',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          '하단의 + 버튼을 눌러 첫 일기를 작성해 보세요.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '하단의 + 버튼을 눌러 첫 일기를 작성해 보세요.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: diaries.length,
-              itemBuilder: (context, index) {
-                final diary = diaries[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () => _showFormDialog(context, diary),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    diary.title,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: diaries.length,
+                    itemBuilder: (context, index) {
+                      final diary = diaries[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () => _showFormDialog(context, diary),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          diary.title,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.teal.shade50,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          diary.lastModified.toString().substring(0, 10),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.teal.shade700,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    diary.content,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
                                     ),
-                                    maxLines: 1,
+                                    maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.teal.shade50,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    diary.lastModified.toString().substring(0, 10),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.teal.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              diary.content,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade700,
+                                ],
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showFormDialog(context),
         backgroundColor: Colors.teal.shade600,
@@ -375,53 +388,55 @@ class _DiaryFormDialogState extends ConsumerState<DiaryFormDialog> {
       ),
       content: SizedBox(
         width: 400,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _titleController,
-              autofocus: !isEdit,
-              decoration: InputDecoration(
-                hintText: '비워두면 AI가 자동으로 제목을 생성합니다.',
-                labelText: '제목 (선택)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
-                ),
-                suffixIcon: _isGeneratingTitle
-                    ? const Padding(
-                        padding: EdgeInsets.all(12.0),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _contentController,
-              maxLines: 6,
-              autofocus: isEdit,
-              decoration: InputDecoration(
-                hintText: '오늘 하루 어떤 일이 있었나요? 자유롭게 입력해 주세요.',
-                labelText: '내용',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _titleController,
+                autofocus: !isEdit,
+                decoration: InputDecoration(
+                  hintText: '비워두면 AI가 자동으로 제목을 생성합니다.',
+                  labelText: '제목 (선택)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+                  ),
+                  suffixIcon: _isGeneratingTitle
+                      ? const Padding(
+                          padding: EdgeInsets.all(12.0),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : null,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _contentController,
+                maxLines: 6,
+                autofocus: isEdit,
+                decoration: InputDecoration(
+                  hintText: '오늘 하루 어떤 일이 있었나요? 자유롭게 입력해 주세요.',
+                  labelText: '내용',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [

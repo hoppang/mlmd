@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/diary_entity.dart';
 import '../repositories/diary_repository.dart';
 
 /// 유사 일기 검색 패널.
@@ -13,10 +14,18 @@ class SimilarDiaryPanel extends ConsumerStatefulWidget {
   /// 초기 검색어 (일기 조회 페이지에서 현재 일기 내용을 넘길 때 사용)
   final String? initialQuery;
 
+  /// 제외할 일기 ID (자기 자신이 결과로 나오는 것을 방지)
+  final int? excludeDiaryId;
+
+  /// 다이어리 카드 클릭 시 콜백
+  final void Function(DiaryEntity)? onDiaryTap;
+
   const SimilarDiaryPanel({
     super.key,
     this.maxResults = 5,
     this.initialQuery,
+    this.excludeDiaryId,
+    this.onDiaryTap,
   });
 
   @override
@@ -53,9 +62,17 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
 
     setState(() => _isSearching = true);
     try {
-      final results = ref
+      var results = ref
           .read(diaryListProvider.notifier)
-          .searchSimilar(query, limit: widget.maxResults);
+          .searchSimilar(query, limit: widget.maxResults + (widget.excludeDiaryId != null ? 1 : 0));
+      
+      if (widget.excludeDiaryId != null) {
+        results = results.where((r) => r.diary.id != widget.excludeDiaryId).toList();
+        if (results.length > widget.maxResults) {
+          results = results.sublist(0, widget.maxResults);
+        }
+      }
+
       setState(() => _results = results);
     } finally {
       setState(() => _isSearching = false);
@@ -74,7 +91,7 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
               child: TextField(
                 controller: _queryController,
                 decoration: InputDecoration(
-                  hintText: '유사한 날을 검색해 보세요...',
+                  hintText: '지난 기록을 찾아봅니다.',
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -126,7 +143,10 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
             ),
           ),
           const SizedBox(height: 8),
-          ..._results.map((result) => _SimilarDiaryCard(result: result)),
+          ..._results.map((result) => _SimilarDiaryCard(
+                result: result,
+                onTap: widget.onDiaryTap,
+              )),
         ] else if (!_isSearching && _queryController.text.isNotEmpty) ...[
           const SizedBox(height: 12),
           Center(
@@ -144,8 +164,9 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
 /// 유사 일기 단일 카드 위젯
 class _SimilarDiaryCard extends StatelessWidget {
   final SimilarDiaryResult result;
+  final void Function(DiaryEntity)? onTap;
 
-  const _SimilarDiaryCard({required this.result});
+  const _SimilarDiaryCard({required this.result, this.onTap});
 
   /// 유사도에 따른 배지 색상
   Color _badgeColor(double percent) {
@@ -166,11 +187,14 @@ class _SimilarDiaryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap != null ? () => onTap!(diary) : null,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // 유사도 배지
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -231,6 +255,7 @@ class _SimilarDiaryCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
