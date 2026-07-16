@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get appTitle => '小さな奇跡の日記';
+  String get appTitle => 'ふくちゃん日記';
 
   @override
   String get noDiaryTitle => '作成された日記がありません。';
