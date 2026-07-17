@@ -30,10 +30,46 @@ class AppLocalizationsKo extends AppLocalizations {
   String get titleHint => '비워두면 AI가 자동으로 제목을 생성합니다.';
 
   @override
-  String get contentLabel => '내용';
+  String get contentLabel => '내용 (원문)';
 
   @override
   String get contentHint => '오늘 하루 어떤 일이 있었나요? 자유롭게 입력해 주세요.';
+
+  @override
+  String get summaryLabel => '요약';
+
+  @override
+  String get summaryHint => '오늘 하루를 1~3문장으로 요약해 주세요.';
+
+  @override
+  String get simpleModeLabel => '간단 입력';
+
+  @override
+  String get manualModeLabel => '직접 입력';
+
+  @override
+  String get analyzeButton => 'AI 분석';
+
+  @override
+  String get analyzingLabel => 'AI가 분석 중입니다…';
+
+  @override
+  String get previewSection => '분석 결과 미리보기';
+
+  @override
+  String get addEventButton => '이벤트 추가';
+
+  @override
+  String get eventTypeLabel => '종류';
+
+  @override
+  String get eventTypeHint => '예: 수유, 수면, 병원';
+
+  @override
+  String get eventDetailLabel => '상세';
+
+  @override
+  String get eventDetailHint => '예: [7, 9, 11]시, 오전 소아과';
 
   @override
   String get delete => '삭제';
@@ -98,5 +134,5 @@ class AppLocalizationsKo extends AppLocalizations {
   String get close => '닫기';
 
   @override
-  String get llmModelError => '모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다.';
+  String get llmModelError => '모델 파일을 찾을 수 없습니다. AI 분석이 비활성화됩니다.';
 }

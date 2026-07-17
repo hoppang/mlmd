@@ -145,7 +145,7 @@ abstract class AppLocalizations {
   /// No description provided for @contentLabel.
   ///
   /// In ko, this message translates to:
-  /// **'내용'**
+  /// **'내용 (원문)'**
   String get contentLabel;
 
   /// No description provided for @contentHint.
@@ -153,6 +153,78 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'오늘 하루 어떤 일이 있었나요? 자유롭게 입력해 주세요.'**
   String get contentHint;
+
+  /// No description provided for @summaryLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약'**
+  String get summaryLabel;
+
+  /// No description provided for @summaryHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 하루를 1~3문장으로 요약해 주세요.'**
+  String get summaryHint;
+
+  /// No description provided for @simpleModeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'간단 입력'**
+  String get simpleModeLabel;
+
+  /// No description provided for @manualModeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'직접 입력'**
+  String get manualModeLabel;
+
+  /// No description provided for @analyzeButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 분석'**
+  String get analyzeButton;
+
+  /// No description provided for @analyzingLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI가 분석 중입니다…'**
+  String get analyzingLabel;
+
+  /// No description provided for @previewSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'분석 결과 미리보기'**
+  String get previewSection;
+
+  /// No description provided for @addEventButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'이벤트 추가'**
+  String get addEventButton;
+
+  /// No description provided for @eventTypeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'종류'**
+  String get eventTypeLabel;
+
+  /// No description provided for @eventTypeHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: 수유, 수면, 병원'**
+  String get eventTypeHint;
+
+  /// No description provided for @eventDetailLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'상세'**
+  String get eventDetailLabel;
+
+  /// No description provided for @eventDetailHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: [7, 9, 11]시, 오전 소아과'**
+  String get eventDetailHint;
 
   /// No description provided for @delete.
   ///
@@ -277,7 +349,7 @@ abstract class AppLocalizations {
   /// No description provided for @llmModelError.
   ///
   /// In ko, this message translates to:
-  /// **'모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다.'**
+  /// **'모델 파일을 찾을 수 없습니다. AI 분석이 비활성화됩니다.'**
   String get llmModelError;
 }
 

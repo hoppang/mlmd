@@ -7,8 +7,20 @@
   "editDiary": "Edit Diary",
   "titleLabel": "Title (Optional)",
   "titleHint": "If left empty, AI will automatically generate a title.",
-  "contentLabel": "Content",
+  "contentLabel": "Content (Original)",
   "contentHint": "How was your day? Feel free to write anything.",
+  "summaryLabel": "Summary",
+  "summaryHint": "Summarize today in 1-3 sentences.",
+  "simpleModeLabel": "Quick Input",
+  "manualModeLabel": "Manual Input",
+  "analyzeButton": "AI Analyze",
+  "analyzingLabel": "AI is analyzing\u2026",
+  "previewSection": "Analysis Preview",
+  "addEventButton": "Add Event",
+  "eventTypeLabel": "Type",
+  "eventTypeHint": "e.g. Feeding, Sleep, Hospital",
+  "eventDetailLabel": "Detail",
+  "eventDetailHint": "e.g. [7, 9, 11] AM, Pediatrician evening",
   "delete": "Delete",
   "cancel": "Cancel",
   "confirm": "Confirm",
@@ -36,5 +48,5 @@
   "languageEnglish": "English",
   "languageJapanese": "日本語(Japanese)",
   "close": "Close",
-  "llmModelError": "Model file not found. Auto title generation is disabled."
+  "llmModelError": "Model file not found. AI analysis is disabled."
 }

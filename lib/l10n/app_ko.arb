@@ -7,8 +7,20 @@
   "editDiary": "일기 수정",
   "titleLabel": "제목 (선택)",
   "titleHint": "비워두면 AI가 자동으로 제목을 생성합니다.",
-  "contentLabel": "내용",
+  "contentLabel": "내용 (원문)",
   "contentHint": "오늘 하루 어떤 일이 있었나요? 자유롭게 입력해 주세요.",
+  "summaryLabel": "요약",
+  "summaryHint": "오늘 하루를 1~3문장으로 요약해 주세요.",
+  "simpleModeLabel": "간단 입력",
+  "manualModeLabel": "직접 입력",
+  "analyzeButton": "AI 분석",
+  "analyzingLabel": "AI가 분석 중입니다…",
+  "previewSection": "분석 결과 미리보기",
+  "addEventButton": "이벤트 추가",
+  "eventTypeLabel": "종류",
+  "eventTypeHint": "예: 수유, 수면, 병원",
+  "eventDetailLabel": "상세",
+  "eventDetailHint": "예: [7, 9, 11]시, 오전 소아과",
   "delete": "삭제",
   "cancel": "취소",
   "confirm": "확인",
@@ -36,5 +48,5 @@
   "languageEnglish": "English",
   "languageJapanese": "日本語(Japanese)",
   "close": "닫기",
-  "llmModelError": "모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다."
+  "llmModelError": "모델 파일을 찾을 수 없습니다. AI 분석이 비활성화됩니다."
 }

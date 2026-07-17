@@ -30,10 +30,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String get titleHint => '空白の場合、AIが自動でタイトルを生成します。';
 
   @override
-  String get contentLabel => '内容';
+  String get contentLabel => '内容（原文）';
 
   @override
   String get contentHint => '今日一日どんなことがありましたか？自由に書いてください。';
+
+  @override
+  String get summaryLabel => 'まとめ';
+
+  @override
+  String get summaryHint => '今日を1〜3文でまとめてください。';
+
+  @override
+  String get simpleModeLabel => '簡単入力';
+
+  @override
+  String get manualModeLabel => '直接入力';
+
+  @override
+  String get analyzeButton => 'AI分析';
+
+  @override
+  String get analyzingLabel => 'AIが分析中です…';
+
+  @override
+  String get previewSection => '分析結果のプレビュー';
+
+  @override
+  String get addEventButton => 'イベント追加';
+
+  @override
+  String get eventTypeLabel => '種類';
+
+  @override
+  String get eventTypeHint => '例: 授乳、睡眠、病院';
+
+  @override
+  String get eventDetailLabel => '詳細';
+
+  @override
+  String get eventDetailHint => '例: [7, 9, 11]時、小児科外来';
 
   @override
   String get delete => '削除';
@@ -98,5 +134,5 @@ class AppLocalizationsJa extends AppLocalizations {
   String get close => '閉じる';
 
   @override
-  String get llmModelError => 'モデルファイルが見つかりません。タイトルの自動生成が無効になっています。';
+  String get llmModelError => 'モデルファイルが見つかりません。AI分析が無効になっています。';
 }

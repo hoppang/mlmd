@@ -7,8 +7,20 @@
   "editDiary": "日記を編集",
   "titleLabel": "タイトル (任意)",
   "titleHint": "空白の場合、AIが自動でタイトルを生成します。",
-  "contentLabel": "内容",
+  "contentLabel": "内容（原文）",
   "contentHint": "今日一日どんなことがありましたか？自由に書いてください。",
+  "summaryLabel": "まとめ",
+  "summaryHint": "今日を1〜3文でまとめてください。",
+  "simpleModeLabel": "簡単入力",
+  "manualModeLabel": "直接入力",
+  "analyzeButton": "AI分析",
+  "analyzingLabel": "AIが分析中です…",
+  "previewSection": "分析結果のプレビュー",
+  "addEventButton": "イベント追加",
+  "eventTypeLabel": "種類",
+  "eventTypeHint": "例: 授乳、睡眠、病院",
+  "eventDetailLabel": "詳細",
+  "eventDetailHint": "例: [7, 9, 11]時、小児科外来",
   "delete": "削除",
   "cancel": "キャンセル",
   "confirm": "確認",
@@ -36,5 +48,5 @@
   "languageEnglish": "English",
   "languageJapanese": "日本語(Japanese)",
   "close": "閉じる",
-  "llmModelError": "モデルファイルが見つかりません。タイトルの自動生成が無効になっています。"
+  "llmModelError": "モデルファイルが見つかりません。AI分析が無効になっています。"
 }

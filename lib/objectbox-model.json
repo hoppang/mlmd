@@ -47,7 +47,7 @@
     },
     {
       "id": "2:7784148166755830454",
-      "lastPropertyId": "6:5901673729773360223",
+      "lastPropertyId": "7:1234567890123456789",
       "name": "DiaryEntity",
       "properties": [
         {
@@ -82,6 +82,11 @@
           "indexId": "2:6229927242462545823",
           "type": 28,
           "flags": 8
+        },
+        {
+          "id": "7:1234567890123456789",
+          "name": "summary",
+          "type": 9
         }
       ],
       "relations": [

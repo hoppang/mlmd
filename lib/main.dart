@@ -11,6 +11,7 @@ import 'data/objectbox_helper.dart';
 import 'models/diary_entity.dart';
 import 'repositories/diary_repository.dart';
 import 'services/embedding_service.dart';
+import 'services/llm_diary_service.dart';
 import 'services/llm_title_service.dart';
 import 'widgets/similar_diary_panel.dart';
 import 'providers/locale_provider.dart';
@@ -134,8 +135,35 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-class DiaryDemoPage extends ConsumerWidget {
+class DiaryDemoPage extends ConsumerStatefulWidget {
   const DiaryDemoPage({super.key});
+
+  @override
+  ConsumerState<DiaryDemoPage> createState() => _DiaryDemoPageState();
+}
+
+class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
+  bool _initialNavDone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 첫 프레임 이후: 오늘 일기가 있으면 상세 페이지로 자동 이동
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _initialNavDone) return;
+      _initialNavDone = true;
+      final diaries = ref.read(diaryListProvider);
+      final now = DateTime.now();
+      for (final diary in diaries) {
+        if (diary.date.year == now.year &&
+            diary.date.month == now.month &&
+            diary.date.day == now.day) {
+          _navigateToFormPage(context, diary);
+          break;
+        }
+      }
+    });
+  }
 
   void _navigateToFormPage(BuildContext context, [DiaryEntity? diary]) {
     Navigator.push(
@@ -144,7 +172,7 @@ class DiaryDemoPage extends ConsumerWidget {
     );
   }
 
-  void _showSettingsDialog(BuildContext context, WidgetRef ref) {
+  void _showSettingsDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
@@ -227,7 +255,7 @@ class DiaryDemoPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final diaries = ref.watch(diaryListProvider);
     final loc = AppLocalizations.of(context)!;
 
@@ -257,7 +285,7 @@ class DiaryDemoPage extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () => _showSettingsDialog(context, ref),
+            onPressed: () => _showSettingsDialog(context),
           ),
         ],
       ),
@@ -354,8 +382,10 @@ class DiaryDemoPage extends ConsumerWidget {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    diary.content,
+                                Text(
+                                    diary.summary.isNotEmpty
+                                        ? diary.summary
+                                        : diary.content,
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey.shade700,
@@ -363,6 +393,11 @@ class DiaryDemoPage extends ConsumerWidget {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                  // 이벤트 칩
+                                  if (diary.activities.isNotEmpty) ...[  
+                                    const SizedBox(height: 8),
+                                    _buildEventChips(diary),
+                                  ],
                                 ],
                               ),
                             ),
@@ -383,6 +418,27 @@ class DiaryDemoPage extends ConsumerWidget {
       ),
     );
   }
+
+  /// 일기 카드에 이벤트 칩을 표시합니다.
+  Widget _buildEventChips(DiaryEntity diary) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: diary.activities.map((a) {
+        return Chip(
+          label: Text(
+            '${a.type} ${a.details}',
+            style: const TextStyle(fontSize: 11),
+          ),
+          backgroundColor: Colors.teal.shade50,
+          side: BorderSide(color: Colors.teal.shade100),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+        );
+      }).toList(),
+    );
+  }
 }
 
 /// 일기 작성 및 수정을 위한 페이지
@@ -395,53 +451,138 @@ class DiaryFormPage extends ConsumerStatefulWidget {
   ConsumerState<DiaryFormPage> createState() => _DiaryFormPageState();
 }
 
+// ---------------------------------------------------------------------------
+// 입력 모드
+// ---------------------------------------------------------------------------
+enum _InputMode { simple, manual }
+
+// ---------------------------------------------------------------------------
+// 이벤트 항목 (UI용 가변 모델)
+// ---------------------------------------------------------------------------
+class _EditableActivity {
+  String type;
+  String detail;
+  _EditableActivity({required this.type, required this.detail});
+}
+
 class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
+  // 공통
   late final TextEditingController _titleController;
+
+  // 간단 입력 모드
+  late final TextEditingController _rawController;
+  bool _isAnalyzing = false;
+  DiaryExtractionResult? _extractionResult;
+
+  // 직접 입력 모드
+  late final TextEditingController _summaryController;
   late final TextEditingController _contentController;
-  bool _isGeneratingTitle = false;
+  final List<_EditableActivity> _activities = [];
+
+  _InputMode _mode = _InputMode.simple;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.diary?.title);
-    _contentController = TextEditingController(text: widget.diary?.content);
+    final d = widget.diary;
+    _titleController = TextEditingController(text: d?.title);
+    _rawController = TextEditingController(text: d?.content);
+    _summaryController = TextEditingController(text: d?.summary);
+    _contentController = TextEditingController(text: d?.content);
+
+    // 수정 시 기존 이벤트 로드 + 직접 입력 모드 고정
+    if (d != null) {
+      for (final a in d.activities) {
+        _activities.add(_EditableActivity(type: a.type, detail: a.details));
+      }
+      // 수정 시에는 항상 직접 입력 모드
+      _mode = _InputMode.manual;
+    }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
+    _rawController.dispose();
+    _summaryController.dispose();
     _contentController.dispose();
     super.dispose();
   }
 
-  void _onConfirm() async {
+  // ---------------------------------------------------------------------------
+  // AI 분석 (간단 입력 모드)
+  // ---------------------------------------------------------------------------
+  Future<void> _onAnalyze() async {
+    final raw = _rawController.text.trim();
+    if (raw.isEmpty) return;
+    setState(() => _isAnalyzing = true);
+    try {
+      final locale = Localizations.localeOf(context).languageCode;
+      final result = await LlmDiaryService().generate(raw, languageCode: locale);
+      setState(() {
+        _extractionResult = result;
+        // 봸석 결과를 상세 필드에 반영
+        _titleController.text = result.title;
+        _summaryController.text = result.summary;
+        _activities
+          ..clear()
+          ..addAll(result.activities.map(
+            (a) => _EditableActivity(type: a.type, detail: a.detail),
+          ));
+        // 분석 완료 후 자동으로 상세 탭으로 전환
+        _mode = _InputMode.manual;
+      });
+    } finally {
+      if (mounted) setState(() => _isAnalyzing = false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 저장
+  // ---------------------------------------------------------------------------
+  Future<void> _onConfirm() async {
     final loc = AppLocalizations.of(context)!;
-    final content = _contentController.text.trim();
-    if (content.isEmpty) return;
+
+    if (_mode == _InputMode.simple && widget.diary == null) {
+      final raw = _rawController.text.trim();
+      if (raw.isEmpty) return;
+      // 간단 입력 모드에서 확인(FAB) 클릭 시, LLM 분석 수행 후 상세 모드로 자동 전환 (저장 안 함)
+      await _onAnalyze();
+      return;
+    }
 
     String title = _titleController.text.trim();
+    // 상세 입력 모드
+    String summary = _summaryController.text.trim();
+    // 간단 입력한 원문은 만약을 위해 저장(content)만 하고, 수정 시 UI에선 숨겨짐
+    String content = _rawController.text.trim().isNotEmpty
+        ? _rawController.text.trim()
+        : _synthesizeRaw();
 
-    // 제목 미입력 시 LLM으로 자동 생성
-    if (title.isEmpty) {
-      setState(() => _isGeneratingTitle = true);
-      try {
-        final currentLocale = Localizations.localeOf(context).languageCode;
-        title = await LlmTitleService().generate(
-          content,
-          fallback: content.length > 20 ? content.substring(0, 20) : content,
-          languageCode: currentLocale,
-        );
-      } finally {
-        if (mounted) setState(() => _isGeneratingTitle = false);
-      }
+    if (content.isEmpty && summary.isEmpty) return;
+
+    // 제목 미입력 시 LLM
+    if (title.isEmpty && (content.isNotEmpty || summary.isNotEmpty)) {
+      final base = summary.isNotEmpty ? summary : content;
+      final locale = Localizations.localeOf(context).languageCode;
+      title = await LlmTitleService().generate(base, languageCode: locale);
     }
+
+    List<ActivitySummary> activities = _activities
+        .where((a) => a.type.isNotEmpty)
+        .map((a) => ActivitySummary(type: a.type, detail: a.detail))
+        .toList();
 
     if (!mounted) return;
 
     if (widget.diary != null) {
-      ref
-          .read(diaryListProvider.notifier)
-          .updateDiary(widget.diary!, title, content);
+      ref.read(diaryListProvider.notifier).updateDiary(
+            widget.diary!,
+            title,
+            summary,
+            content,
+            activitySummaries: activities,
+          );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(loc.diaryUpdated),
@@ -449,7 +590,12 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
         ),
       );
     } else {
-      ref.read(diaryListProvider.notifier).addDiary(title, content);
+      ref.read(diaryListProvider.notifier).addDiary(
+            title,
+            summary,
+            content,
+            activitySummaries: activities,
+          );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(loc.diaryAdded),
@@ -486,7 +632,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
       if (!mounted) return;
       if (confirmed == true) {
         ref.read(diaryListProvider.notifier).deleteDiary(widget.diary!.id);
-        Navigator.pop(context); // 수정 페이지 닫기
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(loc.diaryDeleted),
@@ -497,6 +643,20 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // 이벤트 편집 (manual)
+  // ---------------------------------------------------------------------------
+  void _addActivity() {
+    setState(() => _activities.add(_EditableActivity(type: '', detail: '')));
+  }
+
+  void _removeActivity(int index) {
+    setState(() => _activities.removeAt(index));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.diary != null;
@@ -516,69 +676,25 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
             ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _titleController,
-              autofocus: !isEdit,
-              decoration: InputDecoration(
-                hintText: loc.titleHint,
-                labelText: loc.titleLabel,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
-                ),
-                suffixIcon: _isGeneratingTitle
-                    ? const Padding(
-                        padding: EdgeInsets.all(12.0),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : null,
-              ),
+      body: Column(
+        children: [
+          // 모드 토글 (새 일기 작성 시에만 표시)
+          if (!isEdit) _buildModeToggle(loc),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: _mode == _InputMode.simple
+                  ? _buildSimpleMode(loc)
+                  : _buildManualMode(loc),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TextField(
-                controller: _contentController,
-                maxLines: null,
-                expands: true,
-                autofocus: isEdit,
-                textAlignVertical: TextAlignVertical.top,
-                decoration: InputDecoration(
-                  hintText: loc.contentHint,
-                  labelText: loc.contentLabel,
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.teal.shade600,
-                      width: 2,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isGeneratingTitle ? null : _onConfirm,
+        onPressed: _isAnalyzing ? null : _onConfirm,
         backgroundColor: Colors.teal.shade600,
         foregroundColor: Colors.white,
-        icon: _isGeneratingTitle
+        icon: _isAnalyzing
             ? const SizedBox(
                 width: 24,
                 height: 24,
@@ -587,9 +703,223 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
                   color: Colors.white,
                 ),
               )
-            : const Icon(Icons.check),
-        label: Text(isEdit ? loc.edit : loc.confirm),
+            : Icon((_mode == _InputMode.simple && !isEdit) ? Icons.auto_awesome : Icons.check),
+        label: Text(isEdit 
+            ? loc.edit 
+            : (_mode == _InputMode.simple ? loc.analyzeButton : loc.confirm)),
       ),
+    );
+  }
+
+  // --- 모드 토글 ---
+  Widget _buildModeToggle(AppLocalizations loc) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: SegmentedButton<_InputMode>(
+        segments: [
+          ButtonSegment(
+            value: _InputMode.simple,
+            label: Text(loc.simpleModeLabel),
+            icon: const Icon(Icons.auto_awesome, size: 16),
+          ),
+          ButtonSegment(
+            value: _InputMode.manual,
+            label: Text(loc.manualModeLabel),
+            icon: const Icon(Icons.edit_note, size: 16),
+          ),
+        ],
+        selected: {_mode},
+        onSelectionChanged: (s) {
+          final newMode = s.first;
+          if (newMode == _InputMode.simple && _mode == _InputMode.manual) {
+            // 상세 → 간단: summary + 이벤트로 간단 입력 합성
+            final synthesized = _synthesizeRaw();
+            if (synthesized.isNotEmpty) {
+              _rawController.text = synthesized;
+              _extractionResult = null; // 미리보기 초기화
+            }
+          }
+          setState(() => _mode = newMode);
+        },
+        style: ButtonStyle(
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 상세 필드(summary + 이벤트)를 합산하여 간단 입력 텍스트를 생성합니다.
+  String _synthesizeRaw() {
+    final parts = <String>[];
+    final summary = _summaryController.text.trim();
+    if (summary.isNotEmpty) parts.add(summary);
+    final eventsStr = _activities
+        .where((a) => a.type.isNotEmpty)
+        .map((a) => a.detail.isNotEmpty ? '${a.type}: ${a.detail}' : a.type)
+        .join('\n');
+    if (eventsStr.isNotEmpty) parts.add(eventsStr);
+    return parts.join('\n');
+  }
+
+  // ---------------------------------------------------------------------------
+  // 간단 입력 모드 UI
+  // ---------------------------------------------------------------------------
+  Widget _buildSimpleMode(AppLocalizations loc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 12),
+        // 제목 (AI 분석 후 수정 가능)
+        TextField(
+          controller: _titleController,
+          decoration: InputDecoration(
+            labelText: loc.titleLabel,
+            hintText: loc.titleHint,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 간단 입력 필드
+        TextField(
+          controller: _rawController,
+          maxLines: 10,
+          autofocus: widget.diary == null,
+          textAlignVertical: TextAlignVertical.top,
+          decoration: InputDecoration(
+            labelText: loc.simpleModeLabel,
+            hintText: loc.contentHint,
+            alignLabelWithHint: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 80), // FAB 여백
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 직접 입력 모드 UI
+  // ---------------------------------------------------------------------------
+  Widget _buildManualMode(AppLocalizations loc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 12),
+        // 제목
+        TextField(
+          controller: _titleController,
+          autofocus: widget.diary == null,
+          decoration: InputDecoration(
+            labelText: loc.titleLabel,
+            hintText: loc.titleHint,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 요약
+        TextField(
+          controller: _summaryController,
+          maxLines: 4,
+          textAlignVertical: TextAlignVertical.top,
+          decoration: InputDecoration(
+            labelText: loc.summaryLabel,
+            hintText: loc.summaryHint,
+            alignLabelWithHint: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        // 이벤트 목록
+        Row(
+          children: [
+            const Icon(Icons.event_note, size: 18, color: Colors.teal),
+            const SizedBox(width: 6),
+            Text(
+              loc.eventTypeLabel,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: _addActivity,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(loc.addEventButton),
+              style: TextButton.styleFrom(foregroundColor: Colors.teal),
+            ),
+          ],
+        ),
+        ..._activities.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final act = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                // 종류
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: TextEditingController(text: act.type)
+                      ..selection = TextSelection.collapsed(offset: act.type.length),
+                    onChanged: (v) => act.type = v,
+                    decoration: InputDecoration(
+                      hintText: loc.eventTypeHint,
+                      labelText: loc.eventTypeLabel,
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // 상세
+                Expanded(
+                  flex: 3,
+                  child: TextField(
+                    controller: TextEditingController(text: act.detail)
+                      ..selection = TextSelection.collapsed(offset: act.detail.length),
+                    onChanged: (v) => act.detail = v,
+                    decoration: InputDecoration(
+                      hintText: loc.eventDetailHint,
+                      labelText: loc.eventDetailLabel,
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+                // 삭제
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                  onPressed: () => _removeActivity(idx),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 80), // FAB 여백
+      ],
     );
   }
 }

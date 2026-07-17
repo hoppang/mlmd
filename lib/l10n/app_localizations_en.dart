@@ -31,10 +31,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'If left empty, AI will automatically generate a title.';
 
   @override
-  String get contentLabel => 'Content';
+  String get contentLabel => 'Content (Original)';
 
   @override
   String get contentHint => 'How was your day? Feel free to write anything.';
+
+  @override
+  String get summaryLabel => 'Summary';
+
+  @override
+  String get summaryHint => 'Summarize today in 1-3 sentences.';
+
+  @override
+  String get simpleModeLabel => 'Quick Input';
+
+  @override
+  String get manualModeLabel => 'Manual Input';
+
+  @override
+  String get analyzeButton => 'AI Analyze';
+
+  @override
+  String get analyzingLabel => 'AI is analyzing…';
+
+  @override
+  String get previewSection => 'Analysis Preview';
+
+  @override
+  String get addEventButton => 'Add Event';
+
+  @override
+  String get eventTypeLabel => 'Type';
+
+  @override
+  String get eventTypeHint => 'e.g. Feeding, Sleep, Hospital';
+
+  @override
+  String get eventDetailLabel => 'Detail';
+
+  @override
+  String get eventDetailHint => 'e.g. [7, 9, 11] AM, Pediatrician evening';
 
   @override
   String get delete => 'Delete';
@@ -100,6 +136,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
-  String get llmModelError =>
-      'Model file not found. Auto title generation is disabled.';
+  String get llmModelError => 'Model file not found. AI analysis is disabled.';
 }

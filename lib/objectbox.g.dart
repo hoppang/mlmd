@@ -72,7 +72,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(2, 7784148166755830454),
     name: 'DiaryEntity',
-    lastPropertyId: const obx_int.IdUid(6, 5901673729773360223),
+    lastPropertyId: const obx_int.IdUid(7, 1234567890123456789),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -112,6 +112,12 @@ final _entities = <obx_int.ModelEntity>[
         flags: 8,
         indexId: const obx_int.IdUid(2, 6229927242462545823),
         hnswParams: obx_int.ModelHnswParams(dimensions: 384),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 1234567890123456789),
+        name: 'summary',
+        type: 9,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[
@@ -257,13 +263,15 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final embeddingOffset = object.embedding == null
             ? null
             : fbb.writeListFloat32(object.embedding!);
-        fbb.startTable(7);
+        final summaryOffset = fbb.writeString(object.summary);
+        fbb.startTable(8);
         fbb.addInt64(0, object.id);
         fbb.addInt64(1, object.date.millisecondsSinceEpoch);
         fbb.addOffset(2, titleOffset);
         fbb.addOffset(3, contentOffset);
         fbb.addInt64(4, object.lastModified.millisecondsSinceEpoch);
         fbb.addOffset(5, embeddingOffset);
+        fbb.addOffset(6, summaryOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -282,6 +290,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final titleParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 8, '');
+        final summaryParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
         final contentParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 10, '');
@@ -296,6 +307,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           id: idParam,
           date: dateParam,
           title: titleParam,
+          summary: summaryParam,
           content: contentParam,
           lastModified: lastModifiedParam,
           embedding: embeddingParam,
@@ -376,6 +388,11 @@ class DiaryEntity_ {
   /// See [DiaryEntity.embedding].
   static final embedding = obx.QueryHnswProperty<DiaryEntity>(
     _entities[1].properties[5],
+  );
+
+  /// See [DiaryEntity.summary].
+  static final summary = obx.QueryStringProperty<DiaryEntity>(
+    _entities[1].properties[6],
   );
 
   /// see [DiaryEntity.activities]

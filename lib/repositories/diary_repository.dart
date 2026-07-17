@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/activity_entity.dart';
 import '../models/diary_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
+import '../services/llm_diary_service.dart' show buildEmbeddingText, ActivitySummary;
 
 /// 유사 검색 결과 모델
 class SimilarDiaryResult {
@@ -111,6 +113,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
           // 실제 텍스트에 검색어가 그대로 포함되어 있다면 확정적으로 가산점을 주어 최상단에 노출되도록 합니다.
           final exactMatch =
               item.object.title.contains(query) ||
+              item.object.summary.contains(query) ||
               item.object.content.contains(query);
           if (exactMatch) {
             mapped += 50.0;
@@ -143,18 +146,39 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     return repo.getDiaries();
   }
 
-  void addDiary(String title, String content) {
+  /// 새 일기를 추가합니다.
+  /// [summary]와 비일상 [activities]를 합산하여 임베딩 텍스트를 구성합니다.
+  void addDiary(
+    String title,
+    String summary,
+    String content, {
+    List<ActivitySummary> activitySummaries = const [],
+  }) {
     final repo = ref.read(diaryRepositoryProvider);
     final embeddingService = ref.read(embeddingServiceProvider);
-    final embedding = embeddingService.getEmbedding(content);
     final now = DateTime.now();
+
     final newDiary = DiaryEntity(
       date: now,
       title: title,
+      summary: summary,
       content: content,
       lastModified: now,
-      embedding: embedding,
     );
+
+    // ActivityEntity 생성 및 연결
+    final activityEntities = activitySummaries.map((a) => ActivityEntity(
+      type: a.type,
+      time: now,
+      details: a.detail,
+      lastModified: now,
+    )).toList();
+    newDiary.activities.addAll(activityEntities);
+
+    // 임베딩 텍스트 = summary + 비일상 이벤트
+    final embeddingText = buildEmbeddingText(summary, activityEntities);
+    newDiary.embedding = embeddingService.getEmbedding(embeddingText);
+
     repo.saveDiary(newDiary);
     state = repo.getDiaries();
   }
@@ -166,13 +190,36 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     return repo.searchSimilar(query, embeddingService, limit: limit);
   }
 
-  void updateDiary(DiaryEntity diary, String newTitle, String newContent) {
+  /// 기존 일기를 수정합니다.
+  void updateDiary(
+    DiaryEntity diary,
+    String newTitle,
+    String newSummary,
+    String newContent, {
+    List<ActivitySummary> activitySummaries = const [],
+  }) {
     final repo = ref.read(diaryRepositoryProvider);
     final embeddingService = ref.read(embeddingServiceProvider);
-    final embedding = embeddingService.getEmbedding(newContent);
+    final now = DateTime.now();
+
     diary.title = newTitle;
+    diary.summary = newSummary;
     diary.content = newContent;
-    diary.embedding = embedding;
+
+    // 기존 activities 교체
+    diary.activities.clear();
+    final activityEntities = activitySummaries.map((a) => ActivityEntity(
+      type: a.type,
+      time: now,
+      details: a.detail,
+      lastModified: now,
+    )).toList();
+    diary.activities.addAll(activityEntities);
+
+    // 임베딩 텍스트 = summary + 비일상 이벤트
+    final embeddingText = buildEmbeddingText(newSummary, activityEntities);
+    diary.embedding = embeddingService.getEmbedding(embeddingText);
+
     repo.saveDiary(diary); // saveDiary가 자동으로 lastModified를 갱신합니다.
     state = repo.getDiaries();
   }
