@@ -89,13 +89,7 @@
           "type": 9
         }
       ],
-      "relations": [
-        {
-          "id": "1:6838825628405302824",
-          "name": "activities",
-          "targetId": "1:3014340625497478550"
-        }
-      ]
+      "relations": []
     }
   ],
   "lastEntityId": "2:7784148166755830454",
@@ -107,6 +101,8 @@
   "retiredEntityUids": [],
   "retiredIndexUids": [],
   "retiredPropertyUids": [],
-  "retiredRelationUids": [],
+  "retiredRelationUids": [
+    6838825628405302824
+  ],
   "version": 1
 }

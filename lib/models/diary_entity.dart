@@ -25,6 +25,8 @@ class DiaryEntity {
   @Property(type: PropertyType.floatVector)
   List<double>? embedding;
 
+  /// ActivityEntity.diary를 관계의 단일 원본으로 사용하는 역방향 관계입니다.
+  @Backlink('diary')
   final activities = ToMany<ActivityEntity>();
 
   DiaryEntity({

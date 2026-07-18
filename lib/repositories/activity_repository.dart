@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_entity.dart';
 import '../data/objectbox_helper.dart';
+import '../objectbox.g.dart';
 
 /// 활동 로그 CRUD 처리를 위한 Repository 인터페이스
 abstract class ActivityRepository {
@@ -35,11 +36,14 @@ class ActivityRepositoryImpl implements ActivityRepository {
 
   @override
   List<ActivityEntity> getActivitiesByDiary(int diaryId) {
-    final diary = _obxHelper.diaryBox.get(diaryId);
-    if (diary != null) {
-      return diary.activities.toList();
+    final query = _obxHelper.activityBox
+        .query(ActivityEntity_.diary.equals(diaryId))
+        .build();
+    try {
+      return query.find();
+    } finally {
+      query.close();
     }
-    return [];
   }
 
   @override

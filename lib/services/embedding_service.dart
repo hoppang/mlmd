@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -19,19 +21,36 @@ class EmbeddingService {
   factory EmbeddingService() => _instance;
   EmbeddingService._internal();
 
-  BgeEmbedder? _embedder;
+  Isolate? _worker;
+  ReceivePort? _responses;
+  SendPort? _commands;
+  final Map<int, Completer<List<double>?>> _pending = {};
+  int _nextRequestId = 0;
+  Object? _initializationError;
+
+  bool get isAvailable =>
+      _worker != null && _responses != null && _commands != null;
+  Object? get initializationError => _initializationError;
 
   /// 임베딩 모델 및 토크나이저 파일을 로컬 영구 디렉터리로 복사하고 초기화합니다.
   Future<void> init() async {
-    if (_embedder != null) return;
+    if (_commands != null) return;
 
-    // flutter_embedder FFI 런타임 초기화
-    if (Platform.isWindows) {
-      await initFlutterEmbedder(path: 'onnxruntime.dll');
-    } else {
-      await initFlutterEmbedder();
+    try {
+      await _initModel();
+      _initializationError = null;
+    } catch (error, stackTrace) {
+      _commands = null;
+      _initializationError = error;
+      logger.e(
+        'EmbeddingService initialization failed; semantic search is disabled.',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
+  }
 
+  Future<void> _initModel() async {
     // 로컬 앱 지원 디렉터리 경로 확보
     final appDir = await getApplicationSupportDirectory();
     final modelFile = File(p.join(appDir.path, 'model_quantized.onnx'));
@@ -61,39 +80,104 @@ class EmbeddingService {
       logger.i('Finished copying tokenizer.');
     }
 
-    // 3. FFI를 통한 BgeEmbedder 인스턴스 로드
-    _embedder = BgeEmbedder.create(
-      modelPath: modelFile.path,
-      tokenizerPath: tokenizerFile.path,
-    );
+    // 3. 전용 isolate에서 FFI 런타임과 모델을 한 번만 로드합니다.
+    await _startWorker(modelFile.path, tokenizerFile.path);
     logger.i('EmbeddingService successfully initialized.');
   }
 
-  /// 일반 텍스트(문서/본문) 임베딩 벡터 추출 (E5 모델 기준 "passage: " 접두사 자동 추가)
-  List<double>? getEmbedding(String text) {
-    if (_embedder == null) {
-      throw StateError('EmbeddingService가 초기화되지 않았습니다. init()을 먼저 호출해 주세요.');
-    }
+  Future<void> _startWorker(String modelPath, String tokenizerPath) async {
+    final responses = ReceivePort();
+    final ready = Completer<void>();
+    _responses = responses;
 
-    // E5 임베딩 모델 특성상 본문에는 'passage: ' 접두사 필수 사용
-    final formattedText = 'passage: $text';
-    final result = _embedder!.embed(texts: [formattedText]);
-    if (result.isEmpty) return null;
+    responses.listen((message) {
+      final values = message as List<Object?>;
+      switch (values[0]) {
+        case 'ready':
+          _commands = values[1] as SendPort;
+          if (!ready.isCompleted) ready.complete();
+        case 'init-error':
+          if (!ready.isCompleted) {
+            ready.completeError(StateError(values[1] as String));
+          }
+        case 'result':
+          final id = values[1] as int;
+          final completer = _pending.remove(id);
+          if (completer == null) return;
+          final error = values[3] as String?;
+          if (error != null) {
+            completer.completeError(StateError(error));
+          } else {
+            completer.complete((values[2] as List?)?.cast<double>());
+          }
+      }
+    });
 
-    return result.first.toList();
+    _worker = await Isolate.spawn(_embeddingWorkerMain, <Object?>[
+      responses.sendPort,
+      modelPath,
+      tokenizerPath,
+      Platform.isWindows ? 'onnxruntime.dll' : null,
+    ], debugName: 'mlmd-embedding-worker');
+    await ready.future;
   }
 
+  /// 일반 텍스트(문서/본문) 임베딩 벡터 추출 (E5 모델 기준 "passage: " 접두사 자동 추가)
+  Future<List<double>?> getEmbedding(String text) => _embed('passage: $text');
+
   /// 검색어 쿼리용 임베딩 벡터 추출 (E5 모델 기준 "query: " 접두사 자동 추가)
-  List<double>? getQueryEmbedding(String query) {
-    if (_embedder == null) {
-      throw StateError('EmbeddingService가 초기화되지 않았습니다. init()을 먼저 호출해 주세요.');
+  Future<List<double>?> getQueryEmbedding(String query) =>
+      _embed('query: $query');
+
+  Future<List<double>?> _embed(String formattedText) {
+    final commands = _commands;
+    if (commands == null) return Future.value(null);
+
+    final id = _nextRequestId++;
+    final completer = Completer<List<double>?>();
+    _pending[id] = completer;
+    commands.send(<Object?>['embed', id, formattedText]);
+    return completer.future;
+  }
+}
+
+Future<void> _embeddingWorkerMain(List<Object?> args) async {
+  final responses = args[0] as SendPort;
+  final modelPath = args[1] as String;
+  final tokenizerPath = args[2] as String;
+  final nativeLibraryPath = args[3] as String?;
+
+  try {
+    if (nativeLibraryPath != null) {
+      await initFlutterEmbedder(path: nativeLibraryPath);
+    } else {
+      await initFlutterEmbedder();
     }
+    final embedder = BgeEmbedder.create(
+      modelPath: modelPath,
+      tokenizerPath: tokenizerPath,
+    );
+    final commands = ReceivePort();
+    responses.send(<Object?>['ready', commands.sendPort]);
 
-    // E5 임베딩 모델 특성상 검색 쿼리에는 'query: ' 접두사 필수 사용
-    final formattedText = 'query: $query';
-    final result = _embedder!.embed(texts: [formattedText]);
-    if (result.isEmpty) return null;
-
-    return result.first.toList();
+    await for (final message in commands) {
+      final values = message as List<Object?>;
+      if (values[0] != 'embed') continue;
+      final id = values[1] as int;
+      final text = values[2] as String;
+      try {
+        final result = embedder.embed(texts: [text]);
+        responses.send(<Object?>[
+          'result',
+          id,
+          result.isEmpty ? null : result.first,
+          null,
+        ]);
+      } catch (error) {
+        responses.send(<Object?>['result', id, null, error.toString()]);
+      }
+    }
+  } catch (error) {
+    responses.send(<Object?>['init-error', error.toString()]);
   }
 }

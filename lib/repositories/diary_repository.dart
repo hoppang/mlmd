@@ -4,7 +4,8 @@ import '../models/diary_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
-import '../services/llm_diary_service.dart' show buildEmbeddingText, ActivitySummary;
+import '../services/llm_diary_service.dart'
+    show buildEmbeddingText, ActivitySummary;
 
 /// 유사 검색 결과 모델
 class SimilarDiaryResult {
@@ -31,13 +32,20 @@ abstract class DiaryRepository {
   /// 저장 시 `lastModified` 타임스탬프가 자동으로 현재 시간으로 갱신됩니다.
   int saveDiary(DiaryEntity diary);
 
+  /// 일기와 그 활동 목록을 하나의 트랜잭션에서 저장합니다.
+  /// 기존 활동 엔티티는 실제 삭제한 뒤 [activities]로 교체합니다.
+  int saveDiaryWithActivities(
+    DiaryEntity diary,
+    List<ActivityEntity> activities,
+  );
+
   /// 지정한 ID의 일기를 삭제합니다.
   bool deleteDiary(int id);
 
   /// 쿼리 텍스트와 의미적으로 유사한 일기를 HNSW 벡터 검색으로 조회합니다.
   /// [embeddingService]로 쿼리를 임베딩한 뒤 가장 가까운 [limit]개를 반환합니다.
   /// 반환값은 유사도(%) 내림차순으로 정렬됩니다.
-  List<SimilarDiaryResult> searchSimilar(
+  Future<List<SimilarDiaryResult>> searchSimilar(
     String query,
     EmbeddingService embeddingService, {
     int limit = 5,
@@ -74,61 +82,110 @@ class DiaryRepositoryImpl implements DiaryRepository {
   }
 
   @override
-  bool deleteDiary(int id) {
-    return _obxHelper.diaryBox.remove(id);
+  int saveDiaryWithActivities(
+    DiaryEntity diary,
+    List<ActivityEntity> activities,
+  ) {
+    return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final now = DateTime.now();
+      diary.lastModified = now;
+      final diaryId = _obxHelper.diaryBox.put(diary);
+
+      final oldQuery = _obxHelper.activityBox
+          .query(ActivityEntity_.diary.equals(diaryId))
+          .build();
+      final oldIds = oldQuery.findIds();
+      oldQuery.close();
+      if (oldIds.isNotEmpty) {
+        _obxHelper.activityBox.removeMany(oldIds);
+      }
+
+      for (final activity in activities) {
+        activity.diary.target = diary;
+        activity.lastModified = now;
+      }
+      if (activities.isNotEmpty) {
+        _obxHelper.activityBox.putMany(activities);
+      }
+      return diaryId;
+    });
   }
 
   @override
-  List<SimilarDiaryResult> searchSimilar(
+  bool deleteDiary(int id) {
+    return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final activityQuery = _obxHelper.activityBox
+          .query(ActivityEntity_.diary.equals(id))
+          .build();
+      final activityIds = activityQuery.findIds();
+      activityQuery.close();
+      if (activityIds.isNotEmpty) {
+        _obxHelper.activityBox.removeMany(activityIds);
+      }
+      return _obxHelper.diaryBox.remove(id);
+    });
+  }
+
+  @override
+  Future<List<SimilarDiaryResult>> searchSimilar(
     String query,
     EmbeddingService embeddingService, {
     int limit = 5,
-  }) {
-    final queryVector = embeddingService.getQueryEmbedding(query);
-    if (queryVector == null || queryVector.isEmpty) return [];
+  }) async {
+    if (query.trim().isEmpty || limit <= 0) return [];
 
-    // ObjectBox HNSW: nearestNeighborsF32는 L2 제곱 거리(score)를 반환
-    final obxQuery = _obxHelper.diaryBox
-        .query(DiaryEntity_.embedding.nearestNeighborsF32(queryVector, limit))
+    final queryVector = await embeddingService.getQueryEmbedding(query);
+    final exactQuery = _obxHelper.diaryBox
+        .query(
+          DiaryEntity_.title.contains(query, caseSensitive: false) |
+              DiaryEntity_.summary.contains(query, caseSensitive: false) |
+              DiaryEntity_.content.contains(query, caseSensitive: false),
+        )
         .build();
+    exactQuery.limit = limit;
 
-    final withScores = obxQuery.findWithScores();
-    obxQuery.close();
+    final vectorQuery = queryVector == null || queryVector.isEmpty
+        ? null
+        : _obxHelper.diaryBox
+              .query(
+                DiaryEntity_.embedding.nearestNeighborsF32(queryVector, limit),
+              )
+              .build();
 
-    // L2 제곱 거리 → 유사도 % 변환
-    // 벡터가 정규화되어 있을 때, L2 제곱 거리(D^2) = 2 - 2 * CosSim
-    // 따라서 CosSim = 1 - (D^2 / 2)
-    return withScores
-        .map((item) {
-          final distance = item.score;
-          final cosSim = 1.0 - (distance / 2.0);
+    try {
+      final results = <int, SimilarDiaryResult>{};
+      final exactMatches = await exactQuery.findAsync();
+      for (final diary in exactMatches) {
+        results[diary.id] = SimilarDiaryResult(
+          diary: diary,
+          similarityPercent: 100,
+        );
+      }
 
-          // E5 같은 밀집 임베딩(dense embedding) 모델은 의미가 전혀 달라도
-          // 코사인 유사도가 0.8 이상으로 매우 높게 나오는 특성이 있습니다.
-          // 사용자 체감상 직관적인 퍼센티지(0~100%)로 보정하기 위해 0.82를 0%의 기준으로 삼습니다.
-          double mapped = (cosSim - 0.82) / (1.0 - 0.82) * 100.0;
+      final withScores = vectorQuery == null
+          ? const <ObjectWithScore<DiaryEntity>>[]
+          : await vectorQuery.findWithScoresAsync();
+      for (final item in withScores) {
+        final distance = item.score;
+        final cosSim = 1.0 - (distance / 2.0);
+        final mapped = (cosSim - 0.82) / (1.0 - 0.82) * 100.0;
+        final candidate = SimilarDiaryResult(
+          diary: item.object,
+          similarityPercent: mapped.clamp(0.0, 100.0),
+        );
+        if (candidate.similarityPercent > 0 &&
+            !results.containsKey(candidate.diary.id)) {
+          results[candidate.diary.id] = candidate;
+        }
+      }
 
-          // [키워드 검색(Lexical) 보정]
-          // 의미론적 검색(Vector)의 한계로 인해, 단어가 정확히 일치해도 100%가 나오지 않는 문제를 해결합니다.
-          // 실제 텍스트에 검색어가 그대로 포함되어 있다면 확정적으로 가산점을 주어 최상단에 노출되도록 합니다.
-          final exactMatch =
-              item.object.title.contains(query) ||
-              item.object.summary.contains(query) ||
-              item.object.content.contains(query);
-          if (exactMatch) {
-            mapped += 50.0;
-          }
-
-          final clamped = mapped.clamp(0.0, 100.0);
-
-          return SimilarDiaryResult(
-            diary: item.object,
-            similarityPercent: clamped,
-          );
-        })
-        .where((result) => result.similarityPercent > 0.0)
-        .toList()
-      ..sort((a, b) => b.similarityPercent.compareTo(a.similarityPercent));
+      final sorted = results.values.toList()
+        ..sort((a, b) => b.similarityPercent.compareTo(a.similarityPercent));
+      return sorted.take(limit).toList(growable: false);
+    } finally {
+      exactQuery.close();
+      vectorQuery?.close();
+    }
   }
 }
 
@@ -148,12 +205,12 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
 
   /// 새 일기를 추가합니다.
   /// [summary]와 비일상 [activities]를 합산하여 임베딩 텍스트를 구성합니다.
-  void addDiary(
+  Future<void> addDiary(
     String title,
     String summary,
     String content, {
     List<ActivitySummary> activitySummaries = const [],
-  }) {
+  }) async {
     final repo = ref.read(diaryRepositoryProvider);
     final embeddingService = ref.read(embeddingServiceProvider);
     final now = DateTime.now();
@@ -166,38 +223,43 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
       lastModified: now,
     );
 
-    // ActivityEntity 생성 및 연결
-    final activityEntities = activitySummaries.map((a) => ActivityEntity(
-      type: a.type,
-      time: now,
-      details: a.detail,
-      lastModified: now,
-    )).toList();
-    newDiary.activities.addAll(activityEntities);
-
+    // ActivityEntity 생성. 관계 연결은 repository 트랜잭션에서 수행합니다.
+    final activityEntities = activitySummaries
+        .map(
+          (a) => ActivityEntity(
+            type: a.type,
+            time: now,
+            details: a.detail,
+            lastModified: now,
+          ),
+        )
+        .toList();
     // 임베딩 텍스트 = summary + 비일상 이벤트
     final embeddingText = buildEmbeddingText(summary, activityEntities);
-    newDiary.embedding = embeddingService.getEmbedding(embeddingText);
+    newDiary.embedding = await embeddingService.getEmbedding(embeddingText);
 
-    repo.saveDiary(newDiary);
+    repo.saveDiaryWithActivities(newDiary, activityEntities);
     state = repo.getDiaries();
   }
 
   /// 현재 텍스트 쿼리와 유사한 일기를 검색합니다.
-  List<SimilarDiaryResult> searchSimilar(String query, {int limit = 5}) {
+  Future<List<SimilarDiaryResult>> searchSimilar(
+    String query, {
+    int limit = 5,
+  }) {
     final repo = ref.read(diaryRepositoryProvider);
     final embeddingService = ref.read(embeddingServiceProvider);
     return repo.searchSimilar(query, embeddingService, limit: limit);
   }
 
   /// 기존 일기를 수정합니다.
-  void updateDiary(
+  Future<void> updateDiary(
     DiaryEntity diary,
     String newTitle,
     String newSummary,
     String newContent, {
     List<ActivitySummary> activitySummaries = const [],
-  }) {
+  }) async {
     final repo = ref.read(diaryRepositoryProvider);
     final embeddingService = ref.read(embeddingServiceProvider);
     final now = DateTime.now();
@@ -207,20 +269,21 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     diary.content = newContent;
 
     // 기존 activities 교체
-    diary.activities.clear();
-    final activityEntities = activitySummaries.map((a) => ActivityEntity(
-      type: a.type,
-      time: now,
-      details: a.detail,
-      lastModified: now,
-    )).toList();
-    diary.activities.addAll(activityEntities);
-
+    final activityEntities = activitySummaries
+        .map(
+          (a) => ActivityEntity(
+            type: a.type,
+            time: now,
+            details: a.detail,
+            lastModified: now,
+          ),
+        )
+        .toList();
     // 임베딩 텍스트 = summary + 비일상 이벤트
     final embeddingText = buildEmbeddingText(newSummary, activityEntities);
-    diary.embedding = embeddingService.getEmbedding(embeddingText);
+    diary.embedding = await embeddingService.getEmbedding(embeddingText);
 
-    repo.saveDiary(diary); // saveDiary가 자동으로 lastModified를 갱신합니다.
+    repo.saveDiaryWithActivities(diary, activityEntities);
     state = repo.getDiaries();
   }
 

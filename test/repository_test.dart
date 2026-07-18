@@ -6,6 +6,7 @@ import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/activity_repository.dart';
+import 'package:mlmd/services/embedding_service.dart';
 
 // ObjectBoxHelper의 테스트용 구현체 (임시 디렉터리에 데이터베이스 가동)
 class TestObjectBoxHelper implements ObjectBoxHelper {
@@ -106,6 +107,10 @@ void main() {
           greaterThan(0),
         );
         expect(savedActivity.diary.targetId, equals(diaryId));
+        expect(
+          activityRepo.getActivitiesByDiary(diaryId).map((a) => a.id),
+          contains(activityId),
+        );
 
         // 4. 부모 일기의 타임스탬프가 연쇄 갱신되었는지 검증
         final savedDiaryAfter = diaryRepo.getDiary(diaryId)!;
@@ -154,5 +159,81 @@ void main() {
         expect(activityRepo.getActivity(activityId), isNull);
       },
     );
+
+    test('Replacing Diary activities removes old activity entities', () {
+      final diary = DiaryEntity(
+        date: DateTime.now(),
+        title: '교체 테스트',
+        content: '본문',
+        lastModified: DateTime.now(),
+      );
+      final oldActivity = ActivityEntity(
+        type: '수유',
+        time: DateTime.now(),
+        details: '100ml',
+        lastModified: DateTime.now(),
+      );
+
+      final diaryId = diaryRepo.saveDiaryWithActivities(diary, [oldActivity]);
+      final oldActivityId = oldActivity.id;
+      expect(oldActivityId, greaterThan(0));
+      expect(
+        diaryRepo.getDiary(diaryId)!.activities.map((a) => a.id),
+        contains(oldActivityId),
+      );
+
+      final newActivity = ActivityEntity(
+        type: '수면',
+        time: DateTime.now(),
+        details: '2시간',
+        lastModified: DateTime.now(),
+      );
+      diaryRepo.saveDiaryWithActivities(diary, [newActivity]);
+
+      expect(activityRepo.getActivity(oldActivityId), isNull);
+      expect(
+        activityRepo.getActivitiesByDiary(diaryId).map((a) => a.id),
+        equals([newActivity.id]),
+      );
+    });
+
+    test('Deleting a Diary also deletes its activity entities', () {
+      final diary = DiaryEntity(
+        date: DateTime.now(),
+        title: '삭제 테스트',
+        content: '본문',
+        lastModified: DateTime.now(),
+      );
+      final activity = ActivityEntity(
+        type: '병원',
+        time: DateTime.now(),
+        details: '정기 검진',
+        lastModified: DateTime.now(),
+      );
+      final diaryId = diaryRepo.saveDiaryWithActivities(diary, [activity]);
+      final activityId = activity.id;
+
+      expect(diaryRepo.deleteDiary(diaryId), isTrue);
+      expect(activityRepo.getActivity(activityId), isNull);
+    });
+
+    test('Exact text search works without an embedding model', () async {
+      diaryRepo.saveDiary(
+        DiaryEntity(
+          date: DateTime.now(),
+          title: '정확키워드가 있는 일기',
+          content: '본문',
+          lastModified: DateTime.now(),
+        ),
+      );
+
+      final results = await diaryRepo.searchSimilar(
+        '정확키워드',
+        EmbeddingService(),
+      );
+
+      expect(results, hasLength(1));
+      expect(results.single.similarityPercent, 100);
+    });
   });
 }

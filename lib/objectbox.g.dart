@@ -120,14 +120,14 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
     ],
-    relations: <obx_int.ModelRelation>[
-      obx_int.ModelRelation(
-        id: const obx_int.IdUid(1, 6838825628405302824),
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[
+      obx_int.ModelBacklink(
         name: 'activities',
-        targetId: const obx_int.IdUid(1, 3014340625497478550),
+        srcEntity: 'ActivityEntity',
+        srcField: 'diary',
       ),
     ],
-    backlinks: <obx_int.ModelBacklink>[],
   ),
 ];
 
@@ -181,7 +181,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     retiredEntityUids: const [],
     retiredIndexUids: const [],
     retiredPropertyUids: const [],
-    retiredRelationUids: const [],
+    retiredRelationUids: const [6838825628405302824],
     modelVersion: 5,
     modelVersionParserMinimum: 5,
     version: 1,
@@ -251,7 +251,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
       model: _entities[1],
       toOneRelations: (DiaryEntity object) => [],
       toManyRelations: (DiaryEntity object) => {
-        obx_int.RelInfo<DiaryEntity>.toMany(1, object.id): object.activities,
+        obx_int.RelInfo<ActivityEntity>.toOneBacklink(
+          6,
+          object.id,
+          (ActivityEntity srcObject) => srcObject.diary,
+        ): object.activities,
       },
       getId: (DiaryEntity object) => object.id,
       setId: (DiaryEntity object, int id) {
@@ -315,7 +319,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         obx_int.InternalToManyAccess.setRelInfo<DiaryEntity>(
           object.activities,
           store,
-          obx_int.RelInfo<DiaryEntity>.toMany(1, object.id),
+          obx_int.RelInfo<ActivityEntity>.toOneBacklink(
+            6,
+            object.id,
+            (ActivityEntity srcObject) => srcObject.diary,
+          ),
         );
         return object;
       },
@@ -397,7 +405,7 @@ class DiaryEntity_ {
 
   /// see [DiaryEntity.activities]
   static final activities =
-      obx.QueryRelationToMany<DiaryEntity, ActivityEntity>(
-        _entities[1].relations[0],
+      obx.QueryBacklinkToMany<ActivityEntity, DiaryEntity>(
+        ActivityEntity_.diary,
       );
 }

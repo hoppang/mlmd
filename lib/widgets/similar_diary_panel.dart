@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import '../models/diary_entity.dart';
 import '../repositories/diary_repository.dart';
+import '../utils/logger.dart';
 
 /// 유사 일기 검색 패널.
 ///
@@ -37,6 +38,7 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
   late final TextEditingController _queryController;
   List<SimilarDiaryResult> _results = [];
   bool _isSearching = false;
+  int _searchGeneration = 0;
 
   @override
   void initState() {
@@ -56,6 +58,7 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
 
   Future<void> _search() async {
     final query = _queryController.text.trim();
+    final generation = ++_searchGeneration;
     if (query.isEmpty) {
       setState(() => _results = []);
       return;
@@ -63,7 +66,7 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
 
     setState(() => _isSearching = true);
     try {
-      var results = ref
+      var results = await ref
           .read(diaryListProvider.notifier)
           .searchSimilar(
             query,
@@ -79,9 +82,21 @@ class _SimilarDiaryPanelState extends ConsumerState<SimilarDiaryPanel> {
         }
       }
 
+      if (!mounted || generation != _searchGeneration) return;
       setState(() => _results = results);
+    } catch (error, stackTrace) {
+      logger.e(
+        'Similar diary search failed.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted && generation == _searchGeneration) {
+        setState(() => _results = []);
+      }
     } finally {
-      setState(() => _isSearching = false);
+      if (mounted && generation == _searchGeneration) {
+        setState(() => _isSearching = false);
+      }
     }
   }
 

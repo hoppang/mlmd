@@ -51,6 +51,13 @@ void main() async {
 }
 
 Future<void> _registerModelIfNeeded() async {
+  // flutter_gemma가 관리하는 활성 모델은 원본 다운로드 파일과 독립적입니다.
+  // 이미 설치된 모델을 앱 시작마다 해제하거나 다시 설치하지 않습니다.
+  if (FlutterGemma.hasActiveModel()) {
+    logger.i('[LLM] 기존 활성 모델을 사용합니다.');
+    return;
+  }
+
   // 플랫폼별 탐색 경로
   final candidatePaths = <String>[
     if (Platform.isWindows)
@@ -72,15 +79,7 @@ Future<void> _registerModelIfNeeded() async {
   if (foundPath == null) {
     logger.w('[LLM] 모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다.');
     logger.i('[LLM] 다음 위치에 파일을 놓아주세요: ${candidatePaths.join(", ")}');
-    if (FlutterGemma.hasActiveModel()) {
-      await FlutterGemma.clearActiveInferenceIdentity();
-    }
     return;
-  }
-
-  if (FlutterGemma.hasActiveModel()) {
-    logger.i('[LLM] 기존 모델 등록 초기화 (fileType 재설정)...');
-    await FlutterGemma.clearActiveInferenceIdentity();
   }
 
   logger.i('[LLM] 모델 파일 발견: $foundPath — 등록 중...');
@@ -382,7 +381,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                Text(
+                                  Text(
                                     diary.summary.isNotEmpty
                                         ? diary.summary
                                         : diary.content,
@@ -394,7 +393,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   // 이벤트 칩
-                                  if (diary.activities.isNotEmpty) ...[  
+                                  if (diary.activities.isNotEmpty) ...[
                                     const SizedBox(height: 8),
                                     _buildEventChips(diary),
                                   ],
@@ -460,9 +459,20 @@ enum _InputMode { simple, manual }
 // 이벤트 항목 (UI용 가변 모델)
 // ---------------------------------------------------------------------------
 class _EditableActivity {
-  String type;
-  String detail;
-  _EditableActivity({required this.type, required this.detail});
+  final TextEditingController typeController;
+  final TextEditingController detailController;
+
+  _EditableActivity({required String type, required String detail})
+    : typeController = TextEditingController(text: type),
+      detailController = TextEditingController(text: detail);
+
+  String get type => typeController.text.trim();
+  String get detail => detailController.text.trim();
+
+  void dispose() {
+    typeController.dispose();
+    detailController.dispose();
+  }
 }
 
 class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
@@ -472,7 +482,6 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
   // 간단 입력 모드
   late final TextEditingController _rawController;
   bool _isAnalyzing = false;
-  DiaryExtractionResult? _extractionResult;
 
   // 직접 입력 모드
   late final TextEditingController _summaryController;
@@ -506,6 +515,9 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
     _rawController.dispose();
     _summaryController.dispose();
     _contentController.dispose();
+    for (final activity in _activities) {
+      activity.dispose();
+    }
     super.dispose();
   }
 
@@ -518,17 +530,25 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
     setState(() => _isAnalyzing = true);
     try {
       final locale = Localizations.localeOf(context).languageCode;
-      final result = await LlmDiaryService().generate(raw, languageCode: locale);
+      final result = await LlmDiaryService().generate(
+        raw,
+        languageCode: locale,
+      );
+      if (!mounted) return;
       setState(() {
-        _extractionResult = result;
         // 봸석 결과를 상세 필드에 반영
         _titleController.text = result.title;
         _summaryController.text = result.summary;
+        for (final activity in _activities) {
+          activity.dispose();
+        }
         _activities
           ..clear()
-          ..addAll(result.activities.map(
-            (a) => _EditableActivity(type: a.type, detail: a.detail),
-          ));
+          ..addAll(
+            result.activities.map(
+              (a) => _EditableActivity(type: a.type, detail: a.detail),
+            ),
+          );
         // 분석 완료 후 자동으로 상세 탭으로 전환
         _mode = _InputMode.manual;
       });
@@ -576,13 +596,16 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
     if (!mounted) return;
 
     if (widget.diary != null) {
-      ref.read(diaryListProvider.notifier).updateDiary(
+      await ref
+          .read(diaryListProvider.notifier)
+          .updateDiary(
             widget.diary!,
             title,
             summary,
             content,
             activitySummaries: activities,
           );
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(loc.diaryUpdated),
@@ -590,12 +613,10 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
         ),
       );
     } else {
-      ref.read(diaryListProvider.notifier).addDiary(
-            title,
-            summary,
-            content,
-            activitySummaries: activities,
-          );
+      await ref
+          .read(diaryListProvider.notifier)
+          .addDiary(title, summary, content, activitySummaries: activities);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(loc.diaryAdded),
@@ -651,7 +672,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
   }
 
   void _removeActivity(int index) {
-    setState(() => _activities.removeAt(index));
+    setState(() => _activities.removeAt(index).dispose());
   }
 
   // ---------------------------------------------------------------------------
@@ -703,10 +724,16 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
                   color: Colors.white,
                 ),
               )
-            : Icon((_mode == _InputMode.simple && !isEdit) ? Icons.auto_awesome : Icons.check),
-        label: Text(isEdit 
-            ? loc.edit 
-            : (_mode == _InputMode.simple ? loc.analyzeButton : loc.confirm)),
+            : Icon(
+                (_mode == _InputMode.simple && !isEdit)
+                    ? Icons.auto_awesome
+                    : Icons.check,
+              ),
+        label: Text(
+          isEdit
+              ? loc.edit
+              : (_mode == _InputMode.simple ? loc.analyzeButton : loc.confirm),
+        ),
       ),
     );
   }
@@ -736,7 +763,6 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
             final synthesized = _synthesizeRaw();
             if (synthesized.isNotEmpty) {
               _rawController.text = synthesized;
-              _extractionResult = null; // 미리보기 초기화
             }
           }
           setState(() => _mode = newMode);
@@ -876,9 +902,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
                 Expanded(
                   flex: 2,
                   child: TextField(
-                    controller: TextEditingController(text: act.type)
-                      ..selection = TextSelection.collapsed(offset: act.type.length),
-                    onChanged: (v) => act.type = v,
+                    controller: act.typeController,
                     decoration: InputDecoration(
                       hintText: loc.eventTypeHint,
                       labelText: loc.eventTypeLabel,
@@ -894,9 +918,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage> {
                 Expanded(
                   flex: 3,
                   child: TextField(
-                    controller: TextEditingController(text: act.detail)
-                      ..selection = TextSelection.collapsed(offset: act.detail.length),
-                    onChanged: (v) => act.detail = v,
+                    controller: act.detailController,
                     decoration: InputDecoration(
                       hintText: loc.eventDetailHint,
                       labelText: loc.eventDetailLabel,
