@@ -10,6 +10,13 @@ set(BINARY_NAME "mlmd")
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
 
+# objectbox_flutter_libs 5.3.x still uses FetchContent_Populate().
+# Keep that dependency on the compatibility behavior until it migrates to
+# FetchContent_MakeAvailable(), avoiding CMP0169 developer warnings on CMake 3.30+.
+if(POLICY CMP0169)
+  set(CMAKE_POLICY_DEFAULT_CMP0169 OLD)
+endif()
+
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)
