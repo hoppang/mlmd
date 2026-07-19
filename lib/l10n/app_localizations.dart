@@ -351,6 +351,144 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'모델 파일을 찾을 수 없습니다. AI 분석이 비활성화됩니다.'**
   String get llmModelError;
+
+  /// No description provided for @dataManagement.
+  ///
+  /// In ko, this message translates to:
+  /// **'데이터 관리'**
+  String get dataManagement;
+
+  /// No description provided for @dataManagementDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 일기와 활동을 백업하거나 복원합니다.'**
+  String get dataManagementDescription;
+
+  /// No description provided for @exportDiary.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기 내보내기'**
+  String get exportDiary;
+
+  /// No description provided for @importDiary.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기 가져오기'**
+  String get importDiary;
+
+  /// No description provided for @exportWarningTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'평문 백업 내보내기'**
+  String get exportWarningTitle;
+
+  /// No description provided for @exportWarning.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기 {count}건의 제목, 요약, 본문과 활동이 암호화되지 않은 파일에 포함됩니다.'**
+  String exportWarning(int count);
+
+  /// No description provided for @exporting.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 파일을 만드는 중입니다…'**
+  String get exporting;
+
+  /// No description provided for @importing.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기를 가져오는 중입니다…'**
+  String get importing;
+
+  /// No description provided for @exportSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}건을 v{version} 백업으로 내보냈습니다.\n{fileName}'**
+  String exportSuccess(int count, int version, String fileName);
+
+  /// No description provided for @importPreviewTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'가져오기 미리보기'**
+  String get importPreviewTitle;
+
+  /// No description provided for @backupInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 v{version} · 앱 {appVersion}\n생성: {exportedAt}'**
+  String backupInfo(int version, String appVersion, String exportedAt);
+
+  /// No description provided for @importCounts.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기 {total}건 · 활동 {activities}건'**
+  String importCounts(int total, int activities);
+
+  /// No description provided for @newRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 일기'**
+  String get newRecords;
+
+  /// No description provided for @duplicateRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'중복'**
+  String get duplicateRecords;
+
+  /// No description provided for @newerRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'최신 백업으로 갱신'**
+  String get newerRecords;
+
+  /// No description provided for @skippedRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'건너뜀'**
+  String get skippedRecords;
+
+  /// No description provided for @conflictPolicy.
+  ///
+  /// In ko, this message translates to:
+  /// **'중복 처리'**
+  String get conflictPolicy;
+
+  /// No description provided for @skipExisting.
+  ///
+  /// In ko, this message translates to:
+  /// **'기존 일기 건너뛰기'**
+  String get skipExisting;
+
+  /// No description provided for @overwriteIfNewer.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업이 더 최신이면 덮어쓰기'**
+  String get overwriteIfNewer;
+
+  /// No description provided for @importAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'가져오기'**
+  String get importAction;
+
+  /// No description provided for @importResult.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가 {inserted}건 · 갱신 {updated}건 · 건너뜀 {skipped}건'**
+  String importResult(int inserted, int updated, int skipped);
+
+  /// No description provided for @embeddingFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색 색인 {count}건은 나중에 다시 생성해야 합니다.'**
+  String embeddingFailed(int count);
+
+  /// No description provided for @transferError.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업을 처리하지 못했습니다. 파일 형식과 저장 공간을 확인해 주세요.'**
+  String get transferError;
 }
 
 class _AppLocalizationsDelegate

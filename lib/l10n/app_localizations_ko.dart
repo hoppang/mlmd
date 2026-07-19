@@ -135,4 +135,85 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get llmModelError => '모델 파일을 찾을 수 없습니다. AI 분석이 비활성화됩니다.';
+
+  @override
+  String get dataManagement => '데이터 관리';
+
+  @override
+  String get dataManagementDescription => '전체 일기와 활동을 백업하거나 복원합니다.';
+
+  @override
+  String get exportDiary => '일기 내보내기';
+
+  @override
+  String get importDiary => '일기 가져오기';
+
+  @override
+  String get exportWarningTitle => '평문 백업 내보내기';
+
+  @override
+  String exportWarning(int count) {
+    return '일기 $count건의 제목, 요약, 본문과 활동이 암호화되지 않은 파일에 포함됩니다.';
+  }
+
+  @override
+  String get exporting => '백업 파일을 만드는 중입니다…';
+
+  @override
+  String get importing => '일기를 가져오는 중입니다…';
+
+  @override
+  String exportSuccess(int count, int version, String fileName) {
+    return '$count건을 v$version 백업으로 내보냈습니다.\n$fileName';
+  }
+
+  @override
+  String get importPreviewTitle => '가져오기 미리보기';
+
+  @override
+  String backupInfo(int version, String appVersion, String exportedAt) {
+    return '백업 v$version · 앱 $appVersion\n생성: $exportedAt';
+  }
+
+  @override
+  String importCounts(int total, int activities) {
+    return '일기 $total건 · 활동 $activities건';
+  }
+
+  @override
+  String get newRecords => '새 일기';
+
+  @override
+  String get duplicateRecords => '중복';
+
+  @override
+  String get newerRecords => '최신 백업으로 갱신';
+
+  @override
+  String get skippedRecords => '건너뜀';
+
+  @override
+  String get conflictPolicy => '중복 처리';
+
+  @override
+  String get skipExisting => '기존 일기 건너뛰기';
+
+  @override
+  String get overwriteIfNewer => '백업이 더 최신이면 덮어쓰기';
+
+  @override
+  String get importAction => '가져오기';
+
+  @override
+  String importResult(int inserted, int updated, int skipped) {
+    return '추가 $inserted건 · 갱신 $updated건 · 건너뜀 $skipped건';
+  }
+
+  @override
+  String embeddingFailed(int count) {
+    return '검색 색인 $count건은 나중에 다시 생성해야 합니다.';
+  }
+
+  @override
+  String get transferError => '백업을 처리하지 못했습니다. 파일 형식과 저장 공간을 확인해 주세요.';
 }

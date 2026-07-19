@@ -135,4 +135,85 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get llmModelError => 'モデルファイルが見つかりません。AI分析が無効になっています。';
+
+  @override
+  String get dataManagement => 'データ管理';
+
+  @override
+  String get dataManagementDescription => 'すべての日記と活動をバックアップまたは復元します。';
+
+  @override
+  String get exportDiary => '日記をエクスポート';
+
+  @override
+  String get importDiary => '日記をインポート';
+
+  @override
+  String get exportWarningTitle => '平文バックアップのエクスポート';
+
+  @override
+  String exportWarning(int count) {
+    return '$count件の日記のタイトル、要約、本文、活動が暗号化されていないファイルに保存されます。';
+  }
+
+  @override
+  String get exporting => 'バックアップファイルを作成しています…';
+
+  @override
+  String get importing => '日記をインポートしています…';
+
+  @override
+  String exportSuccess(int count, int version, String fileName) {
+    return '$count件をv$versionバックアップとしてエクスポートしました。\n$fileName';
+  }
+
+  @override
+  String get importPreviewTitle => 'インポートのプレビュー';
+
+  @override
+  String backupInfo(int version, String appVersion, String exportedAt) {
+    return 'バックアップ v$version · アプリ $appVersion\n作成: $exportedAt';
+  }
+
+  @override
+  String importCounts(int total, int activities) {
+    return '日記 $total件 · 活動 $activities件';
+  }
+
+  @override
+  String get newRecords => '新しい日記';
+
+  @override
+  String get duplicateRecords => '重複';
+
+  @override
+  String get newerRecords => '新しいバックアップで更新';
+
+  @override
+  String get skippedRecords => 'スキップ';
+
+  @override
+  String get conflictPolicy => '重複の処理';
+
+  @override
+  String get skipExisting => '既存の日記をスキップ';
+
+  @override
+  String get overwriteIfNewer => 'バックアップが新しい場合のみ上書き';
+
+  @override
+  String get importAction => 'インポート';
+
+  @override
+  String importResult(int inserted, int updated, int skipped) {
+    return '追加 $inserted件 · 更新 $updated件 · スキップ $skipped件';
+  }
+
+  @override
+  String embeddingFailed(int count) {
+    return '$count件の検索インデックスは後で再生成する必要があります。';
+  }
+
+  @override
+  String get transferError => 'バックアップを処理できませんでした。ファイル形式と空き容量を確認してください。';
 }

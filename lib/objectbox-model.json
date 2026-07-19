@@ -47,7 +47,7 @@
     },
     {
       "id": "2:7784148166755830454",
-      "lastPropertyId": "7:1234567890123456789",
+      "lastPropertyId": "8:7610676040634885379",
       "name": "DiaryEntity",
       "properties": [
         {
@@ -87,13 +87,20 @@
           "id": "7:1234567890123456789",
           "name": "summary",
           "type": 9
+        },
+        {
+          "id": "8:7610676040634885379",
+          "name": "recordId",
+          "indexId": "3:4154334858951904683",
+          "type": 9,
+          "flags": 2048
         }
       ],
       "relations": []
     }
   ],
   "lastEntityId": "2:7784148166755830454",
-  "lastIndexId": "2:6229927242462545823",
+  "lastIndexId": "3:4154334858951904683",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

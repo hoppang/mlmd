@@ -137,4 +137,87 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get llmModelError => 'Model file not found. AI analysis is disabled.';
+
+  @override
+  String get dataManagement => 'Data Management';
+
+  @override
+  String get dataManagementDescription =>
+      'Back up or restore all diaries and activities.';
+
+  @override
+  String get exportDiary => 'Export Diaries';
+
+  @override
+  String get importDiary => 'Import Diaries';
+
+  @override
+  String get exportWarningTitle => 'Export Plaintext Backup';
+
+  @override
+  String exportWarning(int count) {
+    return 'The titles, summaries, content, and activities of $count diaries will be stored in an unencrypted file.';
+  }
+
+  @override
+  String get exporting => 'Creating the backup file…';
+
+  @override
+  String get importing => 'Importing diaries…';
+
+  @override
+  String exportSuccess(int count, int version, String fileName) {
+    return 'Exported $count diaries as a v$version backup.\n$fileName';
+  }
+
+  @override
+  String get importPreviewTitle => 'Import Preview';
+
+  @override
+  String backupInfo(int version, String appVersion, String exportedAt) {
+    return 'Backup v$version · App $appVersion\nCreated: $exportedAt';
+  }
+
+  @override
+  String importCounts(int total, int activities) {
+    return '$total diaries · $activities activities';
+  }
+
+  @override
+  String get newRecords => 'New diaries';
+
+  @override
+  String get duplicateRecords => 'Duplicates';
+
+  @override
+  String get newerRecords => 'Update from newer backup';
+
+  @override
+  String get skippedRecords => 'Skipped';
+
+  @override
+  String get conflictPolicy => 'Duplicate handling';
+
+  @override
+  String get skipExisting => 'Skip existing diaries';
+
+  @override
+  String get overwriteIfNewer => 'Overwrite only when backup is newer';
+
+  @override
+  String get importAction => 'Import';
+
+  @override
+  String importResult(int inserted, int updated, int skipped) {
+    return 'Added $inserted · Updated $updated · Skipped $skipped';
+  }
+
+  @override
+  String embeddingFailed(int count) {
+    return 'Search indexes for $count diaries must be regenerated later.';
+  }
+
+  @override
+  String get transferError =>
+      'The backup could not be processed. Check its format and available storage.';
 }

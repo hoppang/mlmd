@@ -1,0 +1,24 @@
+{
+  "format": "mlmd-diary-export",
+  "schemaVersion": 1,
+  "exportedAt": "2026-07-18T12:30:00.000Z",
+  "appVersion": "1.0.0+1",
+  "diaries": [
+    {
+      "recordId": "550e8400-e29b-41d4-a716-446655440000",
+      "date": "2026-07-18T20:15:00.000",
+      "title": "오늘의 기록",
+      "summary": "하루 요약\n두 번째 줄",
+      "content": "한국어 English 日本語 😊",
+      "lastModified": "2026-07-18T12:20:00.000Z",
+      "activities": [
+        {
+          "type": "수유",
+          "time": "2026-07-18T19:30:00.000",
+          "details": "120ml",
+          "lastModified": "2026-07-18T10:31:00.000Z"
+        }
+      ]
+    }
+  ]
+}

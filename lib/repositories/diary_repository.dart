@@ -6,6 +6,8 @@ import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
 import '../services/llm_diary_service.dart'
     show buildEmbeddingText, ActivitySummary;
+import '../transfer/canonical_transfer_document.dart';
+import 'package:uuid/uuid.dart';
 
 /// 유사 검색 결과 모델
 class SimilarDiaryResult {
@@ -39,6 +41,27 @@ abstract class DiaryRepository {
     List<ActivityEntity> activities,
   );
 
+  /// 현재 저장소를 버전 독립적인 내보내기 모델로 스냅샷합니다.
+  CanonicalExportDocument createExportDocument({required String appVersion});
+
+  /// DB를 변경하지 않고 충돌 정책별 반영 건수를 계산합니다.
+  ImportPreview previewImport(
+    CanonicalImportDocument document,
+    ImportConflictPolicy policy,
+  );
+
+  /// 검증을 마친 문서를 하나의 쓰기 트랜잭션에서 반영합니다.
+  ImportResult importDocument(
+    CanonicalImportDocument document,
+    ImportConflictPolicy policy,
+  );
+
+  /// 가져온 레코드의 임베딩만 갱신하며 원래 수정 시각은 보존합니다.
+  void updateEmbeddingPreservingLastModified(
+    String recordId,
+    List<double>? embedding,
+  );
+
   /// 지정한 ID의 일기를 삭제합니다.
   bool deleteDiary(int id);
 
@@ -55,8 +78,13 @@ abstract class DiaryRepository {
 /// DiaryRepository의 ObjectBox 구현체
 class DiaryRepositoryImpl implements DiaryRepository {
   final ObjectBoxHelper _obxHelper;
-
-  DiaryRepositoryImpl(this._obxHelper);
+  static const _uuid = Uuid();
+  static final _uuidV4Pattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+  );
+  DiaryRepositoryImpl(this._obxHelper) {
+    _backfillRecordIds();
+  }
 
   @override
   List<DiaryEntity> getDiaries() {
@@ -74,8 +102,32 @@ class DiaryRepositoryImpl implements DiaryRepository {
     return _obxHelper.diaryBox.get(id);
   }
 
+  /// 저장소 생성 시 기존 레코드의 비어 있거나 중복된 전송 식별자를 한 번 보정합니다.
+  void _backfillRecordIds() {
+    _obxHelper.store.runInTransaction(TxMode.write, () {
+      final diaries = _obxHelper.diaryBox.getAll();
+      final used = <String>{};
+      final changed = <DiaryEntity>[];
+      for (final diary in diaries) {
+        var value = diary.recordId?.trim().toLowerCase();
+        if (value == null || value.isEmpty || !used.add(value)) {
+          do {
+            value = _uuid.v4();
+          } while (!used.add(value));
+          diary.recordId = value;
+          changed.add(diary);
+        } else if (diary.recordId != value) {
+          diary.recordId = value;
+          changed.add(diary);
+        }
+      }
+      if (changed.isNotEmpty) _obxHelper.diaryBox.putMany(changed);
+    });
+  }
+
   @override
   int saveDiary(DiaryEntity diary) {
+    _prepareRecordId(diary);
     // 트리거: 생성 및 수정 시 자동으로 lastModified 갱신
     diary.lastModified = DateTime.now();
     return _obxHelper.diaryBox.put(diary);
@@ -86,6 +138,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
     DiaryEntity diary,
     List<ActivityEntity> activities,
   ) {
+    _prepareRecordId(diary);
     return _obxHelper.store.runInTransaction(TxMode.write, () {
       final now = DateTime.now();
       diary.lastModified = now;
@@ -109,6 +162,185 @@ class DiaryRepositoryImpl implements DiaryRepository {
       }
       return diaryId;
     });
+  }
+
+  void _prepareRecordId(DiaryEntity diary) {
+    var value = diary.recordId?.trim().toLowerCase();
+    final collides =
+        value != null &&
+        _obxHelper.diaryBox.getAll().any(
+          (item) => item.id != diary.id && item.recordId == value,
+        );
+    if (value == null || !_uuidV4Pattern.hasMatch(value) || collides) {
+      final used = _obxHelper.diaryBox
+          .getAll()
+          .map((item) => item.recordId)
+          .whereType<String>()
+          .toSet();
+      do {
+        value = _uuid.v4();
+      } while (used.contains(value));
+    }
+    diary.recordId = value;
+  }
+
+  @override
+  CanonicalExportDocument createExportDocument({required String appVersion}) {
+    final diaries = getDiaries()
+        .map((diary) {
+          final activities = diary.activities
+              .map(
+                (activity) => CanonicalActivity(
+                  type: activity.type,
+                  time: activity.time,
+                  details: activity.details,
+                  lastModified: activity.lastModified,
+                ),
+              )
+              .toList(growable: false);
+          return CanonicalDiary(
+            recordId: diary.recordId!,
+            date: diary.date,
+            title: diary.title,
+            summary: diary.summary,
+            content: diary.content,
+            lastModified: diary.lastModified,
+            activities: activities,
+          );
+        })
+        .toList(growable: false);
+    return CanonicalExportDocument(
+      exportedAt: DateTime.now().toUtc(),
+      appVersion: appVersion,
+      diaries: diaries,
+    );
+  }
+
+  @override
+  ImportPreview previewImport(
+    CanonicalImportDocument document,
+    ImportConflictPolicy policy,
+  ) {
+    final existing = _recordsByTransferId();
+    var newCount = 0;
+    var duplicateCount = 0;
+    var newerCount = 0;
+    var skippedCount = 0;
+    var activityCount = 0;
+    for (final incoming in document.diaries) {
+      activityCount += incoming.activities.length;
+      final local = existing[incoming.recordId];
+      if (local == null) {
+        newCount++;
+      } else {
+        duplicateCount++;
+        if (policy == ImportConflictPolicy.overwriteIfNewer &&
+            incoming.lastModified.isAfter(local.lastModified)) {
+          newerCount++;
+        } else {
+          skippedCount++;
+        }
+      }
+    }
+    return ImportPreview(
+      total: document.diaries.length,
+      newCount: newCount,
+      duplicateCount: duplicateCount,
+      newerCount: newerCount,
+      skippedCount: skippedCount,
+      activityCount: activityCount,
+    );
+  }
+
+  @override
+  ImportResult importDocument(
+    CanonicalImportDocument document,
+    ImportConflictPolicy policy,
+  ) {
+    return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final existing = _recordsByTransferId();
+      var inserted = 0;
+      var updated = 0;
+      var skipped = 0;
+      final affected = <String>[];
+
+      for (final incoming in document.diaries) {
+        final local = existing[incoming.recordId];
+        final shouldUpdate =
+            local != null &&
+            policy == ImportConflictPolicy.overwriteIfNewer &&
+            incoming.lastModified.isAfter(local.lastModified);
+        if (local != null && !shouldUpdate) {
+          skipped++;
+          continue;
+        }
+
+        final diary = DiaryEntity(
+          id: local?.id ?? 0,
+          recordId: incoming.recordId,
+          date: incoming.date,
+          title: incoming.title,
+          summary: incoming.summary,
+          content: incoming.content,
+          lastModified: incoming.lastModified,
+          embedding: null,
+        );
+        final diaryId = _obxHelper.diaryBox.put(diary);
+
+        if (local != null) {
+          final oldQuery = _obxHelper.activityBox
+              .query(ActivityEntity_.diary.equals(diaryId))
+              .build();
+          final oldIds = oldQuery.findIds();
+          oldQuery.close();
+          if (oldIds.isNotEmpty) _obxHelper.activityBox.removeMany(oldIds);
+          updated++;
+        } else {
+          inserted++;
+        }
+
+        final activities = incoming.activities
+            .map((item) {
+              final entity = ActivityEntity(
+                type: item.type,
+                time: item.time,
+                details: item.details,
+                lastModified: item.lastModified,
+              );
+              entity.diary.targetId = diaryId;
+              return entity;
+            })
+            .toList(growable: false);
+        if (activities.isNotEmpty) _obxHelper.activityBox.putMany(activities);
+        existing[incoming.recordId] = diary;
+        affected.add(incoming.recordId);
+      }
+      return ImportResult(
+        inserted: inserted,
+        updated: updated,
+        skipped: skipped,
+        embeddingPending: affected.length,
+        affectedRecordIds: List.unmodifiable(affected),
+      );
+    });
+  }
+
+  Map<String, DiaryEntity> _recordsByTransferId() => {
+    for (final diary in _obxHelper.diaryBox.getAll())
+      if (diary.recordId case final String recordId) recordId: diary,
+  };
+
+  @override
+  void updateEmbeddingPreservingLastModified(
+    String recordId,
+    List<double>? embedding,
+  ) {
+    final diary = _recordsByTransferId()[recordId];
+    if (diary == null) return;
+    final originalLastModified = diary.lastModified;
+    diary.embedding = embedding;
+    diary.lastModified = originalLastModified;
+    _obxHelper.diaryBox.put(diary);
   }
 
   @override
@@ -291,6 +523,33 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     final repo = ref.read(diaryRepositoryProvider);
     repo.deleteDiary(id);
     state = repo.getDiaries();
+  }
+
+  void reload() {
+    state = ref.read(diaryRepositoryProvider).getDiaries();
+  }
+
+  /// 가져오기 성공 후 임베딩을 순차 재생성합니다. 실패한 항목 수를 반환합니다.
+  Future<int> regenerateEmbeddings(Iterable<String> recordIds) async {
+    final ids = recordIds.toSet();
+    if (ids.isEmpty) return 0;
+    final repo = ref.read(diaryRepositoryProvider);
+    final embeddingService = ref.read(embeddingServiceProvider);
+    var failed = 0;
+    for (final diary in repo.getDiaries()) {
+      final recordId = diary.recordId;
+      if (recordId == null || !ids.contains(recordId)) continue;
+      try {
+        final text = buildEmbeddingText(diary.summary, diary.activities);
+        final embedding = await embeddingService.getEmbedding(text);
+        repo.updateEmbeddingPreservingLastModified(recordId, embedding);
+        if (embedding == null) failed++;
+      } catch (_) {
+        failed++;
+      }
+    }
+    state = repo.getDiaries();
+    return failed;
   }
 }
 

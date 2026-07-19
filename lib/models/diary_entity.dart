@@ -6,6 +6,13 @@ class DiaryEntity {
   @Id()
   int id;
 
+  /// ObjectBox의 로컬 ID와 별개로, 백업 파일과 설치 간에 유지되는 식별자입니다.
+  ///
+  /// 기존 데이터베이스와의 안전한 마이그레이션을 위해 nullable로 시작하며
+  /// [DiaryRepository]가 최초 접근 시 비어 있는 값을 UUID v4로 채웁니다.
+  @Index()
+  String? recordId;
+
   @Property(type: PropertyType.date)
   DateTime date;
 
@@ -31,6 +38,7 @@ class DiaryEntity {
 
   DiaryEntity({
     this.id = 0,
+    this.recordId,
     required this.date,
     required this.title,
     this.summary = '',

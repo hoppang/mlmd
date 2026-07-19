@@ -14,8 +14,13 @@ import 'services/embedding_service.dart';
 import 'services/llm_diary_service.dart';
 import 'services/llm_title_service.dart';
 import 'widgets/similar_diary_panel.dart';
+import 'widgets/import_preview_dialog.dart';
+import 'widgets/transfer_progress_dialog.dart';
 import 'providers/locale_provider.dart';
 import 'utils/logger.dart';
+import 'transfer/canonical_transfer_document.dart';
+import 'transfer/diary_transfer_exception.dart';
+import 'transfer/diary_transfer_service.dart';
 
 void main() async {
   // Flutter의 바인딩을 먼저 초기화합니다.
@@ -171,6 +176,144 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     );
   }
 
+  DiaryTransferService get _transferService =>
+      DiaryTransferService(repository: ref.read(diaryRepositoryProvider));
+
+  Future<void> _exportDiaries() async {
+    final loc = AppLocalizations.of(context)!;
+    final count = ref.read(diaryListProvider).length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(loc.exportWarningTitle),
+        content: Text(loc.exportWarning(count)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(loc.exportDiary),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    var progressShown = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => TransferProgressDialog(message: loc.exporting),
+    );
+    try {
+      await Future<void>.delayed(Duration.zero);
+      final result = await _transferService.exportToPlatform(
+        dialogTitle: loc.exportDiary,
+        shareSubject: loc.exportDiary,
+      );
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      progressShown = false;
+      if (!result.cancelled) {
+        await _showTransferMessage(
+          context,
+          loc.exportDiary,
+          loc.exportSuccess(
+            result.diaryCount,
+            result.schemaVersion,
+            result.fileName,
+          ),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      if (progressShown) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      _logTransferError('export', error);
+      await _showTransferMessage(context, loc.exportDiary, loc.transferError);
+    }
+  }
+
+  Future<void> _importDiaries() async {
+    final loc = AppLocalizations.of(context)!;
+    var progressShown = false;
+    try {
+      final service = _transferService;
+      final prepared = await service.pickAndPrepareImport(
+        dialogTitle: loc.importDiary,
+      );
+      if (prepared == null || !mounted) return;
+      final policy = await showDialog<ImportConflictPolicy>(
+        context: context,
+        builder: (_) => ImportPreviewDialog(
+          prepared: prepared,
+          previewFor: (policy) => service.preview(prepared, policy),
+        ),
+      );
+      if (policy == null || !mounted) return;
+
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => TransferProgressDialog(message: loc.importing),
+      );
+      progressShown = true;
+      await Future<void>.delayed(Duration.zero);
+      final result = service.apply(prepared, policy);
+      ref.read(diaryListProvider.notifier).reload();
+      final embeddingFailed = await ref
+          .read(diaryListProvider.notifier)
+          .regenerateEmbeddings(result.affectedRecordIds);
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      progressShown = false;
+      final message = StringBuffer(
+        loc.importResult(result.inserted, result.updated, result.skipped),
+      );
+      if (embeddingFailed > 0) {
+        message
+          ..writeln()
+          ..write(loc.embeddingFailed(embeddingFailed));
+      }
+      await _showTransferMessage(context, loc.importDiary, message.toString());
+    } catch (error) {
+      if (!mounted) return;
+      if (progressShown) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      _logTransferError('import', error);
+      await _showTransferMessage(context, loc.importDiary, loc.transferError);
+    }
+  }
+
+  Future<void> _showTransferMessage(
+    BuildContext context,
+    String title,
+    String message,
+  ) => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(AppLocalizations.of(context)!.close),
+        ),
+      ],
+    ),
+  );
+
+  void _logTransferError(String stage, Object error) {
+    final code = error is DiaryTransferException
+        ? error.code
+        : error.runtimeType.toString();
+    logger.e('[transfer] $stage failed ($code)');
+  }
+
   void _showSettingsDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -234,6 +377,41 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                         ref.read(localeProvider.notifier).setLocale(mode);
                       }
                     },
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  Text(
+                    loc.dataManagement,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    loc.dataManagementDescription,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _exportDiaries,
+                          icon: const Icon(Icons.upload_file),
+                          label: Text(loc.exportDiary),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _importDiaries,
+                          icon: const Icon(Icons.download_for_offline_outlined),
+                          label: Text(loc.importDiary),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
