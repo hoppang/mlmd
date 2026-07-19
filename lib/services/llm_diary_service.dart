@@ -45,9 +45,21 @@ const Map<String, List<String>> allowedEventTypes = {
 /// 임베딩 텍스트 조합 시 제외할 일상 루틴 이벤트 타입 목록.
 /// 수유·낮잠 등은 빈도가 높아 벡터 공간을 오염시킬 수 있으므로 제외합니다.
 const Set<String> routineEventTypes = {
-  '수유', '낮잠', '수면', '기저귀', '목욕',
-  'feeding', 'nap', 'sleep', 'diaper', 'bath',
-  '授乳', '昼寝', '睡眠', 'おむつ', 'お風呂',
+  '수유',
+  '낮잠',
+  '수면',
+  '기저귀',
+  '목욕',
+  'feeding',
+  'nap',
+  'sleep',
+  'diaper',
+  'bath',
+  '授乳',
+  '昼寝',
+  '睡眠',
+  'おむつ',
+  'お風呂',
 };
 
 /// [summary]와 비일상 [activities]를 합산하여 임베딩 대상 텍스트를 반환합니다.
@@ -90,17 +102,21 @@ class LlmDiaryService {
 
     String langInstruction;
     if (isKorean) {
-      langInstruction = 'ALL OUTPUT MUST BE WRITTEN IN KOREAN.\n'
+      langInstruction =
+          'ALL OUTPUT MUST BE WRITTEN IN KOREAN.\n'
           'TONE: Use a casual, personal diary style (반말/해라체) for the summary. DO NOT use honorifics (존댓말).';
     } else if (isJapanese) {
-      langInstruction = 'ALL OUTPUT MUST BE WRITTEN IN JAPANESE.\n'
+      langInstruction =
+          'ALL OUTPUT MUST BE WRITTEN IN JAPANESE.\n'
           'TONE: Use a casual, personal diary style (常体/だ・である調) for the summary. DO NOT use polite forms (敬体/です・ます調).';
     } else {
-      langInstruction = 'ALL OUTPUT MUST BE WRITTEN IN ENGLISH.\n'
+      langInstruction =
+          'ALL OUTPUT MUST BE WRITTEN IN ENGLISH.\n'
           'TONE: Use a casual, personal first-person diary style for the summary.';
     }
 
-    final allowedEvents = allowedEventTypes[languageCode] ?? allowedEventTypes['ko']!;
+    final allowedEvents =
+        allowedEventTypes[languageCode] ?? allowedEventTypes['ko']!;
     final allowedEventsStr = allowedEvents.join(', ');
 
     return 'You are a helpful assistant that analyzes baby diaries.\n'
@@ -131,7 +147,9 @@ class LlmDiaryService {
   String _getUserPrompt(String content, String languageCode) {
     final isKorean = languageCode == 'ko';
     final isJapanese = languageCode == 'ja';
-    final langTarget = isKorean ? 'KOREAN' : (isJapanese ? 'JAPANESE' : 'ENGLISH');
+    final langTarget = isKorean
+        ? 'KOREAN'
+        : (isJapanese ? 'JAPANESE' : 'ENGLISH');
     return 'Analyze the following baby diary entry and extract the title, summary, and events.\n'
         'All output must be in $langTarget.\n\n'
         'Diary:\n$content';
@@ -181,10 +199,12 @@ class LlmDiaryService {
             final type = parts[0].trim();
             // 화이트리스트에 없는 타입은 무조건 버림 (필터링)
             if (allAllowedTypes.contains(type)) {
-              activities.add(ActivitySummary(
-                type: type,
-                detail: parts.sublist(1).join(' | ').trim(),
-              ));
+              activities.add(
+                ActivitySummary(
+                  type: type,
+                  detail: parts.sublist(1).join(' | ').trim(),
+                ),
+              );
             } else {
               logger.d('[LlmDiaryService] 화이트리스트 제외 이벤트 필터링 됨: $type');
             }
@@ -204,8 +224,14 @@ class LlmDiaryService {
       summary = content.length > 100 ? content.substring(0, 100) : content;
     }
 
-    logger.d('[LlmDiaryService] parsed title="$title" summary="${summary.substring(0, summary.length.clamp(0, 30))}..." events=${activities.length}');
-    return DiaryExtractionResult(title: title, summary: summary, activities: activities);
+    logger.d(
+      '[LlmDiaryService] parsed title="$title" summary="${summary.substring(0, summary.length.clamp(0, 30))}..." events=${activities.length}',
+    );
+    return DiaryExtractionResult(
+      title: title,
+      summary: summary,
+      activities: activities,
+    );
   }
 
   // -------------------------------------------------------------------------
