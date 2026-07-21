@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +27,16 @@ class ObjectBoxHelper {
     // openStore는 objectbox.g.dart에 구현되어 있는 자동생성 함수입니다.
     final store = await openStore(directory: storePath);
     return ObjectBoxHelper._create(store);
+  }
+
+  /// 모든 로컬 데이터를 삭제합니다. (초기화 오류 복구용)
+  static Future<void> resetData() async {
+    final docsDir = await getApplicationDocumentsDirectory();
+    final storePath = p.join(docsDir.path, "obx-db");
+    final directory = Directory(storePath);
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
+    }
   }
 }
 

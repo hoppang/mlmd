@@ -136,6 +136,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get todayStatusTitle => '오늘 현황';
 
   @override
+  String get startupLoading => '앱을 준비하는 중...';
+
+  @override
+  String get startupErrorTitle => '앱 초기화 중 문제가 발생했습니다';
+
+  @override
+  String get startupRetry => '다시 시도';
+
+  @override
+  String get startupResetData => '모든 데이터 초기화';
+
+  @override
+  String get startupResetConfirmMessage =>
+      '정말 모든 데이터를 삭제하고 처음부터 다시 시작하시겠습니까?\n이 작업은 되돌릴 수 없습니다.';
+
+  @override
   String get searchTab => '검색';
 
   @override

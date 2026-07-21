@@ -352,6 +352,36 @@ abstract class AppLocalizations {
   /// **'오늘 현황'**
   String get todayStatusTitle;
 
+  /// No description provided for @startupLoading.
+  ///
+  /// In ko, this message translates to:
+  /// **'앱을 준비하는 중...'**
+  String get startupLoading;
+
+  /// No description provided for @startupErrorTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'앱 초기화 중 문제가 발생했습니다'**
+  String get startupErrorTitle;
+
+  /// No description provided for @startupRetry.
+  ///
+  /// In ko, this message translates to:
+  /// **'다시 시도'**
+  String get startupRetry;
+
+  /// No description provided for @startupResetData.
+  ///
+  /// In ko, this message translates to:
+  /// **'모든 데이터 초기화'**
+  String get startupResetData;
+
+  /// No description provided for @startupResetConfirmMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'정말 모든 데이터를 삭제하고 처음부터 다시 시작하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'**
+  String get startupResetConfirmMessage;
+
   /// No description provided for @searchTab.
   ///
   /// In ko, this message translates to:

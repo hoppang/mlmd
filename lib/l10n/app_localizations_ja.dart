@@ -135,6 +135,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get todayStatusTitle => '今日の状況';
 
   @override
+  String get startupLoading => 'アプリを準備しています...';
+
+  @override
+  String get startupErrorTitle => '初期化中に問題が発生しました';
+
+  @override
+  String get startupRetry => '再試行';
+
+  @override
+  String get startupResetData => 'すべてのデータを初期化';
+
+  @override
+  String get startupResetConfirmMessage =>
+      '本当にすべてのデータを削除して最初からやり直しますか？\nこの操作は元に戻せません。';
+
+  @override
   String get searchTab => '検索';
 
   @override

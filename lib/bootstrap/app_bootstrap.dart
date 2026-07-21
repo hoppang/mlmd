@@ -9,7 +9,19 @@ import '../services/embedding_service.dart';
 import 'local_model_bootstrap.dart';
 import 'desktop_window_close_handler.dart';
 
-Future<Widget> bootstrapApplication() async {
+class AppDependencies {
+  final ObjectBoxHelper objectBox;
+  final EmbeddingService embeddingService;
+  final SharedPreferences preferences;
+
+  AppDependencies({
+    required this.objectBox,
+    required this.embeddingService,
+    required this.preferences,
+  });
+}
+
+final appStartupProvider = FutureProvider<AppDependencies>((ref) async {
   await DesktopWindowCloseHandler.instance.initialize();
   await registerLocalModelIfNeeded();
 
@@ -18,12 +30,9 @@ Future<Widget> bootstrapApplication() async {
   await embeddingService.init();
   final preferences = await SharedPreferences.getInstance();
 
-  return ProviderScope(
-    overrides: [
-      objectBoxProvider.overrideWithValue(objectBox),
-      embeddingServiceProvider.overrideWithValue(embeddingService),
-      sharedPreferencesProvider.overrideWithValue(preferences),
-    ],
-    child: const MyApp(),
+  return AppDependencies(
+    objectBox: objectBox,
+    embeddingService: embeddingService,
+    preferences: preferences,
   );
-}
+});

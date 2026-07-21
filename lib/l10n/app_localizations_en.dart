@@ -134,10 +134,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTab => 'By Date';
 
   @override
-  String get todayTimelineTitle => 'Today\'s Records';
+  String get todayTimelineTitle => 'Today\'s Log';
 
   @override
   String get todayStatusTitle => 'Today\'s Status';
+
+  @override
+  String get startupLoading => 'Preparing app...';
+
+  @override
+  String get startupErrorTitle => 'A problem occurred during initialization';
+
+  @override
+  String get startupRetry => 'Retry';
+
+  @override
+  String get startupResetData => 'Reset All Data';
+
+  @override
+  String get startupResetConfirmMessage =>
+      'Are you sure you want to delete all data and start over?\nThis action cannot be undone.';
 
   @override
   String get searchTab => 'Search';

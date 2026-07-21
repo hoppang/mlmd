@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'bootstrap/app_bootstrap.dart';
+import 'bootstrap/app_startup_widget.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(await bootstrapApplication());
+  runApp(const ProviderScope(child: AppStartupWidget()));
 }
