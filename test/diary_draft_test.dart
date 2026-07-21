@@ -50,12 +50,21 @@ class _MemoryDraftRepository implements RecordDraftRepository {
 void main() {
   group('DiaryDraftPayload', () {
     test('round-trips all user-entered fields', () {
-      const original = DiaryDraftPayload(
+      final occurredAt = DateTime(2026, 7, 21, 14, 30);
+      final activityTime = DateTime(2026, 7, 21, 13, 10);
+      final original = DiaryDraftPayload(
         inputMode: 'manual',
         title: '감기 기록',
         rawText: '병원에 다녀옴',
         summary: '저녁 약 처방',
-        activities: [DiaryDraftActivity(type: '투약', detail: '18:30')],
+        occurredAt: occurredAt,
+        activities: [
+          DiaryDraftActivity(
+            type: '투약',
+            detail: '18:30',
+            occurredAt: activityTime,
+          ),
+        ],
       );
 
       final restored = DiaryDraftPayload.decode(original.encode());
@@ -64,8 +73,55 @@ void main() {
       expect(restored.title, original.title);
       expect(restored.rawText, original.rawText);
       expect(restored.summary, original.summary);
+      expect(restored.occurredAt, occurredAt);
       expect(restored.activities.single.type, '투약');
       expect(restored.activities.single.detail, '18:30');
+      expect(restored.activities.single.occurredAt, activityTime);
+    });
+
+    test('restores v1 drafts with original record timestamps', () {
+      final recordTime = DateTime(2026, 7, 20, 9);
+      final activityTime = DateTime(2026, 7, 20, 8, 30);
+      final legacy = DiaryDraftPayload.decode(
+        '{"inputMode":"manual","title":"기존 초안",'
+        '"rawText":"","summary":"",'
+        '"activities":[{"type":"수유","detail":"120ml"}]}',
+      );
+      final fallback = DiaryDraftPayload(
+        inputMode: 'manual',
+        title: '원본',
+        rawText: '',
+        summary: '',
+        occurredAt: recordTime,
+        activities: [
+          DiaryDraftActivity(
+            type: '수유',
+            detail: '100ml',
+            occurredAt: activityTime,
+          ),
+        ],
+      );
+
+      final restored = legacy.withFallbackTimes(fallback);
+
+      expect(restored.title, '기존 초안');
+      expect(restored.occurredAt, recordTime);
+      expect(restored.activities.single.occurredAt, activityTime);
+    });
+
+    test('keeps an explicitly unknown v2 activity time unknown', () {
+      final original = DiaryDraftPayload(
+        inputMode: 'manual',
+        title: '집계 이벤트',
+        rawText: '',
+        summary: '',
+        occurredAt: DateTime(2026, 7, 21, 12),
+        activities: const [DiaryDraftActivity(type: '수유', detail: '여러 번')],
+      );
+
+      final restored = DiaryDraftPayload.decode(original.encode());
+
+      expect(restored.activities.single.occurredAt, isNull);
     });
 
     test('ignores presentation mode when comparing record content', () {

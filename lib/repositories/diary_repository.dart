@@ -201,6 +201,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
                 (activity) => CanonicalActivity(
                   type: activity.type,
                   time: activity.time,
+                  timePrecision: activity.timePrecision,
                   details: activity.details,
                   lastModified: activity.lastModified,
                 ),
@@ -312,6 +313,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
               final entity = ActivityEntity(
                 type: item.type,
                 time: item.time,
+                timePrecision: item.timePrecision,
                 details: item.details,
                 lastModified: item.lastModified,
               );

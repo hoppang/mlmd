@@ -33,10 +33,14 @@ enum _InputMode { simple, manual }
 class _EditableActivity {
   final TextEditingController typeController;
   final TextEditingController detailController;
+  DateTime? occurredAt;
 
-  _EditableActivity({required String type, required String detail})
-    : typeController = TextEditingController(text: type),
-      detailController = TextEditingController(text: detail);
+  _EditableActivity({
+    required String type,
+    required String detail,
+    this.occurredAt,
+  }) : typeController = TextEditingController(text: type),
+       detailController = TextEditingController(text: detail);
 
   String get type => typeController.text.trim();
   String get detail => detailController.text.trim();
@@ -59,6 +63,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
   // 직접 입력 모드
   late final TextEditingController _summaryController;
   final List<_EditableActivity> _activities = [];
+  late DateTime _occurredAt;
 
   _InputMode _mode = _InputMode.simple;
   late final DiaryDraftPayload _baselinePayload;
@@ -74,17 +79,20 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     final d = widget.diary;
+    final defaultOccurredAt = d?.date ?? DateTime.now();
     _baselinePayload = DiaryDraftPayload(
       inputMode: d == null ? 'simple' : 'manual',
       title: d?.title ?? '',
       rawText: d?.content ?? '',
       summary: d?.summary ?? '',
+      occurredAt: defaultOccurredAt,
       activities:
           d?.activities
               .map(
                 (activity) => DiaryDraftActivity(
                   type: activity.type,
                   detail: activity.details,
+                  occurredAt: activity.hasExactTime ? activity.time : null,
                 ),
               )
               .toList(growable: false) ??
@@ -104,12 +112,26 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         !existingDraft!.baseLastModified!.isAtSameMomentAs(d.lastModified);
 
     var initialPayload = _baselinePayload;
-    if (existingDraft?.payloadSchemaVersion ==
-        DiaryDraftPayload.schemaVersion) {
+    if (existingDraft != null &&
+        DiaryDraftPayload.supportsSchemaVersion(
+          existingDraft.payloadSchemaVersion,
+        )) {
       try {
-        initialPayload = DiaryDraftPayload.decode(
-          existingDraft!.fieldPayloadJson,
+        final decodedPayload = DiaryDraftPayload.decode(
+          existingDraft.fieldPayloadJson,
         );
+        if (existingDraft.payloadSchemaVersion == 1) {
+          initialPayload = decodedPayload.withFallbackTimes(_baselinePayload);
+          if (d == null && decodedPayload.occurredAt == null) {
+            initialPayload = initialPayload.withRecordTime(
+              existingDraft.createdAt,
+            );
+          }
+        } else {
+          initialPayload = decodedPayload.withFallbackRecordTime(
+            _baselinePayload.occurredAt,
+          );
+        }
       } on FormatException {
         initialPayload = _baselinePayload;
       }
@@ -124,9 +146,14 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     _titleController = TextEditingController(text: initialPayload.title);
     _rawController = TextEditingController(text: initialPayload.rawText);
     _summaryController = TextEditingController(text: initialPayload.summary);
+    _occurredAt = initialPayload.occurredAt ?? defaultOccurredAt;
     for (final activity in initialPayload.activities) {
       _activities.add(
-        _EditableActivity(type: activity.type, detail: activity.detail),
+        _EditableActivity(
+          type: activity.type,
+          detail: activity.detail,
+          occurredAt: activity.occurredAt,
+        ),
       );
     }
 
@@ -189,11 +216,13 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     title: _titleController.text,
     rawText: _rawController.text,
     summary: _summaryController.text,
+    occurredAt: _occurredAt,
     activities: _activities
         .map(
           (activity) => DiaryDraftActivity(
             type: activity.typeController.text,
             detail: activity.detailController.text,
+            occurredAt: activity.occurredAt,
           ),
         )
         .toList(growable: false),
@@ -239,7 +268,11 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
           ..clear()
           ..addAll(
             result.activities.map(
-              (a) => _EditableActivity(type: a.type, detail: a.detail),
+              (a) => _EditableActivity(
+                type: a.type,
+                detail: a.detail,
+                occurredAt: a.occurredAt,
+              ),
             ),
           );
         for (final activity in _activities) {
@@ -288,7 +321,13 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
 
     List<ActivitySummary> activities = _activities
         .where((a) => a.type.isNotEmpty)
-        .map((a) => ActivitySummary(type: a.type, detail: a.detail))
+        .map(
+          (a) => ActivitySummary(
+            type: a.type,
+            detail: a.detail,
+            occurredAt: a.occurredAt,
+          ),
+        )
         .toList();
 
     if (!mounted) return;
@@ -301,6 +340,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
             title,
             summary,
             content,
+            occurredAt: _occurredAt,
             activitySummaries: activities,
             consumedDraftId: _draftController.draftId,
           );
@@ -318,6 +358,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
             title,
             summary,
             content,
+            occurredAt: _occurredAt,
             activitySummaries: activities,
             consumedDraftId: _draftController.draftId,
           );
@@ -375,7 +416,11 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
   // 이벤트 편집 (manual)
   // ---------------------------------------------------------------------------
   void _addActivity() {
-    final activity = _EditableActivity(type: '', detail: '');
+    final activity = _EditableActivity(
+      type: '',
+      detail: '',
+      occurredAt: _occurredAt,
+    );
     _attachActivityListeners(activity);
     setState(() => _activities.add(activity));
     _draftController.schedule();
@@ -383,6 +428,47 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
 
   void _removeActivity(int index) {
     setState(() => _activities.removeAt(index).dispose());
+    _draftController.schedule();
+  }
+
+  String _formatDateTime(BuildContext context, DateTime value) {
+    final material = MaterialLocalizations.of(context);
+    return '${material.formatMediumDate(value)} · '
+        '${material.formatTimeOfDay(TimeOfDay.fromDateTime(value))}';
+  }
+
+  Future<DateTime?> _selectDateTime(DateTime initial) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+    if (date == null || !mounted) return null;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  Future<void> _editRecordTime() async {
+    final selected = await _selectDateTime(_occurredAt);
+    if (selected == null || !mounted) return;
+    setState(() => _occurredAt = selected);
+    _draftController.schedule();
+  }
+
+  Future<void> _editActivityTime(_EditableActivity activity) async {
+    final selected = await _selectDateTime(activity.occurredAt ?? _occurredAt);
+    if (selected == null || !mounted) return;
+    setState(() => activity.occurredAt = selected);
+    _draftController.schedule();
+  }
+
+  void _clearActivityTime(_EditableActivity activity) {
+    setState(() => activity.occurredAt = null);
     _draftController.schedule();
   }
 
@@ -590,10 +676,38 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
   // ---------------------------------------------------------------------------
   // 간단 입력 모드 UI
   // ---------------------------------------------------------------------------
+  Widget _buildRecordTimeField(AppLocalizations loc) {
+    return Semantics(
+      button: true,
+      label: loc.recordTimeLabel,
+      value: _formatDateTime(context, _occurredAt),
+      child: InkWell(
+        onTap: _editRecordTime,
+        borderRadius: BorderRadius.circular(12),
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: loc.recordTimeLabel,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.event, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text(_formatDateTime(context, _occurredAt))),
+              const Icon(Icons.edit_outlined, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSimpleMode(AppLocalizations loc) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SizedBox(height: 12),
+        _buildRecordTimeField(loc),
         const SizedBox(height: 12),
         // 제목 (AI 분석 후 수정 가능)
         TextField(
@@ -638,6 +752,8 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SizedBox(height: 12),
+        _buildRecordTimeField(loc),
         const SizedBox(height: 12),
         // 제목
         TextField(
@@ -694,45 +810,75 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
           final act = entry.value;
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 종류
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: act.typeController,
-                    decoration: InputDecoration(
-                      hintText: loc.eventTypeHint,
-                      labelText: loc.eventTypeLabel,
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                Row(
+                  children: [
+                    // 종류
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: act.typeController,
+                        decoration: InputDecoration(
+                          hintText: loc.eventTypeHint,
+                          labelText: loc.eventTypeLabel,
+                          isDense: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 상세
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: act.detailController,
-                    decoration: InputDecoration(
-                      hintText: loc.eventDetailHint,
-                      labelText: loc.eventDetailLabel,
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    const SizedBox(width: 8),
+                    // 상세
+                    Expanded(
+                      flex: 3,
+                      child: TextField(
+                        controller: act.detailController,
+                        decoration: InputDecoration(
+                          hintText: loc.eventDetailHint,
+                          labelText: loc.eventDetailLabel,
+                          isDense: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    // 삭제
+                    IconButton(
+                      tooltip: loc.delete,
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                      onPressed: () => _removeActivity(idx),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
                 ),
-                // 삭제
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red, size: 20),
-                  onPressed: () => _removeActivity(idx),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _editActivityTime(act),
+                      icon: const Icon(Icons.schedule, size: 16),
+                      label: Text(
+                        act.occurredAt == null
+                            ? loc.eventTimeUnknown
+                            : _formatDateTime(context, act.occurredAt!),
+                      ),
+                    ),
+                    if (act.occurredAt != null)
+                      IconButton(
+                        tooltip: loc.clearEventTime,
+                        onPressed: () => _clearActivityTime(act),
+                        icon: const Icon(Icons.event_busy, size: 18),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
                 ),
               ],
             ),

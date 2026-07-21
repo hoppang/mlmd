@@ -226,6 +226,24 @@ abstract class AppLocalizations {
   /// **'예: [7, 9, 11]시, 오전 소아과'**
   String get eventDetailHint;
 
+  /// No description provided for @recordTimeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 시각'**
+  String get recordTimeLabel;
+
+  /// No description provided for @eventTimeUnknown.
+  ///
+  /// In ko, this message translates to:
+  /// **'발생 시각 미상'**
+  String get eventTimeUnknown;
+
+  /// No description provided for @clearEventTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'발생 시각 지우기'**
+  String get clearEventTime;
+
   /// No description provided for @delete.
   ///
   /// In ko, this message translates to:

@@ -7,17 +7,35 @@ import 'package:mlmd/features/diary/application/diary_list_notifier.dart';
 import 'package:mlmd/features/diary/presentation/diary_form_page.dart';
 import 'package:mlmd/features/diary/presentation/diary_home_page.dart';
 import 'package:mlmd/l10n/app_localizations.dart';
+import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
+import 'package:mlmd/services/llm_diary_service.dart';
 
 class _TestDiaryListNotifier extends DiaryListNotifier {
   _TestDiaryListNotifier(this.diaries);
 
   final List<DiaryEntity> diaries;
+  DateTime? updatedOccurredAt;
+  List<ActivitySummary>? updatedActivities;
 
   @override
   List<DiaryEntity> build() => diaries;
+
+  @override
+  Future<void> updateDiary(
+    DiaryEntity diary,
+    String newTitle,
+    String newSummary,
+    String newContent, {
+    required DateTime occurredAt,
+    List<ActivitySummary> activitySummaries = const [],
+    String? consumedDraftId,
+  }) async {
+    updatedOccurredAt = occurredAt;
+    updatedActivities = activitySummaries;
+  }
 }
 
 class _TestDraftListNotifier extends RecordDraftListNotifier {
@@ -76,10 +94,13 @@ class _MemoryDraftRepository implements RecordDraftRepository {
 Widget _buildApp({
   List<DiaryEntity> diaries = const [],
   List<RecordDraftEntity> drafts = const [],
+  _TestDiaryListNotifier? diaryNotifier,
 }) {
   return ProviderScope(
     overrides: [
-      diaryListProvider.overrideWith(() => _TestDiaryListNotifier(diaries)),
+      diaryListProvider.overrideWith(
+        () => diaryNotifier ?? _TestDiaryListNotifier(diaries),
+      ),
       recordDraftRepositoryProvider.overrideWithValue(
         _MemoryDraftRepository(drafts),
       ),
@@ -110,7 +131,7 @@ void main() {
       date: now,
       title: '오늘 기록',
       content: '자동으로 열리면 안 됩니다.',
-      lastModified: now,
+      lastModified: DateTime(1999, 1, 1),
     );
 
     await tester.pumpWidget(_buildApp(diaries: [diary]));
@@ -119,6 +140,11 @@ void main() {
     expect(find.byType(DiaryDemoPage), findsOneWidget);
     expect(find.byType(DiaryFormPage), findsNothing);
     expect(find.text('오늘 기록'), findsOneWidget);
+    final homeContext = tester.element(find.byType(DiaryDemoPage));
+    final displayedDate = MaterialLocalizations.of(
+      homeContext,
+    ).formatShortDate(now);
+    expect(find.text(displayedDate), findsOneWidget);
 
     await tester.tap(find.text('오늘 기록'));
     await tester.pumpAndSettle();
@@ -156,5 +182,48 @@ void main() {
 
     expect(find.byType(DiaryFormPage), findsOneWidget);
     expect(find.text('작성 중인 메모'), findsOneWidget);
+  });
+
+  testWidgets('기록 수정 시 메모와 이벤트의 발생 시각을 보존한다', (tester) async {
+    final recordTime = DateTime(2026, 7, 20, 14, 30);
+    final exactEventTime = DateTime(2026, 7, 20, 13, 10);
+    final diary = DiaryEntity(
+      id: 2,
+      recordId: 'time-record',
+      date: recordTime,
+      title: '시각 보존 기록',
+      content: '수정해도 발생 시각은 유지',
+      lastModified: DateTime(2026, 7, 21),
+    );
+    diary.activities.addAll([
+      ActivityEntity(
+        type: '투약',
+        time: exactEventTime,
+        details: '해열제',
+        lastModified: DateTime(2026, 7, 20, 13, 11),
+      ),
+      ActivityEntity(
+        type: '수유',
+        time: recordTime,
+        timePrecision: ActivityEntity.timePrecisionUnknown,
+        details: '여러 번',
+        lastModified: DateTime(2026, 7, 20, 15),
+      ),
+    ]);
+    final notifier = _TestDiaryListNotifier([diary]);
+
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], diaryNotifier: notifier),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('시각 보존 기록'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FloatingActionButton, '수정'));
+    await tester.pumpAndSettle();
+
+    expect(notifier.updatedOccurredAt, recordTime);
+    expect(notifier.updatedActivities, hasLength(2));
+    expect(notifier.updatedActivities![0].occurredAt, exactEventTime);
+    expect(notifier.updatedActivities![1].occurredAt, isNull);
   });
 }

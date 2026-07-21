@@ -24,7 +24,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 3014340625497478550),
     name: 'ActivityEntity',
-    lastPropertyId: const obx_int.IdUid(6, 2147283445462106961),
+    lastPropertyId: const obx_int.IdUid(7, 3951416368719840019),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -65,6 +65,12 @@ final _entities = <obx_int.ModelEntity>[
         indexId: const obx_int.IdUid(1, 4296004632891135973),
         relationField: 'diary',
         relationTarget: 'DiaryEntity',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 3951416368719840019),
+        name: 'timePrecision',
+        type: 6,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -279,13 +285,14 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectToFB: (ActivityEntity object, fb.Builder fbb) {
         final typeOffset = fbb.writeString(object.type);
         final detailsOffset = fbb.writeString(object.details);
-        fbb.startTable(7);
+        fbb.startTable(8);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, typeOffset);
         fbb.addInt64(2, object.time.millisecondsSinceEpoch);
         fbb.addOffset(3, detailsOffset);
         fbb.addInt64(4, object.lastModified.millisecondsSinceEpoch);
         fbb.addInt64(5, object.diary.targetId);
+        fbb.addInt64(6, object.timePrecision);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -304,6 +311,12 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final timeParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 8, 0),
         );
+        final timePrecisionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          16,
+          0,
+        );
         final detailsParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 10, '');
@@ -314,6 +327,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           id: idParam,
           type: typeParam,
           time: timeParam,
+          timePrecision: timePrecisionParam,
           details: detailsParam,
           lastModified: lastModifiedParam,
         );
@@ -541,6 +555,11 @@ class ActivityEntity_ {
   /// See [ActivityEntity.diary].
   static final diary = obx.QueryRelationToOne<ActivityEntity, DiaryEntity>(
     _entities[0].properties[5],
+  );
+
+  /// See [ActivityEntity.timePrecision].
+  static final timePrecision = obx.QueryIntegerProperty<ActivityEntity>(
+    _entities[0].properties[6],
   );
 }
 

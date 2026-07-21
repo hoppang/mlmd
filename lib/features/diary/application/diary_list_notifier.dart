@@ -18,6 +18,7 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     String title,
     String summary,
     String content, {
+    required DateTime occurredAt,
     List<ActivitySummary> activitySummaries = const [],
     String? consumedDraftId,
   }) async {
@@ -25,7 +26,7 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     final embeddingService = ref.read(embeddingServiceProvider);
     final now = DateTime.now();
     final newDiary = DiaryEntity(
-      date: now,
+      date: occurredAt,
       title: title,
       summary: summary,
       content: content,
@@ -35,7 +36,10 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
         .map(
           (activity) => ActivityEntity(
             type: activity.type,
-            time: now,
+            time: activity.occurredAt ?? occurredAt,
+            timePrecision: activity.occurredAt == null
+                ? ActivityEntity.timePrecisionUnknown
+                : ActivityEntity.timePrecisionExact,
             details: activity.detail,
             lastModified: now,
           ),
@@ -66,6 +70,7 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     String newTitle,
     String newSummary,
     String newContent, {
+    required DateTime occurredAt,
     List<ActivitySummary> activitySummaries = const [],
     String? consumedDraftId,
   }) async {
@@ -75,7 +80,7 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     final updatedDiary = DiaryEntity(
       id: diary.id,
       recordId: diary.recordId,
-      date: diary.date,
+      date: occurredAt,
       title: newTitle,
       summary: newSummary,
       content: newContent,
@@ -85,7 +90,10 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
         .map(
           (activity) => ActivityEntity(
             type: activity.type,
-            time: now,
+            time: activity.occurredAt ?? occurredAt,
+            timePrecision: activity.occurredAt == null
+                ? ActivityEntity.timePrecisionUnknown
+                : ActivityEntity.timePrecisionExact,
             details: activity.detail,
             lastModified: now,
           ),

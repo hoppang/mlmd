@@ -242,6 +242,32 @@ void main() {
       expect(results, hasLength(1));
       expect(results.single.similarityPercent, 100);
     });
+
+    test('Activity occurrence precision persists independently of time', () {
+      final now = DateTime.now();
+      final diaryId = diaryRepo.saveDiary(
+        DiaryEntity(
+          date: now,
+          title: '시각 정밀도',
+          content: 'AI 집계 이벤트',
+          lastModified: now,
+        ),
+      );
+      final activityId = activityRepo.saveActivity(
+        ActivityEntity(
+          type: '수유',
+          time: now,
+          timePrecision: ActivityEntity.timePrecisionUnknown,
+          details: '여러 번',
+          lastModified: now,
+        ),
+        diaryId,
+      );
+
+      final restored = activityRepo.getActivity(activityId)!;
+      expect(restored.time.millisecondsSinceEpoch, now.millisecondsSinceEpoch);
+      expect(restored.hasExactTime, isFalse);
+    });
   });
 
   group('Record draft repository', () {

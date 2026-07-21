@@ -73,6 +73,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventDetailHint => 'e.g. [7, 9, 11] AM, Pediatrician evening';
 
   @override
+  String get recordTimeLabel => 'Record time';
+
+  @override
+  String get eventTimeUnknown => 'Occurrence time unknown';
+
+  @override
+  String get clearEventTime => 'Clear occurrence time';
+
+  @override
   String get delete => 'Delete';
 
   @override

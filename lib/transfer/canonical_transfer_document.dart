@@ -37,12 +37,14 @@ class CanonicalDiary {
 class CanonicalActivity {
   final String type;
   final DateTime time;
+  final int timePrecision;
   final String details;
   final DateTime lastModified;
 
   const CanonicalActivity({
     required this.type,
     required this.time,
+    this.timePrecision = 1,
     required this.details,
     required this.lastModified,
   });

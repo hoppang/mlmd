@@ -22,6 +22,7 @@ void main() {
     expect(diary.summary, contains('\n'));
     expect(diary.date.isUtc, isFalse);
     expect(diary.lastModified.isUtc, isTrue);
+    expect(diary.activities.single.timePrecision, 1);
 
     final encoded = registry.encode(decoded);
     expect(encoded['schemaVersion'], 1);
@@ -89,5 +90,35 @@ void main() {
       first.indexOf('446655440000'),
       lessThan(first.indexOf('446655440001')),
     );
+  });
+
+  test('unknown activity occurrence time survives a v1 round trip', () {
+    final document = CanonicalExportDocument(
+      exportedAt: DateTime.utc(2026, 7, 21),
+      appVersion: 'test',
+      diaries: [
+        CanonicalDiary(
+          recordId: '550e8400-e29b-41d4-a716-446655440000',
+          date: DateTime(2026, 7, 21, 12),
+          title: '집계 이벤트',
+          summary: '',
+          content: '',
+          lastModified: DateTime.utc(2026, 7, 21, 3),
+          activities: [
+            CanonicalActivity(
+              type: '수유',
+              time: DateTime(2026, 7, 21, 12),
+              timePrecision: 0,
+              details: '여러 번',
+              lastModified: DateTime.utc(2026, 7, 21, 3),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final decoded = registry.decode(registry.encode(document));
+
+    expect(decoded.diaries.single.activities.single.timePrecision, 0);
   });
 }

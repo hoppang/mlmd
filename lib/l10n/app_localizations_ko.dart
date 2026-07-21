@@ -72,6 +72,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventDetailHint => '예: [7, 9, 11]시, 오전 소아과';
 
   @override
+  String get recordTimeLabel => '기록 시각';
+
+  @override
+  String get eventTimeUnknown => '발생 시각 미상';
+
+  @override
+  String get clearEventTime => '발생 시각 지우기';
+
+  @override
   String get delete => '삭제';
 
   @override

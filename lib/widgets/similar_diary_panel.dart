@@ -202,10 +202,9 @@ class _SimilarDiaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final diary = result.diary;
     final percent = result.similarityPercent;
-    final dateStr =
-        '${diary.date.year}-'
-        '${diary.date.month.toString().padLeft(2, '0')}-'
-        '${diary.date.day.toString().padLeft(2, '0')}';
+    final dateStr = MaterialLocalizations.of(
+      context,
+    ).formatShortDate(diary.date);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

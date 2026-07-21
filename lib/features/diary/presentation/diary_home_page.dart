@@ -352,9 +352,9 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                                           ),
                                         ),
                                         child: Text(
-                                          diary.lastModified
-                                              .toString()
-                                              .substring(0, 10),
+                                          MaterialLocalizations.of(
+                                            context,
+                                          ).formatShortDate(diary.date),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.teal.shade700,

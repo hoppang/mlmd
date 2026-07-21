@@ -13,6 +13,8 @@ class DiaryEntity {
   @Index()
   String? recordId;
 
+  /// 사용자가 기록한 메모의 발생 시각이다.
+  /// 생성·수정 시각과 구분하며 목록 날짜와 정렬의 기준으로 사용한다.
   @Property(type: PropertyType.date)
   DateTime date;
 
@@ -25,6 +27,8 @@ class DiaryEntity {
   /// 원문 보관용: 간단 입력 모드에서 사용자가 입력한 자유 텍스트.
   String content;
 
+  /// 감사와 동기화를 위한 마지막 수정 시각이다.
+  /// 사용자에게 보여 주는 기록 날짜로 사용하지 않는다.
   @Property(type: PropertyType.date)
   DateTime lastModified;
 

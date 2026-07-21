@@ -10,8 +10,13 @@ import '../utils/logger.dart';
 class ActivitySummary {
   final String type; // 수유, 수면, 병원 등
   final String detail; // "[7, 9, 11]시", "2회", "저녁 소아과" 등
+  final DateTime? occurredAt;
 
-  const ActivitySummary({required this.type, required this.detail});
+  const ActivitySummary({
+    required this.type,
+    required this.detail,
+    this.occurredAt,
+  });
 }
 
 /// LLM 분석 결과 전체를 담는 DTO.

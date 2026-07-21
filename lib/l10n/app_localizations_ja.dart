@@ -72,6 +72,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventDetailHint => '例: [7, 9, 11]時、小児科外来';
 
   @override
+  String get recordTimeLabel => '記録時刻';
+
+  @override
+  String get eventTimeUnknown => '発生時刻不明';
+
+  @override
+  String get clearEventTime => '発生時刻を消去';
+
+  @override
   String get delete => '削除';
 
   @override
