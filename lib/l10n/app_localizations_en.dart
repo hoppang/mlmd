@@ -220,4 +220,38 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get transferError =>
       'The backup could not be processed. Check its format and available storage.';
+
+  @override
+  String get draftSaving => 'Saving draft…';
+
+  @override
+  String get draftSaved => 'Draft saved';
+
+  @override
+  String get draftSaveFailed => 'Draft could not be saved';
+
+  @override
+  String get draftSourceChanged =>
+      'The original record changed after this draft was created. Review it before saving.';
+
+  @override
+  String get discardDraft => 'Discard draft';
+
+  @override
+  String get discardDraftTitle => 'Discard this draft?';
+
+  @override
+  String get discardDraftDescription =>
+      'Your unfinished changes cannot be recovered.';
+
+  @override
+  String draftsInProgress(int count) {
+    return '$count unfinished records';
+  }
+
+  @override
+  String get continueWriting => 'Continue writing';
+
+  @override
+  String get startNewDraft => 'Start new';
 }

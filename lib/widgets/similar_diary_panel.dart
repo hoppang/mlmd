@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import '../models/diary_entity.dart';
 import '../repositories/diary_repository.dart';
+import '../features/diary/application/diary_list_notifier.dart';
 import '../utils/logger.dart';
 
 /// 유사 일기 검색 패널.

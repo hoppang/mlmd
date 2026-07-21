@@ -77,5 +77,16 @@
   "@importResult": {"placeholders": {"inserted": {"type": "int"}, "updated": {"type": "int"}, "skipped": {"type": "int"}}},
   "embeddingFailed": "검색 색인 {count}건은 나중에 다시 생성해야 합니다.",
   "@embeddingFailed": {"placeholders": {"count": {"type": "int"}}},
-  "transferError": "백업을 처리하지 못했습니다. 파일 형식과 저장 공간을 확인해 주세요."
+  "transferError": "백업을 처리하지 못했습니다. 파일 형식과 저장 공간을 확인해 주세요.",
+  "draftSaving": "임시 저장 중…",
+  "draftSaved": "임시 저장됨",
+  "draftSaveFailed": "임시 저장하지 못했어요",
+  "draftSourceChanged": "초안을 만든 뒤 원본 기록이 변경됐어요. 저장하기 전에 내용을 확인해 주세요.",
+  "discardDraft": "초안 버리기",
+  "discardDraftTitle": "이 초안을 버릴까요?",
+  "discardDraftDescription": "작성 중인 내용은 복구할 수 없습니다.",
+  "draftsInProgress": "작성 중인 기록 {count}개",
+  "@draftsInProgress": {"placeholders": {"count": {"type": "int"}}},
+  "continueWriting": "이어서 작성",
+  "startNewDraft": "새로 작성"
 }

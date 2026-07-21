@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/activity_entity.dart';
+import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/activity_repository.dart';
+import 'package:mlmd/repositories/record_draft_repository.dart';
 import 'package:mlmd/services/embedding_service.dart';
 
 // ObjectBoxHelper의 테스트용 구현체 (임시 디렉터리에 데이터베이스 가동)
@@ -16,10 +18,13 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<DiaryEntity> diaryBox;
   @override
   late final Box<ActivityEntity> activityBox;
+  @override
+  late final Box<RecordDraftEntity> draftBox;
 
   TestObjectBoxHelper(this.store) {
     diaryBox = Box<DiaryEntity>(store);
     activityBox = Box<ActivityEntity>(store);
+    draftBox = Box<RecordDraftEntity>(store);
   }
 
   static Future<TestObjectBoxHelper> createTemp() async {
@@ -37,11 +42,13 @@ void main() {
   late TestObjectBoxHelper obxHelper;
   late DiaryRepository diaryRepo;
   late ActivityRepository activityRepo;
+  late RecordDraftRepository draftRepo;
 
   setUp(() async {
     obxHelper = await TestObjectBoxHelper.createTemp();
     diaryRepo = DiaryRepositoryImpl(obxHelper);
     activityRepo = ActivityRepositoryImpl(obxHelper);
+    draftRepo = RecordDraftRepositoryImpl(obxHelper);
   });
 
   tearDown(() async {
@@ -234,6 +241,59 @@ void main() {
 
       expect(results, hasLength(1));
       expect(results.single.similarityPercent, 100);
+    });
+  });
+
+  group('Record draft repository', () {
+    test('upserts by stable draft ID instead of creating duplicates', () {
+      final now = DateTime.now();
+      final draft = RecordDraftEntity(
+        draftId: 'draft-stable-id',
+        draftKind: 'createRecord',
+        recordType: 'diary',
+        fieldPayloadJson: '{"rawText":"처음"}',
+        createdAt: now,
+        lastSavedAt: now,
+      );
+      draftRepo.saveDraft(draft);
+      draft.fieldPayloadJson = '{"rawText":"수정"}';
+      draft.lastSavedAt = now.add(const Duration(seconds: 1));
+      draftRepo.saveDraft(draft);
+
+      expect(draftRepo.getAllDrafts(), hasLength(1));
+      expect(
+        draftRepo.getByDraftId('draft-stable-id')?.fieldPayloadJson,
+        contains('수정'),
+      );
+    });
+
+    test('final record commit consumes its draft in the same operation', () {
+      final now = DateTime.now();
+      draftRepo.saveDraft(
+        RecordDraftEntity(
+          draftId: 'draft-to-consume',
+          draftKind: 'createRecord',
+          recordType: 'diary',
+          fieldPayloadJson: '{"rawText":"완료할 기록"}',
+          createdAt: now,
+          lastSavedAt: now,
+        ),
+      );
+      final diary = DiaryEntity(
+        date: now,
+        title: '완료',
+        content: '완료할 기록',
+        lastModified: now,
+      );
+
+      diaryRepo.saveDiaryWithActivities(
+        diary,
+        const [],
+        consumedDraftId: 'draft-to-consume',
+      );
+
+      expect(diaryRepo.getDiary(diary.id), isNotNull);
+      expect(draftRepo.getByDraftId('draft-to-consume'), isNull);
     });
   });
 }

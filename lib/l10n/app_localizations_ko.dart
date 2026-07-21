@@ -216,4 +216,37 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get transferError => '백업을 처리하지 못했습니다. 파일 형식과 저장 공간을 확인해 주세요.';
+
+  @override
+  String get draftSaving => '임시 저장 중…';
+
+  @override
+  String get draftSaved => '임시 저장됨';
+
+  @override
+  String get draftSaveFailed => '임시 저장하지 못했어요';
+
+  @override
+  String get draftSourceChanged =>
+      '초안을 만든 뒤 원본 기록이 변경됐어요. 저장하기 전에 내용을 확인해 주세요.';
+
+  @override
+  String get discardDraft => '초안 버리기';
+
+  @override
+  String get discardDraftTitle => '이 초안을 버릴까요?';
+
+  @override
+  String get discardDraftDescription => '작성 중인 내용은 복구할 수 없습니다.';
+
+  @override
+  String draftsInProgress(int count) {
+    return '작성 중인 기록 $count개';
+  }
+
+  @override
+  String get continueWriting => '이어서 작성';
+
+  @override
+  String get startNewDraft => '새로 작성';
 }

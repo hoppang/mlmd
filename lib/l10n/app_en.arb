@@ -77,5 +77,16 @@
   "@importResult": {"placeholders": {"inserted": {"type": "int"}, "updated": {"type": "int"}, "skipped": {"type": "int"}}},
   "embeddingFailed": "Search indexes for {count} diaries must be regenerated later.",
   "@embeddingFailed": {"placeholders": {"count": {"type": "int"}}},
-  "transferError": "The backup could not be processed. Check its format and available storage."
+  "transferError": "The backup could not be processed. Check its format and available storage.",
+  "draftSaving": "Saving draft…",
+  "draftSaved": "Draft saved",
+  "draftSaveFailed": "Draft could not be saved",
+  "draftSourceChanged": "The original record changed after this draft was created. Review it before saving.",
+  "discardDraft": "Discard draft",
+  "discardDraftTitle": "Discard this draft?",
+  "discardDraftDescription": "Your unfinished changes cannot be recovered.",
+  "draftsInProgress": "{count} unfinished records",
+  "@draftsInProgress": {"placeholders": {"count": {"type": "int"}}},
+  "continueWriting": "Continue writing",
+  "startNewDraft": "Start new"
 }

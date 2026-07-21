@@ -4,8 +4,6 @@ import '../models/diary_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
-import '../services/llm_diary_service.dart'
-    show buildEmbeddingText, ActivitySummary;
 import '../transfer/canonical_transfer_document.dart';
 import 'package:uuid/uuid.dart';
 
@@ -38,8 +36,9 @@ abstract class DiaryRepository {
   /// 기존 활동 엔티티는 실제 삭제한 뒤 [activities]로 교체합니다.
   int saveDiaryWithActivities(
     DiaryEntity diary,
-    List<ActivityEntity> activities,
-  );
+    List<ActivityEntity> activities, {
+    String? consumedDraftId,
+  });
 
   /// 현재 저장소를 버전 독립적인 내보내기 모델로 스냅샷합니다.
   CanonicalExportDocument createExportDocument({required String appVersion});
@@ -136,8 +135,9 @@ class DiaryRepositoryImpl implements DiaryRepository {
   @override
   int saveDiaryWithActivities(
     DiaryEntity diary,
-    List<ActivityEntity> activities,
-  ) {
+    List<ActivityEntity> activities, {
+    String? consumedDraftId,
+  }) {
     _prepareRecordId(diary);
     return _obxHelper.store.runInTransaction(TxMode.write, () {
       final now = DateTime.now();
@@ -159,6 +159,14 @@ class DiaryRepositoryImpl implements DiaryRepository {
       }
       if (activities.isNotEmpty) {
         _obxHelper.activityBox.putMany(activities);
+      }
+      if (consumedDraftId != null) {
+        final draftQuery = _obxHelper.draftBox
+            .query(RecordDraftEntity_.draftId.equals(consumedDraftId))
+            .build();
+        final draftId = draftQuery.findFirst()?.id;
+        draftQuery.close();
+        if (draftId != null) _obxHelper.draftBox.remove(draftId);
       }
       return diaryId;
     });
@@ -426,134 +434,3 @@ final diaryRepositoryProvider = Provider<DiaryRepository>((ref) {
   final obxHelper = ref.watch(objectBoxProvider);
   return DiaryRepositoryImpl(obxHelper);
 });
-
-/// 일기 목록의 상태와 변경을 관리하는 Riverpod Notifier
-class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
-  @override
-  List<DiaryEntity> build() {
-    final repo = ref.watch(diaryRepositoryProvider);
-    return repo.getDiaries();
-  }
-
-  /// 새 일기를 추가합니다.
-  /// [summary]와 비일상 [activities]를 합산하여 임베딩 텍스트를 구성합니다.
-  Future<void> addDiary(
-    String title,
-    String summary,
-    String content, {
-    List<ActivitySummary> activitySummaries = const [],
-  }) async {
-    final repo = ref.read(diaryRepositoryProvider);
-    final embeddingService = ref.read(embeddingServiceProvider);
-    final now = DateTime.now();
-
-    final newDiary = DiaryEntity(
-      date: now,
-      title: title,
-      summary: summary,
-      content: content,
-      lastModified: now,
-    );
-
-    // ActivityEntity 생성. 관계 연결은 repository 트랜잭션에서 수행합니다.
-    final activityEntities = activitySummaries
-        .map(
-          (a) => ActivityEntity(
-            type: a.type,
-            time: now,
-            details: a.detail,
-            lastModified: now,
-          ),
-        )
-        .toList();
-    // 임베딩 텍스트 = summary + 비일상 이벤트
-    final embeddingText = buildEmbeddingText(summary, activityEntities);
-    newDiary.embedding = await embeddingService.getEmbedding(embeddingText);
-
-    repo.saveDiaryWithActivities(newDiary, activityEntities);
-    state = repo.getDiaries();
-  }
-
-  /// 현재 텍스트 쿼리와 유사한 일기를 검색합니다.
-  Future<List<SimilarDiaryResult>> searchSimilar(
-    String query, {
-    int limit = 5,
-  }) {
-    final repo = ref.read(diaryRepositoryProvider);
-    final embeddingService = ref.read(embeddingServiceProvider);
-    return repo.searchSimilar(query, embeddingService, limit: limit);
-  }
-
-  /// 기존 일기를 수정합니다.
-  Future<void> updateDiary(
-    DiaryEntity diary,
-    String newTitle,
-    String newSummary,
-    String newContent, {
-    List<ActivitySummary> activitySummaries = const [],
-  }) async {
-    final repo = ref.read(diaryRepositoryProvider);
-    final embeddingService = ref.read(embeddingServiceProvider);
-    final now = DateTime.now();
-
-    diary.title = newTitle;
-    diary.summary = newSummary;
-    diary.content = newContent;
-
-    // 기존 activities 교체
-    final activityEntities = activitySummaries
-        .map(
-          (a) => ActivityEntity(
-            type: a.type,
-            time: now,
-            details: a.detail,
-            lastModified: now,
-          ),
-        )
-        .toList();
-    // 임베딩 텍스트 = summary + 비일상 이벤트
-    final embeddingText = buildEmbeddingText(newSummary, activityEntities);
-    diary.embedding = await embeddingService.getEmbedding(embeddingText);
-
-    repo.saveDiaryWithActivities(diary, activityEntities);
-    state = repo.getDiaries();
-  }
-
-  void deleteDiary(int id) {
-    final repo = ref.read(diaryRepositoryProvider);
-    repo.deleteDiary(id);
-    state = repo.getDiaries();
-  }
-
-  void reload() {
-    state = ref.read(diaryRepositoryProvider).getDiaries();
-  }
-
-  /// 가져오기 성공 후 임베딩을 순차 재생성합니다. 실패한 항목 수를 반환합니다.
-  Future<int> regenerateEmbeddings(Iterable<String> recordIds) async {
-    final ids = recordIds.toSet();
-    if (ids.isEmpty) return 0;
-    final repo = ref.read(diaryRepositoryProvider);
-    final embeddingService = ref.read(embeddingServiceProvider);
-    var failed = 0;
-    for (final diary in repo.getDiaries()) {
-      final recordId = diary.recordId;
-      if (recordId == null || !ids.contains(recordId)) continue;
-      try {
-        final text = buildEmbeddingText(diary.summary, diary.activities);
-        final embedding = await embeddingService.getEmbedding(text);
-        repo.updateEmbeddingPreservingLastModified(recordId, embedding);
-        if (embedding == null) failed++;
-      } catch (_) {
-        failed++;
-      }
-    }
-    state = repo.getDiaries();
-    return failed;
-  }
-}
-
-final diaryListProvider =
-    NotifierProvider<DiaryListNotifier, List<DiaryEntity>>(
-      DiaryListNotifier.new,
-    );

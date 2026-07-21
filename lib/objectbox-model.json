@@ -97,10 +97,73 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "3:7267053488527556749",
+      "lastPropertyId": "10:7546525739943859305",
+      "name": "RecordDraftEntity",
+      "properties": [
+        {
+          "id": "1:297220628326684676",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2039058292242704036",
+          "name": "draftId",
+          "indexId": "4:3814644681440260711",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:8347721301641903710",
+          "name": "draftKind",
+          "type": 9
+        },
+        {
+          "id": "4:3237704710357051558",
+          "name": "recordType",
+          "type": 9
+        },
+        {
+          "id": "5:6911837752050715765",
+          "name": "targetRecordId",
+          "indexId": "5:7756920370847829618",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "6:137211334806176683",
+          "name": "payloadSchemaVersion",
+          "type": 6
+        },
+        {
+          "id": "7:431416241111935843",
+          "name": "fieldPayloadJson",
+          "type": 9
+        },
+        {
+          "id": "8:9179149231182169138",
+          "name": "baseLastModified",
+          "type": 10
+        },
+        {
+          "id": "9:4103476853539093946",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "10:7546525739943859305",
+          "name": "lastSavedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "2:7784148166755830454",
-  "lastIndexId": "3:4154334858951904683",
+  "lastEntityId": "3:7267053488527556749",
+  "lastIndexId": "5:7756920370847829618",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

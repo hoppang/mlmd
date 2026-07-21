@@ -16,6 +16,7 @@ import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
 import 'models/activity_entity.dart';
 import 'models/diary_entity.dart';
+import 'models/record_draft_entity.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
@@ -136,6 +137,78 @@ final _entities = <obx_int.ModelEntity>[
       ),
     ],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(3, 7267053488527556749),
+    name: 'RecordDraftEntity',
+    lastPropertyId: const obx_int.IdUid(10, 7546525739943859305),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 297220628326684676),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 2039058292242704036),
+        name: 'draftId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(4, 3814644681440260711),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 8347721301641903710),
+        name: 'draftKind',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 3237704710357051558),
+        name: 'recordType',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 6911837752050715765),
+        name: 'targetRecordId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(5, 7756920370847829618),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 137211334806176683),
+        name: 'payloadSchemaVersion',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 431416241111935843),
+        name: 'fieldPayloadJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 9179149231182169138),
+        name: 'baseLastModified',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 4103476853539093946),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 7546525739943859305),
+        name: 'lastSavedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -181,8 +254,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(2, 7784148166755830454),
-    lastIndexId: const obx_int.IdUid(3, 4154334858951904683),
+    lastEntityId: const obx_int.IdUid(3, 7267053488527556749),
+    lastIndexId: const obx_int.IdUid(5, 7756920370847829618),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -343,6 +416,96 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    RecordDraftEntity: obx_int.EntityDefinition<RecordDraftEntity>(
+      model: _entities[2],
+      toOneRelations: (RecordDraftEntity object) => [],
+      toManyRelations: (RecordDraftEntity object) => {},
+      getId: (RecordDraftEntity object) => object.id,
+      setId: (RecordDraftEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (RecordDraftEntity object, fb.Builder fbb) {
+        final draftIdOffset = fbb.writeString(object.draftId);
+        final draftKindOffset = fbb.writeString(object.draftKind);
+        final recordTypeOffset = fbb.writeString(object.recordType);
+        final targetRecordIdOffset = object.targetRecordId == null
+            ? null
+            : fbb.writeString(object.targetRecordId!);
+        final fieldPayloadJsonOffset = fbb.writeString(object.fieldPayloadJson);
+        fbb.startTable(11);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, draftIdOffset);
+        fbb.addOffset(2, draftKindOffset);
+        fbb.addOffset(3, recordTypeOffset);
+        fbb.addOffset(4, targetRecordIdOffset);
+        fbb.addInt64(5, object.payloadSchemaVersion);
+        fbb.addOffset(6, fieldPayloadJsonOffset);
+        fbb.addInt64(7, object.baseLastModified?.millisecondsSinceEpoch);
+        fbb.addInt64(8, object.createdAt.millisecondsSinceEpoch);
+        fbb.addInt64(9, object.lastSavedAt.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final baseLastModifiedValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          18,
+        );
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final draftIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final draftKindParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final recordTypeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final targetRecordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 12);
+        final payloadSchemaVersionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          0,
+        );
+        final fieldPayloadJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final baseLastModifiedParam = baseLastModifiedValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(baseLastModifiedValue);
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 20, 0),
+        );
+        final lastSavedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 22, 0),
+        );
+        final object = RecordDraftEntity(
+          id: idParam,
+          draftId: draftIdParam,
+          draftKind: draftKindParam,
+          recordType: recordTypeParam,
+          targetRecordId: targetRecordIdParam,
+          payloadSchemaVersion: payloadSchemaVersionParam,
+          fieldPayloadJson: fieldPayloadJsonParam,
+          baseLastModified: baseLastModifiedParam,
+          createdAt: createdAtParam,
+          lastSavedAt: lastSavedAtParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -428,4 +591,56 @@ class DiaryEntity_ {
       obx.QueryBacklinkToMany<ActivityEntity, DiaryEntity>(
         ActivityEntity_.diary,
       );
+}
+
+/// [RecordDraftEntity] entity fields to define ObjectBox queries.
+class RecordDraftEntity_ {
+  /// See [RecordDraftEntity.id].
+  static final id = obx.QueryIntegerProperty<RecordDraftEntity>(
+    _entities[2].properties[0],
+  );
+
+  /// See [RecordDraftEntity.draftId].
+  static final draftId = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[1],
+  );
+
+  /// See [RecordDraftEntity.draftKind].
+  static final draftKind = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[2],
+  );
+
+  /// See [RecordDraftEntity.recordType].
+  static final recordType = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[3],
+  );
+
+  /// See [RecordDraftEntity.targetRecordId].
+  static final targetRecordId = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[4],
+  );
+
+  /// See [RecordDraftEntity.payloadSchemaVersion].
+  static final payloadSchemaVersion =
+      obx.QueryIntegerProperty<RecordDraftEntity>(_entities[2].properties[5]);
+
+  /// See [RecordDraftEntity.fieldPayloadJson].
+  static final fieldPayloadJson = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[6],
+  );
+
+  /// See [RecordDraftEntity.baseLastModified].
+  static final baseLastModified = obx.QueryDateProperty<RecordDraftEntity>(
+    _entities[2].properties[7],
+  );
+
+  /// See [RecordDraftEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<RecordDraftEntity>(
+    _entities[2].properties[8],
+  );
+
+  /// See [RecordDraftEntity.lastSavedAt].
+  static final lastSavedAt = obx.QueryDateProperty<RecordDraftEntity>(
+    _entities[2].properties[9],
+  );
 }

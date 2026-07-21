@@ -77,5 +77,16 @@
   "@importResult": {"placeholders": {"inserted": {"type": "int"}, "updated": {"type": "int"}, "skipped": {"type": "int"}}},
   "embeddingFailed": "{count}件の検索インデックスは後で再生成する必要があります。",
   "@embeddingFailed": {"placeholders": {"count": {"type": "int"}}},
-  "transferError": "バックアップを処理できませんでした。ファイル形式と空き容量を確認してください。"
+  "transferError": "バックアップを処理できませんでした。ファイル形式と空き容量を確認してください。",
+  "draftSaving": "下書きを保存中…",
+  "draftSaved": "下書きを保存しました",
+  "draftSaveFailed": "下書きを保存できませんでした",
+  "draftSourceChanged": "この下書きの作成後に元の記録が変更されました。保存前に内容を確認してください。",
+  "discardDraft": "下書きを破棄",
+  "discardDraftTitle": "この下書きを破棄しますか？",
+  "discardDraftDescription": "作成中の内容は復元できません。",
+  "draftsInProgress": "作成中の記録 {count}件",
+  "@draftsInProgress": {"placeholders": {"count": {"type": "int"}}},
+  "continueWriting": "続きを書く",
+  "startNewDraft": "新しく作成"
 }

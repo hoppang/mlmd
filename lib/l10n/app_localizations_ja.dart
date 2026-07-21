@@ -216,4 +216,36 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get transferError => 'バックアップを処理できませんでした。ファイル形式と空き容量を確認してください。';
+
+  @override
+  String get draftSaving => '下書きを保存中…';
+
+  @override
+  String get draftSaved => '下書きを保存しました';
+
+  @override
+  String get draftSaveFailed => '下書きを保存できませんでした';
+
+  @override
+  String get draftSourceChanged => 'この下書きの作成後に元の記録が変更されました。保存前に内容を確認してください。';
+
+  @override
+  String get discardDraft => '下書きを破棄';
+
+  @override
+  String get discardDraftTitle => 'この下書きを破棄しますか？';
+
+  @override
+  String get discardDraftDescription => '作成中の内容は復元できません。';
+
+  @override
+  String draftsInProgress(int count) {
+    return '作成中の記録 $count件';
+  }
+
+  @override
+  String get continueWriting => '続きを書く';
+
+  @override
+  String get startNewDraft => '新しく作成';
 }

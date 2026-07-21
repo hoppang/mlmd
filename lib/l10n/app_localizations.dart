@@ -489,6 +489,66 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'백업을 처리하지 못했습니다. 파일 형식과 저장 공간을 확인해 주세요.'**
   String get transferError;
+
+  /// No description provided for @draftSaving.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시 저장 중…'**
+  String get draftSaving;
+
+  /// No description provided for @draftSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시 저장됨'**
+  String get draftSaved;
+
+  /// No description provided for @draftSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시 저장하지 못했어요'**
+  String get draftSaveFailed;
+
+  /// No description provided for @draftSourceChanged.
+  ///
+  /// In ko, this message translates to:
+  /// **'초안을 만든 뒤 원본 기록이 변경됐어요. 저장하기 전에 내용을 확인해 주세요.'**
+  String get draftSourceChanged;
+
+  /// No description provided for @discardDraft.
+  ///
+  /// In ko, this message translates to:
+  /// **'초안 버리기'**
+  String get discardDraft;
+
+  /// No description provided for @discardDraftTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 초안을 버릴까요?'**
+  String get discardDraftTitle;
+
+  /// No description provided for @discardDraftDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성 중인 내용은 복구할 수 없습니다.'**
+  String get discardDraftDescription;
+
+  /// No description provided for @draftsInProgress.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성 중인 기록 {count}개'**
+  String draftsInProgress(int count);
+
+  /// No description provided for @continueWriting.
+  ///
+  /// In ko, this message translates to:
+  /// **'이어서 작성'**
+  String get continueWriting;
+
+  /// No description provided for @startNewDraft.
+  ///
+  /// In ko, this message translates to:
+  /// **'새로 작성'**
+  String get startNewDraft;
 }
 
 class _AppLocalizationsDelegate

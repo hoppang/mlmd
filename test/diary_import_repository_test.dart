@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
+import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/transfer/canonical_transfer_document.dart';
@@ -15,11 +16,14 @@ class _TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<DiaryEntity> diaryBox;
   @override
   late final Box<ActivityEntity> activityBox;
+  @override
+  late final Box<RecordDraftEntity> draftBox;
   final Directory directory;
 
   _TestObjectBoxHelper(this.store, this.directory) {
     diaryBox = Box<DiaryEntity>(store);
     activityBox = Box<ActivityEntity>(store);
+    draftBox = Box<RecordDraftEntity>(store);
   }
 
   static Future<_TestObjectBoxHelper> create() async {
