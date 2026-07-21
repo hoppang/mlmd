@@ -27,7 +27,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get titleLabel => 'タイトル (任意)';
 
   @override
-  String get titleHint => '空白の場合、AIが自動でタイトルを生成します。';
+  String get titleHint => '空白の場合、内容の最初の行をタイトルにします。';
 
   @override
   String get contentLabel => '内容（原文）';
@@ -48,10 +48,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get manualModeLabel => '直接入力';
 
   @override
-  String get analyzeButton => 'AI分析';
+  String get analyzeButton => 'AIで整理';
 
   @override
-  String get analyzingLabel => 'AIが分析中です…';
+  String get analyzingLabel => 'AIが記録を整理しています…';
+
+  @override
+  String get saveRecord => '保存';
+
+  @override
+  String get aiUnavailableDescription => '現在AIを使用できません。元の記録はそのまま保存できます。';
+
+  @override
+  String get aiAnalysisFailed => 'AI整理に失敗しました。元の文章はそのまま残っています。';
+
+  @override
+  String get retryAiAnalysis => 'AI整理を再試行';
+
+  @override
+  String get aiAnalysisApplied => 'AI整理の結果を適用しました。入力した元の文章はそのまま保存されます。';
 
   @override
   String get previewSection => '分析結果のプレビュー';

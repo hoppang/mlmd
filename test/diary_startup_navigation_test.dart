@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +22,9 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   DateTime? updatedOccurredAt;
   List<ActivitySummary>? updatedActivities;
   bool addedDiary = false;
+  String? addedTitle;
+  String? addedSummary;
+  String? addedContent;
 
   @override
   List<DiaryEntity> build() => diaries;
@@ -34,6 +39,9 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     String? consumedDraftId,
   }) async {
     addedDiary = true;
+    addedTitle = title;
+    addedSummary = summary;
+    addedContent = content;
   }
 
   @override
@@ -48,6 +56,31 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   }) async {
     updatedOccurredAt = occurredAt;
     updatedActivities = activitySummaries;
+  }
+}
+
+class _TestDiaryAnalysisService implements DiaryAnalysisService {
+  _TestDiaryAnalysisService({
+    required this.isAvailable,
+    required this.onAnalyze,
+  });
+
+  @override
+  final bool isAvailable;
+  final Future<DiaryAnalysisOutcome> Function(
+    String content,
+    String languageCode,
+  )
+  onAnalyze;
+  int callCount = 0;
+
+  @override
+  Future<DiaryAnalysisOutcome> analyze(
+    String content, {
+    String languageCode = 'ko',
+  }) {
+    callCount += 1;
+    return onAnalyze(content, languageCode);
   }
 }
 
@@ -108,6 +141,7 @@ Widget _buildApp({
   List<DiaryEntity> diaries = const [],
   List<RecordDraftEntity> drafts = const [],
   _TestDiaryListNotifier? diaryNotifier,
+  DiaryAnalysisService? analysisService,
 }) {
   return ProviderScope(
     overrides: [
@@ -120,6 +154,8 @@ Widget _buildApp({
       recordDraftListProvider.overrideWith(
         () => _TestDraftListNotifier(drafts),
       ),
+      if (analysisService != null)
+        diaryAnalysisServiceProvider.overrideWithValue(analysisService),
     ],
     child: const MaterialApp(
       localizationsDelegates: [
@@ -199,14 +235,138 @@ void main() {
     expect(find.byType(DiaryFormPage), findsOneWidget);
     expect(find.text('작성 중인 메모'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FloatingActionButton, 'AI 분석'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FloatingActionButton, '확인'));
+    final aiButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('ai-analyze-button')),
+    );
+    expect(aiButton.onPressed, isNull);
+    expect(
+      find.text('현재 AI를 사용할 수 없어요. 원문 기록은 그대로 저장할 수 있어요.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.widgetWithText(FloatingActionButton, '저장'));
     await tester.pumpAndSettle();
 
     expect(notifier.addedDiary, isTrue);
+    expect(notifier.addedTitle, '작성 중인 메모');
+    expect(notifier.addedContent, '작성 중인 메모');
     expect(find.byType(DiaryDemoPage), findsOneWidget);
     expect(find.text('작성 중인 기록 1개'), findsNothing);
+  });
+
+  testWidgets('AI 정리는 진행 상태를 표시하고 성공해도 원문을 보존한다', (tester) async {
+    final now = DateTime.now();
+    final draft = RecordDraftEntity(
+      draftId: 'draft-ai-success',
+      draftKind: 'createRecord',
+      recordType: 'diary',
+      payloadSchemaVersion: DiaryDraftPayload.schemaVersion,
+      fieldPayloadJson: const DiaryDraftPayload(
+        inputMode: 'simple',
+        title: '',
+        rawText: 'AI에게 전달할 원문',
+        summary: '',
+        activities: [],
+      ).encode(),
+      createdAt: now,
+      lastSavedAt: now,
+    );
+    final completion = Completer<DiaryAnalysisOutcome>();
+    final service = _TestDiaryAnalysisService(
+      isAvailable: true,
+      onAnalyze: (_, _) => completion.future,
+    );
+    final notifier = _TestDiaryListNotifier(const []);
+
+    await tester.pumpWidget(
+      _buildApp(
+        drafts: [draft],
+        diaryNotifier: notifier,
+        analysisService: service,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('이어서 작성'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('ai-analyze-button')));
+    await tester.pump();
+
+    expect(find.text('AI가 기록을 정리하고 있어요…'), findsOneWidget);
+    expect(
+      tester
+          .widget<OutlinedButton>(find.byKey(const Key('ai-analyze-button')))
+          .onPressed,
+      isNull,
+    );
+    expect(find.text('AI에게 전달할 원문'), findsOneWidget);
+    expect(
+      tester
+          .widget<FloatingActionButton>(
+            find.widgetWithText(FloatingActionButton, '저장'),
+          )
+          .onPressed,
+      isNotNull,
+    );
+
+    completion.complete(
+      const DiaryAnalysisOutcome.success(
+        DiaryExtractionResult(title: 'AI 제목', summary: 'AI 요약', activities: []),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('AI 정리 결과를 적용했어요. 입력한 원문은 그대로 보존됩니다.'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FloatingActionButton, '저장'));
+    await tester.pumpAndSettle();
+
+    expect(service.callCount, 1);
+    expect(notifier.addedTitle, 'AI 제목');
+    expect(notifier.addedSummary, 'AI 요약');
+    expect(notifier.addedContent, 'AI에게 전달할 원문');
+  });
+
+  testWidgets('AI 정리 실패 후 원문을 유지하고 다시 시도할 수 있다', (tester) async {
+    final now = DateTime.now();
+    final draft = RecordDraftEntity(
+      draftId: 'draft-ai-failure',
+      draftKind: 'createRecord',
+      recordType: 'diary',
+      payloadSchemaVersion: DiaryDraftPayload.schemaVersion,
+      fieldPayloadJson: const DiaryDraftPayload(
+        inputMode: 'simple',
+        title: '',
+        rawText: '실패해도 남을 원문',
+        summary: '',
+        activities: [],
+      ).encode(),
+      createdAt: now,
+      lastSavedAt: now,
+    );
+    final service = _TestDiaryAnalysisService(
+      isAvailable: true,
+      onAnalyze: (_, _) async => const DiaryAnalysisOutcome.failed(),
+    );
+
+    await tester.pumpWidget(
+      _buildApp(drafts: [draft], analysisService: service),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('이어서 작성'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('ai-analyze-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('AI 정리에 실패했어요. 원문은 그대로 유지됩니다.'), findsOneWidget);
+    expect(find.text('실패해도 남을 원문'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'AI 정리 다시 시도'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('ai-analyze-button')));
+    await tester.tap(find.byKey(const Key('ai-analyze-button')));
+    await tester.pumpAndSettle();
+
+    expect(service.callCount, 2);
   });
 
   testWidgets('기록 수정 시 메모와 이벤트의 발생 시각을 보존한다', (tester) async {

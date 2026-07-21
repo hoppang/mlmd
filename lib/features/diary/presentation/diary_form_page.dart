@@ -6,7 +6,6 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/record_draft_repository.dart';
 import '../../../services/llm_diary_service.dart';
-import '../../../services/llm_title_service.dart';
 import '../../drafts/application/draft_autosave_controller.dart';
 import '../../drafts/application/active_draft_registry.dart';
 import '../application/diary_draft_payload.dart';
@@ -26,6 +25,8 @@ class DiaryFormPage extends ConsumerStatefulWidget {
 // 입력 모드
 // ---------------------------------------------------------------------------
 enum _InputMode { simple, manual }
+
+enum _AiAnalysisState { idle, unavailable, failed, applied }
 
 // ---------------------------------------------------------------------------
 // 이벤트 항목 (UI용 가변 모델)
@@ -59,6 +60,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
   // 간단 입력 모드
   late final TextEditingController _rawController;
   bool _isAnalyzing = false;
+  _AiAnalysisState _aiAnalysisState = _AiAnalysisState.idle;
 
   // 직접 입력 모드
   late final TextEditingController _summaryController;
@@ -247,18 +249,28 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
   // ---------------------------------------------------------------------------
   Future<void> _onAnalyze() async {
     final raw = _rawController.text.trim();
-    if (raw.isEmpty) return;
+    final service = ref.read(diaryAnalysisServiceProvider);
+    if (raw.isEmpty || !service.isAvailable || _isAnalyzing) return;
     _draftController.flush();
-    setState(() => _isAnalyzing = true);
+    setState(() {
+      _isAnalyzing = true;
+      _aiAnalysisState = _AiAnalysisState.idle;
+    });
     try {
       final locale = Localizations.localeOf(context).languageCode;
-      final result = await LlmDiaryService().generate(
-        raw,
-        languageCode: locale,
-      );
+      final outcome = await service.analyze(raw, languageCode: locale);
       if (!mounted) return;
+      if (outcome.status == DiaryAnalysisStatus.unavailable) {
+        setState(() => _aiAnalysisState = _AiAnalysisState.unavailable);
+        return;
+      }
+      final result = outcome.result;
+      if (outcome.status == DiaryAnalysisStatus.failed || result == null) {
+        setState(() => _aiAnalysisState = _AiAnalysisState.failed);
+        return;
+      }
       setState(() {
-        // 봸석 결과를 상세 필드에 반영
+        // 분석 결과를 상세 필드에 반영
         _titleController.text = result.title;
         _summaryController.text = result.summary;
         for (final activity in _activities) {
@@ -280,8 +292,11 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         }
         // 분석 완료 후 자동으로 상세 탭으로 전환
         _mode = _InputMode.manual;
+        _aiAnalysisState = _AiAnalysisState.applied;
       });
       _draftController.flush();
+    } catch (_) {
+      if (mounted) setState(() => _aiAnalysisState = _AiAnalysisState.failed);
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
@@ -294,14 +309,6 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     final loc = AppLocalizations.of(context)!;
     _draftController.flush();
 
-    if (_mode == _InputMode.simple && widget.diary == null) {
-      final raw = _rawController.text.trim();
-      if (raw.isEmpty) return;
-      // 간단 입력 모드에서 확인(FAB) 클릭 시, LLM 분석 수행 후 상세 모드로 자동 전환 (저장 안 함)
-      await _onAnalyze();
-      return;
-    }
-
     String title = _titleController.text.trim();
     // 상세 입력 모드
     String summary = _summaryController.text.trim();
@@ -312,11 +319,10 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
 
     if (content.isEmpty && summary.isEmpty) return;
 
-    // 제목 미입력 시 LLM
+    // AI는 저장의 필수 조건이 아니다. 제목이 비어 있으면 원문에서 로컬로 만든다.
     if (title.isEmpty && (content.isNotEmpty || summary.isNotEmpty)) {
-      final base = summary.isNotEmpty ? summary : content;
-      final locale = Localizations.localeOf(context).languageCode;
-      title = await LlmTitleService().generate(base, languageCode: locale);
+      final base = content.isNotEmpty ? content : summary;
+      title = _fallbackTitle(base);
     }
 
     List<ActivitySummary> activities = _activities
@@ -503,6 +509,11 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
   Widget build(BuildContext context) {
     final isEdit = widget.diary != null;
     final loc = AppLocalizations.of(context)!;
+    final serviceAvailable = ref
+        .watch(diaryAnalysisServiceProvider)
+        .isAvailable;
+    final aiAvailable =
+        serviceAvailable && _aiAnalysisState != _AiAnalysisState.unavailable;
 
     return PopScope<Object?>(
       canPop: _allowPop,
@@ -581,42 +592,80 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
                   ),
                 ),
               ),
+            _buildAiStatus(loc, aiAvailable),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: _mode == _InputMode.simple
-                    ? _buildSimpleMode(loc)
+                    ? _buildSimpleMode(loc, aiAvailable)
                     : _buildManualMode(loc),
               ),
             ),
           ],
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: _isAnalyzing ? null : _onConfirm,
+          onPressed: _onConfirm,
           backgroundColor: Colors.teal.shade600,
           foregroundColor: Colors.white,
-          icon: _isAnalyzing
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Icon(
-                  (_mode == _InputMode.simple && !isEdit)
-                      ? Icons.auto_awesome
-                      : Icons.check,
-                ),
-          label: Text(
-            isEdit
-                ? loc.edit
-                : (_mode == _InputMode.simple
-                      ? loc.analyzeButton
-                      : loc.confirm),
-          ),
+          icon: const Icon(Icons.check),
+          label: Text(isEdit ? loc.edit : loc.saveRecord),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAiStatus(AppLocalizations loc, bool aiAvailable) {
+    final (message, icon, color) = switch ((
+      _isAnalyzing,
+      aiAvailable,
+      _aiAnalysisState,
+    )) {
+      (true, _, _) => (
+        loc.analyzingLabel,
+        Icons.auto_awesome,
+        Theme.of(context).colorScheme.primary,
+      ),
+      (false, false, _) when _mode == _InputMode.simple => (
+        loc.aiUnavailableDescription,
+        Icons.info_outline,
+        Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      (false, true, _AiAnalysisState.failed) => (
+        loc.aiAnalysisFailed,
+        Icons.error_outline,
+        Theme.of(context).colorScheme.error,
+      ),
+      (false, _, _AiAnalysisState.applied) => (
+        loc.aiAnalysisApplied,
+        Icons.check_circle_outline,
+        Theme.of(context).colorScheme.primary,
+      ),
+      _ => ('', Icons.info_outline, Colors.transparent),
+    };
+    if (message.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isAnalyzing)
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: color),
+            )
+          else
+            Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -673,6 +722,14 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     return parts.join('\n');
   }
 
+  String _fallbackTitle(String source) {
+    final firstLine = source
+        .split('\n')
+        .map((line) => line.trim())
+        .firstWhere((line) => line.isNotEmpty, orElse: () => source.trim());
+    return String.fromCharCodes(firstLine.runes.take(20));
+  }
+
   // ---------------------------------------------------------------------------
   // 간단 입력 모드 UI
   // ---------------------------------------------------------------------------
@@ -702,7 +759,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     );
   }
 
-  Widget _buildSimpleMode(AppLocalizations loc) {
+  Widget _buildSimpleMode(AppLocalizations loc, bool aiAvailable) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -738,6 +795,17 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
             ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          key: const Key('ai-analyze-button'),
+          onPressed: aiAvailable && !_isAnalyzing ? _onAnalyze : null,
+          icon: const Icon(Icons.auto_awesome),
+          label: Text(
+            _aiAnalysisState == _AiAnalysisState.failed
+                ? loc.retryAiAnalysis
+                : loc.analyzeButton,
           ),
         ),
         const SizedBox(height: 80), // FAB 여백

@@ -139,7 +139,7 @@ abstract class AppLocalizations {
   /// No description provided for @titleHint.
   ///
   /// In ko, this message translates to:
-  /// **'비워두면 AI가 자동으로 제목을 생성합니다.'**
+  /// **'비워두면 내용의 첫 줄로 제목을 만듭니다.'**
   String get titleHint;
 
   /// No description provided for @contentLabel.
@@ -181,14 +181,44 @@ abstract class AppLocalizations {
   /// No description provided for @analyzeButton.
   ///
   /// In ko, this message translates to:
-  /// **'AI 분석'**
+  /// **'AI로 정리'**
   String get analyzeButton;
 
   /// No description provided for @analyzingLabel.
   ///
   /// In ko, this message translates to:
-  /// **'AI가 분석 중입니다…'**
+  /// **'AI가 기록을 정리하고 있어요…'**
   String get analyzingLabel;
+
+  /// No description provided for @saveRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장'**
+  String get saveRecord;
+
+  /// No description provided for @aiUnavailableDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 AI를 사용할 수 없어요. 원문 기록은 그대로 저장할 수 있어요.'**
+  String get aiUnavailableDescription;
+
+  /// No description provided for @aiAnalysisFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 정리에 실패했어요. 원문은 그대로 유지됩니다.'**
+  String get aiAnalysisFailed;
+
+  /// No description provided for @retryAiAnalysis.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 정리 다시 시도'**
+  String get retryAiAnalysis;
+
+  /// No description provided for @aiAnalysisApplied.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 정리 결과를 적용했어요. 입력한 원문은 그대로 보존됩니다.'**
+  String get aiAnalysisApplied;
 
   /// No description provided for @previewSection.
   ///

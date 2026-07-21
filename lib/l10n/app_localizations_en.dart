@@ -28,7 +28,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get titleHint =>
-      'If left empty, AI will automatically generate a title.';
+      'If left empty, the first line of the content becomes the title.';
 
   @override
   String get contentLabel => 'Content (Original)';
@@ -49,10 +49,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manualModeLabel => 'Manual Input';
 
   @override
-  String get analyzeButton => 'AI Analyze';
+  String get analyzeButton => 'Organize with AI';
 
   @override
-  String get analyzingLabel => 'AI is analyzing…';
+  String get analyzingLabel => 'AI is organizing the record…';
+
+  @override
+  String get saveRecord => 'Save';
+
+  @override
+  String get aiUnavailableDescription =>
+      'AI is currently unavailable. You can still save the original record.';
+
+  @override
+  String get aiAnalysisFailed =>
+      'AI organization failed. Your original text is unchanged.';
+
+  @override
+  String get retryAiAnalysis => 'Retry AI organization';
+
+  @override
+  String get aiAnalysisApplied =>
+      'AI results were applied. Your original text is still preserved.';
 
   @override
   String get previewSection => 'Analysis Preview';
