@@ -328,23 +328,143 @@ abstract class AppLocalizations {
   /// **'이 일기를 정말 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.'**
   String get deleteConfirmDesc;
 
+  /// No description provided for @todayTab.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘'**
+  String get todayTab;
+
+  /// No description provided for @searchTab.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색'**
+  String get searchTab;
+
+  /// No description provided for @searchTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 검색'**
+  String get searchTitle;
+
   /// No description provided for @searchHint.
   ///
   /// In ko, this message translates to:
-  /// **'지난 기록을 찾아봅니다.'**
+  /// **'메모나 이벤트를 검색해 보세요.'**
   String get searchHint;
 
-  /// No description provided for @similarCount.
+  /// No description provided for @searchAction.
   ///
   /// In ko, this message translates to:
-  /// **'유사한 일기 {count}건'**
-  String similarCount(int count);
+  /// **'검색'**
+  String get searchAction;
 
-  /// No description provided for @noSimilarDiary.
+  /// No description provided for @searchIntroTitle.
   ///
   /// In ko, this message translates to:
-  /// **'유사한 일기가 없습니다.'**
-  String get noSimilarDiary;
+  /// **'지난 기록을 찾아보세요'**
+  String get searchIntroTitle;
+
+  /// No description provided for @searchIntroDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모 내용이나 수유, 투약 같은 이벤트 이름으로 찾을 수 있어요.'**
+  String get searchIntroDescription;
+
+  /// No description provided for @searchResultCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색 결과 {count}건'**
+  String searchResultCount(int count);
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In ko, this message translates to:
+  /// **'일치하는 기록이 없어요.'**
+  String get searchNoResults;
+
+  /// No description provided for @searchNoResultsHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색어를 줄이거나 다른 표현으로 다시 찾아보세요.'**
+  String get searchNoResultsHint;
+
+  /// No description provided for @searchFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색하지 못했어요. 원본 기록은 그대로 유지됩니다.'**
+  String get searchFailed;
+
+  /// No description provided for @retrySearch.
+  ///
+  /// In ko, this message translates to:
+  /// **'다시 검색'**
+  String get retrySearch;
+
+  /// No description provided for @searchSortLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'정렬'**
+  String get searchSortLabel;
+
+  /// No description provided for @searchSortRelevance.
+  ///
+  /// In ko, this message translates to:
+  /// **'관련도순'**
+  String get searchSortRelevance;
+
+  /// No description provided for @searchSortNewest.
+  ///
+  /// In ko, this message translates to:
+  /// **'최신순'**
+  String get searchSortNewest;
+
+  /// No description provided for @searchSortOldest.
+  ///
+  /// In ko, this message translates to:
+  /// **'오래된순'**
+  String get searchSortOldest;
+
+  /// No description provided for @searchMatchExact.
+  ///
+  /// In ko, this message translates to:
+  /// **'정확한 문구 일치'**
+  String get searchMatchExact;
+
+  /// No description provided for @searchMatchActivityType.
+  ///
+  /// In ko, this message translates to:
+  /// **'이벤트 종류 일치'**
+  String get searchMatchActivityType;
+
+  /// No description provided for @searchMatchRelated.
+  ///
+  /// In ko, this message translates to:
+  /// **'관련 표현'**
+  String get searchMatchRelated;
+
+  /// No description provided for @searchMemoResult.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모'**
+  String get searchMemoResult;
+
+  /// No description provided for @searchActivityResult.
+  ///
+  /// In ko, this message translates to:
+  /// **'이벤트'**
+  String get searchActivityResult;
+
+  /// No description provided for @searchReadOnly.
+  ///
+  /// In ko, this message translates to:
+  /// **'읽기 전용'**
+  String get searchReadOnly;
+
+  /// No description provided for @searchResultDetail.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색 결과 상세'**
+  String get searchResultDetail;
 
   /// No description provided for @settings.
   ///

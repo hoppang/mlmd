@@ -123,15 +123,75 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deleteConfirmDesc => '本当にこの日記を削除しますか？削除後は元に戻せません。';
 
   @override
-  String get searchHint => '過去の記録を検索します。';
+  String get todayTab => '今日';
 
   @override
-  String similarCount(int count) {
-    return '類似した日記 $count件';
+  String get searchTab => '検索';
+
+  @override
+  String get searchTitle => '記録を検索';
+
+  @override
+  String get searchHint => 'メモやイベントを検索してください。';
+
+  @override
+  String get searchAction => '検索';
+
+  @override
+  String get searchIntroTitle => '過去の記録を探す';
+
+  @override
+  String get searchIntroDescription => 'メモの内容や授乳、投薬などのイベント名で検索できます。';
+
+  @override
+  String searchResultCount(int count) {
+    return '検索結果 $count件';
   }
 
   @override
-  String get noSimilarDiary => '類似した日記はありません。';
+  String get searchNoResults => '一致する記録がありません。';
+
+  @override
+  String get searchNoResultsHint => '検索語を短くするか、別の表現を試してください。';
+
+  @override
+  String get searchFailed => '検索できませんでした。元の記録は変更されていません。';
+
+  @override
+  String get retrySearch => 'もう一度検索';
+
+  @override
+  String get searchSortLabel => '並び順';
+
+  @override
+  String get searchSortRelevance => '関連度順';
+
+  @override
+  String get searchSortNewest => '新しい順';
+
+  @override
+  String get searchSortOldest => '古い順';
+
+  @override
+  String get searchMatchExact => '完全一致';
+
+  @override
+  String get searchMatchActivityType => 'イベント種類の一致';
+
+  @override
+  String get searchMatchRelated => '関連する表現';
+
+  @override
+  String get searchMemoResult => 'メモ';
+
+  @override
+  String get searchActivityResult => 'イベント';
+
+  @override
+  String get searchReadOnly => '読み取り専用';
+
+  @override
+  String get searchResultDetail => '検索結果の詳細';
 
   @override
   String get settings => '設定';

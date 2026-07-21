@@ -12,22 +12,40 @@ import 'package:mlmd/l10n/app_localizations.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
+import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
 import 'package:mlmd/services/llm_diary_service.dart';
 
 class _TestDiaryListNotifier extends DiaryListNotifier {
-  _TestDiaryListNotifier(this.diaries);
+  _TestDiaryListNotifier(
+    this.diaries, {
+    this.searchResults = const [],
+    this.searchError,
+  });
 
   final List<DiaryEntity> diaries;
+  final List<DiarySearchResult> searchResults;
+  final Object? searchError;
   DateTime? updatedOccurredAt;
   List<ActivitySummary>? updatedActivities;
   bool addedDiary = false;
   String? addedTitle;
   String? addedSummary;
   String? addedContent;
+  String? searchedQuery;
 
   @override
   List<DiaryEntity> build() => diaries;
+
+  @override
+  Future<List<DiarySearchResult>> searchRecords(
+    String query, {
+    int limit = 50,
+  }) async {
+    searchedQuery = query;
+    if (searchError != null) throw searchError!;
+    return searchResults.take(limit).toList(growable: false);
+  }
 
   @override
   Future<void> addDiary(
@@ -367,6 +385,147 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(service.callCount, 2);
+  });
+
+  testWidgets('검색 탭은 메모와 이벤트 결과를 이유와 함께 표시하고 읽기 전용으로 연다', (tester) async {
+    final older = DiaryEntity(
+      id: 21,
+      recordId: 'older-search-record',
+      date: DateTime(2026, 7, 18, 9),
+      title: '투약이 있던 날',
+      content: '열이 올라 상태를 살폈다.',
+      lastModified: DateTime(2026, 7, 18, 10),
+    );
+    final medication = ActivityEntity(
+      id: 31,
+      type: '투약',
+      time: DateTime(2026, 7, 18, 9, 30),
+      details: '해열제 복용',
+      lastModified: DateTime(2026, 7, 18, 9, 31),
+    );
+    older.activities.add(medication);
+    final newer = DiaryEntity(
+      id: 22,
+      recordId: 'newer-search-record',
+      date: DateTime(2026, 7, 20, 14),
+      title: '회복 메모',
+      content: '오후에는 열이 내렸다.',
+      lastModified: DateTime(2026, 7, 20, 15),
+    );
+    final notifier = _TestDiaryListNotifier(
+      [newer, older],
+      searchResults: [
+        DiarySearchResult(
+          diary: older,
+          activity: medication,
+          reason: DiarySearchMatchReason.activityType,
+          relevanceScore: 100,
+        ),
+        DiarySearchResult(
+          diary: newer,
+          reason: DiarySearchMatchReason.exactText,
+          relevanceScore: 80,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      _buildApp(diaries: [newer, older], diaryNotifier: notifier),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('search-query-field')), findsNothing);
+    await tester.tap(find.text('검색'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('기록 검색'), findsOneWidget);
+    expect(find.text('지난 기록을 찾아보세요'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('search-query-field')), '투약');
+    await tester.tap(find.byKey(const Key('search-submit-button')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.searchedQuery, '투약');
+    expect(find.text('검색 결과 2건'), findsOneWidget);
+    expect(find.text('이벤트 종류 일치'), findsOneWidget);
+    expect(find.text('정확한 문구 일치'), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
+    final activityTitle = find.descendant(
+      of: find.byKey(const ValueKey('activity:31')),
+      matching: find.text('투약'),
+    );
+    final memoTitle = find.descendant(
+      of: find.byKey(const ValueKey('memo:22')),
+      matching: find.text('회복 메모'),
+    );
+    expect(
+      tester.getTopLeft(activityTitle).dy,
+      lessThan(tester.getTopLeft(memoTitle).dy),
+    );
+
+    await tester.tap(find.byKey(const Key('search-sort-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('최신순').last);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(memoTitle).dy,
+      lessThan(tester.getTopLeft(activityTitle).dy),
+    );
+
+    await tester.tap(activityTitle);
+    await tester.pumpAndSettle();
+
+    expect(find.text('검색 결과 상세'), findsOneWidget);
+    expect(find.text('읽기 전용'), findsOneWidget);
+    expect(find.byType(DiaryFormPage), findsNothing);
+    expect(find.text('해열제 복용'), findsAtLeastNWidgets(1));
+
+    await tester.tap(find.byKey(const Key('search-result-edit-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DiaryFormPage), findsOneWidget);
+  });
+
+  testWidgets('검색 결과가 없으면 검색어를 유지하고 다시 찾는 방법을 안내한다', (tester) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('검색'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('search-query-field')),
+      '없는 기록',
+    );
+    await tester.tap(find.byKey(const Key('search-submit-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('일치하는 기록이 없어요.'), findsOneWidget);
+    expect(find.text('검색어를 줄이거나 다른 표현으로 다시 찾아보세요.'), findsOneWidget);
+    expect(find.text('없는 기록'), findsOneWidget);
+  });
+
+  testWidgets('검색 실패를 원본 손상으로 오해하지 않도록 안내하고 재시도를 제공한다', (tester) async {
+    final notifier = _TestDiaryListNotifier(
+      const [],
+      searchError: StateError('test search failure'),
+    );
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('검색'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('search-query-field')),
+      '검색 오류',
+    );
+    await tester.tap(find.byKey(const Key('search-submit-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('검색하지 못했어요. 원본 기록은 그대로 유지됩니다.'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, '다시 검색'), findsOneWidget);
   });
 
   testWidgets('기록 수정 시 메모와 이벤트의 발생 시각을 보존한다', (tester) async {

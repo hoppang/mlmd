@@ -128,15 +128,78 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to delete this diary? This action cannot be undone.';
 
   @override
-  String get searchHint => 'Search past records.';
+  String get todayTab => 'Today';
 
   @override
-  String similarCount(int count) {
-    return '$count similar diaries';
+  String get searchTab => 'Search';
+
+  @override
+  String get searchTitle => 'Search records';
+
+  @override
+  String get searchHint => 'Search notes or events.';
+
+  @override
+  String get searchAction => 'Search';
+
+  @override
+  String get searchIntroTitle => 'Find past records';
+
+  @override
+  String get searchIntroDescription =>
+      'Search by note text or event names such as feeding and medication.';
+
+  @override
+  String searchResultCount(int count) {
+    return '$count results';
   }
 
   @override
-  String get noSimilarDiary => 'No similar diaries found.';
+  String get searchNoResults => 'No matching records.';
+
+  @override
+  String get searchNoResultsHint =>
+      'Try a shorter query or a different phrase.';
+
+  @override
+  String get searchFailed =>
+      'Search failed. Your original records are unchanged.';
+
+  @override
+  String get retrySearch => 'Search again';
+
+  @override
+  String get searchSortLabel => 'Sort';
+
+  @override
+  String get searchSortRelevance => 'Relevance';
+
+  @override
+  String get searchSortNewest => 'Newest';
+
+  @override
+  String get searchSortOldest => 'Oldest';
+
+  @override
+  String get searchMatchExact => 'Exact phrase match';
+
+  @override
+  String get searchMatchActivityType => 'Event type match';
+
+  @override
+  String get searchMatchRelated => 'Related expression';
+
+  @override
+  String get searchMemoResult => 'Note';
+
+  @override
+  String get searchActivityResult => 'Event';
+
+  @override
+  String get searchReadOnly => 'Read only';
+
+  @override
+  String get searchResultDetail => 'Search result details';
 
   @override
   String get settings => 'Settings';

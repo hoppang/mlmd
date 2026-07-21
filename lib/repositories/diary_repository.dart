@@ -7,17 +7,33 @@ import '../services/embedding_service.dart';
 import '../transfer/canonical_transfer_document.dart';
 import 'package:uuid/uuid.dart';
 
-/// 유사 검색 결과 모델
-class SimilarDiaryResult {
+enum DiarySearchSource { memo, activity }
+
+enum DiarySearchMatchReason { exactText, activityType, relatedExpression }
+
+/// 검색 화면에 표시할 메모 또는 개별 이벤트 결과입니다.
+class DiarySearchResult {
   final DiaryEntity diary;
+  final ActivityEntity? activity;
+  final DiarySearchMatchReason reason;
 
-  /// 유사도 (0.0 ~ 100.0 %)
-  final double similarityPercent;
+  /// 사용자에게 노출하지 않는 내부 정렬 점수입니다.
+  final double relevanceScore;
 
-  const SimilarDiaryResult({
+  const DiarySearchResult({
     required this.diary,
-    required this.similarityPercent,
+    this.activity,
+    required this.reason,
+    required this.relevanceScore,
   });
+
+  DiarySearchSource get source =>
+      activity == null ? DiarySearchSource.memo : DiarySearchSource.activity;
+
+  DateTime get occurredAt => activity?.time ?? diary.date;
+
+  String get resultKey =>
+      activity == null ? 'memo:${diary.id}' : 'activity:${activity!.id}';
 }
 
 /// 일기 CRUD 처리를 위한 Repository 인터페이스
@@ -64,13 +80,12 @@ abstract class DiaryRepository {
   /// 지정한 ID의 일기를 삭제합니다.
   bool deleteDiary(int id);
 
-  /// 쿼리 텍스트와 의미적으로 유사한 일기를 HNSW 벡터 검색으로 조회합니다.
-  /// [embeddingService]로 쿼리를 임베딩한 뒤 가장 가까운 [limit]개를 반환합니다.
-  /// 반환값은 유사도(%) 내림차순으로 정렬됩니다.
-  Future<List<SimilarDiaryResult>> searchSimilar(
+  /// 키워드가 일치하는 메모·이벤트와 선택형 의미 검색 결과를 반환합니다.
+  /// 임베딩을 사용할 수 없어도 키워드 검색은 정상 동작합니다.
+  Future<List<DiarySearchResult>> searchRecords(
     String query,
     EmbeddingService embeddingService, {
-    int limit = 5,
+    int limit = 50,
   });
 }
 
@@ -369,22 +384,41 @@ class DiaryRepositoryImpl implements DiaryRepository {
   }
 
   @override
-  Future<List<SimilarDiaryResult>> searchSimilar(
+  Future<List<DiarySearchResult>> searchRecords(
     String query,
     EmbeddingService embeddingService, {
-    int limit = 5,
+    int limit = 50,
   }) async {
     if (query.trim().isEmpty || limit <= 0) return [];
 
-    final queryVector = await embeddingService.getQueryEmbedding(query);
+    final normalizedQuery = query.trim();
+    final queryVector = await embeddingService.getQueryEmbedding(
+      normalizedQuery,
+    );
     final exactQuery = _obxHelper.diaryBox
         .query(
-          DiaryEntity_.title.contains(query, caseSensitive: false) |
-              DiaryEntity_.summary.contains(query, caseSensitive: false) |
-              DiaryEntity_.content.contains(query, caseSensitive: false),
+          DiaryEntity_.title.contains(normalizedQuery, caseSensitive: false) |
+              DiaryEntity_.summary.contains(
+                normalizedQuery,
+                caseSensitive: false,
+              ) |
+              DiaryEntity_.content.contains(
+                normalizedQuery,
+                caseSensitive: false,
+              ),
         )
         .build();
     exactQuery.limit = limit;
+    final activityQuery = _obxHelper.activityBox
+        .query(
+          ActivityEntity_.type.contains(normalizedQuery, caseSensitive: false) |
+              ActivityEntity_.details.contains(
+                normalizedQuery,
+                caseSensitive: false,
+              ),
+        )
+        .build();
+    activityQuery.limit = limit;
 
     final vectorQuery = queryVector == null || queryVector.isEmpty
         ? null
@@ -395,13 +429,33 @@ class DiaryRepositoryImpl implements DiaryRepository {
               .build();
 
     try {
-      final results = <int, SimilarDiaryResult>{};
+      final results = <String, DiarySearchResult>{};
       final exactMatches = await exactQuery.findAsync();
       for (final diary in exactMatches) {
-        results[diary.id] = SimilarDiaryResult(
+        final result = DiarySearchResult(
           diary: diary,
-          similarityPercent: 100,
+          reason: DiarySearchMatchReason.exactText,
+          relevanceScore: 100,
         );
+        results[result.resultKey] = result;
+      }
+
+      final activityMatches = await activityQuery.findAsync();
+      for (final activity in activityMatches) {
+        final diary = activity.diary.target;
+        if (diary == null) continue;
+        final typeMatches = activity.type.toLowerCase().contains(
+          normalizedQuery.toLowerCase(),
+        );
+        final result = DiarySearchResult(
+          diary: diary,
+          activity: activity,
+          reason: typeMatches
+              ? DiarySearchMatchReason.activityType
+              : DiarySearchMatchReason.exactText,
+          relevanceScore: 100,
+        );
+        results[result.resultKey] = result;
       }
 
       final withScores = vectorQuery == null
@@ -411,21 +465,27 @@ class DiaryRepositoryImpl implements DiaryRepository {
         final distance = item.score;
         final cosSim = 1.0 - (distance / 2.0);
         final mapped = (cosSim - 0.82) / (1.0 - 0.82) * 100.0;
-        final candidate = SimilarDiaryResult(
+        final candidate = DiarySearchResult(
           diary: item.object,
-          similarityPercent: mapped.clamp(0.0, 100.0),
+          reason: DiarySearchMatchReason.relatedExpression,
+          relevanceScore: mapped.clamp(0.0, 99.0),
         );
-        if (candidate.similarityPercent > 0 &&
-            !results.containsKey(candidate.diary.id)) {
-          results[candidate.diary.id] = candidate;
+        if (candidate.relevanceScore > 0 &&
+            !results.containsKey(candidate.resultKey)) {
+          results[candidate.resultKey] = candidate;
         }
       }
 
       final sorted = results.values.toList()
-        ..sort((a, b) => b.similarityPercent.compareTo(a.similarityPercent));
+        ..sort((a, b) {
+          final relevance = b.relevanceScore.compareTo(a.relevanceScore);
+          if (relevance != 0) return relevance;
+          return b.occurredAt.compareTo(a.occurredAt);
+        });
       return sorted.take(limit).toList(growable: false);
     } finally {
       exactQuery.close();
+      activityQuery.close();
       vectorQuery?.close();
     }
   }

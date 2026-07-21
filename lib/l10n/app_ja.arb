@@ -38,16 +38,36 @@
   "diaryDeleted": "日記が削除されました。",
   "deleteConfirmTitle": "日記の削除",
   "deleteConfirmDesc": "本当にこの日記を削除しますか？削除後は元に戻せません。",
-  "searchHint": "過去の記録を検索します。",
-  "similarCount": "類似した日記 {count}件",
-  "@similarCount": {
+  "todayTab": "今日",
+  "searchTab": "検索",
+  "searchTitle": "記録を検索",
+  "searchHint": "メモやイベントを検索してください。",
+  "searchAction": "検索",
+  "searchIntroTitle": "過去の記録を探す",
+  "searchIntroDescription": "メモの内容や授乳、投薬などのイベント名で検索できます。",
+  "searchResultCount": "検索結果 {count}件",
+  "@searchResultCount": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "noSimilarDiary": "類似した日記はありません。",
+  "searchNoResults": "一致する記録がありません。",
+  "searchNoResultsHint": "検索語を短くするか、別の表現を試してください。",
+  "searchFailed": "検索できませんでした。元の記録は変更されていません。",
+  "retrySearch": "もう一度検索",
+  "searchSortLabel": "並び順",
+  "searchSortRelevance": "関連度順",
+  "searchSortNewest": "新しい順",
+  "searchSortOldest": "古い順",
+  "searchMatchExact": "完全一致",
+  "searchMatchActivityType": "イベント種類の一致",
+  "searchMatchRelated": "関連する表現",
+  "searchMemoResult": "メモ",
+  "searchActivityResult": "イベント",
+  "searchReadOnly": "読み取り専用",
+  "searchResultDetail": "検索結果の詳細",
   "settings": "設定",
   "settingsTitle": "設定",
   "languageSetting": "言語設定",

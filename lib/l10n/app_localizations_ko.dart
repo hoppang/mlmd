@@ -124,15 +124,75 @@ class AppLocalizationsKo extends AppLocalizations {
   String get deleteConfirmDesc => '이 일기를 정말 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.';
 
   @override
-  String get searchHint => '지난 기록을 찾아봅니다.';
+  String get todayTab => '오늘';
 
   @override
-  String similarCount(int count) {
-    return '유사한 일기 $count건';
+  String get searchTab => '검색';
+
+  @override
+  String get searchTitle => '기록 검색';
+
+  @override
+  String get searchHint => '메모나 이벤트를 검색해 보세요.';
+
+  @override
+  String get searchAction => '검색';
+
+  @override
+  String get searchIntroTitle => '지난 기록을 찾아보세요';
+
+  @override
+  String get searchIntroDescription => '메모 내용이나 수유, 투약 같은 이벤트 이름으로 찾을 수 있어요.';
+
+  @override
+  String searchResultCount(int count) {
+    return '검색 결과 $count건';
   }
 
   @override
-  String get noSimilarDiary => '유사한 일기가 없습니다.';
+  String get searchNoResults => '일치하는 기록이 없어요.';
+
+  @override
+  String get searchNoResultsHint => '검색어를 줄이거나 다른 표현으로 다시 찾아보세요.';
+
+  @override
+  String get searchFailed => '검색하지 못했어요. 원본 기록은 그대로 유지됩니다.';
+
+  @override
+  String get retrySearch => '다시 검색';
+
+  @override
+  String get searchSortLabel => '정렬';
+
+  @override
+  String get searchSortRelevance => '관련도순';
+
+  @override
+  String get searchSortNewest => '최신순';
+
+  @override
+  String get searchSortOldest => '오래된순';
+
+  @override
+  String get searchMatchExact => '정확한 문구 일치';
+
+  @override
+  String get searchMatchActivityType => '이벤트 종류 일치';
+
+  @override
+  String get searchMatchRelated => '관련 표현';
+
+  @override
+  String get searchMemoResult => '메모';
+
+  @override
+  String get searchActivityResult => '이벤트';
+
+  @override
+  String get searchReadOnly => '읽기 전용';
+
+  @override
+  String get searchResultDetail => '검색 결과 상세';
 
   @override
   String get settings => '설정';

@@ -38,16 +38,36 @@
   "diaryDeleted": "일기가 삭제되었습니다.",
   "deleteConfirmTitle": "일기 삭제",
   "deleteConfirmDesc": "이 일기를 정말 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.",
-  "searchHint": "지난 기록을 찾아봅니다.",
-  "similarCount": "유사한 일기 {count}건",
-  "@similarCount": {
+  "todayTab": "오늘",
+  "searchTab": "검색",
+  "searchTitle": "기록 검색",
+  "searchHint": "메모나 이벤트를 검색해 보세요.",
+  "searchAction": "검색",
+  "searchIntroTitle": "지난 기록을 찾아보세요",
+  "searchIntroDescription": "메모 내용이나 수유, 투약 같은 이벤트 이름으로 찾을 수 있어요.",
+  "searchResultCount": "검색 결과 {count}건",
+  "@searchResultCount": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "noSimilarDiary": "유사한 일기가 없습니다.",
+  "searchNoResults": "일치하는 기록이 없어요.",
+  "searchNoResultsHint": "검색어를 줄이거나 다른 표현으로 다시 찾아보세요.",
+  "searchFailed": "검색하지 못했어요. 원본 기록은 그대로 유지됩니다.",
+  "retrySearch": "다시 검색",
+  "searchSortLabel": "정렬",
+  "searchSortRelevance": "관련도순",
+  "searchSortNewest": "최신순",
+  "searchSortOldest": "오래된순",
+  "searchMatchExact": "정확한 문구 일치",
+  "searchMatchActivityType": "이벤트 종류 일치",
+  "searchMatchRelated": "관련 표현",
+  "searchMemoResult": "메모",
+  "searchActivityResult": "이벤트",
+  "searchReadOnly": "읽기 전용",
+  "searchResultDetail": "검색 결과 상세",
   "settings": "설정",
   "settingsTitle": "설정",
   "languageSetting": "언어 설정",

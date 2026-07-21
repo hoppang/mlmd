@@ -56,13 +56,13 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     state = repo.getDiaries();
   }
 
-  Future<List<SimilarDiaryResult>> searchSimilar(
+  Future<List<DiarySearchResult>> searchRecords(
     String query, {
-    int limit = 5,
+    int limit = 50,
   }) {
     final repo = ref.read(diaryRepositoryProvider);
     final embeddingService = ref.read(embeddingServiceProvider);
-    return repo.searchSimilar(query, embeddingService, limit: limit);
+    return repo.searchRecords(query, embeddingService, limit: limit);
   }
 
   Future<void> updateDiary(

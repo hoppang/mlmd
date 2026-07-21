@@ -234,14 +234,51 @@ void main() {
         ),
       );
 
-      final results = await diaryRepo.searchSimilar(
+      final results = await diaryRepo.searchRecords(
         '정확키워드',
         EmbeddingService(),
       );
 
       expect(results, hasLength(1));
-      expect(results.single.similarityPercent, 100);
+      expect(results.single.source, DiarySearchSource.memo);
+      expect(results.single.reason, DiarySearchMatchReason.exactText);
+      expect(results.single.relevanceScore, 100);
     });
+
+    test(
+      'Activity type and details are returned as individual results',
+      () async {
+        final now = DateTime.now();
+        final diary = DiaryEntity(
+          date: now,
+          title: '하루 기록',
+          content: '평범한 하루',
+          lastModified: now,
+        );
+        diaryRepo.saveDiaryWithActivities(diary, [
+          ActivityEntity(
+            type: '투약',
+            time: now,
+            details: '해열제 복용',
+            lastModified: now,
+          ),
+        ]);
+
+        final byType = await diaryRepo.searchRecords('투약', EmbeddingService());
+        final byDetail = await diaryRepo.searchRecords(
+          '해열제',
+          EmbeddingService(),
+        );
+
+        expect(byType, hasLength(1));
+        expect(byType.single.source, DiarySearchSource.activity);
+        expect(byType.single.activity!.type, '투약');
+        expect(byType.single.reason, DiarySearchMatchReason.activityType);
+        expect(byDetail, hasLength(1));
+        expect(byDetail.single.activity!.details, '해열제 복용');
+        expect(byDetail.single.reason, DiarySearchMatchReason.exactText);
+      },
+    );
 
     test('Activity occurrence precision persists independently of time', () {
       final now = DateTime.now();

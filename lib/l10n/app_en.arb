@@ -38,16 +38,36 @@
   "diaryDeleted": "The diary has been deleted.",
   "deleteConfirmTitle": "Delete Diary",
   "deleteConfirmDesc": "Are you sure you want to delete this diary? This action cannot be undone.",
-  "searchHint": "Search past records.",
-  "similarCount": "{count} similar diaries",
-  "@similarCount": {
+  "todayTab": "Today",
+  "searchTab": "Search",
+  "searchTitle": "Search records",
+  "searchHint": "Search notes or events.",
+  "searchAction": "Search",
+  "searchIntroTitle": "Find past records",
+  "searchIntroDescription": "Search by note text or event names such as feeding and medication.",
+  "searchResultCount": "{count} results",
+  "@searchResultCount": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "noSimilarDiary": "No similar diaries found.",
+  "searchNoResults": "No matching records.",
+  "searchNoResultsHint": "Try a shorter query or a different phrase.",
+  "searchFailed": "Search failed. Your original records are unchanged.",
+  "retrySearch": "Search again",
+  "searchSortLabel": "Sort",
+  "searchSortRelevance": "Relevance",
+  "searchSortNewest": "Newest",
+  "searchSortOldest": "Oldest",
+  "searchMatchExact": "Exact phrase match",
+  "searchMatchActivityType": "Event type match",
+  "searchMatchRelated": "Related expression",
+  "searchMemoResult": "Note",
+  "searchActivityResult": "Event",
+  "searchReadOnly": "Read only",
+  "searchResultDetail": "Search result details",
   "settings": "Settings",
   "settingsTitle": "Settings",
   "languageSetting": "Language",
