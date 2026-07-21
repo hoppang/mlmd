@@ -19,9 +19,22 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   final List<DiaryEntity> diaries;
   DateTime? updatedOccurredAt;
   List<ActivitySummary>? updatedActivities;
+  bool addedDiary = false;
 
   @override
   List<DiaryEntity> build() => diaries;
+
+  @override
+  Future<void> addDiary(
+    String title,
+    String summary,
+    String content, {
+    required DateTime occurredAt,
+    List<ActivitySummary> activitySummaries = const [],
+    String? consumedDraftId,
+  }) async {
+    addedDiary = true;
+  }
 
   @override
   Future<void> updateDiary(
@@ -170,7 +183,10 @@ void main() {
       lastSavedAt: now,
     );
 
-    await tester.pumpWidget(_buildApp(drafts: [draft]));
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(
+      _buildApp(drafts: [draft], diaryNotifier: notifier),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(DiaryDemoPage), findsOneWidget);
@@ -182,6 +198,15 @@ void main() {
 
     expect(find.byType(DiaryFormPage), findsOneWidget);
     expect(find.text('작성 중인 메모'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FloatingActionButton, 'AI 분석'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FloatingActionButton, '확인'));
+    await tester.pumpAndSettle();
+
+    expect(notifier.addedDiary, isTrue);
+    expect(find.byType(DiaryDemoPage), findsOneWidget);
+    expect(find.text('작성 중인 기록 1개'), findsNothing);
   });
 
   testWidgets('기록 수정 시 메모와 이벤트의 발생 시각을 보존한다', (tester) async {

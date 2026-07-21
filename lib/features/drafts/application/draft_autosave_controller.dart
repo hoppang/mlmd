@@ -91,9 +91,19 @@ class DraftAutosaveController {
   void markCommitted() {
     _timer?.cancel();
     _timer = null;
-    _hasPersistedDraft = false;
-    _finished = true;
-    onDraftListChanged();
+    try {
+      // 최종 기록 저장 트랜잭션이 초안을 함께 소비하는 것이 기본 경로다.
+      // 저장소 구현이나 상태 불일치로 초안이 남은 경우에도 여기서 한 번 더
+      // 정리해, 저장 완료 뒤 홈에 초안 카드가 다시 나타나지 않게 한다.
+      if (_hasPersistedDraft) repository.deleteDraft(draftId);
+    } catch (_) {
+      // 최종 기록은 이미 저장됐으므로 초안 정리 실패로 저장을 재시도하게
+      // 만들지 않는다. 목록 새로고침으로 저장소의 실제 상태를 반영한다.
+    } finally {
+      _hasPersistedDraft = false;
+      _finished = true;
+      onDraftListChanged();
+    }
   }
 
   void discard() {

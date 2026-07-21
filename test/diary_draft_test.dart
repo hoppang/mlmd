@@ -197,6 +197,26 @@ void main() {
       expect(repository.saveCount, 1);
     });
 
+    test('commit removes a persisted draft left by the final save path', () {
+      final repository = _MemoryDraftRepository();
+      final controller = DraftAutosaveController(
+        repository: repository,
+        draftId: 'draft-commit-cleanup',
+        draftKind: 'createRecord',
+        recordType: 'diary',
+        capturePayload: () => '{"rawText":"완성할 기록"}',
+        hasMeaningfulChanges: () => true,
+        onStatusChanged: (_) {},
+        onDraftListChanged: () {},
+      );
+      controller.flush();
+      expect(repository.getByDraftId('draft-commit-cleanup'), isNotNull);
+
+      controller.markCommitted();
+
+      expect(repository.getByDraftId('draft-commit-cleanup'), isNull);
+    });
+
     test('reports failure so navigation or window close can stay open', () {
       final repository = _MemoryDraftRepository()..failSave = true;
       final statuses = <DraftSaveStatus>[];
