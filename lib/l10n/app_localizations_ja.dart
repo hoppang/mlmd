@@ -126,6 +126,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get todayTab => '今日';
 
   @override
+  String get dateTab => '日付別';
+
+  @override
+  String get todayTimelineTitle => '今日の記録';
+
+  @override
+  String get todayStatusTitle => '今日の状況';
+
+  @override
   String get searchTab => '検索';
 
   @override

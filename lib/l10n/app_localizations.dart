@@ -334,6 +334,24 @@ abstract class AppLocalizations {
   /// **'오늘'**
   String get todayTab;
 
+  /// No description provided for @dateTab.
+  ///
+  /// In ko, this message translates to:
+  /// **'날짜별'**
+  String get dateTab;
+
+  /// No description provided for @todayTimelineTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 기록'**
+  String get todayTimelineTitle;
+
+  /// No description provided for @todayStatusTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 현황'**
+  String get todayStatusTitle;
+
   /// No description provided for @searchTab.
   ///
   /// In ko, this message translates to:

@@ -127,6 +127,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get todayTab => '오늘';
 
   @override
+  String get dateTab => '날짜별';
+
+  @override
+  String get todayTimelineTitle => '오늘 기록';
+
+  @override
+  String get todayStatusTitle => '오늘 현황';
+
+  @override
   String get searchTab => '검색';
 
   @override

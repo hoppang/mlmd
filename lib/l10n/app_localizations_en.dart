@@ -131,6 +131,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayTab => 'Today';
 
   @override
+  String get dateTab => 'By Date';
+
+  @override
+  String get todayTimelineTitle => 'Today\'s Records';
+
+  @override
+  String get todayStatusTitle => 'Today\'s Status';
+
+  @override
   String get searchTab => 'Search';
 
   @override

@@ -12,12 +12,13 @@ import '../../../transfer/diary_transfer_service.dart';
 import '../../../utils/logger.dart';
 import '../../../widgets/import_preview_dialog.dart';
 import '../../../widgets/transfer_progress_dialog.dart';
-import '../../drafts/presentation/draft_resume_card.dart';
 import '../../search/presentation/diary_search_page.dart';
 import '../../settings/presentation/settings_dialog.dart';
 import '../application/diary_draft_payload.dart';
 import '../application/diary_list_notifier.dart';
 import 'diary_form_page.dart';
+import 'diary_list_page.dart';
+import 'today_page.dart';
 
 class DiaryDemoPage extends ConsumerStatefulWidget {
   const DiaryDemoPage({super.key});
@@ -64,22 +65,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
   DiaryTransferService get _transferService =>
       DiaryTransferService(repository: ref.read(diaryRepositoryProvider));
 
-  String _draftDescription(BuildContext context, RecordDraftEntity draft) {
-    var label = AppLocalizations.of(context)!.newDiary;
-    try {
-      final payload = DiaryDraftPayload.decode(draft.fieldPayloadJson);
-      final candidate = [payload.title, payload.summary, payload.rawText]
-          .map((value) => value.trim())
-          .firstWhere((value) => value.isNotEmpty, orElse: () => '');
-      if (candidate.isNotEmpty) label = candidate.split('\n').first;
-    } on FormatException {
-      // 손상된 초안도 목록 자체는 숨기지 않는다.
-    }
-    final time = MaterialLocalizations.of(
-      context,
-    ).formatTimeOfDay(TimeOfDay.fromDateTime(draft.lastSavedAt));
-    return '$label · $time';
-  }
+
 
   Future<void> _exportDiaries() async {
     final loc = AppLocalizations.of(context)!;
@@ -251,7 +237,9 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _selectedTab == 0 ? loc.appTitle : loc.searchTitle,
+          _selectedTab == 0
+              ? loc.appTitle
+              : (_selectedTab == 1 ? loc.dateTab : loc.searchTitle),
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -271,126 +259,12 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       body: IndexedStack(
         index: _selectedTab,
         children: [
-          Column(
-            children: [
-              if (drafts.isNotEmpty)
-                DraftResumeCard(
-                  count: drafts.length,
-                  description: _draftDescription(context, drafts.first),
-                  onContinue: () => _openDraft(context, drafts.first, diaries),
-                  onStartNew: () => _navigateToFormPage(context),
-                ),
-              Expanded(
-                child: diaries.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.book_outlined,
-                              size: 64,
-                              color: Colors.teal.shade200,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              loc.noDiaryTitle,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              loc.noDiaryDesc,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: diaries.length,
-                        itemBuilder: (context, index) {
-                          final diary = diaries[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0),
-                            child: Card(
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: () =>
-                                    _navigateToFormPage(context, diary),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              diary.title,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.teal.shade50,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              MaterialLocalizations.of(
-                                                context,
-                                              ).formatShortDate(diary.date),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.teal.shade700,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        diary.summary.isNotEmpty
-                                            ? diary.summary
-                                            : diary.content,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade700,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (diary.activities.isNotEmpty) ...[
-                                        const SizedBox(height: 8),
-                                        _buildEventChips(diary),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
+          TodayPage(
+            onNavigateToForm: (diary, draftId) =>
+                _navigateToFormPage(context, diary, draftId),
+          ),
+          DiaryListPage(
+            onEditDiary: (diary) => _navigateToFormPage(context, diary),
           ),
           DiarySearchPage(
             onEditDiary: (diary) => _navigateToFormPage(context, diary),
@@ -407,50 +281,33 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
             label: loc.todayTab,
           ),
           NavigationDestination(
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: loc.dateTab,
+          ),
+          NavigationDestination(
             icon: const Icon(Icons.search_outlined),
             selectedIcon: const Icon(Icons.search),
             label: loc.searchTab,
           ),
         ],
       ),
-      floatingActionButton: _selectedTab == 0
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                if (todayDiary != null) {
-                  _navigateToFormPage(context, todayDiary);
-                } else if (latestCreateDraft != null) {
-                  _openDraft(context, latestCreateDraft, diaries);
-                } else {
-                  _navigateToFormPage(context);
-                }
-              },
-              backgroundColor: Colors.teal.shade600,
-              foregroundColor: Colors.white,
-              icon: Icon(todayDiary != null ? Icons.edit : Icons.add),
-              label: Text(todayDiary != null ? loc.edit : loc.newDiary),
-            )
-          : null,
-    );
-  }
-
-  /// 일기 카드에 이벤트 칩을 표시합니다.
-  Widget _buildEventChips(DiaryEntity diary) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 4,
-      children: diary.activities.map((a) {
-        return Chip(
-          label: Text(
-            '${a.type} ${a.details}',
-            style: const TextStyle(fontSize: 11),
-          ),
-          backgroundColor: Colors.teal.shade50,
-          side: BorderSide(color: Colors.teal.shade100),
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
-        );
-      }).toList(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          if (todayDiary != null) {
+            _navigateToFormPage(context, todayDiary);
+          } else if (latestCreateDraft != null) {
+            _openDraft(context, latestCreateDraft, diaries);
+          } else {
+            _navigateToFormPage(context);
+          }
+        },
+        backgroundColor: Colors.teal.shade600,
+        foregroundColor: Colors.white,
+        icon: Icon(todayDiary != null ? Icons.edit : Icons.add),
+        label: Text(todayDiary != null ? loc.edit : loc.newDiary),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
