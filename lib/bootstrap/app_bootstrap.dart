@@ -1,10 +1,7 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../app.dart';
 import '../data/objectbox_helper.dart';
-import '../providers/locale_provider.dart';
 import '../services/embedding_service.dart';
 import 'local_model_bootstrap.dart';
 import 'desktop_window_close_handler.dart';

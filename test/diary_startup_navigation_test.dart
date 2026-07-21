@@ -206,14 +206,16 @@ void main() {
 
     expect(find.byType(DiaryDemoPage), findsOneWidget);
     expect(find.byType(DiaryFormPage), findsNothing);
-    expect(find.text('오늘 기록'), findsOneWidget);
+    expect(find.text('오늘 기록'), findsAtLeastNWidgets(1));
     final homeContext = tester.element(find.byType(DiaryDemoPage));
     final displayedDate = MaterialLocalizations.of(
       homeContext,
-    ).formatShortDate(now);
+    ).formatFullDate(now);
     expect(find.text(displayedDate), findsOneWidget);
 
-    await tester.tap(find.text('오늘 기록'));
+    await tester.tap(find.byKey(const ValueKey('today-memo:1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('today-record-edit-button')));
     await tester.pumpAndSettle();
 
     expect(find.byType(DiaryFormPage), findsOneWidget);
@@ -440,7 +442,7 @@ void main() {
 
     expect(find.text('기록 검색'), findsOneWidget);
     expect(find.text('지난 기록을 찾아보세요'), findsOneWidget);
-    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('search-query-field')), '투약');
     await tester.tap(find.byKey(const Key('search-submit-button')));
@@ -528,9 +530,101 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, '다시 검색'), findsOneWidget);
   });
 
+  testWidgets('오늘 화면은 현황과 원본 기록을 시간순으로 표시하고 상세에서만 수정한다', (tester) async {
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 41,
+      recordId: 'today-hierarchy-record',
+      date: now.subtract(const Duration(hours: 1)),
+      title: '오늘 메모',
+      summary: '오늘 하루 요약',
+      content: '오후 상태를 기록했다.',
+      lastModified: now,
+    );
+    diary.activities.addAll([
+      ActivityEntity(
+        id: 51,
+        type: '투약',
+        time: now,
+        details: '해열제',
+        lastModified: now,
+      ),
+      ActivityEntity(
+        id: 52,
+        type: '수유',
+        time: now.subtract(const Duration(hours: 2)),
+        timePrecision: ActivityEntity.timePrecisionUnknown,
+        details: '여러 번',
+        lastModified: now,
+      ),
+    ]);
+
+    await tester.pumpWidget(_buildApp(diaries: [diary]));
+    await tester.pumpAndSettle();
+
+    expect(find.text('오늘 현황'), findsOneWidget);
+    expect(find.text('수유 · 1'), findsOneWidget);
+    expect(find.text('투약 · 1'), findsOneWidget);
+    expect(find.text('발생 시각 미상'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('today-activity:51'))).dy,
+      lessThan(
+        tester.getTopLeft(find.byKey(const ValueKey('today-memo:41'))).dy,
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('today-activity:51')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('읽기 전용'), findsOneWidget);
+    expect(find.text('해열제'), findsAtLeastNWidgets(1));
+    expect(find.byType(DiaryFormPage), findsNothing);
+
+    await tester.tap(find.byKey(const Key('today-record-edit-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DiaryFormPage), findsOneWidget);
+  });
+
+  testWidgets('날짜별 탭은 선택한 날짜의 기록만 표시한다', (tester) async {
+    final now = DateTime.now();
+    final todayDiary = DiaryEntity(
+      id: 61,
+      recordId: 'date-today-record',
+      date: now,
+      title: '오늘 날짜 기록',
+      content: '오늘 내용',
+      lastModified: now,
+    );
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayDiary = DiaryEntity(
+      id: 62,
+      recordId: 'date-yesterday-record',
+      date: yesterday,
+      title: '어제 날짜 기록',
+      content: '어제 내용',
+      lastModified: yesterday,
+    );
+
+    await tester.pumpWidget(_buildApp(diaries: [todayDiary, yesterdayDiary]));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('날짜별'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('오늘 날짜 기록'), findsOneWidget);
+    expect(find.text('어제 날짜 기록'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('date-previous-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('오늘 날짜 기록'), findsNothing);
+    expect(find.text('어제 날짜 기록'), findsOneWidget);
+  });
+
   testWidgets('기록 수정 시 메모와 이벤트의 발생 시각을 보존한다', (tester) async {
-    final recordTime = DateTime(2026, 7, 20, 14, 30);
-    final exactEventTime = DateTime(2026, 7, 20, 13, 10);
+    final today = DateTime.now();
+    final recordTime = DateTime(today.year, today.month, today.day, 14, 30);
+    final exactEventTime = DateTime(today.year, today.month, today.day, 13, 10);
     final diary = DiaryEntity(
       id: 2,
       recordId: 'time-record',
@@ -561,6 +655,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text('시각 보존 기록'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('today-record-edit-button')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FloatingActionButton, '수정'));
     await tester.pumpAndSettle();

@@ -14,7 +14,6 @@ import '../../../widgets/import_preview_dialog.dart';
 import '../../../widgets/transfer_progress_dialog.dart';
 import '../../search/presentation/diary_search_page.dart';
 import '../../settings/presentation/settings_dialog.dart';
-import '../application/diary_draft_payload.dart';
 import '../application/diary_list_notifier.dart';
 import 'diary_form_page.dart';
 import 'diary_list_page.dart';
@@ -64,8 +63,6 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
 
   DiaryTransferService get _transferService =>
       DiaryTransferService(repository: ref.read(diaryRepositoryProvider));
-
-
 
   Future<void> _exportDiaries() async {
     final loc = AppLocalizations.of(context)!;
