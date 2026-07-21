@@ -27,28 +27,6 @@ class DiaryDemoPage extends ConsumerStatefulWidget {
 }
 
 class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
-  bool _initialNavDone = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // 첫 프레임 이후: 오늘 일기가 있으면 상세 페이지로 자동 이동
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _initialNavDone) return;
-      _initialNavDone = true;
-      final diaries = ref.read(diaryListProvider);
-      final now = DateTime.now();
-      for (final diary in diaries) {
-        if (diary.date.year == now.year &&
-            diary.date.month == now.month &&
-            diary.date.day == now.day) {
-          _navigateToFormPage(context, diary);
-          break;
-        }
-      }
-    });
-  }
-
   void _navigateToFormPage(
     BuildContext context, [
     DiaryEntity? diary,
