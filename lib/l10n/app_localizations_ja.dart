@@ -225,6 +225,94 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsTitle => '設定';
 
   @override
+  String get settingsIntro => '必要な情報とデータの保管方法だけをここで管理します。';
+
+  @override
+  String get childInformation => '子どもの情報';
+
+  @override
+  String get childInformationDescription => '子どもの情報を記録に紐づける機能は準備中です。';
+
+  @override
+  String get authorProfile => '自分の名前と色';
+
+  @override
+  String get authorProfileDescription => '記録の作成者表示は準備中です。';
+
+  @override
+  String get familySharing => '家族と一緒に使う';
+
+  @override
+  String get familySharingDescription => '現在、記録はこの端末にのみ保存されます。';
+
+  @override
+  String get dataBackupTitle => 'データ保管とバックアップ';
+
+  @override
+  String get dataBackupDescription => '記録をファイルに保管し、安全に読み込みます。';
+
+  @override
+  String get helpTitle => 'ヘルプ';
+
+  @override
+  String get helpDescription => 'アプリの動作理由と言語設定を確認します。';
+
+  @override
+  String get notAvailableYetTitle => 'まだ準備中です';
+
+  @override
+  String notAvailableYetDescription(String feature) {
+    return '$featureは、必要なデータ構造と安全基準を整えてから提供する予定です。';
+  }
+
+  @override
+  String get storageSummaryTitle => '現在のバックアップ範囲';
+
+  @override
+  String backupContentsSummary(int records, int activities, String size) {
+    return '日記 $records件 · 活動 $activities件\n推定ファイルサイズ $size';
+  }
+
+  @override
+  String get backupPrivacyNotice =>
+      '現在のバックアップは記録と活動を暗号化されていないJSONファイルに保存します。添付ファイルにはまだ対応していません。';
+
+  @override
+  String get createBackupFile => 'バックアップファイルを作成';
+
+  @override
+  String get createBackupDescription => 'この端末の記録と活動を別の場所に保管できるファイルにします。';
+
+  @override
+  String get importBackupFile => 'バックアップファイルを読み込む';
+
+  @override
+  String get importBackupDescription => '追加する前に内容と競合の可能性を確認できます。';
+
+  @override
+  String get recentlyDeleted => '最近削除した記録';
+
+  @override
+  String get recentlyDeletedDescription => '復元できる削除機能はまだ準備中です。';
+
+  @override
+  String get helpIntro => 'ボタンの場所だけでなく、なぜこのように動作するかを説明します。';
+
+  @override
+  String get offlineHelpQuestion => 'なぜインターネットがなくても記録できますか？';
+
+  @override
+  String get offlineHelpAnswer =>
+      '記録はまずこの端末に保存されます。ネットワークやAI機能に問題があっても、元の記録を作成して探すことができます。';
+
+  @override
+  String get duplicateHelpQuestion => 'なぜ読み込んだ記録を自動で上書きしないのですか？';
+
+  @override
+  String get duplicateHelpAnswer =>
+      '内容が異なる場合、どちらかを自動で消すのは安全ではありません。現在は新しい記録だけを追加し、同じIDの記録はスキップします。';
+
+  @override
   String get languageSetting => '言語設定';
 
   @override
@@ -294,6 +382,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get duplicateRecords => '重複';
+
+  @override
+  String get identicalRecords => '同じ内容';
+
+  @override
+  String get conflictingRecords => '確認が必要な競合';
+
+  @override
+  String importDateRange(String from, String to) {
+    return '記録期間: $from ～ $to';
+  }
+
+  @override
+  String get safeImportNotice =>
+      '読み込み直前に現在の記録を自動でバックアップします。既存の記録は上書きせず、新しい記録だけを追加します。';
 
   @override
   String get newerRecords => '新しいバックアップで更新';

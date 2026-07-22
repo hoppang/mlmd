@@ -8,6 +8,7 @@ import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/transfer/canonical_transfer_document.dart';
+import 'package:mlmd/transfer/diary_transfer_service.dart';
 
 class _TestObjectBoxHelper implements ObjectBoxHelper {
   @override
@@ -151,5 +152,80 @@ void main() {
     );
     expect(saved.activities, hasLength(1));
     expect(saved.activities.single.diary.targetId, originalId);
+  });
+
+  test(
+    'safe import writes a restorable snapshot before applying changes',
+    () async {
+      final modified = DateTime.utc(2026, 7, 18, 12);
+      repository.importDocument(
+        document(modified: modified, title: 'before import'),
+        ImportConflictPolicy.skipExisting,
+      );
+      final incoming = CanonicalImportDocument(
+        exportedAt: DateTime.utc(2026, 7, 19),
+        appVersion: 'test',
+        diaries: [
+          CanonicalDiary(
+            recordId: '550e8400-e29b-41d4-a716-446655440001',
+            date: DateTime(2026, 7, 19),
+            title: 'new record',
+            summary: '',
+            content: '',
+            lastModified: modified,
+            activities: const [],
+          ),
+        ],
+      );
+      final service = DiaryTransferService(repository: repository);
+      final safetyDirectory = Directory('${helper.directory.path}/safety');
+
+      final result = await service.applyWithAutomaticBackup(
+        PreparedDiaryImport(
+          document: incoming,
+          schemaVersion: 1,
+          sourceName: 'incoming.mlmd.json',
+        ),
+        ImportConflictPolicy.skipExisting,
+        backupDirectory: safetyDirectory,
+        createdAt: DateTime(2026, 7, 19, 9, 30),
+      );
+
+      expect(result.inserted, 1);
+      expect(repository.getDiaries(), hasLength(2));
+      final safetyFiles = safetyDirectory.listSync().whereType<File>().toList();
+      expect(safetyFiles, hasLength(1));
+      final snapshot = service.decodeImportBytes(
+        await safetyFiles.single.readAsBytes(),
+        sourceName: safetyFiles.single.path,
+      );
+      expect(snapshot.document.diaries, hasLength(1));
+      expect(snapshot.document.diaries.single.title, 'before import');
+    },
+  );
+
+  test('preview distinguishes identical records from content conflicts', () {
+    final modified = DateTime.utc(2026, 7, 18, 12);
+    repository.importDocument(
+      document(modified: modified, title: 'same'),
+      ImportConflictPolicy.skipExisting,
+    );
+
+    final identical = repository.previewImport(
+      document(modified: modified.add(const Duration(hours: 1)), title: 'same'),
+      ImportConflictPolicy.skipExisting,
+    );
+    final conflict = repository.previewImport(
+      document(
+        modified: modified.add(const Duration(hours: 1)),
+        title: 'changed',
+      ),
+      ImportConflictPolicy.skipExisting,
+    );
+
+    expect(identical.identicalCount, 1);
+    expect(identical.conflictCount, 0);
+    expect(conflict.identicalCount, 0);
+    expect(conflict.conflictCount, 1);
   });
 }

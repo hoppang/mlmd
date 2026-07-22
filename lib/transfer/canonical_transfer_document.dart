@@ -59,6 +59,8 @@ class ImportPreview {
   final int newerCount;
   final int skippedCount;
   final int activityCount;
+  final int identicalCount;
+  final int conflictCount;
 
   const ImportPreview({
     required this.total,
@@ -67,6 +69,8 @@ class ImportPreview {
     required this.newerCount,
     required this.skippedCount,
     required this.activityCount,
+    this.identicalCount = 0,
+    this.conflictCount = 0,
   });
 
   int get appliedCount => newCount + newerCount;

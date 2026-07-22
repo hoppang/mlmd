@@ -226,6 +226,95 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsTitle => '설정';
 
   @override
+  String get settingsIntro => '꼭 필요한 정보와 데이터 보관 방법만 한곳에서 관리합니다.';
+
+  @override
+  String get childInformation => '아이 정보';
+
+  @override
+  String get childInformationDescription => '아직 기록과 연결된 아이 정보를 저장할 수 없어요.';
+
+  @override
+  String get authorProfile => '내 이름과 색상';
+
+  @override
+  String get authorProfileDescription => '기록 작성자 표시는 아직 준비 중이에요.';
+
+  @override
+  String get familySharing => '가족과 함께 쓰기';
+
+  @override
+  String get familySharingDescription => '현재 기록은 이 기기에만 저장됩니다.';
+
+  @override
+  String get dataBackupTitle => '데이터 보관 및 백업';
+
+  @override
+  String get dataBackupDescription => '기록을 파일로 보관하거나 안전하게 가져옵니다.';
+
+  @override
+  String get helpTitle => '도움말';
+
+  @override
+  String get helpDescription => '앱의 동작 이유와 언어 설정을 확인합니다.';
+
+  @override
+  String get notAvailableYetTitle => '아직 준비 중이에요';
+
+  @override
+  String notAvailableYetDescription(String feature) {
+    return '$feature 기능은 필요한 데이터 구조와 안전 기준을 갖춘 뒤 제공할 예정입니다.';
+  }
+
+  @override
+  String get storageSummaryTitle => '현재 백업 범위';
+
+  @override
+  String backupContentsSummary(int records, int activities, String size) {
+    return '일기 $records건 · 활동 $activities건\n예상 파일 크기 $size';
+  }
+
+  @override
+  String get backupPrivacyNotice =>
+      '현재 백업은 기록과 활동을 암호화되지 않은 JSON 파일로 보관합니다. 첨부파일 기능은 아직 포함되지 않습니다.';
+
+  @override
+  String get createBackupFile => '백업 파일 만들기';
+
+  @override
+  String get createBackupDescription =>
+      '현재 기기의 기록과 활동을 다른 곳에 보관할 수 있는 파일로 만듭니다.';
+
+  @override
+  String get importBackupFile => '백업 파일 가져오기';
+
+  @override
+  String get importBackupDescription => '파일을 바로 합치지 않고 내용과 충돌 가능성을 먼저 보여드립니다.';
+
+  @override
+  String get recentlyDeleted => '최근 삭제한 기록';
+
+  @override
+  String get recentlyDeletedDescription => '복구 가능한 삭제 기능은 아직 준비 중이에요.';
+
+  @override
+  String get helpIntro => '버튼 위치보다 왜 이렇게 동작하는지 먼저 설명드릴게요.';
+
+  @override
+  String get offlineHelpQuestion => '왜 인터넷이 없어도 기록할 수 있나요?';
+
+  @override
+  String get offlineHelpAnswer =>
+      '기록은 먼저 현재 기기에 저장됩니다. 네트워크나 AI 기능에 문제가 생겨도 원문 기록은 계속 작성하고 찾을 수 있어요.';
+
+  @override
+  String get duplicateHelpQuestion => '왜 가져온 기록을 자동으로 덮어쓰지 않나요?';
+
+  @override
+  String get duplicateHelpAnswer =>
+      '같은 기록이 서로 다르면 어느 쪽도 조용히 지우지 않는 편이 안전합니다. 지금은 새 기록만 추가하고 같은 ID의 기록은 건너뜁니다.';
+
+  @override
   String get languageSetting => '언어 설정';
 
   @override
@@ -295,6 +384,21 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get duplicateRecords => '중복';
+
+  @override
+  String get identicalRecords => '내용이 같은 기록';
+
+  @override
+  String get conflictingRecords => '확인이 필요한 충돌';
+
+  @override
+  String importDateRange(String from, String to) {
+    return '기록 기간: $from ~ $to';
+  }
+
+  @override
+  String get safeImportNotice =>
+      '가져오기 직전에 현재 기록을 자동 백업합니다. 기존 기록은 덮어쓰지 않고 새 기록만 추가합니다.';
 
   @override
   String get newerRecords => '최신 백업으로 갱신';

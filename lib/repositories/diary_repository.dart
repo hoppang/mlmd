@@ -251,6 +251,8 @@ class DiaryRepositoryImpl implements DiaryRepository {
     var newerCount = 0;
     var skippedCount = 0;
     var activityCount = 0;
+    var identicalCount = 0;
+    var conflictCount = 0;
     for (final incoming in document.diaries) {
       activityCount += incoming.activities.length;
       final local = existing[incoming.recordId];
@@ -258,6 +260,11 @@ class DiaryRepositoryImpl implements DiaryRepository {
         newCount++;
       } else {
         duplicateCount++;
+        if (_hasSameContent(local, incoming)) {
+          identicalCount++;
+        } else {
+          conflictCount++;
+        }
         if (policy == ImportConflictPolicy.overwriteIfNewer &&
             incoming.lastModified.isAfter(local.lastModified)) {
           newerCount++;
@@ -273,8 +280,61 @@ class DiaryRepositoryImpl implements DiaryRepository {
       newerCount: newerCount,
       skippedCount: skippedCount,
       activityCount: activityCount,
+      identicalCount: identicalCount,
+      conflictCount: conflictCount,
     );
   }
+
+  bool _hasSameContent(DiaryEntity local, CanonicalDiary incoming) {
+    if (!_sameWallClock(local.date, incoming.date) ||
+        local.title != incoming.title ||
+        local.summary != incoming.summary ||
+        local.content != incoming.content) {
+      return false;
+    }
+    final localActivities = local.activities.map(_activitySignature).toList()
+      ..sort();
+    final incomingActivities =
+        incoming.activities.map(_canonicalActivitySignature).toList()..sort();
+    if (localActivities.length != incomingActivities.length) return false;
+    for (var index = 0; index < localActivities.length; index++) {
+      if (localActivities[index] != incomingActivities[index]) return false;
+    }
+    return true;
+  }
+
+  bool _sameWallClock(DateTime first, DateTime second) =>
+      first.year == second.year &&
+      first.month == second.month &&
+      first.day == second.day &&
+      first.hour == second.hour &&
+      first.minute == second.minute &&
+      first.second == second.second &&
+      first.millisecond == second.millisecond;
+
+  String _activitySignature(ActivityEntity activity) => [
+    activity.type,
+    _wallClockSignature(activity.time),
+    activity.timePrecision.toString(),
+    activity.details,
+  ].join('\u0000');
+
+  String _canonicalActivitySignature(CanonicalActivity activity) => [
+    activity.type,
+    _wallClockSignature(activity.time),
+    activity.timePrecision.toString(),
+    activity.details,
+  ].join('\u0000');
+
+  String _wallClockSignature(DateTime value) => [
+    value.year,
+    value.month,
+    value.day,
+    value.hour,
+    value.minute,
+    value.second,
+    value.millisecond,
+  ].join(':');
 
   @override
   ImportResult importDocument(

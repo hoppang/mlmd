@@ -233,6 +233,105 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get settingsIntro =>
+      'Manage only the essential information and ways to protect your data.';
+
+  @override
+  String get childInformation => 'Child information';
+
+  @override
+  String get childInformationDescription =>
+      'Child details cannot be linked to records yet.';
+
+  @override
+  String get authorProfile => 'My name and color';
+
+  @override
+  String get authorProfileDescription =>
+      'Record author labels are still being prepared.';
+
+  @override
+  String get familySharing => 'Use with family';
+
+  @override
+  String get familySharingDescription =>
+      'Records currently stay on this device.';
+
+  @override
+  String get dataBackupTitle => 'Data storage and backup';
+
+  @override
+  String get dataBackupDescription =>
+      'Keep records in a file or import them safely.';
+
+  @override
+  String get helpTitle => 'Help';
+
+  @override
+  String get helpDescription =>
+      'Learn why the app works this way and set its language.';
+
+  @override
+  String get notAvailableYetTitle => 'Not available yet';
+
+  @override
+  String notAvailableYetDescription(String feature) {
+    return '$feature will be added after the required data model and safety rules are ready.';
+  }
+
+  @override
+  String get storageSummaryTitle => 'Current backup coverage';
+
+  @override
+  String backupContentsSummary(int records, int activities, String size) {
+    return '$records diaries · $activities activities\nEstimated file size $size';
+  }
+
+  @override
+  String get backupPrivacyNotice =>
+      'The current backup stores records and activities in an unencrypted JSON file. Attachments are not supported yet.';
+
+  @override
+  String get createBackupFile => 'Create backup file';
+
+  @override
+  String get createBackupDescription =>
+      'Create a file containing this device\'s records and activities for safekeeping elsewhere.';
+
+  @override
+  String get importBackupFile => 'Import backup file';
+
+  @override
+  String get importBackupDescription =>
+      'Review its contents and possible conflicts before anything is added.';
+
+  @override
+  String get recentlyDeleted => 'Recently deleted records';
+
+  @override
+  String get recentlyDeletedDescription =>
+      'Recoverable deletion is not available yet.';
+
+  @override
+  String get helpIntro =>
+      'This help explains why the app behaves as it does, not just where buttons are.';
+
+  @override
+  String get offlineHelpQuestion => 'Why can I record without the internet?';
+
+  @override
+  String get offlineHelpAnswer =>
+      'Records are saved on this device first. You can keep writing and finding the original text even when the network or AI features are unavailable.';
+
+  @override
+  String get duplicateHelpQuestion =>
+      'Why aren\'t imported records overwritten automatically?';
+
+  @override
+  String get duplicateHelpAnswer =>
+      'When two versions differ, silently deleting either one is unsafe. For now, only new records are added and matching IDs are skipped.';
+
+  @override
   String get languageSetting => 'Language';
 
   @override
@@ -303,6 +402,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get duplicateRecords => 'Duplicates';
+
+  @override
+  String get identicalRecords => 'Same content';
+
+  @override
+  String get conflictingRecords => 'Conflicts to review';
+
+  @override
+  String importDateRange(String from, String to) {
+    return 'Record period: $from – $to';
+  }
+
+  @override
+  String get safeImportNotice =>
+      'Your current records are backed up automatically just before import. Existing records are not overwritten; only new records are added.';
 
   @override
   String get newerRecords => 'Update from newer backup';

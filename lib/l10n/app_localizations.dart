@@ -526,6 +526,168 @@ abstract class AppLocalizations {
   /// **'설정'**
   String get settingsTitle;
 
+  /// No description provided for @settingsIntro.
+  ///
+  /// In ko, this message translates to:
+  /// **'꼭 필요한 정보와 데이터 보관 방법만 한곳에서 관리합니다.'**
+  String get settingsIntro;
+
+  /// No description provided for @childInformation.
+  ///
+  /// In ko, this message translates to:
+  /// **'아이 정보'**
+  String get childInformation;
+
+  /// No description provided for @childInformationDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 기록과 연결된 아이 정보를 저장할 수 없어요.'**
+  String get childInformationDescription;
+
+  /// No description provided for @authorProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 이름과 색상'**
+  String get authorProfile;
+
+  /// No description provided for @authorProfileDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 작성자 표시는 아직 준비 중이에요.'**
+  String get authorProfileDescription;
+
+  /// No description provided for @familySharing.
+  ///
+  /// In ko, this message translates to:
+  /// **'가족과 함께 쓰기'**
+  String get familySharing;
+
+  /// No description provided for @familySharingDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 기록은 이 기기에만 저장됩니다.'**
+  String get familySharingDescription;
+
+  /// No description provided for @dataBackupTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'데이터 보관 및 백업'**
+  String get dataBackupTitle;
+
+  /// No description provided for @dataBackupDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록을 파일로 보관하거나 안전하게 가져옵니다.'**
+  String get dataBackupDescription;
+
+  /// No description provided for @helpTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'도움말'**
+  String get helpTitle;
+
+  /// No description provided for @helpDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'앱의 동작 이유와 언어 설정을 확인합니다.'**
+  String get helpDescription;
+
+  /// No description provided for @notAvailableYetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 준비 중이에요'**
+  String get notAvailableYetTitle;
+
+  /// No description provided for @notAvailableYetDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'{feature} 기능은 필요한 데이터 구조와 안전 기준을 갖춘 뒤 제공할 예정입니다.'**
+  String notAvailableYetDescription(String feature);
+
+  /// No description provided for @storageSummaryTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 백업 범위'**
+  String get storageSummaryTitle;
+
+  /// No description provided for @backupContentsSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기 {records}건 · 활동 {activities}건\n예상 파일 크기 {size}'**
+  String backupContentsSummary(int records, int activities, String size);
+
+  /// No description provided for @backupPrivacyNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 백업은 기록과 활동을 암호화되지 않은 JSON 파일로 보관합니다. 첨부파일 기능은 아직 포함되지 않습니다.'**
+  String get backupPrivacyNotice;
+
+  /// No description provided for @createBackupFile.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 파일 만들기'**
+  String get createBackupFile;
+
+  /// No description provided for @createBackupDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 기기의 기록과 활동을 다른 곳에 보관할 수 있는 파일로 만듭니다.'**
+  String get createBackupDescription;
+
+  /// No description provided for @importBackupFile.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 파일 가져오기'**
+  String get importBackupFile;
+
+  /// No description provided for @importBackupDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일을 바로 합치지 않고 내용과 충돌 가능성을 먼저 보여드립니다.'**
+  String get importBackupDescription;
+
+  /// No description provided for @recentlyDeleted.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 삭제한 기록'**
+  String get recentlyDeleted;
+
+  /// No description provided for @recentlyDeletedDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'복구 가능한 삭제 기능은 아직 준비 중이에요.'**
+  String get recentlyDeletedDescription;
+
+  /// No description provided for @helpIntro.
+  ///
+  /// In ko, this message translates to:
+  /// **'버튼 위치보다 왜 이렇게 동작하는지 먼저 설명드릴게요.'**
+  String get helpIntro;
+
+  /// No description provided for @offlineHelpQuestion.
+  ///
+  /// In ko, this message translates to:
+  /// **'왜 인터넷이 없어도 기록할 수 있나요?'**
+  String get offlineHelpQuestion;
+
+  /// No description provided for @offlineHelpAnswer.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록은 먼저 현재 기기에 저장됩니다. 네트워크나 AI 기능에 문제가 생겨도 원문 기록은 계속 작성하고 찾을 수 있어요.'**
+  String get offlineHelpAnswer;
+
+  /// No description provided for @duplicateHelpQuestion.
+  ///
+  /// In ko, this message translates to:
+  /// **'왜 가져온 기록을 자동으로 덮어쓰지 않나요?'**
+  String get duplicateHelpQuestion;
+
+  /// No description provided for @duplicateHelpAnswer.
+  ///
+  /// In ko, this message translates to:
+  /// **'같은 기록이 서로 다르면 어느 쪽도 조용히 지우지 않는 편이 안전합니다. 지금은 새 기록만 추가하고 같은 ID의 기록은 건너뜁니다.'**
+  String get duplicateHelpAnswer;
+
   /// No description provided for @languageSetting.
   ///
   /// In ko, this message translates to:
@@ -651,6 +813,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'중복'**
   String get duplicateRecords;
+
+  /// No description provided for @identicalRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'내용이 같은 기록'**
+  String get identicalRecords;
+
+  /// No description provided for @conflictingRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인이 필요한 충돌'**
+  String get conflictingRecords;
+
+  /// No description provided for @importDateRange.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 기간: {from} ~ {to}'**
+  String importDateRange(String from, String to);
+
+  /// No description provided for @safeImportNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'가져오기 직전에 현재 기록을 자동 백업합니다. 기존 기록은 덮어쓰지 않고 새 기록만 추가합니다.'**
+  String get safeImportNotice;
 
   /// No description provided for @newerRecords.
   ///

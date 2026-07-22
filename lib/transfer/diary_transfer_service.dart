@@ -151,6 +151,47 @@ class DiaryTransferService {
     ImportConflictPolicy policy,
   ) => repository.importDocument(prepared.document, policy);
 
+  /// 가져오기를 적용하기 직전에 현재 기록의 복구용 스냅샷을 앱 저장소에
+  /// 원자적으로 기록합니다. 실제 반영도 저장소의 단일 트랜잭션에서 수행됩니다.
+  Future<ImportResult> applyWithAutomaticBackup(
+    PreparedDiaryImport prepared,
+    ImportConflictPolicy policy, {
+    Directory? backupDirectory,
+    DateTime? createdAt,
+  }) async {
+    await createAutomaticBackup(
+      backupDirectory: backupDirectory,
+      createdAt: createdAt,
+    );
+    return apply(prepared, policy);
+  }
+
+  Future<File> createAutomaticBackup({
+    Directory? backupDirectory,
+    DateTime? createdAt,
+  }) async {
+    final directory =
+        backupDirectory ??
+        Directory(
+          p.join(
+            (await getApplicationSupportDirectory()).path,
+            'automatic-backups',
+          ),
+        );
+    await directory.create(recursive: true);
+    final timestamp = createdAt ?? DateTime.now();
+    final fileName = 'before-import-${_fileName(timestamp)}';
+    final target = File(p.join(directory.path, fileName));
+    final temporary = File('${target.path}.tmp');
+    try {
+      await temporary.writeAsBytes(buildExportBytes(), flush: true);
+      return await temporary.rename(target.path);
+    } catch (_) {
+      if (await temporary.exists()) await temporary.delete();
+      rethrow;
+    }
+  }
+
   Future<DiaryExportOutcome> exportToPlatform({
     int? targetSchemaVersion,
     String? dialogTitle,

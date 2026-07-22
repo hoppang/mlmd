@@ -13,7 +13,7 @@ import '../../../utils/logger.dart';
 import '../../../widgets/import_preview_dialog.dart';
 import '../../../widgets/transfer_progress_dialog.dart';
 import '../../search/presentation/diary_search_page.dart';
-import '../../settings/presentation/settings_dialog.dart';
+import '../../settings/presentation/settings_page.dart';
 import '../application/diary_list_notifier.dart';
 import 'diary_form_page.dart';
 import 'diary_list_page.dart';
@@ -147,7 +147,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       );
       progressShown = true;
       await Future<void>.delayed(Duration.zero);
-      final result = service.apply(prepared, policy);
+      final result = await service.applyWithAutomaticBackup(prepared, policy);
       ref.read(diaryListProvider.notifier).reload();
       final embeddingFailed = await ref
           .read(diaryListProvider.notifier)
@@ -199,11 +199,25 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     logger.e('[transfer] $stage failed ($code)');
   }
 
-  void _showSettingsDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (_) =>
-          SettingsDialog(onExport: _exportDiaries, onImport: _importDiaries),
+  void _showSettingsPage(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsPage(
+          onExport: _exportDiaries,
+          onImport: _importDiaries,
+          backupOverview: () {
+            final diaries = ref.read(diaryListProvider);
+            return BackupOverview(
+              diaryCount: diaries.length,
+              activityCount: diaries.fold(
+                0,
+                (count, diary) => count + diary.activities.length,
+              ),
+              estimatedBackupBytes: _transferService.buildExportBytes().length,
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -249,7 +263,8 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
           if (_selectedTab == 0)
             IconButton(
               icon: const Icon(Icons.settings, color: Colors.white),
-              onPressed: () => _showSettingsDialog(context),
+              tooltip: loc.settingsTitle,
+              onPressed: () => _showSettingsPage(context),
             ),
         ],
       ),
