@@ -10,11 +10,12 @@ import '../utils/logger.dart';
 
 /// Riverpod에서 사용할 EmbeddingService 프로바이더.
 /// main.dart에서 스토어 초기화와 함께 주입해야 합니다.
-final embeddingServiceProvider = Provider<EmbeddingService>((ref) {
-  throw UnimplementedError(
+final embeddingServiceProvider = Provider<EmbeddingService>(
+  (ref) => throw UnimplementedError(
     'embeddingServiceProvider가 초기화되지 않았습니다. main.dart에서 재정의해주십시오.',
-  );
-});
+  ),
+  dependencies: const [],
+);
 
 class EmbeddingService {
   static final EmbeddingService _instance = EmbeddingService._internal();

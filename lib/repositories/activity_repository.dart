@@ -95,4 +95,4 @@ class ActivityRepositoryImpl implements ActivityRepository {
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
   final obxHelper = ref.watch(objectBoxProvider);
   return ActivityRepositoryImpl(obxHelper);
-});
+}, dependencies: [objectBoxProvider]);

@@ -5,9 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app.dart';
 import '../data/objectbox_helper.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../services/embedding_service.dart';
-import '../l10n/app_localizations.dart';
 import 'app_bootstrap.dart';
 import 'startup_error_screen.dart';
 
@@ -23,8 +23,12 @@ class AppStartupWidget extends ConsumerWidget {
         return ProviderScope(
           overrides: [
             objectBoxProvider.overrideWithValue(dependencies.objectBox),
-            embeddingServiceProvider.overrideWithValue(dependencies.embeddingService),
-            sharedPreferencesProvider.overrideWithValue(dependencies.preferences),
+            embeddingServiceProvider.overrideWithValue(
+              dependencies.embeddingService,
+            ),
+            sharedPreferencesProvider.overrideWithValue(
+              dependencies.preferences,
+            ),
           ],
           child: const MyApp(),
         );
@@ -41,7 +45,7 @@ class AppStartupWidget extends ConsumerWidget {
             // Optional: reset SharedPreferences as well
             final prefs = await SharedPreferences.getInstance();
             await prefs.clear();
-            
+
             if (context.mounted) {
               ref.invalidate(appStartupProvider);
             }
@@ -55,16 +59,13 @@ class AppStartupWidget extends ConsumerWidget {
   }
 }
 
-class _StartupLoadingScreen extends ConsumerWidget {
+class _StartupLoadingScreen extends StatelessWidget {
   const _StartupLoadingScreen();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final locale = ref.watch(localeProvider.notifier).locale;
-
+  Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      locale: locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

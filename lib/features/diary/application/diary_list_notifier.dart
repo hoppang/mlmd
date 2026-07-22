@@ -146,4 +146,5 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
 final diaryListProvider =
     NotifierProvider<DiaryListNotifier, List<DiaryEntity>>(
       DiaryListNotifier.new,
+      dependencies: [diaryRepositoryProvider, embeddingServiceProvider],
     );

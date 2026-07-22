@@ -89,9 +89,10 @@ class RecordDraftRepositoryImpl implements RecordDraftRepository {
   }
 }
 
-final recordDraftRepositoryProvider = Provider<RecordDraftRepository>((ref) {
-  return RecordDraftRepositoryImpl(ref.watch(objectBoxProvider));
-});
+final recordDraftRepositoryProvider = Provider<RecordDraftRepository>(
+  (ref) => RecordDraftRepositoryImpl(ref.watch(objectBoxProvider)),
+  dependencies: [objectBoxProvider],
+);
 
 class RecordDraftListNotifier extends Notifier<List<RecordDraftEntity>> {
   @override
@@ -107,4 +108,5 @@ class RecordDraftListNotifier extends Notifier<List<RecordDraftEntity>> {
 final recordDraftListProvider =
     NotifierProvider<RecordDraftListNotifier, List<RecordDraftEntity>>(
       RecordDraftListNotifier.new,
+      dependencies: [recordDraftRepositoryProvider],
     );

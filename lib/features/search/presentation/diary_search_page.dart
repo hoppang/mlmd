@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/presentation/adaptive_detail.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/diary_repository.dart';
@@ -10,9 +13,14 @@ import '../../diary/application/diary_list_notifier.dart';
 enum _DiarySearchSort { relevance, newest, oldest }
 
 class DiarySearchPage extends ConsumerStatefulWidget {
-  const DiarySearchPage({required this.onEditDiary, super.key});
+  const DiarySearchPage({
+    required this.onEditDiary,
+    this.focusRequest,
+    super.key,
+  });
 
   final ValueChanged<DiaryEntity> onEditDiary;
+  final ValueListenable<int>? focusRequest;
 
   @override
   ConsumerState<DiarySearchPage> createState() => _DiarySearchPageState();
@@ -20,6 +28,7 @@ class DiarySearchPage extends ConsumerStatefulWidget {
 
 class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   final _queryController = TextEditingController();
+  final _queryFocusNode = FocusNode(debugLabel: 'search query');
   List<DiarySearchResult> _results = const [];
   _DiarySearchSort _sort = _DiarySearchSort.relevance;
   bool _isSearching = false;
@@ -28,8 +37,30 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   int _searchGeneration = 0;
 
   @override
+  void initState() {
+    super.initState();
+    widget.focusRequest?.addListener(_requestQueryFocus);
+  }
+
+  @override
+  void didUpdateWidget(covariant DiarySearchPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusRequest == widget.focusRequest) return;
+    oldWidget.focusRequest?.removeListener(_requestQueryFocus);
+    widget.focusRequest?.addListener(_requestQueryFocus);
+  }
+
+  void _requestQueryFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _queryFocusNode.requestFocus();
+    });
+  }
+
+  @override
   void dispose() {
+    widget.focusRequest?.removeListener(_requestQueryFocus);
     _queryController.dispose();
+    _queryFocusNode.dispose();
     super.dispose();
   }
 
@@ -82,10 +113,8 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   }
 
   Future<void> _openResult(DiarySearchResult result) async {
-    final shouldEdit = await showModalBottomSheet<bool>(
+    final shouldEdit = await showAdaptiveDetail<bool>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
       builder: (context) => _SearchResultDetail(result: result),
     );
     if (shouldEdit == true && mounted) widget.onEditDiary(result.diary);
@@ -95,53 +124,56 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextField(
-                  key: const Key('search-query-field'),
-                  controller: _queryController,
-                  textInputAction: TextInputAction.search,
-                  decoration: InputDecoration(
-                    hintText: loc.searchHint,
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+    return AdaptiveContentFrame(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('search-query-field'),
+                    controller: _queryController,
+                    focusNode: _queryFocusNode,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: loc.searchHint,
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
+                    onSubmitted: (_) => _search(),
                   ),
-                  onSubmitted: (_) => _search(),
                 ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                key: const Key('search-submit-button'),
-                onPressed: _isSearching ? null : _search,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(56, 56),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                const SizedBox(width: 8),
+                FilledButton(
+                  key: const Key('search-submit-button'),
+                  onPressed: _isSearching ? null : _search,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(56, 56),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  child: _isSearching
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(loc.searchAction),
                 ),
-                child: _isSearching
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(loc.searchAction),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_results.isNotEmpty && !_hasError) _buildResultHeader(loc),
-          Expanded(child: _buildBody(loc)),
-        ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_results.isNotEmpty && !_hasError) _buildResultHeader(loc),
+            Expanded(child: _buildBody(loc)),
+          ],
+        ),
       ),
     );
   }
@@ -248,34 +280,41 @@ class _SearchMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 52, color: Theme.of(context).colorScheme.outline),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            if (description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                description!,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+    return Semantics(
+      liveRegion: true,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 52,
+                color: Theme.of(context).colorScheme.outline,
               ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              if (description != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  description!,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(height: 16),
+                OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+              ],
             ],
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 16),
-              OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
-            ],
-          ],
+          ),
         ),
       ),
     );
@@ -312,63 +351,71 @@ class _SearchResultCard extends StatelessWidget {
         ? loc.searchMemoResult
         : loc.searchActivityResult;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    activity == null ? Icons.notes : Icons.event_note,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    typeLabel,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+    final timeLabel = _formatResultTime(context, result);
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label:
+          '$typeLabel, $title, $timeLabel, ${_reason(loc)}, '
+          '${loc.searchReadOnly}',
+      child: Card(
+        margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      activity == null ? Icons.notes : Icons.event_note,
+                      size: 18,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    _formatResultTime(context, result),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    const SizedBox(width: 6),
+                    Text(
+                      typeLabel,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
+                    const Spacer(),
+                    Text(
+                      timeLabel,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                if (excerpt.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    excerpt,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              if (excerpt.isNotEmpty) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
-                  excerpt,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  _reason(loc),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
-              const SizedBox(height: 8),
-              Text(
-                _reason(loc),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -391,7 +438,7 @@ class _SearchResultDetail extends StatelessWidget {
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           24,
-          0,
+          24,
           24,
           24 + MediaQuery.viewInsetsOf(context).bottom,
         ),

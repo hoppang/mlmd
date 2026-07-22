@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/layout/adaptive_content_frame.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/locale_provider.dart';
 
@@ -21,52 +22,57 @@ class SettingsPage extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(loc.settingsTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: [
-          Text(loc.settingsIntro, style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: 16),
-          _SettingsTile(
-            icon: Icons.child_care_outlined,
-            title: loc.childInformation,
-            subtitle: loc.childInformationDescription,
-            onTap: () => _showUnavailable(context, loc.childInformation),
-          ),
-          _SettingsTile(
-            icon: Icons.badge_outlined,
-            title: loc.authorProfile,
-            subtitle: loc.authorProfileDescription,
-            onTap: () => _showUnavailable(context, loc.authorProfile),
-          ),
-          _SettingsTile(
-            icon: Icons.family_restroom_outlined,
-            title: loc.familySharing,
-            subtitle: loc.familySharingDescription,
-            onTap: () => _showUnavailable(context, loc.familySharing),
-          ),
-          _SettingsTile(
-            icon: Icons.inventory_2_outlined,
-            title: loc.dataBackupTitle,
-            subtitle: loc.dataBackupDescription,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => DataBackupPage(
-                  onExport: onExport,
-                  onImport: onImport,
-                  backupOverview: backupOverview,
+      body: AdaptiveContentFrame(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            Text(
+              loc.settingsIntro,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 16),
+            _SettingsTile(
+              icon: Icons.child_care_outlined,
+              title: loc.childInformation,
+              subtitle: loc.childInformationDescription,
+              onTap: () => _showUnavailable(context, loc.childInformation),
+            ),
+            _SettingsTile(
+              icon: Icons.badge_outlined,
+              title: loc.authorProfile,
+              subtitle: loc.authorProfileDescription,
+              onTap: () => _showUnavailable(context, loc.authorProfile),
+            ),
+            _SettingsTile(
+              icon: Icons.family_restroom_outlined,
+              title: loc.familySharing,
+              subtitle: loc.familySharingDescription,
+              onTap: () => _showUnavailable(context, loc.familySharing),
+            ),
+            _SettingsTile(
+              icon: Icons.inventory_2_outlined,
+              title: loc.dataBackupTitle,
+              subtitle: loc.dataBackupDescription,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => DataBackupPage(
+                    onExport: onExport,
+                    onImport: onImport,
+                    backupOverview: backupOverview,
+                  ),
                 ),
               ),
             ),
-          ),
-          _SettingsTile(
-            icon: Icons.help_outline,
-            title: loc.helpTitle,
-            subtitle: loc.helpDescription,
-            onTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute<void>(builder: (_) => const HelpPage())),
-          ),
-        ],
+            _SettingsTile(
+              icon: Icons.help_outline,
+              title: loc.helpTitle,
+              subtitle: loc.helpDescription,
+              onTap: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute<void>(builder: (_) => const HelpPage())),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -125,68 +131,70 @@ class _DataBackupPageState extends State<DataBackupPage> {
     final overview = widget.backupOverview();
     return Scaffold(
       appBar: AppBar(title: Text(loc.dataBackupTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.storage_outlined, color: colors.primary),
-                      const SizedBox(width: 10),
-                      Text(
-                        loc.storageSummaryTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    loc.backupContentsSummary(
-                      overview.diaryCount,
-                      overview.activityCount,
-                      _formatBytes(overview.estimatedBackupBytes),
+      body: AdaptiveContentFrame(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.storage_outlined, color: colors.primary),
+                        const SizedBox(width: 10),
+                        Text(
+                          loc.storageSummaryTitle,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    loc.backupPrivacyNotice,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Text(
+                      loc.backupContentsSummary(
+                        overview.diaryCount,
+                        overview.activityCount,
+                        _formatBytes(overview.estimatedBackupBytes),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      loc.backupPrivacyNotice,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          _ActionCard(
-            icon: Icons.upload_file_outlined,
-            title: loc.createBackupFile,
-            description: loc.createBackupDescription,
-            buttonLabel: loc.createBackupFile,
-            filled: true,
-            onPressed: widget.onExport,
-          ),
-          const SizedBox(height: 12),
-          _ActionCard(
-            icon: Icons.download_for_offline_outlined,
-            title: loc.importBackupFile,
-            description: loc.importBackupDescription,
-            buttonLabel: loc.importBackupFile,
-            filled: false,
-            onPressed: _importAndRefresh,
-          ),
-          const SizedBox(height: 20),
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-            leading: const Icon(Icons.restore_from_trash_outlined),
-            title: Text(loc.recentlyDeleted),
-            subtitle: Text(loc.recentlyDeletedDescription),
-          ),
-        ],
+            const SizedBox(height: 12),
+            _ActionCard(
+              icon: Icons.upload_file_outlined,
+              title: loc.createBackupFile,
+              description: loc.createBackupDescription,
+              buttonLabel: loc.createBackupFile,
+              filled: true,
+              onPressed: widget.onExport,
+            ),
+            const SizedBox(height: 12),
+            _ActionCard(
+              icon: Icons.download_for_offline_outlined,
+              title: loc.importBackupFile,
+              description: loc.importBackupDescription,
+              buttonLabel: loc.importBackupFile,
+              filled: false,
+              onPressed: _importAndRefresh,
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              leading: const Icon(Icons.restore_from_trash_outlined),
+              title: Text(loc.recentlyDeleted),
+              subtitle: Text(loc.recentlyDeletedDescription),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -213,53 +221,55 @@ class HelpPage extends ConsumerWidget {
     final currentMode = ref.watch(localeProvider);
     return Scaffold(
       appBar: AppBar(title: Text(loc.helpTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: [
-          Text(loc.helpIntro, style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: 20),
-          _HelpCard(
-            question: loc.offlineHelpQuestion,
-            answer: loc.offlineHelpAnswer,
-          ),
-          _HelpCard(
-            question: loc.duplicateHelpQuestion,
-            answer: loc.duplicateHelpAnswer,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            loc.languageSetting,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<AppLocaleMode>(
-            initialValue: currentMode,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-            items: [
-              DropdownMenuItem(
-                value: AppLocaleMode.system,
-                child: Text(loc.languageSystem),
-              ),
-              DropdownMenuItem(
-                value: AppLocaleMode.korean,
-                child: Text(loc.languageKorean),
-              ),
-              DropdownMenuItem(
-                value: AppLocaleMode.english,
-                child: Text(loc.languageEnglish),
-              ),
-              DropdownMenuItem(
-                value: AppLocaleMode.japanese,
-                child: Text(loc.languageJapanese),
-              ),
-            ],
-            onChanged: (mode) {
-              if (mode != null) {
-                ref.read(localeProvider.notifier).setLocale(mode);
-              }
-            },
-          ),
-        ],
+      body: AdaptiveContentFrame(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            Text(loc.helpIntro, style: Theme.of(context).textTheme.bodyLarge),
+            const SizedBox(height: 20),
+            _HelpCard(
+              question: loc.offlineHelpQuestion,
+              answer: loc.offlineHelpAnswer,
+            ),
+            _HelpCard(
+              question: loc.duplicateHelpQuestion,
+              answer: loc.duplicateHelpAnswer,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              loc.languageSetting,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<AppLocaleMode>(
+              initialValue: currentMode,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+              items: [
+                DropdownMenuItem(
+                  value: AppLocaleMode.system,
+                  child: Text(loc.languageSystem),
+                ),
+                DropdownMenuItem(
+                  value: AppLocaleMode.korean,
+                  child: Text(loc.languageKorean),
+                ),
+                DropdownMenuItem(
+                  value: AppLocaleMode.english,
+                  child: Text(loc.languageEnglish),
+                ),
+                DropdownMenuItem(
+                  value: AppLocaleMode.japanese,
+                  child: Text(loc.languageJapanese),
+                ),
+              ],
+              onChanged: (mode) {
+                if (mode != null) {
+                  ref.read(localeProvider.notifier).setLocale(mode);
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

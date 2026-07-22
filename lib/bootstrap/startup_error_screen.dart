@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../l10n/app_localizations.dart';
-import '../providers/locale_provider.dart';
 
-class StartupErrorScreen extends ConsumerWidget {
+class StartupErrorScreen extends StatelessWidget {
   final Object error;
   final StackTrace? stackTrace;
   final VoidCallback onRetry;
@@ -45,13 +43,10 @@ class StartupErrorScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final locale = ref.watch(localeProvider.notifier).locale;
-
+  Widget build(BuildContext context) {
     // Use a standalone MaterialApp because this is shown before MyApp is loaded.
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      locale: locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -70,7 +65,11 @@ class StartupErrorScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         loc.startupErrorTitle,
@@ -86,7 +85,8 @@ class StartupErrorScreen extends ConsumerWidget {
                         ),
                         child: Text(
                           error.toString(),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontFamily: 'monospace'),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -113,7 +113,7 @@ class StartupErrorScreen extends ConsumerWidget {
               ),
             ),
           );
-        }
+        },
       ),
     );
   }

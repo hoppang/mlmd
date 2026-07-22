@@ -555,4 +555,4 @@ class DiaryRepositoryImpl implements DiaryRepository {
 final diaryRepositoryProvider = Provider<DiaryRepository>((ref) {
   final obxHelper = ref.watch(objectBoxProvider);
   return DiaryRepositoryImpl(obxHelper);
-});
+}, dependencies: [objectBoxProvider]);

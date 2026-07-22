@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/features/diary/application/diary_draft_payload.dart';
+import 'package:mlmd/core/layout/adaptive_content_frame.dart';
 import 'package:mlmd/features/diary/application/diary_list_notifier.dart';
 import 'package:mlmd/features/diary/presentation/diary_form_page.dart';
 import 'package:mlmd/features/diary/presentation/diary_home_page.dart';
@@ -160,6 +163,7 @@ Widget _buildApp({
   List<RecordDraftEntity> drafts = const [],
   _TestDiaryListNotifier? diaryNotifier,
   DiaryAnalysisService? analysisService,
+  TextScaler? textScaler,
 }) {
   return ProviderScope(
     overrides: [
@@ -175,16 +179,22 @@ Widget _buildApp({
       if (analysisService != null)
         diaryAnalysisServiceProvider.overrideWithValue(analysisService),
     ],
-    child: const MaterialApp(
-      localizationsDelegates: [
+    child: MaterialApp(
+      builder: textScaler == null
+          ? null
+          : (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+              child: child!,
+            ),
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: [Locale('ko'), Locale('en'), Locale('ja')],
-      locale: Locale('ko'),
-      home: DiaryDemoPage(),
+      supportedLocales: const [Locale('ko'), Locale('en'), Locale('ja')],
+      locale: const Locale('ko'),
+      home: const DiaryDemoPage(),
     ),
   );
 }
@@ -576,6 +586,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('today-activity:51')));
     await tester.pumpAndSettle();
 
+    expect(find.byType(BottomSheet), findsOneWidget);
     expect(find.text('읽기 전용'), findsOneWidget);
     expect(find.text('해열제'), findsAtLeastNWidgets(1));
     expect(find.byType(DiaryFormPage), findsNothing);
@@ -665,5 +676,133 @@ void main() {
     expect(notifier.updatedActivities, hasLength(2));
     expect(notifier.updatedActivities![0].occurredAt, exactEventTime);
     expect(notifier.updatedActivities![1].occurredAt, isNull);
+  });
+
+  testWidgets('넓은 창에서도 오늘 본문은 읽기 가능한 최대 너비를 유지한다', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 800);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AdaptiveContentFrame), findsWidgets);
+    expect(
+      tester.getSize(find.byKey(const Key('today-scroll-view'))).width,
+      lessThanOrEqualTo(720),
+    );
+  });
+
+  testWidgets('Ctrl+F는 검색 탭을 열고 검색어 입력에 포커스한다', (tester) async {
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    final field = find.byKey(const Key('search-query-field'));
+    expect(field, findsOneWidget);
+    expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('Windows에서는 기록 상세를 중앙 대화상자로 연다', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 91,
+      recordId: 'windows-detail',
+      date: now,
+      title: 'Windows 상세',
+      content: '같은 상세 내용',
+      lastModified: now,
+    );
+
+    await tester.pumpWidget(_buildApp(diaries: [diary]));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('today-memo:91')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.text('같은 상세 내용'), findsAtLeastNWidgets(1));
+    expect(find.byKey(const Key('today-record-edit-button')), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('큰 글자와 좁은 화면에서도 작성 화면이 넘치지 않는다', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.reset);
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 92,
+      recordId: 'large-text-form',
+      date: now,
+      title: '큰 글자 기록',
+      content: '큰 글자에서도 보존될 내용',
+      lastModified: now,
+    );
+    diary.activities.add(
+      ActivityEntity(
+        id: 93,
+        type: '투약',
+        time: now,
+        details: '해열제 복용 상세',
+        lastModified: now,
+      ),
+    );
+
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], textScaler: const TextScaler.linear(2)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('today-memo:92')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('today-record-edit-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DiaryFormPage), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('작성 화면의 Esc는 초안을 보존하는 뒤로 가기와 같은 결과다', (tester) async {
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(DiaryFormPage), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DiaryDemoPage), findsOneWidget);
+    expect(find.byType(DiaryFormPage), findsNothing);
+  });
+
+  testWidgets('기록 카드는 읽기 전용 상세 동작을 의미 정보로 제공한다', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 94,
+      recordId: 'semantic-record',
+      date: now,
+      title: '의미 있는 기록',
+      content: '본문',
+      lastModified: now,
+    );
+
+    await tester.pumpWidget(_buildApp(diaries: [diary]));
+    await tester.pumpAndSettle();
+
+    final node = tester.getSemantics(
+      find.byKey(const ValueKey('today-memo:94')),
+    );
+    expect(node.label, contains('의미 있는 기록'));
+    expect(node.label, contains('읽기 전용'));
+    expect(node.flagsCollection.isButton, isTrue);
+    semantics.dispose();
   });
 }

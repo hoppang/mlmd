@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
@@ -28,6 +29,18 @@ class DiaryDemoPage extends ConsumerStatefulWidget {
 
 class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
   int _selectedTab = 0;
+  final ValueNotifier<int> _searchFocusRequest = ValueNotifier(0);
+
+  @override
+  void dispose() {
+    _searchFocusRequest.dispose();
+    super.dispose();
+  }
+
+  void _focusSearch() {
+    setState(() => _selectedTab = 2);
+    _searchFocusRequest.value++;
+  }
 
   void _navigateToFormPage(
     BuildContext context, [
@@ -245,81 +258,96 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _selectedTab == 0
-              ? loc.appTitle
-              : (_selectedTab == 1 ? loc.dateTab : loc.searchTitle),
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyF, control: true):
+            _focusSearch,
+      },
+      child: Focus(
+        autofocus: true,
+        debugLabel: 'home shortcuts',
+        child: FocusTraversalGroup(
+          policy: ReadingOrderTraversalPolicy(),
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text(
+                _selectedTab == 0
+                    ? loc.appTitle
+                    : (_selectedTab == 1 ? loc.dateTab : loc.searchTitle),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: Colors.teal.shade700,
+              elevation: 4,
+              centerTitle: true,
+              actions: [
+                if (_selectedTab == 0)
+                  IconButton(
+                    icon: const Icon(Icons.settings, color: Colors.white),
+                    tooltip: loc.settingsTitle,
+                    onPressed: () => _showSettingsPage(context),
+                  ),
+              ],
+            ),
+            body: IndexedStack(
+              index: _selectedTab,
+              children: [
+                TodayPage(
+                  onNavigateToForm: (diary, draftId) =>
+                      _navigateToFormPage(context, diary, draftId),
+                ),
+                DiaryListPage(
+                  onEditDiary: (diary) => _navigateToFormPage(context, diary),
+                ),
+                DiarySearchPage(
+                  onEditDiary: (diary) => _navigateToFormPage(context, diary),
+                  focusRequest: _searchFocusRequest,
+                ),
+              ],
+            ),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _selectedTab,
+              onDestinationSelected: (index) =>
+                  setState(() => _selectedTab = index),
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.today_outlined),
+                  selectedIcon: const Icon(Icons.today),
+                  label: loc.todayTab,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  selectedIcon: const Icon(Icons.calendar_month),
+                  label: loc.dateTab,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.search_outlined),
+                  selectedIcon: const Icon(Icons.search),
+                  label: loc.searchTab,
+                ),
+              ],
+            ),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: () {
+                if (todayDiary != null) {
+                  _navigateToFormPage(context, todayDiary);
+                } else if (latestCreateDraft != null) {
+                  _openDraft(context, latestCreateDraft, diaries);
+                } else {
+                  _navigateToFormPage(context);
+                }
+              },
+              backgroundColor: Colors.teal.shade600,
+              foregroundColor: Colors.white,
+              icon: Icon(todayDiary != null ? Icons.edit : Icons.add),
+              label: Text(todayDiary != null ? loc.edit : loc.newDiary),
+            ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           ),
         ),
-        backgroundColor: Colors.teal.shade700,
-        elevation: 4,
-        centerTitle: true,
-        actions: [
-          if (_selectedTab == 0)
-            IconButton(
-              icon: const Icon(Icons.settings, color: Colors.white),
-              tooltip: loc.settingsTitle,
-              onPressed: () => _showSettingsPage(context),
-            ),
-        ],
       ),
-      body: IndexedStack(
-        index: _selectedTab,
-        children: [
-          TodayPage(
-            onNavigateToForm: (diary, draftId) =>
-                _navigateToFormPage(context, diary, draftId),
-          ),
-          DiaryListPage(
-            onEditDiary: (diary) => _navigateToFormPage(context, diary),
-          ),
-          DiarySearchPage(
-            onEditDiary: (diary) => _navigateToFormPage(context, diary),
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedTab,
-        onDestinationSelected: (index) => setState(() => _selectedTab = index),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.today_outlined),
-            selectedIcon: const Icon(Icons.today),
-            label: loc.todayTab,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month),
-            label: loc.dateTab,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.search_outlined),
-            selectedIcon: const Icon(Icons.search),
-            label: loc.searchTab,
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          if (todayDiary != null) {
-            _navigateToFormPage(context, todayDiary);
-          } else if (latestCreateDraft != null) {
-            _openDraft(context, latestCreateDraft, diaries);
-          } else {
-            _navigateToFormPage(context);
-          }
-        },
-        backgroundColor: Colors.teal.shade600,
-        foregroundColor: Colors.white,
-        icon: Icon(todayDiary != null ? Icons.edit : Icons.add),
-        label: Text(todayDiary != null ? loc.edit : loc.newDiary),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

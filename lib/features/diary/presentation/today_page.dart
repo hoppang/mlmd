@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/presentation/adaptive_detail.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
@@ -117,10 +119,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   }
 
   Future<void> _openEntry(_TodayTimelineEntry entry) async {
-    final shouldEdit = await showModalBottomSheet<bool>(
+    final shouldEdit = await showAdaptiveDetail<bool>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
       builder: (context) => _TodayRecordDetail(entry: entry),
     );
     if (shouldEdit == true && mounted) {
@@ -142,130 +142,132 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         .where((diary) => diary.summary.trim().isNotEmpty)
         .toList();
 
-    return CustomScrollView(
-      key: const Key('today-scroll-view'),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-            child: Text(
-              MaterialLocalizations.of(context).formatFullDate(_today),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-        ),
-        if (drafts.isNotEmpty)
-          SliverToBoxAdapter(
-            child: DraftResumeCard(
-              count: drafts.length,
-              description: _draftDescription(context, drafts.first),
-              onContinue: () => _openDraft(drafts.first, diaries),
-              onStartNew: () => widget.onNavigateToForm(null, null),
-            ),
-          ),
-        if (counts.isNotEmpty) ...[
-          _SectionTitle(title: loc.todayStatusTitle),
+    return AdaptiveContentFrame(
+      child: CustomScrollView(
+        key: const Key('today-scroll-view'),
+        slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: counts.entries
-                    .map(
-                      (entry) => Chip(
-                        avatar: const Icon(
-                          Icons.check_circle_outline,
-                          size: 16,
-                        ),
-                        label: Text('${entry.key} · ${entry.value}'),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    )
-                    .toList(),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              child: Text(
+                MaterialLocalizations.of(context).formatFullDate(_today),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
           ),
-        ],
-        _SectionTitle(title: loc.todayTimelineTitle),
-        if (entries.isEmpty)
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 240,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.timeline,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      loc.noDiaryTitle,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      loc.noDiaryDesc,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+          if (drafts.isNotEmpty)
+            SliverToBoxAdapter(
+              child: DraftResumeCard(
+                count: drafts.length,
+                description: _draftDescription(context, drafts.first),
+                onContinue: () => _openDraft(drafts.first, diaries),
+                onStartNew: () => widget.onNavigateToForm(null, null),
+              ),
+            ),
+          if (counts.isNotEmpty) ...[
+            _SectionTitle(title: loc.todayStatusTitle),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: counts.entries
+                      .map(
+                        (entry) => Chip(
+                          avatar: const Icon(
+                            Icons.check_circle_outline,
+                            size: 16,
+                          ),
+                          label: Text('${entry.key} · ${entry.value}'),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
             ),
-          )
-        else
-          SliverList.separated(
-            itemCount: entries.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 2),
-            itemBuilder: (context, index) {
-              final entry = entries[index];
-              return _TimelineItem(
-                key: ValueKey(entry.resultKey),
-                entry: entry,
-                onTap: () => _openEntry(entry),
-              );
-            },
-          ),
-        if (summaries.isNotEmpty) ...[
-          _SectionTitle(title: loc.summaryLabel),
-          SliverList.separated(
-            itemCount: summaries.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final diary = summaries[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.auto_awesome,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.primary,
+          ],
+          _SectionTitle(title: loc.todayTimelineTitle),
+          if (entries.isEmpty)
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 240,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.timeline,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        loc.noDiaryTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        loc.noDiaryDesc,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(diary.summary.trim())),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            )
+          else
+            SliverList.separated(
+              itemCount: entries.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 2),
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return _TimelineItem(
+                  key: ValueKey(entry.resultKey),
+                  entry: entry,
+                  onTap: () => _openEntry(entry),
+                );
+              },
+            ),
+          if (summaries.isNotEmpty) ...[
+            _SectionTitle(title: loc.summaryLabel),
+            SliverList.separated(
+              itemCount: summaries.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final diary = summaries[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Card(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    elevation: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(diary.summary.trim())),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+          const SliverToBoxAdapter(child: SizedBox(height: 96)),
         ],
-        const SliverToBoxAdapter(child: SizedBox(height: 96)),
-      ],
+      ),
     );
   }
 }
@@ -319,49 +321,56 @@ class _TimelineItem extends StatelessWidget {
           ).formatTimeOfDay(TimeOfDay.fromDateTime(entry.occurredAt))
         : loc.eventTimeUnknown;
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 76,
-              child: Text(
-                timeLabel,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label:
+          '${entry.title}, $timeLabel, ${loc.searchReadOnly}, '
+          '${loc.searchResultDetail}',
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 76,
+                child: Text(
+                  timeLabel,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-            ),
-            Icon(
-              entry.activity == null ? Icons.notes : Icons.event_note,
-              size: 20,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    entry.title,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  if (entry.content.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      entry.content,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
+              Icon(
+                entry.activity == null ? Icons.notes : Icons.event_note,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
               ),
-            ),
-            const Icon(Icons.chevron_right, size: 20),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.title,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    if (entry.content.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        entry.content,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -385,7 +394,7 @@ class _TodayRecordDetail extends StatelessWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

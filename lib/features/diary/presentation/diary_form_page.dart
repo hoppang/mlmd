@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/layout/adaptive_content_frame.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/record_draft_repository.dart';
@@ -515,100 +517,127 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     final aiAvailable =
         serviceAvailable && _aiAnalysisState != _AiAnalysisState.unavailable;
 
-    return PopScope<Object?>(
-      canPop: _allowPop,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop || _handlingPop) return;
-        if (!_draftController.flush()) return;
-        _handlingPop = true;
-        setState(() => _allowPop = true);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) Navigator.of(context).pop(result);
-        });
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          Navigator.of(context).maybePop();
+        },
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            isEdit ? loc.editDiary : loc.newDiary,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          actions: [
-            if (isEdit)
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                onPressed: _onDelete,
-              ),
-            if (_draftStatus != DraftSaveStatus.idle)
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'discardDraft') _confirmDiscardDraft();
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'discardDraft',
-                    child: Text(loc.discardDraft),
-                  ),
+      child: Focus(
+        autofocus: true,
+        debugLabel: 'diary form shortcuts',
+        child: FocusTraversalGroup(
+          policy: ReadingOrderTraversalPolicy(),
+          child: PopScope<Object?>(
+            canPop: _allowPop,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop || _handlingPop) return;
+              if (!_draftController.flush()) return;
+              _handlingPop = true;
+              setState(() => _allowPop = true);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) Navigator.of(context).pop(result);
+              });
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                title: Text(
+                  isEdit ? loc.editDiary : loc.newDiary,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                actions: [
+                  if (isEdit)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      tooltip: loc.delete,
+                      onPressed: _onDelete,
+                    ),
+                  if (_draftStatus != DraftSaveStatus.idle)
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'discardDraft') _confirmDiscardDraft();
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'discardDraft',
+                          child: Text(loc.discardDraft),
+                        ),
+                      ],
+                    ),
                 ],
               ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // 모드 토글 (새 일기 작성 시에만 표시)
-            if (!isEdit) _buildModeToggle(loc),
-            if (_draftStatus != DraftSaveStatus.idle)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    switch (_draftStatus) {
-                      DraftSaveStatus.saving => loc.draftSaving,
-                      DraftSaveStatus.saved => loc.draftSaved,
-                      DraftSaveStatus.failed => loc.draftSaveFailed,
-                      DraftSaveStatus.idle => '',
-                    },
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: _draftStatus == DraftSaveStatus.failed
-                          ? Theme.of(context).colorScheme.error
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
+              body: AdaptiveContentFrame(
+                child: Column(
+                  children: [
+                    // 모드 토글 (새 일기 작성 시에만 표시)
+                    if (!isEdit) _buildModeToggle(loc),
+                    if (_draftStatus != DraftSaveStatus.idle)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              switch (_draftStatus) {
+                                DraftSaveStatus.saving => loc.draftSaving,
+                                DraftSaveStatus.saved => loc.draftSaved,
+                                DraftSaveStatus.failed => loc.draftSaveFailed,
+                                DraftSaveStatus.idle => '',
+                              },
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color:
+                                        _draftStatus == DraftSaveStatus.failed
+                                        ? Theme.of(context).colorScheme.error
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (_sourceChangedSinceDraft)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          loc.draftSourceChanged,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
+                        ),
+                      ),
+                    _buildAiStatus(loc, aiAvailable),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: _mode == _InputMode.simple
+                            ? _buildSimpleMode(loc, aiAvailable)
+                            : _buildManualMode(loc),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            if (_sourceChangedSinceDraft)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  loc.draftSourceChanged,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onErrorContainer,
-                  ),
-                ),
-              ),
-            _buildAiStatus(loc, aiAvailable),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: _mode == _InputMode.simple
-                    ? _buildSimpleMode(loc, aiAvailable)
-                    : _buildManualMode(loc),
+              floatingActionButton: FloatingActionButton.extended(
+                onPressed: _onConfirm,
+                backgroundColor: Colors.teal.shade600,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.check),
+                label: Text(isEdit ? loc.edit : loc.saveRecord),
               ),
             ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _onConfirm,
-          backgroundColor: Colors.teal.shade600,
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.check),
-          label: Text(isEdit ? loc.edit : loc.saveRecord),
+          ),
         ),
       ),
     );
@@ -643,29 +672,32 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
       _ => ('', Icons.info_outline, Colors.transparent),
     };
     if (message.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_isAnalyzing)
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2, color: color),
-            )
-          else
-            Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: color),
+    return Semantics(
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_isAnalyzing)
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: color),
+              )
+            else
+              Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: color),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -881,54 +913,9 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    // 종류
-                    Expanded(
-                      flex: 2,
-                      child: TextField(
-                        controller: act.typeController,
-                        decoration: InputDecoration(
-                          hintText: loc.eventTypeHint,
-                          labelText: loc.eventTypeLabel,
-                          isDense: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // 상세
-                    Expanded(
-                      flex: 3,
-                      child: TextField(
-                        controller: act.detailController,
-                        decoration: InputDecoration(
-                          hintText: loc.eventDetailHint,
-                          labelText: loc.eventDetailLabel,
-                          isDense: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // 삭제
-                    IconButton(
-                      tooltip: loc.delete,
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.red,
-                        size: 20,
-                      ),
-                      onPressed: () => _removeActivity(idx),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-                Row(
+                _buildActivityFields(act, idx, loc),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     TextButton.icon(
                       onPressed: () => _editActivityTime(act),
@@ -944,7 +931,6 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
                         tooltip: loc.clearEventTime,
                         onPressed: () => _clearActivityTime(act),
                         icon: const Icon(Icons.event_busy, size: 18),
-                        visualDensity: VisualDensity.compact,
                       ),
                   ],
                 ),
@@ -954,6 +940,61 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         }),
         const SizedBox(height: 80), // FAB 여백
       ],
+    );
+  }
+
+  Widget _buildActivityFields(
+    _EditableActivity activity,
+    int index,
+    AppLocalizations loc,
+  ) {
+    Widget typeField() => TextField(
+      controller: activity.typeController,
+      decoration: InputDecoration(
+        hintText: loc.eventTypeHint,
+        labelText: loc.eventTypeLabel,
+        isDense: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+    Widget detailField() => TextField(
+      controller: activity.detailController,
+      decoration: InputDecoration(
+        hintText: loc.eventDetailHint,
+        labelText: loc.eventDetailLabel,
+        isDense: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+    Widget deleteButton() => IconButton(
+      tooltip: loc.delete,
+      icon: const Icon(Icons.close, color: Colors.red, size: 20),
+      onPressed: () => _removeActivity(index),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final largeText = MediaQuery.textScalerOf(context).scale(16) >= 24;
+        if (constraints.maxWidth < 520 || largeText) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              typeField(),
+              const SizedBox(height: 8),
+              detailField(),
+              Align(alignment: Alignment.centerRight, child: deleteButton()),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(flex: 2, child: typeField()),
+            const SizedBox(width: 8),
+            Expanded(flex: 3, child: detailField()),
+            deleteButton(),
+          ],
+        );
+      },
     );
   }
 }
