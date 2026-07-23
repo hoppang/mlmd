@@ -7,6 +7,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/diary_repository.dart';
+import '../../../repositories/profile_repository.dart';
 import '../../../transfer/canonical_transfer_document.dart';
 import '../../../transfer/diary_transfer_exception.dart';
 import '../../../transfer/diary_transfer_service.dart';
@@ -144,6 +145,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       progressShown = true;
       await Future<void>.delayed(Duration.zero);
       final result = await service.applyWithAutomaticBackup(prepared, policy);
+      ref.read(authorProfileListProvider.notifier).reload();
       ref.read(diaryListProvider.notifier).reload();
       final embeddingFailed = await ref
           .read(diaryListProvider.notifier)

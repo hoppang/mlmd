@@ -24,7 +24,7 @@ void main() {
     expect(diary.lastModified.isUtc, isTrue);
     expect(diary.activities.single.timePrecision, 1);
 
-    final encoded = registry.encode(decoded);
+    final encoded = registry.encode(decoded, targetSchemaVersion: 1);
     expect(encoded['schemaVersion'], 1);
     final encodedDiary = (encoded['diaries'] as List).single as Map;
     expect(encodedDiary, isNot(contains('id')));
@@ -37,8 +37,8 @@ void main() {
   test('empty fixture is valid and latest version is selected', () {
     final decoded = registry.decode(fixture('v1_minimal.mlmd.json'));
     expect(decoded.diaries, isEmpty);
-    expect(registry.latestSchemaVersion, 1);
-    expect(registry.encode(decoded)['schemaVersion'], 1);
+    expect(registry.latestSchemaVersion, 2);
+    expect(registry.encode(decoded)['schemaVersion'], 2);
   });
 
   test('future schema version is rejected', () {
@@ -83,8 +83,10 @@ void main() {
       ],
     );
 
-    final first = jsonEncode(registry.encode(document));
-    final second = jsonEncode(registry.encode(document));
+    final first = jsonEncode(registry.encode(document, targetSchemaVersion: 1));
+    final second = jsonEncode(
+      registry.encode(document, targetSchemaVersion: 1),
+    );
     expect(first, second);
     expect(
       first.indexOf('446655440000'),
@@ -117,8 +119,120 @@ void main() {
       ],
     );
 
-    final decoded = registry.decode(registry.encode(document));
+    final decoded = registry.decode(
+      registry.encode(document, targetSchemaVersion: 1),
+    );
 
     expect(decoded.diaries.single.activities.single.timePrecision, 0);
+  });
+
+  test('v2 round trip preserves author, device, and record provenance', () {
+    const authorId = '550e8400-e29b-41d4-a716-446655440010';
+    const deviceId = '550e8400-e29b-41d4-a716-446655440020';
+    final createdAt = DateTime.utc(2026, 7, 24, 1);
+    final document = CanonicalExportDocument(
+      exportedAt: DateTime.utc(2026, 7, 24, 2),
+      appVersion: 'test',
+      authorProfiles: [
+        CanonicalAuthorProfile(
+          authorProfileId: authorId,
+          nickname: '엄마',
+          colorValue: 0xFF00796B,
+          createdAt: createdAt,
+        ),
+      ],
+      deviceProfiles: [
+        CanonicalDeviceProfile(deviceProfileId: deviceId, createdAt: createdAt),
+      ],
+      diaries: [
+        CanonicalDiary(
+          recordId: '550e8400-e29b-41d4-a716-446655440000',
+          date: DateTime(2026, 7, 24, 10),
+          title: '기록',
+          summary: '',
+          content: '본문',
+          createdAt: createdAt,
+          createdByAuthorProfileId: authorId,
+          createdByDeviceProfileId: deviceId,
+          lastModifiedByAuthorProfileId: authorId,
+          lastModifiedByDeviceProfileId: deviceId,
+          lastModified: createdAt,
+          activities: [
+            CanonicalActivity(
+              type: '수유',
+              time: DateTime(2026, 7, 24, 10),
+              details: '120mL',
+              createdAt: createdAt,
+              createdByAuthorProfileId: authorId,
+              createdByDeviceProfileId: deviceId,
+              lastModifiedByAuthorProfileId: authorId,
+              lastModifiedByDeviceProfileId: deviceId,
+              lastModified: createdAt,
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final encoded = registry.encode(document);
+    final decoded = registry.decode(encoded);
+
+    expect(encoded['schemaVersion'], 2);
+    expect(decoded.authorProfiles.single.nickname, '엄마');
+    expect(decoded.deviceProfiles.single.deviceProfileId, deviceId);
+    expect(decoded.diaries.single.createdByAuthorProfileId, authorId);
+    expect(
+      decoded.diaries.single.activities.single.createdByDeviceProfileId,
+      deviceId,
+    );
+  });
+
+  test('v2 rejects record provenance that references a missing profile', () {
+    const authorId = '550e8400-e29b-41d4-a716-446655440010';
+    const deviceId = '550e8400-e29b-41d4-a716-446655440020';
+    final json = <String, Object?>{
+      'format': 'mlmd-diary-export',
+      'schemaVersion': 2,
+      'exportedAt': '2026-07-24T02:00:00.000Z',
+      'appVersion': 'test',
+      'authorProfiles': [
+        {
+          'authorProfileId': authorId,
+          'nickname': '엄마',
+          'colorValue': 0xFF00796B,
+          'createdAt': '2026-07-24T01:00:00.000Z',
+        },
+      ],
+      'deviceProfiles': [
+        {'deviceProfileId': deviceId, 'createdAt': '2026-07-24T01:00:00.000Z'},
+      ],
+      'diaries': [
+        {
+          'recordId': '550e8400-e29b-41d4-a716-446655440000',
+          'date': '2026-07-24T10:00:00.000',
+          'title': '기록',
+          'summary': '',
+          'content': '본문',
+          'createdAt': '2026-07-24T01:00:00.000Z',
+          'createdByAuthorProfileId': '550e8400-e29b-41d4-a716-446655440099',
+          'createdByDeviceProfileId': deviceId,
+          'lastModifiedByAuthorProfileId': authorId,
+          'lastModifiedByDeviceProfileId': deviceId,
+          'lastModified': '2026-07-24T01:00:00.000Z',
+          'activities': <Object?>[],
+        },
+      ],
+    };
+
+    expect(
+      () => registry.decode(json),
+      throwsA(
+        isA<DiaryTransferException>().having(
+          (error) => error.code,
+          'code',
+          'invalid_document',
+        ),
+      ),
+    );
   });
 }

@@ -32,6 +32,16 @@ class DiaryEntity {
   @Property(type: PropertyType.date)
   DateTime lastModified;
 
+  /// 기존 데이터베이스를 안전하게 열기 위해 nullable로 추가한다.
+  /// 저장소가 최초 접근 시 출처와 함께 보정한다.
+  @Property(type: PropertyType.date)
+  DateTime? createdAt;
+
+  String? createdByAuthorProfileId;
+  String? createdByDeviceProfileId;
+  String? lastModifiedByAuthorProfileId;
+  String? lastModifiedByDeviceProfileId;
+
   @HnswIndex(dimensions: 384)
   @Property(type: PropertyType.floatVector)
   List<double>? embedding;
@@ -48,6 +58,11 @@ class DiaryEntity {
     this.summary = '',
     required this.content,
     required this.lastModified,
+    this.createdAt,
+    this.createdByAuthorProfileId,
+    this.createdByDeviceProfileId,
+    this.lastModifiedByAuthorProfileId,
+    this.lastModifiedByDeviceProfileId,
     this.embedding,
   });
 }

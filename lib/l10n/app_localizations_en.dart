@@ -348,7 +348,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authorProfileDescription =>
-      'Record author labels are still being prepared.';
+      'Manage the author name and color used for new records.';
+
+  @override
+  String get authorSetupTitle => 'Who records on this device?';
+
+  @override
+  String get authorSetupDescription =>
+      'Choose a name and color your family will recognize. It does not need to be a real name and is applied to new records automatically.';
+
+  @override
+  String get authorNicknameLabel => 'Author name';
+
+  @override
+  String get authorNicknameHint => 'For example: Mum, Dad, Grandma';
+
+  @override
+  String get authorColorLabel => 'Personal color';
+
+  @override
+  String get authorSave => 'Start with this name';
+
+  @override
+  String get authorAdd => 'Add author';
+
+  @override
+  String get authorEdit => 'Edit author';
+
+  @override
+  String get authorProfilesTitle => 'Author profiles';
+
+  @override
+  String get authorCurrent => 'Current author';
+
+  @override
+  String get authorUseProfile => 'Switch to this author';
+
+  @override
+  String get authorNicknameError => 'Enter a name between 1 and 30 characters.';
+
+  @override
+  String get authorProfileLocalNotice =>
+      'The current author is applied automatically. Switch only when several people use this device.';
 
   @override
   String get familySharing => 'Use with family';
@@ -583,4 +624,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startNewDraft => 'Start new';
+
+  @override
+  String recordCreatedBy(String nickname) {
+    return 'Author $nickname';
+  }
+
+  @override
+  String get recordSourceDetails => 'Record source';
+
+  @override
+  String recordSourceDevice(String deviceId) {
+    return 'Input device $deviceId';
+  }
 }

@@ -6,6 +6,8 @@ import '../../../core/presentation/app_empty_state.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
+import '../../../repositories/profile_repository.dart';
+import '../../profiles/presentation/record_author_tag.dart';
 import '../application/diary_list_notifier.dart';
 
 class DiaryListPage extends ConsumerStatefulWidget {
@@ -50,6 +52,10 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   @override
   Widget build(BuildContext context) {
     final diaries = ref.watch(diaryListProvider);
+    final showAuthorTags = shouldShowAuthorTags(
+      diaries,
+      ref.watch(profileRepositoryProvider),
+    );
     final loc = AppLocalizations.of(context)!;
     final selectedDiaries =
         diaries.where((diary) => _isSameDay(diary.date, _selectedDate)).toList()
@@ -199,6 +205,14 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                  if (showAuthorTags) ...[
+                                    const SizedBox(height: AppSpacing.xs),
+                                    RecordAuthorTag(
+                                      authorProfileId:
+                                          diary.createdByAuthorProfileId,
+                                      visible: true,
+                                    ),
+                                  ],
                                   if (diary.activities.isNotEmpty) ...[
                                     const SizedBox(height: AppSpacing.xs),
                                     Wrap(

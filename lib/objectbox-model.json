@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:3014340625497478550",
-      "lastPropertyId": "7:3951416368719840019",
+      "lastPropertyId": "12:1109511130613721833",
       "name": "ActivityEntity",
       "properties": [
         {
@@ -46,13 +46,38 @@
           "id": "7:3951416368719840019",
           "name": "timePrecision",
           "type": 6
+        },
+        {
+          "id": "8:2383309938337246146",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "9:7830290555750988587",
+          "name": "createdByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "10:1284952037618883009",
+          "name": "createdByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "11:7364008710423433252",
+          "name": "lastModifiedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "12:1109511130613721833",
+          "name": "lastModifiedByDeviceProfileId",
+          "type": 9
         }
       ],
       "relations": []
     },
     {
       "id": "2:7784148166755830454",
-      "lastPropertyId": "8:7610676040634885379",
+      "lastPropertyId": "13:8483514328196674486",
       "name": "DiaryEntity",
       "properties": [
         {
@@ -99,6 +124,31 @@
           "indexId": "3:4154334858951904683",
           "type": 9,
           "flags": 2048
+        },
+        {
+          "id": "9:6204651566794506874",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "10:1391307458252641105",
+          "name": "createdByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "11:1756132609172896534",
+          "name": "createdByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "12:3492742934748550029",
+          "name": "lastModifiedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "13:8483514328196674486",
+          "name": "lastModifiedByDeviceProfileId",
+          "type": 9
         }
       ],
       "relations": []
@@ -165,10 +215,87 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "4:8617128554070098313",
+      "lastPropertyId": "6:5500009732612843260",
+      "name": "AuthorProfileEntity",
+      "properties": [
+        {
+          "id": "1:8030750345486684197",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4540285916938291502",
+          "name": "authorProfileId",
+          "indexId": "6:1419732821400451937",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:1665940262561319247",
+          "name": "nickname",
+          "type": 9
+        },
+        {
+          "id": "4:5391189275906388874",
+          "name": "colorValue",
+          "type": 6
+        },
+        {
+          "id": "5:6878555105160524880",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "6:5500009732612843260",
+          "name": "isCurrent",
+          "type": 1
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "5:7135689420437583296",
+      "lastPropertyId": "5:8613089406167071831",
+      "name": "DeviceProfileEntity",
+      "properties": [
+        {
+          "id": "1:1308888238229311538",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3026279456824822832",
+          "name": "deviceProfileId",
+          "indexId": "7:5858733805991619695",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:7698913700909905742",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "4:1750248484477288279",
+          "name": "isCurrent",
+          "type": 1
+        },
+        {
+          "id": "5:8613089406167071831",
+          "name": "hasSharedHistory",
+          "type": 1
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "3:7267053488527556749",
-  "lastIndexId": "5:7756920370847829618",
+  "lastEntityId": "5:7135689420437583296",
+  "lastIndexId": "7:5858733805991619695",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

@@ -23,6 +23,14 @@ class ActivityEntity {
   @Property(type: PropertyType.date)
   DateTime lastModified;
 
+  @Property(type: PropertyType.date)
+  DateTime? createdAt;
+
+  String? createdByAuthorProfileId;
+  String? createdByDeviceProfileId;
+  String? lastModifiedByAuthorProfileId;
+  String? lastModifiedByDeviceProfileId;
+
   final diary = ToOne<DiaryEntity>();
 
   ActivityEntity({
@@ -32,6 +40,11 @@ class ActivityEntity {
     this.timePrecision = timePrecisionExact,
     required this.details,
     required this.lastModified,
+    this.createdAt,
+    this.createdByAuthorProfileId,
+    this.createdByDeviceProfileId,
+    this.lastModifiedByAuthorProfileId,
+    this.lastModifiedByDeviceProfileId,
   });
 
   bool get hasExactTime => timePrecision == timePrecisionExact;

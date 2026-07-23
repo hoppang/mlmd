@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mlmd/l10n/app_localizations.dart';
 import 'package:mlmd/transfer/canonical_transfer_document.dart';
 import 'package:mlmd/transfer/diary_transfer_service.dart';
 import 'package:mlmd/features/settings/presentation/settings_page.dart';
 import 'package:mlmd/widgets/import_preview_dialog.dart';
+import 'package:mlmd/repositories/profile_repository.dart';
+import 'support/test_profile_repository.dart';
 
 void main() {
   testWidgets('import preview explains safe merge and conflict counts', (
@@ -50,17 +53,22 @@ void main() {
 
   testWidgets('settings exposes five top-level destinations', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: SettingsPage(
-          onExport: () async {},
-          onImport: () async {},
-          backupOverview: () => const BackupOverview(
-            diaryCount: 2,
-            activityCount: 3,
-            estimatedBackupBytes: 2048,
+      ProviderScope(
+        overrides: [
+          profileRepositoryProvider.overrideWithValue(TestProfileRepository()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SettingsPage(
+            onExport: () async {},
+            onImport: () async {},
+            backupOverview: () => const BackupOverview(
+              diaryCount: 2,
+              activityCount: 3,
+              estimatedBackupBytes: 2048,
+            ),
           ),
         ),
       ),

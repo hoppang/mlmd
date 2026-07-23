@@ -5,8 +5,11 @@ import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
+import 'package:mlmd/models/author_profile_entity.dart';
+import 'package:mlmd/models/device_profile_entity.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
+import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/transfer/canonical_transfer_document.dart';
 import 'package:mlmd/transfer/diary_transfer_service.dart';
 
@@ -19,12 +22,18 @@ class _TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<ActivityEntity> activityBox;
   @override
   late final Box<RecordDraftEntity> draftBox;
+  @override
+  late final Box<AuthorProfileEntity> authorProfileBox;
+  @override
+  late final Box<DeviceProfileEntity> deviceProfileBox;
   final Directory directory;
 
   _TestObjectBoxHelper(this.store, this.directory) {
     diaryBox = Box<DiaryEntity>(store);
     activityBox = Box<ActivityEntity>(store);
     draftBox = Box<RecordDraftEntity>(store);
+    authorProfileBox = Box<AuthorProfileEntity>(store);
+    deviceProfileBox = Box<DeviceProfileEntity>(store);
   }
 
   static Future<_TestObjectBoxHelper> create() async {
@@ -44,10 +53,13 @@ class _TestObjectBoxHelper implements ObjectBoxHelper {
 void main() {
   late _TestObjectBoxHelper helper;
   late DiaryRepository repository;
+  late ProfileRepository profileRepository;
 
   setUp(() async {
     helper = await _TestObjectBoxHelper.create();
-    repository = DiaryRepositoryImpl(helper);
+    profileRepository = ProfileRepositoryImpl(helper);
+    profileRepository.createAuthor(nickname: '테스트 작성자', colorValue: 0xFF00796B);
+    repository = DiaryRepositoryImpl(helper, profileRepository);
   });
 
   tearDown(() => helper.close());
@@ -88,9 +100,12 @@ void main() {
       ),
     );
 
-    repository = DiaryRepositoryImpl(helper);
+    repository = DiaryRepositoryImpl(helper, profileRepository);
     final first = repository.getDiaries().single.recordId;
-    final second = DiaryRepositoryImpl(helper).getDiaries().single.recordId;
+    final second = DiaryRepositoryImpl(
+      helper,
+      profileRepository,
+    ).getDiaries().single.recordId;
 
     expect(first, isNotNull);
     expect(first, second);

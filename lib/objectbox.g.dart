@@ -15,6 +15,8 @@ import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
 import 'models/activity_entity.dart';
+import 'models/author_profile_entity.dart';
+import 'models/device_profile_entity.dart';
 import 'models/diary_entity.dart';
 import 'models/record_draft_entity.dart';
 
@@ -24,7 +26,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 3014340625497478550),
     name: 'ActivityEntity',
-    lastPropertyId: const obx_int.IdUid(7, 3951416368719840019),
+    lastPropertyId: const obx_int.IdUid(12, 1109511130613721833),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -72,6 +74,36 @@ final _entities = <obx_int.ModelEntity>[
         type: 6,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 2383309938337246146),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 7830290555750988587),
+        name: 'createdByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 1284952037618883009),
+        name: 'createdByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 7364008710423433252),
+        name: 'lastModifiedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 1109511130613721833),
+        name: 'lastModifiedByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
@@ -79,7 +111,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(2, 7784148166755830454),
     name: 'DiaryEntity',
-    lastPropertyId: const obx_int.IdUid(8, 7610676040634885379),
+    lastPropertyId: const obx_int.IdUid(13, 8483514328196674486),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -132,6 +164,36 @@ final _entities = <obx_int.ModelEntity>[
         type: 9,
         flags: 2048,
         indexId: const obx_int.IdUid(3, 4154334858951904683),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 6204651566794506874),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 1391307458252641105),
+        name: 'createdByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 1756132609172896534),
+        name: 'createdByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 3492742934748550029),
+        name: 'lastModifiedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 8483514328196674486),
+        name: 'lastModifiedByDeviceProfileId',
+        type: 9,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -215,6 +277,94 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(4, 8617128554070098313),
+    name: 'AuthorProfileEntity',
+    lastPropertyId: const obx_int.IdUid(6, 5500009732612843260),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8030750345486684197),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 4540285916938291502),
+        name: 'authorProfileId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(6, 1419732821400451937),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 1665940262561319247),
+        name: 'nickname',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 5391189275906388874),
+        name: 'colorValue',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 6878555105160524880),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 5500009732612843260),
+        name: 'isCurrent',
+        type: 1,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(5, 7135689420437583296),
+    name: 'DeviceProfileEntity',
+    lastPropertyId: const obx_int.IdUid(5, 8613089406167071831),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 1308888238229311538),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 3026279456824822832),
+        name: 'deviceProfileId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(7, 5858733805991619695),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 7698913700909905742),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 1750248484477288279),
+        name: 'isCurrent',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 8613089406167071831),
+        name: 'hasSharedHistory',
+        type: 1,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -260,8 +410,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(3, 7267053488527556749),
-    lastIndexId: const obx_int.IdUid(5, 7756920370847829618),
+    lastEntityId: const obx_int.IdUid(5, 7135689420437583296),
+    lastIndexId: const obx_int.IdUid(7, 5858733805991619695),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -285,7 +435,23 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectToFB: (ActivityEntity object, fb.Builder fbb) {
         final typeOffset = fbb.writeString(object.type);
         final detailsOffset = fbb.writeString(object.details);
-        fbb.startTable(8);
+        final createdByAuthorProfileIdOffset =
+            object.createdByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.createdByAuthorProfileId!);
+        final createdByDeviceProfileIdOffset =
+            object.createdByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.createdByDeviceProfileId!);
+        final lastModifiedByAuthorProfileIdOffset =
+            object.lastModifiedByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.lastModifiedByAuthorProfileId!);
+        final lastModifiedByDeviceProfileIdOffset =
+            object.lastModifiedByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.lastModifiedByDeviceProfileId!);
+        fbb.startTable(13);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, typeOffset);
         fbb.addInt64(2, object.time.millisecondsSinceEpoch);
@@ -293,12 +459,22 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(4, object.lastModified.millisecondsSinceEpoch);
         fbb.addInt64(5, object.diary.targetId);
         fbb.addInt64(6, object.timePrecision);
+        fbb.addInt64(7, object.createdAt?.millisecondsSinceEpoch);
+        fbb.addOffset(8, createdByAuthorProfileIdOffset);
+        fbb.addOffset(9, createdByDeviceProfileIdOffset);
+        fbb.addOffset(10, lastModifiedByAuthorProfileIdOffset);
+        fbb.addOffset(11, lastModifiedByDeviceProfileIdOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
+        final createdAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          18,
+        );
         final idParam = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -323,6 +499,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final lastModifiedParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
         );
+        final createdAtParam = createdAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(createdAtValue);
+        final createdByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 20);
+        final createdByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 22);
+        final lastModifiedByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 24);
+        final lastModifiedByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 26);
         final object = ActivityEntity(
           id: idParam,
           type: typeParam,
@@ -330,6 +521,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           timePrecision: timePrecisionParam,
           details: detailsParam,
           lastModified: lastModifiedParam,
+          createdAt: createdAtParam,
+          createdByAuthorProfileId: createdByAuthorProfileIdParam,
+          createdByDeviceProfileId: createdByDeviceProfileIdParam,
+          lastModifiedByAuthorProfileId: lastModifiedByAuthorProfileIdParam,
+          lastModifiedByDeviceProfileId: lastModifiedByDeviceProfileIdParam,
         );
         object.diary.targetId = const fb.Int64Reader().vTableGet(
           buffer,
@@ -365,7 +561,23 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final recordIdOffset = object.recordId == null
             ? null
             : fbb.writeString(object.recordId!);
-        fbb.startTable(9);
+        final createdByAuthorProfileIdOffset =
+            object.createdByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.createdByAuthorProfileId!);
+        final createdByDeviceProfileIdOffset =
+            object.createdByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.createdByDeviceProfileId!);
+        final lastModifiedByAuthorProfileIdOffset =
+            object.lastModifiedByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.lastModifiedByAuthorProfileId!);
+        final lastModifiedByDeviceProfileIdOffset =
+            object.lastModifiedByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.lastModifiedByDeviceProfileId!);
+        fbb.startTable(14);
         fbb.addInt64(0, object.id);
         fbb.addInt64(1, object.date.millisecondsSinceEpoch);
         fbb.addOffset(2, titleOffset);
@@ -374,12 +586,22 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(5, embeddingOffset);
         fbb.addOffset(6, summaryOffset);
         fbb.addOffset(7, recordIdOffset);
+        fbb.addInt64(8, object.createdAt?.millisecondsSinceEpoch);
+        fbb.addOffset(9, createdByAuthorProfileIdOffset);
+        fbb.addOffset(10, createdByDeviceProfileIdOffset);
+        fbb.addOffset(11, lastModifiedByAuthorProfileIdOffset);
+        fbb.addOffset(12, lastModifiedByDeviceProfileIdOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
+        final createdAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          20,
+        );
         final idParam = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -404,6 +626,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final lastModifiedParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
         );
+        final createdAtParam = createdAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(createdAtValue);
+        final createdByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 22);
+        final createdByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 24);
+        final lastModifiedByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 26);
+        final lastModifiedByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 28);
         final embeddingParam = const fb.ListReader<double>(
           fb.Float32Reader(),
           lazy: false,
@@ -416,6 +653,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           summary: summaryParam,
           content: contentParam,
           lastModified: lastModifiedParam,
+          createdAt: createdAtParam,
+          createdByAuthorProfileId: createdByAuthorProfileIdParam,
+          createdByDeviceProfileId: createdByDeviceProfileIdParam,
+          lastModifiedByAuthorProfileId: lastModifiedByAuthorProfileIdParam,
+          lastModifiedByDeviceProfileId: lastModifiedByDeviceProfileIdParam,
           embedding: embeddingParam,
         );
         obx_int.InternalToManyAccess.setRelInfo<DiaryEntity>(
@@ -520,6 +762,126 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    AuthorProfileEntity: obx_int.EntityDefinition<AuthorProfileEntity>(
+      model: _entities[3],
+      toOneRelations: (AuthorProfileEntity object) => [],
+      toManyRelations: (AuthorProfileEntity object) => {},
+      getId: (AuthorProfileEntity object) => object.id,
+      setId: (AuthorProfileEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (AuthorProfileEntity object, fb.Builder fbb) {
+        final authorProfileIdOffset = fbb.writeString(object.authorProfileId);
+        final nicknameOffset = fbb.writeString(object.nickname);
+        fbb.startTable(7);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, authorProfileIdOffset);
+        fbb.addOffset(2, nicknameOffset);
+        fbb.addInt64(3, object.colorValue);
+        fbb.addInt64(4, object.createdAt.millisecondsSinceEpoch);
+        fbb.addBool(5, object.isCurrent);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final authorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final nicknameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final colorValueParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          10,
+          0,
+        );
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
+        );
+        final isCurrentParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          false,
+        );
+        final object = AuthorProfileEntity(
+          id: idParam,
+          authorProfileId: authorProfileIdParam,
+          nickname: nicknameParam,
+          colorValue: colorValueParam,
+          createdAt: createdAtParam,
+          isCurrent: isCurrentParam,
+        );
+
+        return object;
+      },
+    ),
+    DeviceProfileEntity: obx_int.EntityDefinition<DeviceProfileEntity>(
+      model: _entities[4],
+      toOneRelations: (DeviceProfileEntity object) => [],
+      toManyRelations: (DeviceProfileEntity object) => {},
+      getId: (DeviceProfileEntity object) => object.id,
+      setId: (DeviceProfileEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (DeviceProfileEntity object, fb.Builder fbb) {
+        final deviceProfileIdOffset = fbb.writeString(object.deviceProfileId);
+        fbb.startTable(6);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, deviceProfileIdOffset);
+        fbb.addInt64(2, object.createdAt.millisecondsSinceEpoch);
+        fbb.addBool(3, object.isCurrent);
+        fbb.addBool(4, object.hasSharedHistory);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final deviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 8, 0),
+        );
+        final isCurrentParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          10,
+          false,
+        );
+        final hasSharedHistoryParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          12,
+          false,
+        );
+        final object = DeviceProfileEntity(
+          id: idParam,
+          deviceProfileId: deviceProfileIdParam,
+          createdAt: createdAtParam,
+          isCurrent: isCurrentParam,
+          hasSharedHistory: hasSharedHistoryParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -561,6 +923,27 @@ class ActivityEntity_ {
   static final timePrecision = obx.QueryIntegerProperty<ActivityEntity>(
     _entities[0].properties[6],
   );
+
+  /// See [ActivityEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<ActivityEntity>(
+    _entities[0].properties[7],
+  );
+
+  /// See [ActivityEntity.createdByAuthorProfileId].
+  static final createdByAuthorProfileId =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[8]);
+
+  /// See [ActivityEntity.createdByDeviceProfileId].
+  static final createdByDeviceProfileId =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[9]);
+
+  /// See [ActivityEntity.lastModifiedByAuthorProfileId].
+  static final lastModifiedByAuthorProfileId =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[10]);
+
+  /// See [ActivityEntity.lastModifiedByDeviceProfileId].
+  static final lastModifiedByDeviceProfileId =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[11]);
 }
 
 /// [DiaryEntity] entity fields to define ObjectBox queries.
@@ -604,6 +987,29 @@ class DiaryEntity_ {
   static final recordId = obx.QueryStringProperty<DiaryEntity>(
     _entities[1].properties[7],
   );
+
+  /// See [DiaryEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<DiaryEntity>(
+    _entities[1].properties[8],
+  );
+
+  /// See [DiaryEntity.createdByAuthorProfileId].
+  static final createdByAuthorProfileId = obx.QueryStringProperty<DiaryEntity>(
+    _entities[1].properties[9],
+  );
+
+  /// See [DiaryEntity.createdByDeviceProfileId].
+  static final createdByDeviceProfileId = obx.QueryStringProperty<DiaryEntity>(
+    _entities[1].properties[10],
+  );
+
+  /// See [DiaryEntity.lastModifiedByAuthorProfileId].
+  static final lastModifiedByAuthorProfileId =
+      obx.QueryStringProperty<DiaryEntity>(_entities[1].properties[11]);
+
+  /// See [DiaryEntity.lastModifiedByDeviceProfileId].
+  static final lastModifiedByDeviceProfileId =
+      obx.QueryStringProperty<DiaryEntity>(_entities[1].properties[12]);
 
   /// see [DiaryEntity.activities]
   static final activities =
@@ -661,5 +1067,66 @@ class RecordDraftEntity_ {
   /// See [RecordDraftEntity.lastSavedAt].
   static final lastSavedAt = obx.QueryDateProperty<RecordDraftEntity>(
     _entities[2].properties[9],
+  );
+}
+
+/// [AuthorProfileEntity] entity fields to define ObjectBox queries.
+class AuthorProfileEntity_ {
+  /// See [AuthorProfileEntity.id].
+  static final id = obx.QueryIntegerProperty<AuthorProfileEntity>(
+    _entities[3].properties[0],
+  );
+
+  /// See [AuthorProfileEntity.authorProfileId].
+  static final authorProfileId = obx.QueryStringProperty<AuthorProfileEntity>(
+    _entities[3].properties[1],
+  );
+
+  /// See [AuthorProfileEntity.nickname].
+  static final nickname = obx.QueryStringProperty<AuthorProfileEntity>(
+    _entities[3].properties[2],
+  );
+
+  /// See [AuthorProfileEntity.colorValue].
+  static final colorValue = obx.QueryIntegerProperty<AuthorProfileEntity>(
+    _entities[3].properties[3],
+  );
+
+  /// See [AuthorProfileEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<AuthorProfileEntity>(
+    _entities[3].properties[4],
+  );
+
+  /// See [AuthorProfileEntity.isCurrent].
+  static final isCurrent = obx.QueryBooleanProperty<AuthorProfileEntity>(
+    _entities[3].properties[5],
+  );
+}
+
+/// [DeviceProfileEntity] entity fields to define ObjectBox queries.
+class DeviceProfileEntity_ {
+  /// See [DeviceProfileEntity.id].
+  static final id = obx.QueryIntegerProperty<DeviceProfileEntity>(
+    _entities[4].properties[0],
+  );
+
+  /// See [DeviceProfileEntity.deviceProfileId].
+  static final deviceProfileId = obx.QueryStringProperty<DeviceProfileEntity>(
+    _entities[4].properties[1],
+  );
+
+  /// See [DeviceProfileEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<DeviceProfileEntity>(
+    _entities[4].properties[2],
+  );
+
+  /// See [DeviceProfileEntity.isCurrent].
+  static final isCurrent = obx.QueryBooleanProperty<DeviceProfileEntity>(
+    _entities[4].properties[3],
+  );
+
+  /// See [DeviceProfileEntity.hasSharedHistory].
+  static final hasSharedHistory = obx.QueryBooleanProperty<DeviceProfileEntity>(
+    _entities[4].properties[4],
   );
 }

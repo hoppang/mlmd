@@ -6,17 +6,23 @@ import '../objectbox.g.dart';
 import '../models/diary_entity.dart';
 import '../models/activity_entity.dart';
 import '../models/record_draft_entity.dart';
+import '../models/author_profile_entity.dart';
+import '../models/device_profile_entity.dart';
 
 class ObjectBoxHelper {
   late final Store store;
   late final Box<DiaryEntity> diaryBox;
   late final Box<ActivityEntity> activityBox;
   late final Box<RecordDraftEntity> draftBox;
+  late final Box<AuthorProfileEntity> authorProfileBox;
+  late final Box<DeviceProfileEntity> deviceProfileBox;
 
   ObjectBoxHelper._create(this.store) {
     diaryBox = Box<DiaryEntity>(store);
     activityBox = Box<ActivityEntity>(store);
     draftBox = Box<RecordDraftEntity>(store);
+    authorProfileBox = Box<AuthorProfileEntity>(store);
+    deviceProfileBox = Box<DeviceProfileEntity>(store);
   }
 
   /// 데이터베이스 저장 공간을 열고 초기화합니다.

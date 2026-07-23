@@ -9,8 +9,10 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/diary_repository.dart';
+import '../../../repositories/profile_repository.dart';
 import '../../../utils/logger.dart';
 import '../../diary/application/diary_list_notifier.dart';
+import '../../profiles/presentation/record_author_tag.dart';
 
 enum _DiarySearchSort { relevance, newest, oldest }
 
@@ -115,9 +117,14 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   }
 
   Future<void> _openResult(DiarySearchResult result) async {
+    final showAuthorTags = shouldShowAuthorTags(
+      ref.read(diaryListProvider),
+      ref.read(profileRepositoryProvider),
+    );
     final shouldEdit = await showAdaptiveDetail<bool>(
       context: context,
-      builder: (context) => _SearchResultDetail(result: result),
+      builder: (context) =>
+          _SearchResultDetail(result: result, showAuthorTag: showAuthorTags),
     );
     if (shouldEdit == true && mounted) widget.onEditDiary(result.diary);
   }
@@ -125,6 +132,11 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final diaries = ref.watch(diaryListProvider);
+    final showAuthorTags = shouldShowAuthorTags(
+      diaries,
+      ref.watch(profileRepositoryProvider),
+    );
 
     return AdaptiveContentFrame(
       child: Padding(
@@ -177,7 +189,7 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
             ),
             const SizedBox(height: AppSpacing.md),
             if (_results.isNotEmpty && !_hasError) _buildResultHeader(loc),
-            Expanded(child: _buildBody(loc)),
+            Expanded(child: _buildBody(loc, showAuthorTags)),
           ],
         ),
       ),
@@ -225,7 +237,7 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
     );
   }
 
-  Widget _buildBody(AppLocalizations loc) {
+  Widget _buildBody(AppLocalizations loc, bool showAuthorTags) {
     if (_isSearching && !_hasSearched) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -262,6 +274,7 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
         return _SearchResultCard(
           key: ValueKey(result.resultKey),
           result: result,
+          showAuthorTag: showAuthorTags,
           onTap: () => _openResult(result),
         );
       },
@@ -298,11 +311,13 @@ class _SearchMessage extends StatelessWidget {
 class _SearchResultCard extends StatelessWidget {
   const _SearchResultCard({
     required this.result,
+    required this.showAuthorTag,
     required this.onTap,
     super.key,
   });
 
   final DiarySearchResult result;
+  final bool showAuthorTag;
   final VoidCallback onTap;
 
   String _reason(AppLocalizations loc) => switch (result.reason) {
@@ -381,6 +396,15 @@ class _SearchResultCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
+                if (showAuthorTag) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  RecordAuthorTag(
+                    authorProfileId:
+                        activity?.createdByAuthorProfileId ??
+                        result.diary.createdByAuthorProfileId,
+                    visible: true,
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   _reason(loc),
@@ -398,9 +422,13 @@ class _SearchResultCard extends StatelessWidget {
 }
 
 class _SearchResultDetail extends StatelessWidget {
-  const _SearchResultDetail({required this.result});
+  const _SearchResultDetail({
+    required this.result,
+    required this.showAuthorTag,
+  });
 
   final DiarySearchResult result;
+  final bool showAuthorTag;
 
   @override
   Widget build(BuildContext context) {
@@ -440,6 +468,18 @@ class _SearchResultDetail extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
+            if (showAuthorTag) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: RecordAuthorTag(
+                  authorProfileId:
+                      activity?.createdByAuthorProfileId ??
+                      diary.createdByAuthorProfileId,
+                  visible: true,
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             Text(
               activity?.type ?? diary.title,

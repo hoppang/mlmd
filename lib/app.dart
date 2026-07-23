@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/diary/presentation/diary_home_page.dart';
+import 'features/profiles/presentation/author_profile_page.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/locale_provider.dart';
 
@@ -27,7 +28,7 @@ class MyApp extends ConsumerWidget {
       ],
       supportedLocales: const [Locale('ko'), Locale('en'), Locale('ja')],
       theme: buildAppTheme(),
-      home: const DiaryDemoPage(),
+      home: const AuthorProfileGate(child: DiaryDemoPage()),
     );
   }
 }

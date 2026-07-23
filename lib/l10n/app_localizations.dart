@@ -745,8 +745,86 @@ abstract class AppLocalizations {
   /// No description provided for @authorProfileDescription.
   ///
   /// In ko, this message translates to:
-  /// **'기록 작성자 표시는 아직 준비 중이에요.'**
+  /// **'새 기록에 사용할 작성자 이름과 색상을 관리합니다.'**
   String get authorProfileDescription;
+
+  /// No description provided for @authorSetupTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기기에서 누가 기록하나요?'**
+  String get authorSetupTitle;
+
+  /// No description provided for @authorSetupDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'가족이 알아볼 수 있는 이름과 색상을 정해 주세요. 실명일 필요는 없으며 새 기록에 자동으로 적용됩니다.'**
+  String get authorSetupDescription;
+
+  /// No description provided for @authorNicknameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성자 이름'**
+  String get authorNicknameLabel;
+
+  /// No description provided for @authorNicknameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: 엄마, 아빠, 할머니'**
+  String get authorNicknameHint;
+
+  /// No description provided for @authorColorLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'개인 색상'**
+  String get authorColorLabel;
+
+  /// No description provided for @authorSave.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 이름으로 시작'**
+  String get authorSave;
+
+  /// No description provided for @authorAdd.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성자 추가'**
+  String get authorAdd;
+
+  /// No description provided for @authorEdit.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성자 수정'**
+  String get authorEdit;
+
+  /// No description provided for @authorProfilesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성자 프로필'**
+  String get authorProfilesTitle;
+
+  /// No description provided for @authorCurrent.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 작성자'**
+  String get authorCurrent;
+
+  /// No description provided for @authorUseProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 작성자로 전환'**
+  String get authorUseProfile;
+
+  /// No description provided for @authorNicknameError.
+  ///
+  /// In ko, this message translates to:
+  /// **'1~30자의 이름을 입력해 주세요.'**
+  String get authorNicknameError;
+
+  /// No description provided for @authorProfileLocalNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'평소에는 현재 작성자가 자동으로 적용됩니다. 같은 기기를 여러 사람이 사용할 때만 전환하세요.'**
+  String get authorProfileLocalNotice;
 
   /// No description provided for @familySharing.
   ///
@@ -1143,6 +1221,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'새로 작성'**
   String get startNewDraft;
+
+  /// No description provided for @recordCreatedBy.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성자 {nickname}'**
+  String recordCreatedBy(String nickname);
+
+  /// No description provided for @recordSourceDetails.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 출처'**
+  String get recordSourceDetails;
+
+  /// No description provided for @recordSourceDevice.
+  ///
+  /// In ko, this message translates to:
+  /// **'입력 기기 {deviceId}'**
+  String recordSourceDevice(String deviceId);
 }
 
 class _AppLocalizationsDelegate

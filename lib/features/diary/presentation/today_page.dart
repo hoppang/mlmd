@@ -13,7 +13,9 @@ import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
 import '../../../models/record_draft_entity.dart';
 import '../../../repositories/record_draft_repository.dart';
+import '../../../repositories/profile_repository.dart';
 import '../../drafts/presentation/draft_resume_card.dart';
+import '../../profiles/presentation/record_author_tag.dart';
 import '../application/diary_draft_payload.dart';
 import '../application/diary_list_notifier.dart';
 
@@ -122,9 +124,14 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   }
 
   Future<void> _openEntry(_TodayTimelineEntry entry) async {
+    final showAuthorTags = shouldShowAuthorTags(
+      ref.read(diaryListProvider),
+      ref.read(profileRepositoryProvider),
+    );
     final shouldEdit = await showAdaptiveDetail<bool>(
       context: context,
-      builder: (context) => _TodayRecordDetail(entry: entry),
+      builder: (context) =>
+          _TodayRecordDetail(entry: entry, showAuthorTag: showAuthorTags),
     );
     if (shouldEdit == true && mounted) {
       widget.onNavigateToForm(entry.diary, null);
@@ -141,6 +148,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         .toList();
     final entries = _timelineEntries(todayDiaries);
     final counts = _activityCounts(todayDiaries);
+    final showAuthorTags = shouldShowAuthorTags(
+      diaries,
+      ref.watch(profileRepositoryProvider),
+    );
     final summaries = todayDiaries
         .where((diary) => diary.summary.trim().isNotEmpty)
         .toList();
@@ -223,6 +234,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                 return _TimelineItem(
                   key: ValueKey(entry.resultKey),
                   entry: entry,
+                  showAuthorTag: showAuthorTags,
                   onTap: () => _openEntry(entry),
                 );
               },
@@ -284,12 +296,20 @@ class _TodayTimelineEntry {
   String get resultKey => activity == null
       ? 'today-memo:${diary.id}'
       : 'today-activity:${activity!.id}';
+  String? get authorProfileId =>
+      activity?.createdByAuthorProfileId ?? diary.createdByAuthorProfileId;
 }
 
 class _TimelineItem extends StatelessWidget {
-  const _TimelineItem({required this.entry, required this.onTap, super.key});
+  const _TimelineItem({
+    required this.entry,
+    required this.showAuthorTag,
+    required this.onTap,
+    super.key,
+  });
 
   final _TodayTimelineEntry entry;
+  final bool showAuthorTag;
   final VoidCallback onTap;
 
   @override
@@ -340,6 +360,13 @@ class _TimelineItem extends StatelessWidget {
                       entry.title,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
+                    if (showAuthorTag) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      RecordAuthorTag(
+                        authorProfileId: entry.authorProfileId,
+                        visible: true,
+                      ),
+                    ],
                     if (entry.content.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xxs),
                       Text(
@@ -361,9 +388,10 @@ class _TimelineItem extends StatelessWidget {
 }
 
 class _TodayRecordDetail extends StatelessWidget {
-  const _TodayRecordDetail({required this.entry});
+  const _TodayRecordDetail({required this.entry, required this.showAuthorTag});
 
   final _TodayTimelineEntry entry;
+  final bool showAuthorTag;
 
   @override
   Widget build(BuildContext context) {
@@ -401,6 +429,16 @@ class _TodayRecordDetail extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
+            if (showAuthorTag) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: RecordAuthorTag(
+                  authorProfileId: entry.authorProfileId,
+                  visible: true,
+                ),
+              ),
+            ],
             if (entry.content.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
               Text(entry.content),

@@ -17,7 +17,9 @@ import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
+import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/services/llm_diary_service.dart';
+import 'support/test_profile_repository.dart';
 
 class _TestDiaryListNotifier extends DiaryListNotifier {
   _TestDiaryListNotifier(
@@ -193,6 +195,7 @@ Widget _buildApp({
       recordDraftListProvider.overrideWith(
         () => _TestDraftListNotifier(drafts),
       ),
+      profileRepositoryProvider.overrideWithValue(TestProfileRepository()),
       if (analysisService != null)
         diaryAnalysisServiceProvider.overrideWithValue(analysisService),
     ],

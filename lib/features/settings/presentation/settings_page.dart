@@ -5,8 +5,10 @@ import '../../../core/layout/adaptive_content_frame.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/locale_provider.dart';
+import '../../../repositories/profile_repository.dart';
+import '../../profiles/presentation/author_profile_page.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends ConsumerWidget {
   const SettingsPage({
     super.key,
     required this.onExport,
@@ -19,8 +21,15 @@ class SettingsPage extends StatelessWidget {
   final BackupOverview Function() backupOverview;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final loc = AppLocalizations.of(context)!;
+    final profiles = ref.watch(authorProfileListProvider);
+    final currentProfiles = profiles
+        .where((profile) => profile.isCurrent)
+        .toList(growable: false);
+    final currentAuthor = currentProfiles.isEmpty
+        ? null
+        : currentProfiles.first;
     return Scaffold(
       appBar: AppBar(title: Text(loc.settingsTitle)),
       body: AdaptiveContentFrame(
@@ -41,8 +50,14 @@ class SettingsPage extends StatelessWidget {
             _SettingsTile(
               icon: Icons.badge_outlined,
               title: loc.authorProfile,
-              subtitle: loc.authorProfileDescription,
-              onTap: () => _showUnavailable(context, loc.authorProfile),
+              subtitle: currentAuthor == null
+                  ? loc.authorProfileDescription
+                  : '${currentAuthor.nickname} · ${loc.authorProfileDescription}',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AuthorProfilesPage(),
+                ),
+              ),
             ),
             _SettingsTile(
               icon: Icons.family_restroom_outlined,

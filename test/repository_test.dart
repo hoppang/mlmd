@@ -4,10 +4,13 @@ import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
+import 'package:mlmd/models/author_profile_entity.dart';
+import 'package:mlmd/models/device_profile_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/activity_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
+import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/services/embedding_service.dart';
 
 // ObjectBoxHelper의 테스트용 구현체 (임시 디렉터리에 데이터베이스 가동)
@@ -20,11 +23,17 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<ActivityEntity> activityBox;
   @override
   late final Box<RecordDraftEntity> draftBox;
+  @override
+  late final Box<AuthorProfileEntity> authorProfileBox;
+  @override
+  late final Box<DeviceProfileEntity> deviceProfileBox;
 
   TestObjectBoxHelper(this.store) {
     diaryBox = Box<DiaryEntity>(store);
     activityBox = Box<ActivityEntity>(store);
     draftBox = Box<RecordDraftEntity>(store);
+    authorProfileBox = Box<AuthorProfileEntity>(store);
+    deviceProfileBox = Box<DeviceProfileEntity>(store);
   }
 
   static Future<TestObjectBoxHelper> createTemp() async {
@@ -43,11 +52,14 @@ void main() {
   late DiaryRepository diaryRepo;
   late ActivityRepository activityRepo;
   late RecordDraftRepository draftRepo;
+  late ProfileRepository profileRepo;
 
   setUp(() async {
     obxHelper = await TestObjectBoxHelper.createTemp();
-    diaryRepo = DiaryRepositoryImpl(obxHelper);
-    activityRepo = ActivityRepositoryImpl(obxHelper);
+    profileRepo = ProfileRepositoryImpl(obxHelper);
+    profileRepo.createAuthor(nickname: '테스트 작성자', colorValue: 0xFF00796B);
+    diaryRepo = DiaryRepositoryImpl(obxHelper, profileRepo);
+    activityRepo = ActivityRepositoryImpl(obxHelper, profileRepo);
     draftRepo = RecordDraftRepositoryImpl(obxHelper);
   });
 
@@ -388,6 +400,111 @@ void main() {
 
       expect(diaryRepo.getDiary(diary.id), isNotNull);
       expect(draftRepo.getByDraftId('draft-to-consume'), isNull);
+    });
+  });
+
+  group('UX-012 author and device provenance', () {
+    test('device identity is stable and separate from the author profile', () {
+      final firstDevice = profileRepo.currentDevice.deviceProfileId;
+      final firstAuthor = profileRepo.currentAuthor!.authorProfileId;
+      final reopenedProfiles = ProfileRepositoryImpl(obxHelper);
+
+      expect(reopenedProfiles.currentDevice.deviceProfileId, firstDevice);
+      expect(reopenedProfiles.currentAuthor!.authorProfileId, firstAuthor);
+      expect(firstDevice, isNot(firstAuthor));
+    });
+
+    test('creator is preserved while the active editor is updated', () {
+      final firstAuthor = profileRepo.currentAuthor!.authorProfileId;
+      final deviceId = profileRepo.currentDevice.deviceProfileId;
+      final diary = DiaryEntity(
+        date: DateTime(2026, 7, 24, 10),
+        title: '기록',
+        content: '본문',
+        lastModified: DateTime.utc(2026),
+      );
+      final diaryId = diaryRepo.saveDiary(diary);
+      final created = diaryRepo.getDiary(diaryId)!;
+      final createdAt = created.createdAt;
+
+      final secondAuthor = profileRepo.createAuthor(
+        nickname: '다른 작성자',
+        colorValue: 0xFF1565C0,
+      );
+      created.title = '수정된 기록';
+      diaryRepo.saveDiary(created);
+      final updated = diaryRepo.getDiary(diaryId)!;
+
+      expect(updated.createdByAuthorProfileId, firstAuthor);
+      expect(updated.createdByDeviceProfileId, deviceId);
+      expect(updated.createdAt, createdAt);
+      expect(
+        updated.lastModifiedByAuthorProfileId,
+        secondAuthor.authorProfileId,
+      );
+      expect(updated.lastModifiedByDeviceProfileId, deviceId);
+    });
+
+    test('quick events store author and device provenance', () {
+      final source = profileRepo.requireCurrentSource();
+      diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: '수유',
+          time: DateTime(2026, 7, 24, 11),
+          details: '120mL',
+          lastModified: DateTime.utc(2026),
+        ),
+      );
+
+      final activity = activityRepo.getActivities().single;
+      expect(activity.createdAt, isNotNull);
+      expect(activity.createdByAuthorProfileId, source.authorProfileId);
+      expect(activity.createdByDeviceProfileId, source.deviceProfileId);
+      expect(activity.lastModifiedByAuthorProfileId, source.authorProfileId);
+      expect(activity.lastModifiedByDeviceProfileId, source.deviceProfileId);
+    });
+
+    test('removing an earlier event does not move its creator to another', () {
+      final firstAuthor = profileRepo.currentAuthor!.authorProfileId;
+      final day = DateTime(2026, 7, 24, 12);
+      diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: '수유',
+          time: day,
+          details: '100mL',
+          lastModified: DateTime.utc(2026),
+        ),
+      );
+      final secondAuthor = profileRepo.createAuthor(
+        nickname: '다른 작성자',
+        colorValue: 0xFF1565C0,
+      );
+      diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: '체온',
+          time: day.add(const Duration(hours: 1)),
+          details: '37.2°C',
+          lastModified: DateTime.utc(2026),
+        ),
+      );
+      final diary = diaryRepo.getDiaries().single;
+      final secondEvent = diary.activities.firstWhere(
+        (activity) => activity.type == '체온',
+      );
+
+      diaryRepo.saveDiaryWithActivities(diary, [
+        ActivityEntity(
+          type: secondEvent.type,
+          time: secondEvent.time,
+          timePrecision: secondEvent.timePrecision,
+          details: secondEvent.details,
+          lastModified: secondEvent.lastModified,
+        ),
+      ]);
+
+      final remaining = activityRepo.getActivities().single;
+      expect(remaining.createdByAuthorProfileId, secondAuthor.authorProfileId);
+      expect(remaining.createdByAuthorProfileId, isNot(firstAuthor));
     });
   });
 }

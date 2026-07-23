@@ -2,11 +2,15 @@
 class CanonicalTransferDocument {
   final DateTime exportedAt;
   final String appVersion;
+  final List<CanonicalAuthorProfile> authorProfiles;
+  final List<CanonicalDeviceProfile> deviceProfiles;
   final List<CanonicalDiary> diaries;
 
   const CanonicalTransferDocument({
     required this.exportedAt,
     required this.appVersion,
+    this.authorProfiles = const [],
+    this.deviceProfiles = const [],
     required this.diaries,
   });
 }
@@ -14,12 +18,41 @@ class CanonicalTransferDocument {
 typedef CanonicalImportDocument = CanonicalTransferDocument;
 typedef CanonicalExportDocument = CanonicalTransferDocument;
 
+class CanonicalAuthorProfile {
+  final String authorProfileId;
+  final String nickname;
+  final int colorValue;
+  final DateTime createdAt;
+
+  const CanonicalAuthorProfile({
+    required this.authorProfileId,
+    required this.nickname,
+    required this.colorValue,
+    required this.createdAt,
+  });
+}
+
+class CanonicalDeviceProfile {
+  final String deviceProfileId;
+  final DateTime createdAt;
+
+  const CanonicalDeviceProfile({
+    required this.deviceProfileId,
+    required this.createdAt,
+  });
+}
+
 class CanonicalDiary {
   final String recordId;
   final DateTime date;
   final String title;
   final String summary;
   final String content;
+  final DateTime? createdAt;
+  final String? createdByAuthorProfileId;
+  final String? createdByDeviceProfileId;
+  final String? lastModifiedByAuthorProfileId;
+  final String? lastModifiedByDeviceProfileId;
   final DateTime lastModified;
   final List<CanonicalActivity> activities;
 
@@ -29,6 +62,11 @@ class CanonicalDiary {
     required this.title,
     required this.summary,
     required this.content,
+    this.createdAt,
+    this.createdByAuthorProfileId,
+    this.createdByDeviceProfileId,
+    this.lastModifiedByAuthorProfileId,
+    this.lastModifiedByDeviceProfileId,
     required this.lastModified,
     required this.activities,
   });
@@ -39,6 +77,11 @@ class CanonicalActivity {
   final DateTime time;
   final int timePrecision;
   final String details;
+  final DateTime? createdAt;
+  final String? createdByAuthorProfileId;
+  final String? createdByDeviceProfileId;
+  final String? lastModifiedByAuthorProfileId;
+  final String? lastModifiedByDeviceProfileId;
   final DateTime lastModified;
 
   const CanonicalActivity({
@@ -46,6 +89,11 @@ class CanonicalActivity {
     required this.time,
     this.timePrecision = 1,
     required this.details,
+    this.createdAt,
+    this.createdByAuthorProfileId,
+    this.createdByDeviceProfileId,
+    this.lastModifiedByAuthorProfileId,
+    this.lastModifiedByDeviceProfileId,
     required this.lastModified,
   });
 }

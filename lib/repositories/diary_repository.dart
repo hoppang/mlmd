@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_entity.dart';
 import '../models/diary_entity.dart';
+import '../models/author_profile_entity.dart';
+import '../models/device_profile_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
 import '../transfer/canonical_transfer_document.dart';
 import 'package:uuid/uuid.dart';
+import 'profile_repository.dart';
 
 enum DiarySearchSource { memo, activity }
 
@@ -96,12 +99,14 @@ abstract class DiaryRepository {
 /// DiaryRepository의 ObjectBox 구현체
 class DiaryRepositoryImpl implements DiaryRepository {
   final ObjectBoxHelper _obxHelper;
+  final ProfileRepository _profileRepository;
   static const _uuid = Uuid();
   static final _uuidV4Pattern = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
   );
-  DiaryRepositoryImpl(this._obxHelper) {
+  DiaryRepositoryImpl(this._obxHelper, this._profileRepository) {
     _backfillRecordIds();
+    _backfillRecordSources();
   }
 
   @override
@@ -143,11 +148,78 @@ class DiaryRepositoryImpl implements DiaryRepository {
     });
   }
 
+  /// UX-012 이전의 로컬 데이터와 v1 백업에는 출처가 없다. 최초 마이그레이션
+  /// 시점의 현재 작성자·현재 설치를 출처로 채우고 원래 수정 시각은 보존한다.
+  void _backfillRecordSources() {
+    final source = _profileRepository.requireCurrentSource();
+    _obxHelper.store.runInTransaction(TxMode.write, () {
+      final diaries = _obxHelper.diaryBox.getAll();
+      final changedDiaries = <DiaryEntity>[];
+      for (final diary in diaries) {
+        var changed = false;
+        if (diary.createdAt == null) {
+          diary.createdAt = diary.lastModified;
+          changed = true;
+        }
+        if (diary.createdByAuthorProfileId == null) {
+          diary.createdByAuthorProfileId = source.authorProfileId;
+          changed = true;
+        }
+        if (diary.createdByDeviceProfileId == null) {
+          diary.createdByDeviceProfileId = source.deviceProfileId;
+          changed = true;
+        }
+        if (diary.lastModifiedByAuthorProfileId == null) {
+          diary.lastModifiedByAuthorProfileId = source.authorProfileId;
+          changed = true;
+        }
+        if (diary.lastModifiedByDeviceProfileId == null) {
+          diary.lastModifiedByDeviceProfileId = source.deviceProfileId;
+          changed = true;
+        }
+        if (changed) changedDiaries.add(diary);
+      }
+      if (changedDiaries.isNotEmpty) {
+        _obxHelper.diaryBox.putMany(changedDiaries);
+      }
+
+      final activities = _obxHelper.activityBox.getAll();
+      final changedActivities = <ActivityEntity>[];
+      for (final activity in activities) {
+        var changed = false;
+        if (activity.createdAt == null) {
+          activity.createdAt = activity.lastModified;
+          changed = true;
+        }
+        if (activity.createdByAuthorProfileId == null) {
+          activity.createdByAuthorProfileId = source.authorProfileId;
+          changed = true;
+        }
+        if (activity.createdByDeviceProfileId == null) {
+          activity.createdByDeviceProfileId = source.deviceProfileId;
+          changed = true;
+        }
+        if (activity.lastModifiedByAuthorProfileId == null) {
+          activity.lastModifiedByAuthorProfileId = source.authorProfileId;
+          changed = true;
+        }
+        if (activity.lastModifiedByDeviceProfileId == null) {
+          activity.lastModifiedByDeviceProfileId = source.deviceProfileId;
+          changed = true;
+        }
+        if (changed) changedActivities.add(activity);
+      }
+      if (changedActivities.isNotEmpty) {
+        _obxHelper.activityBox.putMany(changedActivities);
+      }
+    });
+  }
+
   @override
   int saveDiary(DiaryEntity diary) {
     _prepareRecordId(diary);
-    // 트리거: 생성 및 수정 시 자동으로 lastModified 갱신
-    diary.lastModified = DateTime.now();
+    final now = DateTime.now();
+    _prepareDiarySource(diary, now);
     return _obxHelper.diaryBox.put(diary);
   }
 
@@ -160,12 +232,14 @@ class DiaryRepositoryImpl implements DiaryRepository {
     _prepareRecordId(diary);
     return _obxHelper.store.runInTransaction(TxMode.write, () {
       final now = DateTime.now();
-      diary.lastModified = now;
+      _prepareDiarySource(diary, now);
       final diaryId = _obxHelper.diaryBox.put(diary);
 
       final oldQuery = _obxHelper.activityBox
           .query(ActivityEntity_.diary.equals(diaryId))
           .build();
+      final oldActivities = oldQuery.find();
+      final unmatchedOldActivities = [...oldActivities];
       final oldIds = oldQuery.findIds();
       oldQuery.close();
       if (oldIds.isNotEmpty) {
@@ -173,8 +247,12 @@ class DiaryRepositoryImpl implements DiaryRepository {
       }
 
       for (final activity in activities) {
+        _prepareActivitySource(
+          activity,
+          now,
+          previous: _takePreviousActivity(activity, unmatchedOldActivities),
+        );
         activity.diary.target = diary;
-        activity.lastModified = now;
       }
       if (activities.isNotEmpty) {
         _obxHelper.activityBox.putMany(activities);
@@ -216,13 +294,76 @@ class DiaryRepositoryImpl implements DiaryRepository {
 
     return _obxHelper.store.runInTransaction(TxMode.write, () {
       final now = DateTime.now();
-      diary.lastModified = now;
+      _prepareDiarySource(diary, now);
       _obxHelper.diaryBox.put(diary);
-      activity
-        ..lastModified = now
-        ..diary.target = diary;
+      activity.diary.target = diary;
+      _prepareActivitySource(activity, now);
       return _obxHelper.activityBox.put(activity);
     });
+  }
+
+  void _prepareDiarySource(DiaryEntity diary, DateTime now) {
+    final source = _profileRepository.requireCurrentSource();
+    final previous = diary.id == 0 ? null : _obxHelper.diaryBox.get(diary.id);
+    diary
+      ..createdAt = diary.createdAt ?? previous?.createdAt ?? now
+      ..createdByAuthorProfileId =
+          diary.createdByAuthorProfileId ??
+          previous?.createdByAuthorProfileId ??
+          source.authorProfileId
+      ..createdByDeviceProfileId =
+          diary.createdByDeviceProfileId ??
+          previous?.createdByDeviceProfileId ??
+          source.deviceProfileId
+      ..lastModifiedByAuthorProfileId = source.authorProfileId
+      ..lastModifiedByDeviceProfileId = source.deviceProfileId
+      ..lastModified = now;
+  }
+
+  void _prepareActivitySource(
+    ActivityEntity activity,
+    DateTime now, {
+    ActivityEntity? previous,
+  }) {
+    final source = _profileRepository.requireCurrentSource();
+    activity
+      ..createdAt = activity.createdAt ?? previous?.createdAt ?? now
+      ..createdByAuthorProfileId =
+          activity.createdByAuthorProfileId ??
+          previous?.createdByAuthorProfileId ??
+          source.authorProfileId
+      ..createdByDeviceProfileId =
+          activity.createdByDeviceProfileId ??
+          previous?.createdByDeviceProfileId ??
+          source.deviceProfileId
+      ..lastModifiedByAuthorProfileId = source.authorProfileId
+      ..lastModifiedByDeviceProfileId = source.deviceProfileId
+      ..lastModified = now;
+  }
+
+  ActivityEntity? _takePreviousActivity(
+    ActivityEntity incoming,
+    List<ActivityEntity> candidates,
+  ) {
+    var matchIndex = candidates.indexWhere(
+      (candidate) =>
+          candidate.type == incoming.type &&
+          candidate.time.isAtSameMomentAs(incoming.time) &&
+          candidate.timePrecision == incoming.timePrecision &&
+          candidate.details == incoming.details,
+    );
+    if (matchIndex < 0) {
+      final sameTime = <int>[];
+      for (var index = 0; index < candidates.length; index++) {
+        final candidate = candidates[index];
+        if (candidate.time.isAtSameMomentAs(incoming.time) &&
+            candidate.timePrecision == incoming.timePrecision) {
+          sameTime.add(index);
+        }
+      }
+      if (sameTime.length == 1) matchIndex = sameTime.single;
+    }
+    return matchIndex < 0 ? null : candidates.removeAt(matchIndex);
   }
 
   void _prepareRecordId(DiaryEntity diary) {
@@ -256,6 +397,13 @@ class DiaryRepositoryImpl implements DiaryRepository {
                   time: activity.time,
                   timePrecision: activity.timePrecision,
                   details: activity.details,
+                  createdAt: activity.createdAt,
+                  createdByAuthorProfileId: activity.createdByAuthorProfileId,
+                  createdByDeviceProfileId: activity.createdByDeviceProfileId,
+                  lastModifiedByAuthorProfileId:
+                      activity.lastModifiedByAuthorProfileId,
+                  lastModifiedByDeviceProfileId:
+                      activity.lastModifiedByDeviceProfileId,
                   lastModified: activity.lastModified,
                 ),
               )
@@ -266,6 +414,11 @@ class DiaryRepositoryImpl implements DiaryRepository {
             title: diary.title,
             summary: diary.summary,
             content: diary.content,
+            createdAt: diary.createdAt,
+            createdByAuthorProfileId: diary.createdByAuthorProfileId,
+            createdByDeviceProfileId: diary.createdByDeviceProfileId,
+            lastModifiedByAuthorProfileId: diary.lastModifiedByAuthorProfileId,
+            lastModifiedByDeviceProfileId: diary.lastModifiedByDeviceProfileId,
             lastModified: diary.lastModified,
             activities: activities,
           );
@@ -274,6 +427,26 @@ class DiaryRepositoryImpl implements DiaryRepository {
     return CanonicalExportDocument(
       exportedAt: DateTime.now().toUtc(),
       appVersion: appVersion,
+      authorProfiles: _obxHelper.authorProfileBox
+          .getAll()
+          .map(
+            (profile) => CanonicalAuthorProfile(
+              authorProfileId: profile.authorProfileId,
+              nickname: profile.nickname,
+              colorValue: profile.colorValue,
+              createdAt: profile.createdAt,
+            ),
+          )
+          .toList(growable: false),
+      deviceProfiles: _obxHelper.deviceProfileBox
+          .getAll()
+          .map(
+            (profile) => CanonicalDeviceProfile(
+              deviceProfileId: profile.deviceProfileId,
+              createdAt: profile.createdAt,
+            ),
+          )
+          .toList(growable: false),
       diaries: diaries,
     );
   }
@@ -380,6 +553,8 @@ class DiaryRepositoryImpl implements DiaryRepository {
     ImportConflictPolicy policy,
   ) {
     return _obxHelper.store.runInTransaction(TxMode.write, () {
+      _mergeImportedProfiles(document);
+      final migrationSource = _profileRepository.requireCurrentSource();
       final existing = _recordsByTransferId();
       var inserted = 0;
       var updated = 0;
@@ -404,6 +579,19 @@ class DiaryRepositoryImpl implements DiaryRepository {
           title: incoming.title,
           summary: incoming.summary,
           content: incoming.content,
+          createdAt: incoming.createdAt ?? incoming.lastModified,
+          createdByAuthorProfileId:
+              incoming.createdByAuthorProfileId ??
+              migrationSource.authorProfileId,
+          createdByDeviceProfileId:
+              incoming.createdByDeviceProfileId ??
+              migrationSource.deviceProfileId,
+          lastModifiedByAuthorProfileId:
+              incoming.lastModifiedByAuthorProfileId ??
+              migrationSource.authorProfileId,
+          lastModifiedByDeviceProfileId:
+              incoming.lastModifiedByDeviceProfileId ??
+              migrationSource.deviceProfileId,
           lastModified: incoming.lastModified,
           embedding: null,
         );
@@ -428,6 +616,19 @@ class DiaryRepositoryImpl implements DiaryRepository {
                 time: item.time,
                 timePrecision: item.timePrecision,
                 details: item.details,
+                createdAt: item.createdAt ?? item.lastModified,
+                createdByAuthorProfileId:
+                    item.createdByAuthorProfileId ??
+                    migrationSource.authorProfileId,
+                createdByDeviceProfileId:
+                    item.createdByDeviceProfileId ??
+                    migrationSource.deviceProfileId,
+                lastModifiedByAuthorProfileId:
+                    item.lastModifiedByAuthorProfileId ??
+                    migrationSource.authorProfileId,
+                lastModifiedByDeviceProfileId:
+                    item.lastModifiedByDeviceProfileId ??
+                    migrationSource.deviceProfileId,
                 lastModified: item.lastModified,
               );
               entity.diary.targetId = diaryId;
@@ -446,6 +647,37 @@ class DiaryRepositoryImpl implements DiaryRepository {
         affectedRecordIds: List.unmodifiable(affected),
       );
     });
+  }
+
+  void _mergeImportedProfiles(CanonicalImportDocument document) {
+    final authorIds = _obxHelper.authorProfileBox
+        .getAll()
+        .map((item) => item.authorProfileId)
+        .toSet();
+    final deviceIds = _obxHelper.deviceProfileBox
+        .getAll()
+        .map((item) => item.deviceProfileId)
+        .toSet();
+    for (final profile in document.authorProfiles) {
+      if (!authorIds.add(profile.authorProfileId)) continue;
+      _obxHelper.authorProfileBox.put(
+        AuthorProfileEntity(
+          authorProfileId: profile.authorProfileId,
+          nickname: profile.nickname,
+          colorValue: profile.colorValue,
+          createdAt: profile.createdAt,
+        ),
+      );
+    }
+    for (final profile in document.deviceProfiles) {
+      if (!deviceIds.add(profile.deviceProfileId)) continue;
+      _obxHelper.deviceProfileBox.put(
+        DeviceProfileEntity(
+          deviceProfileId: profile.deviceProfileId,
+          createdAt: profile.createdAt,
+        ),
+      );
+    }
   }
 
   Map<String, DiaryEntity> _recordsByTransferId() => {
@@ -592,5 +824,6 @@ class DiaryRepositoryImpl implements DiaryRepository {
 /// Riverpod에서 제공할 DiaryRepository 프로바이더
 final diaryRepositoryProvider = Provider<DiaryRepository>((ref) {
   final obxHelper = ref.watch(objectBoxProvider);
-  return DiaryRepositoryImpl(obxHelper);
-}, dependencies: [objectBoxProvider]);
+  final profiles = ref.watch(profileRepositoryProvider);
+  return DiaryRepositoryImpl(obxHelper, profiles);
+}, dependencies: [objectBoxProvider, profileRepositoryProvider]);

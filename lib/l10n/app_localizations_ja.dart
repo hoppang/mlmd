@@ -335,7 +335,48 @@ class AppLocalizationsJa extends AppLocalizations {
   String get authorProfile => '自分の名前と色';
 
   @override
-  String get authorProfileDescription => '記録の作成者表示は準備中です。';
+  String get authorProfileDescription => '新しい記録に使う作成者名と色を管理します。';
+
+  @override
+  String get authorSetupTitle => 'この端末で誰が記録しますか？';
+
+  @override
+  String get authorSetupDescription =>
+      '家族が分かる名前と色を選んでください。実名でなくてもよく、新しい記録に自動で適用されます。';
+
+  @override
+  String get authorNicknameLabel => '作成者名';
+
+  @override
+  String get authorNicknameHint => '例：ママ、パパ、おばあちゃん';
+
+  @override
+  String get authorColorLabel => '個人カラー';
+
+  @override
+  String get authorSave => 'この名前で始める';
+
+  @override
+  String get authorAdd => '作成者を追加';
+
+  @override
+  String get authorEdit => '作成者を編集';
+
+  @override
+  String get authorProfilesTitle => '作成者プロフィール';
+
+  @override
+  String get authorCurrent => '現在の作成者';
+
+  @override
+  String get authorUseProfile => 'この作成者に切り替える';
+
+  @override
+  String get authorNicknameError => '1〜30文字の名前を入力してください。';
+
+  @override
+  String get authorProfileLocalNotice =>
+      '通常は現在の作成者が自動で適用されます。同じ端末を複数人で使う場合だけ切り替えてください。';
 
   @override
   String get familySharing => '家族と一緒に使う';
@@ -558,4 +599,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get startNewDraft => '新しく作成';
+
+  @override
+  String recordCreatedBy(String nickname) {
+    return '作成者 $nickname';
+  }
+
+  @override
+  String get recordSourceDetails => '記録元';
+
+  @override
+  String recordSourceDevice(String deviceId) {
+    return '入力端末 $deviceId';
+  }
 }
