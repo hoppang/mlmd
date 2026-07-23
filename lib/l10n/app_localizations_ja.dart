@@ -72,6 +72,104 @@ class AppLocalizationsJa extends AppLocalizations {
   String get previewSection => '分析結果のプレビュー';
 
   @override
+  String get recordAction => '記録する';
+
+  @override
+  String get recordSheetTitle => '何を記録しますか？';
+
+  @override
+  String get quickRecordsTitle => 'クイック記録';
+
+  @override
+  String get recentRecordsTitle => '最近使った項目';
+
+  @override
+  String get allCategoriesTitle => 'すべてのカテゴリー';
+
+  @override
+  String get basicCareCategory => '基本ケア';
+
+  @override
+  String get healthMedicalCategory => '健康・医療';
+
+  @override
+  String get activityPlayCategory => '活動・遊び';
+
+  @override
+  String get growthMemoryCategory => '成長・思い出';
+
+  @override
+  String get feedingEvent => '授乳';
+
+  @override
+  String get mealEvent => '離乳食・食事';
+
+  @override
+  String get waterSnackEvent => '水分・おやつ';
+
+  @override
+  String get sleepEvent => '睡眠';
+
+  @override
+  String get diaperEvent => 'おむつ・排便';
+
+  @override
+  String get pumpingEvent => '搾乳';
+
+  @override
+  String get temperatureEvent => '体温';
+
+  @override
+  String get medicationEvent => '投薬';
+
+  @override
+  String get symptomEvent => '症状・体調';
+
+  @override
+  String get hospitalEvent => '通院・相談';
+
+  @override
+  String get vaccinationEvent => '予防接種';
+
+  @override
+  String get accidentInjuryEvent => '事故・けが';
+
+  @override
+  String get tummyTimeEvent => 'タミータイム';
+
+  @override
+  String get bathEvent => '入浴';
+
+  @override
+  String get growthMeasurementEvent => '身長・体重測定';
+
+  @override
+  String get memoEvent => 'メモ';
+
+  @override
+  String get eventDetailOptionalLabel => '詳細（任意）';
+
+  @override
+  String get eventDetailOptionalHint => '量、状態、短いメモを入力できます。';
+
+  @override
+  String get writeDetailedRecord => '長いメモとAI整理';
+
+  @override
+  String get backToRecordTypes => '記録の種類に戻る';
+
+  @override
+  String get savingQuickRecord => '保存中…';
+
+  @override
+  String get quickRecordSaveFailed => '記録を保存できませんでした。入力内容は保持されています。';
+
+  @override
+  String quickRecordSaved(String type) {
+    return '$typeを記録しました。';
+  }
+
+  @override
   String get addEventButton => 'イベント追加';
 
   @override

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/presentation/adaptive_detail.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
-import '../../../models/record_draft_entity.dart';
 import '../../../repositories/diary_repository.dart';
-import '../../../repositories/record_draft_repository.dart';
 import '../../../transfer/canonical_transfer_document.dart';
 import '../../../transfer/diary_transfer_exception.dart';
 import '../../../transfer/diary_transfer_service.dart';
@@ -15,6 +15,8 @@ import '../../../widgets/import_preview_dialog.dart';
 import '../../../widgets/transfer_progress_dialog.dart';
 import '../../search/presentation/diary_search_page.dart';
 import '../../settings/presentation/settings_page.dart';
+import '../../events/domain/event_catalog.dart';
+import '../../events/presentation/record_entry_sheet.dart';
 import '../application/diary_list_notifier.dart';
 import 'diary_form_page.dart';
 import 'diary_list_page.dart';
@@ -53,25 +55,6 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
         builder: (context) => DiaryFormPage(diary: diary, draftId: draftId),
       ),
     );
-  }
-
-  void _openDraft(
-    BuildContext context,
-    RecordDraftEntity draft,
-    List<DiaryEntity> diaries,
-  ) {
-    DiaryEntity? diary;
-    if (draft.targetRecordId != null) {
-      for (final candidate in diaries) {
-        if (candidate.recordId == draft.targetRecordId ||
-            'local:${candidate.id}' == draft.targetRecordId) {
-          diary = candidate;
-          break;
-        }
-      }
-      if (diary == null) return;
-    }
-    _navigateToFormPage(context, diary, draft.draftId);
   }
 
   DiaryTransferService get _transferService =>
@@ -234,29 +217,48 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     );
   }
 
+  Future<void> _showRecordEntry() async {
+    final diaries = ref.read(diaryListProvider);
+    final quickIds = defaultQuickEventIds.toSet();
+    var openDetailedRecord = false;
+    final savedType = await showAdaptiveDetail<String>(
+      context: context,
+      builder: (sheetContext) => RecordEntrySheet(
+        recentPresets: buildRecentEventPresets(diaries, excludedIds: quickIds),
+        onSave: (type, details, occurredAt) => ref
+            .read(diaryListProvider.notifier)
+            .addActivityRecord(
+              type: type,
+              details: details,
+              occurredAt: occurredAt,
+            ),
+        onOpenDetailedRecord: () {
+          openDetailedRecord = true;
+          Navigator.pop(sheetContext);
+        },
+      ),
+    );
+    if (!mounted) return;
+    if (openDetailedRecord) {
+      _navigateToFormPage(context);
+      return;
+    }
+    if (savedType != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.quickRecordSaved(savedType),
+            ),
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final diaries = ref.watch(diaryListProvider);
-    final drafts = ref.watch(recordDraftListProvider);
     final loc = AppLocalizations.of(context)!;
-
-    final now = DateTime.now();
-    DiaryEntity? todayDiary;
-    for (final diary in diaries) {
-      if (diary.date.year == now.year &&
-          diary.date.month == now.month &&
-          diary.date.day == now.day) {
-        todayDiary = diary;
-        break;
-      }
-    }
-    RecordDraftEntity? latestCreateDraft;
-    for (final draft in drafts) {
-      if (draft.draftKind == 'createRecord' && draft.recordType == 'diary') {
-        latestCreateDraft = draft;
-        break;
-      }
-    }
 
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
@@ -284,21 +286,26 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                   ),
               ],
             ),
-            body: IndexedStack(
-              index: _selectedTab,
-              children: [
-                TodayPage(
-                  onNavigateToForm: (diary, draftId) =>
-                      _navigateToFormPage(context, diary, draftId),
-                ),
-                DiaryListPage(
-                  onEditDiary: (diary) => _navigateToFormPage(context, diary),
-                ),
-                DiarySearchPage(
-                  onEditDiary: (diary) => _navigateToFormPage(context, diary),
-                  focusRequest: _searchFocusRequest,
-                ),
-              ],
+            body: Padding(
+              padding: const EdgeInsets.only(
+                bottom: AppSizes.recordEntryClearance,
+              ),
+              child: IndexedStack(
+                index: _selectedTab,
+                children: [
+                  TodayPage(
+                    onNavigateToForm: (diary, draftId) =>
+                        _navigateToFormPage(context, diary, draftId),
+                  ),
+                  DiaryListPage(
+                    onEditDiary: (diary) => _navigateToFormPage(context, diary),
+                  ),
+                  DiarySearchPage(
+                    onEditDiary: (diary) => _navigateToFormPage(context, diary),
+                    focusRequest: _searchFocusRequest,
+                  ),
+                ],
+              ),
             ),
             bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedTab,
@@ -322,20 +329,18 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                 ),
               ],
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () {
-                if (todayDiary != null) {
-                  _navigateToFormPage(context, todayDiary);
-                } else if (latestCreateDraft != null) {
-                  _openDraft(context, latestCreateDraft, diaries);
-                } else {
-                  _navigateToFormPage(context);
-                }
-              },
-              icon: Icon(todayDiary != null ? Icons.edit : Icons.add),
-              label: Text(todayDiary != null ? loc.edit : loc.newDiary),
+            floatingActionButton: SizedBox(
+              width: 168,
+              height: 56,
+              child: FloatingActionButton.extended(
+                key: const Key('record-entry-button'),
+                onPressed: _showRecordEntry,
+                icon: const Icon(Icons.add),
+                label: Text(loc.recordAction),
+              ),
             ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
           ),
         ),
       ),

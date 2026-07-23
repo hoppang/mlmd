@@ -226,6 +226,198 @@ abstract class AppLocalizations {
   /// **'분석 결과 미리보기'**
   String get previewSection;
 
+  /// No description provided for @recordAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록하기'**
+  String get recordAction;
+
+  /// No description provided for @recordSheetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'무엇을 기록할까요?'**
+  String get recordSheetTitle;
+
+  /// No description provided for @quickRecordsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'빠른 기록'**
+  String get quickRecordsTitle;
+
+  /// No description provided for @recentRecordsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 사용'**
+  String get recentRecordsTitle;
+
+  /// No description provided for @allCategoriesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 카테고리'**
+  String get allCategoriesTitle;
+
+  /// No description provided for @basicCareCategory.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 돌봄'**
+  String get basicCareCategory;
+
+  /// No description provided for @healthMedicalCategory.
+  ///
+  /// In ko, this message translates to:
+  /// **'건강·의료'**
+  String get healthMedicalCategory;
+
+  /// No description provided for @activityPlayCategory.
+  ///
+  /// In ko, this message translates to:
+  /// **'활동·놀이'**
+  String get activityPlayCategory;
+
+  /// No description provided for @growthMemoryCategory.
+  ///
+  /// In ko, this message translates to:
+  /// **'성장·추억'**
+  String get growthMemoryCategory;
+
+  /// No description provided for @feedingEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'수유'**
+  String get feedingEvent;
+
+  /// No description provided for @mealEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'이유식·식사'**
+  String get mealEvent;
+
+  /// No description provided for @waterSnackEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'물·간식'**
+  String get waterSnackEvent;
+
+  /// No description provided for @sleepEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'수면'**
+  String get sleepEvent;
+
+  /// No description provided for @diaperEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'기저귀·배변'**
+  String get diaperEvent;
+
+  /// No description provided for @pumpingEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'유축'**
+  String get pumpingEvent;
+
+  /// No description provided for @temperatureEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'체온'**
+  String get temperatureEvent;
+
+  /// No description provided for @medicationEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'투약'**
+  String get medicationEvent;
+
+  /// No description provided for @symptomEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'증상·컨디션'**
+  String get symptomEvent;
+
+  /// No description provided for @hospitalEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'병원·상담'**
+  String get hospitalEvent;
+
+  /// No description provided for @vaccinationEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'예방접종'**
+  String get vaccinationEvent;
+
+  /// No description provided for @accidentInjuryEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고·다침'**
+  String get accidentInjuryEvent;
+
+  /// No description provided for @tummyTimeEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'터미타임'**
+  String get tummyTimeEvent;
+
+  /// No description provided for @bathEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'목욕'**
+  String get bathEvent;
+
+  /// No description provided for @growthMeasurementEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'키·몸무게 측정'**
+  String get growthMeasurementEvent;
+
+  /// No description provided for @memoEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모'**
+  String get memoEvent;
+
+  /// No description provided for @eventDetailOptionalLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'상세 (선택)'**
+  String get eventDetailOptionalLabel;
+
+  /// No description provided for @eventDetailOptionalHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'수량, 상태 또는 짧은 메모를 남겨보세요.'**
+  String get eventDetailOptionalHint;
+
+  /// No description provided for @writeDetailedRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'긴 메모와 AI 정리'**
+  String get writeDetailedRecord;
+
+  /// No description provided for @backToRecordTypes.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 종류로 돌아가기'**
+  String get backToRecordTypes;
+
+  /// No description provided for @savingQuickRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장 중…'**
+  String get savingQuickRecord;
+
+  /// No description provided for @quickRecordSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록을 저장하지 못했어요. 입력 내용은 그대로 유지됩니다.'**
+  String get quickRecordSaveFailed;
+
+  /// No description provided for @quickRecordSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'{type} 기록을 저장했어요.'**
+  String quickRecordSaved(String type);
+
   /// No description provided for @addEventButton.
   ///
   /// In ko, this message translates to:

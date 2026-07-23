@@ -56,6 +56,23 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     state = repo.getDiaries();
   }
 
+  Future<void> addActivityRecord({
+    required String type,
+    required String details,
+    required DateTime occurredAt,
+  }) async {
+    final repo = ref.read(diaryRepositoryProvider);
+    repo.addActivityRecord(
+      ActivityEntity(
+        type: type,
+        time: occurredAt,
+        details: details,
+        lastModified: DateTime.now(),
+      ),
+    );
+    state = repo.getDiaries();
+  }
+
   Future<List<DiarySearchResult>> searchRecords(
     String query, {
     int limit = 50,

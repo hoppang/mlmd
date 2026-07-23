@@ -19,6 +19,7 @@ abstract final class AppSizes {
   static const double minimumInteractiveDimension = 48;
   static const double contentMaxWidth = 720;
   static const double compactFormBreakpoint = 520;
+  static const double recordEntryClearance = 88;
 }
 
 abstract final class AppInsets {

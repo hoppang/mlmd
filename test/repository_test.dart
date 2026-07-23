@@ -125,6 +125,37 @@ void main() {
       },
     );
 
+    test('Quick activity reuses its date container and preserves events', () {
+      final occurredAt = DateTime(2026, 7, 23, 9);
+      final firstId = diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: '수유',
+          time: occurredAt,
+          details: '180mL',
+          lastModified: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      );
+      final secondId = diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: '투약',
+          time: occurredAt.add(const Duration(hours: 2)),
+          details: '2.5mL',
+          lastModified: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      );
+
+      final diaries = diaryRepo.getDiaries();
+      expect(diaries, hasLength(1));
+      expect(diaries.single.activities.map((activity) => activity.id).toSet(), {
+        firstId,
+        secondId,
+      });
+      expect(
+        diaries.single.activities.map((activity) => activity.type).toSet(),
+        {'수유', '투약'},
+      );
+    });
+
     test(
       'Deleting an Activity should update parent Diary lastModified',
       () async {

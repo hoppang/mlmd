@@ -73,6 +73,104 @@ class AppLocalizationsKo extends AppLocalizations {
   String get previewSection => '분석 결과 미리보기';
 
   @override
+  String get recordAction => '기록하기';
+
+  @override
+  String get recordSheetTitle => '무엇을 기록할까요?';
+
+  @override
+  String get quickRecordsTitle => '빠른 기록';
+
+  @override
+  String get recentRecordsTitle => '최근 사용';
+
+  @override
+  String get allCategoriesTitle => '전체 카테고리';
+
+  @override
+  String get basicCareCategory => '기본 돌봄';
+
+  @override
+  String get healthMedicalCategory => '건강·의료';
+
+  @override
+  String get activityPlayCategory => '활동·놀이';
+
+  @override
+  String get growthMemoryCategory => '성장·추억';
+
+  @override
+  String get feedingEvent => '수유';
+
+  @override
+  String get mealEvent => '이유식·식사';
+
+  @override
+  String get waterSnackEvent => '물·간식';
+
+  @override
+  String get sleepEvent => '수면';
+
+  @override
+  String get diaperEvent => '기저귀·배변';
+
+  @override
+  String get pumpingEvent => '유축';
+
+  @override
+  String get temperatureEvent => '체온';
+
+  @override
+  String get medicationEvent => '투약';
+
+  @override
+  String get symptomEvent => '증상·컨디션';
+
+  @override
+  String get hospitalEvent => '병원·상담';
+
+  @override
+  String get vaccinationEvent => '예방접종';
+
+  @override
+  String get accidentInjuryEvent => '사고·다침';
+
+  @override
+  String get tummyTimeEvent => '터미타임';
+
+  @override
+  String get bathEvent => '목욕';
+
+  @override
+  String get growthMeasurementEvent => '키·몸무게 측정';
+
+  @override
+  String get memoEvent => '메모';
+
+  @override
+  String get eventDetailOptionalLabel => '상세 (선택)';
+
+  @override
+  String get eventDetailOptionalHint => '수량, 상태 또는 짧은 메모를 남겨보세요.';
+
+  @override
+  String get writeDetailedRecord => '긴 메모와 AI 정리';
+
+  @override
+  String get backToRecordTypes => '기록 종류로 돌아가기';
+
+  @override
+  String get savingQuickRecord => '저장 중…';
+
+  @override
+  String get quickRecordSaveFailed => '기록을 저장하지 못했어요. 입력 내용은 그대로 유지됩니다.';
+
+  @override
+  String quickRecordSaved(String type) {
+    return '$type 기록을 저장했어요.';
+  }
+
+  @override
   String get addEventButton => '이벤트 추가';
 
   @override

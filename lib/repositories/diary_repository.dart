@@ -56,6 +56,10 @@ abstract class DiaryRepository {
     String? consumedDraftId,
   });
 
+  /// 발생한 이벤트를 같은 날짜의 기록에 추가합니다. 해당 날짜의 기록이
+  /// 없으면 타임라인용 빈 기록을 함께 만들어 이벤트가 고아가 되지 않게 합니다.
+  int addActivityRecord(ActivityEntity activity);
+
   /// 현재 저장소를 버전 독립적인 내보내기 모델로 스냅샷합니다.
   CanonicalExportDocument createExportDocument({required String appVersion});
 
@@ -184,6 +188,40 @@ class DiaryRepositoryImpl implements DiaryRepository {
         if (draftId != null) _obxHelper.draftBox.remove(draftId);
       }
       return diaryId;
+    });
+  }
+
+  @override
+  int addActivityRecord(ActivityEntity activity) {
+    final sameDayDiaries =
+        _obxHelper.diaryBox
+            .getAll()
+            .where(
+              (diary) =>
+                  diary.date.year == activity.time.year &&
+                  diary.date.month == activity.time.month &&
+                  diary.date.day == activity.time.day,
+            )
+            .toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
+    final diary = sameDayDiaries.isEmpty
+        ? DiaryEntity(
+            date: activity.time,
+            title: '',
+            content: '',
+            lastModified: activity.lastModified,
+          )
+        : sameDayDiaries.first;
+    _prepareRecordId(diary);
+
+    return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final now = DateTime.now();
+      diary.lastModified = now;
+      _obxHelper.diaryBox.put(diary);
+      activity
+        ..lastModified = now
+        ..diary.target = diary;
+      return _obxHelper.activityBox.put(activity);
     });
   }
 

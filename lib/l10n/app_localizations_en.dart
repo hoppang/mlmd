@@ -76,6 +76,106 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewSection => 'Analysis Preview';
 
   @override
+  String get recordAction => 'Record';
+
+  @override
+  String get recordSheetTitle => 'What would you like to record?';
+
+  @override
+  String get quickRecordsTitle => 'Quick records';
+
+  @override
+  String get recentRecordsTitle => 'Recent';
+
+  @override
+  String get allCategoriesTitle => 'All categories';
+
+  @override
+  String get basicCareCategory => 'Basic care';
+
+  @override
+  String get healthMedicalCategory => 'Health · medical';
+
+  @override
+  String get activityPlayCategory => 'Activity · play';
+
+  @override
+  String get growthMemoryCategory => 'Growth · memories';
+
+  @override
+  String get feedingEvent => 'Feeding';
+
+  @override
+  String get mealEvent => 'Meal';
+
+  @override
+  String get waterSnackEvent => 'Water · snack';
+
+  @override
+  String get sleepEvent => 'Sleep';
+
+  @override
+  String get diaperEvent => 'Diaper · bowel';
+
+  @override
+  String get pumpingEvent => 'Pumping';
+
+  @override
+  String get temperatureEvent => 'Temperature';
+
+  @override
+  String get medicationEvent => 'Medication';
+
+  @override
+  String get symptomEvent => 'Symptom · condition';
+
+  @override
+  String get hospitalEvent => 'Hospital · consultation';
+
+  @override
+  String get vaccinationEvent => 'Vaccination';
+
+  @override
+  String get accidentInjuryEvent => 'Accident · injury';
+
+  @override
+  String get tummyTimeEvent => 'Tummy time';
+
+  @override
+  String get bathEvent => 'Bath';
+
+  @override
+  String get growthMeasurementEvent => 'Growth measurement';
+
+  @override
+  String get memoEvent => 'Memo';
+
+  @override
+  String get eventDetailOptionalLabel => 'Details (optional)';
+
+  @override
+  String get eventDetailOptionalHint =>
+      'Add an amount, condition, or short note.';
+
+  @override
+  String get writeDetailedRecord => 'Long note and AI summary';
+
+  @override
+  String get backToRecordTypes => 'Back to record types';
+
+  @override
+  String get savingQuickRecord => 'Saving…';
+
+  @override
+  String get quickRecordSaveFailed =>
+      'Could not save the record. Your input is still here.';
+
+  @override
+  String quickRecordSaved(String type) {
+    return '$type saved.';
+  }
+
+  @override
   String get addEventButton => 'Add Event';
 
   @override

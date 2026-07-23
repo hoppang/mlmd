@@ -24,11 +24,13 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     this.diaries, {
     this.searchResults = const [],
     this.searchError,
+    this.activitySaveError,
   });
 
   final List<DiaryEntity> diaries;
   final List<DiarySearchResult> searchResults;
   final Object? searchError;
+  final Object? activitySaveError;
   DateTime? updatedOccurredAt;
   List<ActivitySummary>? updatedActivities;
   bool addedDiary = false;
@@ -36,6 +38,9 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   String? addedSummary;
   String? addedContent;
   String? searchedQuery;
+  String? addedActivityType;
+  String? addedActivityDetails;
+  DateTime? addedActivityOccurredAt;
 
   @override
   List<DiaryEntity> build() => diaries;
@@ -63,6 +68,18 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     addedTitle = title;
     addedSummary = summary;
     addedContent = content;
+  }
+
+  @override
+  Future<void> addActivityRecord({
+    required String type,
+    required String details,
+    required DateTime occurredAt,
+  }) async {
+    if (activitySaveError != null) throw activitySaveError!;
+    addedActivityType = type;
+    addedActivityDetails = details;
+    addedActivityOccurredAt = occurredAt;
   }
 
   @override
@@ -200,6 +217,111 @@ Widget _buildApp({
 }
 
 void main() {
+  testWidgets('기록 시트에서 빠른 기록과 최근 사용, 카테고리를 제공한다', (tester) async {
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 1,
+      recordId: 'record-entry-source',
+      date: now,
+      title: '',
+      content: '',
+      lastModified: now,
+    );
+    diary.activities.addAll([
+      ActivityEntity(
+        type: '이유식·식사',
+        time: now.subtract(const Duration(hours: 1)),
+        details: '120g',
+        lastModified: now,
+      ),
+      ActivityEntity(
+        type: '수유',
+        time: now,
+        details: '180mL',
+        lastModified: now,
+      ),
+    ]);
+    final notifier = _TestDiaryListNotifier([diary]);
+
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], diaryNotifier: notifier),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(find.text('빠른 기록'), findsOneWidget);
+    expect(find.text('최근 사용'), findsOneWidget);
+    expect(find.text('이유식·식사 · 120g'), findsOneWidget);
+    expect(find.text('수유 · 180mL'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('event-category-healthMedical')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('category-event-medication')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('quick-record-feeding')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('quick-record-details')),
+      '200mL',
+    );
+    await tester.tap(find.byKey(const Key('save-quick-record')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.addedActivityType, '수유');
+    expect(notifier.addedActivityDetails, '200mL');
+    expect(notifier.addedActivityOccurredAt, isNotNull);
+    expect(find.text('수유 기록을 저장했어요.'), findsOneWidget);
+  });
+
+  testWidgets('빠른 기록 저장 실패 시 입력을 유지하고 다시 시도할 수 있다', (tester) async {
+    final notifier = _TestDiaryListNotifier(
+      const [],
+      activitySaveError: StateError('save failed'),
+    );
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('최근 사용'), findsNothing);
+    await tester.tap(find.byKey(const Key('quick-record-sleep')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('quick-record-details')),
+      '낮잠 시작',
+    );
+    await tester.tap(find.byKey(const Key('save-quick-record')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('record-entry-form')), findsOneWidget);
+    expect(find.text('낮잠 시작'), findsOneWidget);
+    expect(find.text('기록을 저장하지 못했어요. 입력 내용은 그대로 유지됩니다.'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const Key('save-quick-record')))
+          .onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('Windows에서도 같은 기록 선택 내용을 중앙 대화상자로 연다', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.text('빠른 기록'), findsOneWidget);
+    expect(find.text('전체 카테고리'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('오늘 일기가 있어도 홈에서 시작하고 선택한 뒤에만 편집한다', (tester) async {
     final now = DateTime.now();
     final diary = DiaryEntity(
@@ -759,6 +881,12 @@ void main() {
       _buildApp(diaries: [diary], textScaler: const TextScaler.linear(2)),
     );
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('today-memo:92')));
+    await tester.drag(
+      find.byKey(const Key('today-scroll-view')),
+      const Offset(0, -120),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('today-memo:92')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('today-record-edit-button')));
@@ -771,7 +899,10 @@ void main() {
   testWidgets('작성 화면의 Esc는 초안을 보존하는 뒤로 가기와 같은 결과다', (tester) async {
     await tester.pumpWidget(_buildApp());
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('open-detailed-record')));
+    await tester.tap(find.byKey(const Key('open-detailed-record')));
     await tester.pumpAndSettle();
     expect(find.byType(DiaryFormPage), findsOneWidget);
 
