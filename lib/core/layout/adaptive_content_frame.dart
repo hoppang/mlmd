@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_tokens.dart';
+
 /// Centers content on wide screens while keeping full width on small screens.
 class AdaptiveContentFrame extends StatelessWidget {
   const AdaptiveContentFrame({
     super.key,
     required this.child,
-    this.contentMaxWidth = 720,
+    this.contentMaxWidth = AppSizes.contentMaxWidth,
     this.horizontalPadding = 0,
   });
 

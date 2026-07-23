@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../transfer/canonical_transfer_document.dart';
 import '../transfer/diary_transfer_service.dart';
@@ -34,9 +35,9 @@ class ImportPreviewDialog extends StatelessWidget {
                 prepared.sourceName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleSmall,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 loc.backupInfo(
                   prepared.schemaVersion,
@@ -46,7 +47,7 @@ class ImportPreviewDialog extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               if (dates.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   loc.importDateRange(
                     materialLoc.formatMediumDate(dates.first),
@@ -55,15 +56,15 @@ class ImportPreviewDialog extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 loc.importCounts(preview.total, preview.activityCount),
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.titleSmall,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
                 children: [
                   _CountChip(label: loc.newRecords, count: preview.newCount),
                   _CountChip(
@@ -76,18 +77,18 @@ class ImportPreviewDialog extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: AppSpacing.md),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadii.control),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(Icons.shield_outlined),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(child: Text(loc.safeImportNotice)),
                   ],
                 ),

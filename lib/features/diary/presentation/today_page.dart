@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
 import '../../../core/presentation/adaptive_detail.dart';
+import '../../../core/presentation/app_empty_state.dart';
+import '../../../core/presentation/app_section_header.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
@@ -148,7 +151,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.xs,
+              ),
               child: Text(
                 MaterialLocalizations.of(context).formatFullDate(_today),
                 style: Theme.of(context).textTheme.titleLarge,
@@ -165,13 +173,18 @@ class _TodayPageState extends ConsumerState<TodayPage> {
               ),
             ),
           if (counts.isNotEmpty) ...[
-            _SectionTitle(title: loc.todayStatusTitle),
+            SliverAppSectionHeader(title: loc.todayStatusTitle),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
                 child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
                   children: counts.entries
                       .map(
                         (entry) => Chip(
@@ -188,35 +201,16 @@ class _TodayPageState extends ConsumerState<TodayPage> {
               ),
             ),
           ],
-          _SectionTitle(title: loc.todayTimelineTitle),
+          SliverAppSectionHeader(title: loc.todayTimelineTitle),
           if (entries.isEmpty)
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 240,
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.timeline,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        loc.noDiaryTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        loc.noDiaryDesc,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: AppEmptyState(
+                  icon: Icons.timeline,
+                  title: loc.noDiaryTitle,
+                  description: loc.noDiaryDesc,
+                  iconColor: Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
             )
@@ -234,19 +228,21 @@ class _TodayPageState extends ConsumerState<TodayPage> {
               },
             ),
           if (summaries.isNotEmpty) ...[
-            _SectionTitle(title: loc.summaryLabel),
+            SliverAppSectionHeader(title: loc.summaryLabel),
             SliverList.separated(
               itemCount: summaries.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final diary = summaries[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
                   child: Card(
                     color: Theme.of(context).colorScheme.primaryContainer,
                     elevation: 0,
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: AppInsets.card,
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -255,7 +251,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             size: 18,
                             color: Theme.of(context).colorScheme.primary,
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: AppSpacing.sm),
                           Expanded(child: Text(diary.summary.trim())),
                         ],
                       ),
@@ -267,22 +263,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           ],
           const SliverToBoxAdapter(child: SizedBox(height: 96)),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-        child: Text(title, style: Theme.of(context).textTheme.titleMedium),
       ),
     );
   }
@@ -330,7 +310,10 @@ class _TimelineItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -348,7 +331,7 @@ class _TimelineItem extends StatelessWidget {
                 size: 20,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,7 +341,7 @@ class _TimelineItem extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     if (entry.content.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xxs),
                       Text(
                         entry.content,
                         maxLines: 2,
@@ -394,7 +377,7 @@ class _TodayRecordDetail extends StatelessWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: AppInsets.dialog,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -419,11 +402,11 @@ class _TodayRecordDetail extends StatelessWidget {
               ),
             ),
             if (entry.content.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(entry.content),
             ],
             if (activity != null && entry.diary.title.trim().isNotEmpty) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 entry.diary.title.trim(),
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -432,15 +415,15 @@ class _TodayRecordDetail extends StatelessWidget {
               ),
             ],
             if (activity == null && entry.diary.summary.trim().isNotEmpty) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 loc.summaryLabel,
                 style: Theme.of(context).textTheme.labelLarge,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xxs),
               Text(entry.diary.summary.trim()),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
               key: const Key('today-record-edit-button'),
               onPressed: () => Navigator.pop(context, true),

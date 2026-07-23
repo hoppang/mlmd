@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/presentation/app_empty_state.dart';
 import '../../../core/presentation/adaptive_detail.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/diary_repository.dart';
@@ -126,7 +128,12 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
 
     return AdaptiveContentFrame(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -142,34 +149,33 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
                     decoration: InputDecoration(
                       hintText: loc.searchHint,
                       prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
                     onSubmitted: (_) => _search(),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 FilledButton(
                   key: const Key('search-submit-button'),
                   onPressed: _isSearching ? null : _search,
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(56, 56),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
                   ),
                   child: _isSearching
-                      ? const SizedBox.square(
+                      ? SizedBox.square(
                           dimension: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         )
                       : Text(loc.searchAction),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             if (_results.isNotEmpty && !_hasError) _buildResultHeader(loc),
             Expanded(child: _buildBody(loc)),
           ],
@@ -180,7 +186,7 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
 
   Widget _buildResultHeader(AppLocalizations loc) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         children: [
           Expanded(
@@ -248,9 +254,9 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
 
     return ListView.separated(
       key: const Key('search-results-list'),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       itemCount: _sortedResults.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
       itemBuilder: (context, index) {
         final result = _sortedResults[index];
         return _SearchResultCard(
@@ -279,46 +285,14 @@ class _SearchMessage extends StatelessWidget {
   final VoidCallback? onAction;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 52,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (description != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  description!,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-              if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: 16),
-                OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppEmptyState(
+    icon: icon,
+    title: title,
+    description: description,
+    actionLabel: actionLabel,
+    onAction: onAction,
+    liveRegion: true,
+  );
 }
 
 class _SearchResultCard extends StatelessWidget {
@@ -364,7 +338,7 @@ class _SearchResultCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: AppInsets.card,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -375,7 +349,7 @@ class _SearchResultCard extends StatelessWidget {
                       size: 18,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSpacing.xs),
                     Text(
                       typeLabel,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -391,7 +365,7 @@ class _SearchResultCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   title,
                   maxLines: 1,
@@ -399,7 +373,7 @@ class _SearchResultCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 if (excerpt.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xxs),
                   Text(
                     excerpt,
                     maxLines: 2,
@@ -407,7 +381,7 @@ class _SearchResultCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   _reason(loc),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -437,10 +411,10 @@ class _SearchResultDetail extends StatelessWidget {
     return SafeArea(
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
-          24,
-          24,
-          24,
-          24 + MediaQuery.viewInsetsOf(context).bottom,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -459,24 +433,24 @@ class _SearchResultDetail extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               _formatResultTime(context, result),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Text(
               activity?.type ?? diary.title,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             if (activity != null) ...[
               if (activity.details.trim().isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Text(activity.details.trim()),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 diary.title,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -485,25 +459,25 @@ class _SearchResultDetail extends StatelessWidget {
               ),
             ] else ...[
               if (diary.summary.trim().isNotEmpty) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   loc.summaryLabel,
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(diary.summary.trim()),
               ],
               if (diary.content.trim().isNotEmpty) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   loc.contentLabel,
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(diary.content.trim()),
               ],
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
               key: const Key('search-result-edit-button'),
               onPressed: () => Navigator.pop(context, true),

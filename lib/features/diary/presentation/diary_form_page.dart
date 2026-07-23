@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/record_draft_repository.dart';
@@ -392,13 +393,13 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(loc.cancel, style: const TextStyle(color: Colors.grey)),
+            child: Text(loc.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             child: Text(loc.delete),
           ),
@@ -541,14 +542,14 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
             },
             child: Scaffold(
               appBar: AppBar(
-                title: Text(
-                  isEdit ? loc.editDiary : loc.newDiary,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
+                title: Text(isEdit ? loc.editDiary : loc.newDiary),
                 actions: [
                   if (isEdit)
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                       tooltip: loc.delete,
                       onPressed: _onDelete,
                     ),
@@ -573,7 +574,12 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
                     if (!isEdit) _buildModeToggle(loc),
                     if (_draftStatus != DraftSaveStatus.idle)
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          AppSpacing.xxs,
+                          AppSpacing.md,
+                          0,
+                        ),
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Semantics(
@@ -601,11 +607,16 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
                     if (_sourceChangedSinceDraft)
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          AppSpacing.xs,
+                          AppSpacing.md,
+                          0,
+                        ),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadii.control),
                         ),
                         child: Text(
                           loc.draftSourceChanged,
@@ -620,7 +631,12 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
                     _buildAiStatus(loc, aiAvailable),
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          0,
+                          AppSpacing.md,
+                          AppSpacing.md,
+                        ),
                         child: _mode == _InputMode.simple
                             ? _buildSimpleMode(loc, aiAvailable)
                             : _buildManualMode(loc),
@@ -631,8 +647,6 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
               ),
               floatingActionButton: FloatingActionButton.extended(
                 onPressed: _onConfirm,
-                backgroundColor: Colors.teal.shade600,
-                foregroundColor: Colors.white,
                 icon: const Icon(Icons.check),
                 label: Text(isEdit ? loc.edit : loc.saveRecord),
               ),
@@ -675,7 +689,12 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     return Semantics(
       liveRegion: true,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.xs,
+          AppSpacing.md,
+          0,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -687,7 +706,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
               )
             else
               Icon(icon, size: 18, color: color),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Text(
                 message,
@@ -705,7 +724,12 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
   // --- 모드 토글 ---
   Widget _buildModeToggle(AppLocalizations loc) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xxs,
+      ),
       child: SegmentedButton<_InputMode>(
         segments: [
           ButtonSegment(
@@ -734,7 +758,9 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         },
         style: ButtonStyle(
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.control),
+            ),
           ),
         ),
       ),
@@ -772,16 +798,13 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
       value: _formatDateTime(context, _occurredAt),
       child: InkWell(
         onTap: _editRecordTime,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.control),
         child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: loc.recordTimeLabel,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+          decoration: InputDecoration(labelText: loc.recordTimeLabel),
           child: Row(
             children: [
               const Icon(Icons.event, size: 20),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(child: Text(_formatDateTime(context, _occurredAt))),
               const Icon(Icons.edit_outlined, size: 18),
             ],
@@ -795,23 +818,18 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         _buildRecordTimeField(loc),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         // 제목 (AI 분석 후 수정 가능)
         TextField(
           controller: _titleController,
           decoration: InputDecoration(
             labelText: loc.titleLabel,
             hintText: loc.titleHint,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
-            ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         // 간단 입력 필드
         TextField(
           controller: _rawController,
@@ -822,14 +840,9 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
             labelText: loc.simpleModeLabel,
             hintText: loc.contentHint,
             alignLabelWithHint: true,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
-            ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         OutlinedButton.icon(
           key: const Key('ai-analyze-button'),
           onPressed: aiAvailable && !_isAnalyzing ? _onAnalyze : null,
@@ -852,9 +865,9 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         _buildRecordTimeField(loc),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         // 제목
         TextField(
           controller: _titleController,
@@ -862,14 +875,9 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
           decoration: InputDecoration(
             labelText: loc.titleLabel,
             hintText: loc.titleHint,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
-            ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         // 요약
         TextField(
           controller: _summaryController,
@@ -879,29 +887,27 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
             labelText: loc.summaryLabel,
             hintText: loc.summaryHint,
             alignLabelWithHint: true,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.teal.shade600, width: 2),
-            ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.md),
         // 이벤트 목록
         Row(
           children: [
-            const Icon(Icons.event_note, size: 18, color: Colors.teal),
-            const SizedBox(width: 6),
+            Icon(
+              Icons.event_note,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: AppSpacing.xs),
             Text(
               loc.eventTypeLabel,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: Theme.of(context).textTheme.titleSmall,
             ),
             const Spacer(),
             TextButton.icon(
               onPressed: _addActivity,
               icon: const Icon(Icons.add, size: 18),
               label: Text(loc.addEventButton),
-              style: TextButton.styleFrom(foregroundColor: Colors.teal),
             ),
           ],
         ),
@@ -909,7 +915,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
           final idx = entry.key;
           final act = entry.value;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -954,7 +960,6 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         hintText: loc.eventTypeHint,
         labelText: loc.eventTypeLabel,
         isDense: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
     Widget detailField() => TextField(
@@ -963,24 +968,28 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         hintText: loc.eventDetailHint,
         labelText: loc.eventDetailLabel,
         isDense: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
     Widget deleteButton() => IconButton(
       tooltip: loc.delete,
-      icon: const Icon(Icons.close, color: Colors.red, size: 20),
+      icon: Icon(
+        Icons.close,
+        color: Theme.of(context).colorScheme.error,
+        size: 20,
+      ),
       onPressed: () => _removeActivity(index),
     );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final largeText = MediaQuery.textScalerOf(context).scale(16) >= 24;
-        if (constraints.maxWidth < 520 || largeText) {
+        if (constraints.maxWidth < AppSizes.compactFormBreakpoint ||
+            largeText) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               typeField(),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               detailField(),
               Align(alignment: Alignment.centerRight, child: deleteButton()),
             ],
@@ -989,7 +998,7 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         return Row(
           children: [
             Expanded(flex: 2, child: typeField()),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(flex: 3, child: detailField()),
             deleteButton(),
           ],

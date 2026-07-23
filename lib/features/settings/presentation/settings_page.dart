@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/locale_provider.dart';
 
@@ -24,13 +25,13 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(title: Text(loc.settingsTitle)),
       body: AdaptiveContentFrame(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: AppInsets.page,
           children: [
             Text(
               loc.settingsIntro,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             _SettingsTile(
               icon: Icons.child_care_outlined,
               title: loc.childInformation,
@@ -133,25 +134,25 @@ class _DataBackupPageState extends State<DataBackupPage> {
       appBar: AppBar(title: Text(loc.dataBackupTitle)),
       body: AdaptiveContentFrame(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: AppInsets.page,
           children: [
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: AppInsets.card,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Icon(Icons.storage_outlined, color: colors.primary),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: AppSpacing.sm),
                         Text(
                           loc.storageSummaryTitle,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.sm),
                     Text(
                       loc.backupContentsSummary(
                         overview.diaryCount,
@@ -159,7 +160,7 @@ class _DataBackupPageState extends State<DataBackupPage> {
                         _formatBytes(overview.estimatedBackupBytes),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       loc.backupPrivacyNotice,
                       style: Theme.of(context).textTheme.bodySmall,
@@ -168,7 +169,7 @@ class _DataBackupPageState extends State<DataBackupPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             _ActionCard(
               icon: Icons.upload_file_outlined,
               title: loc.createBackupFile,
@@ -177,7 +178,7 @@ class _DataBackupPageState extends State<DataBackupPage> {
               filled: true,
               onPressed: widget.onExport,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             _ActionCard(
               icon: Icons.download_for_offline_outlined,
               title: loc.importBackupFile,
@@ -186,9 +187,11 @@ class _DataBackupPageState extends State<DataBackupPage> {
               filled: false,
               onPressed: _importAndRefresh,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xxs,
+              ),
               leading: const Icon(Icons.restore_from_trash_outlined),
               title: Text(loc.recentlyDeleted),
               subtitle: Text(loc.recentlyDeletedDescription),
@@ -223,10 +226,10 @@ class HelpPage extends ConsumerWidget {
       appBar: AppBar(title: Text(loc.helpTitle)),
       body: AdaptiveContentFrame(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: AppInsets.page,
           children: [
             Text(loc.helpIntro, style: Theme.of(context).textTheme.bodyLarge),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             _HelpCard(
               question: loc.offlineHelpQuestion,
               answer: loc.offlineHelpAnswer,
@@ -235,12 +238,12 @@ class HelpPage extends ConsumerWidget {
               question: loc.duplicateHelpQuestion,
               answer: loc.duplicateHelpAnswer,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               loc.languageSetting,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             DropdownButtonFormField<AppLocaleMode>(
               initialValue: currentMode,
               decoration: const InputDecoration(border: OutlineInputBorder()),
@@ -290,7 +293,7 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.only(bottom: 8),
+    margin: const EdgeInsets.only(bottom: AppSpacing.xs),
     child: ListTile(
       leading: Icon(icon),
       title: Text(title),
@@ -321,14 +324,14 @@ class _ActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
-      padding: const EdgeInsets.all(16),
+      padding: AppInsets.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               Icon(icon),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   title,
@@ -337,9 +340,9 @@ class _ActionCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.xs),
           Text(description),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.sm),
           if (filled)
             FilledButton(onPressed: onPressed, child: Text(buttonLabel))
           else
@@ -358,10 +361,15 @@ class _HelpCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.only(bottom: 10),
+    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
     child: ExpansionTile(
       title: Text(question),
-      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      childrenPadding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.md,
+      ),
       children: [Text(answer)],
     ),
   );

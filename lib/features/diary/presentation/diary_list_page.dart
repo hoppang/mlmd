@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/presentation/app_empty_state.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../application/diary_list_notifier.dart';
@@ -57,9 +59,14 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       child: Column(
         children: [
           Material(
-            color: Colors.transparent,
+            type: MaterialType.transparency,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.xs,
+              ),
               child: Row(
                 children: [
                   IconButton(
@@ -73,12 +80,12 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                   Expanded(
                     child: InkWell(
                       key: const Key('date-picker-button'),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadii.control),
                       onTap: _pickDate,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs,
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -88,10 +95,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                                 context,
                               ).formatFullDate(_selectedDate),
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ],
                         ),
@@ -110,46 +114,28 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           ),
           Expanded(
             child: selectedDiaries.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.book_outlined,
-                          size: 64,
-                          color: Colors.teal.shade200,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          loc.noDiaryTitle,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          loc.noDiaryDesc,
-                          style: const TextStyle(color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                ? AppEmptyState(
+                    icon: Icons.book_outlined,
+                    title: loc.noDiaryTitle,
+                    description: loc.noDiaryDesc,
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.xs,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                    ),
                     itemCount: selectedDiaries.length,
                     itemBuilder: (context, index) {
                       final diary = selectedDiaries[index];
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: Card(
-                          clipBehavior: Clip.antiAlias,
                           child: InkWell(
                             onTap: () => widget.onEditDiary(diary),
                             child: Padding(
-                              padding: const EdgeInsets.all(16.0),
+                              padding: AppInsets.card,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -160,70 +146,74 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                                       Expanded(
                                         child: Text(
                                           diary.title,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleMedium,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: AppSpacing.xs),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
+                                          horizontal: AppSpacing.xs,
+                                          vertical: AppSpacing.xxs,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.teal.shade50,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.secondaryContainer,
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            AppRadii.control,
                                           ),
                                         ),
                                         child: Text(
                                           MaterialLocalizations.of(
                                             context,
                                           ).formatShortDate(diary.date),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.teal.shade700,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelMedium
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSecondaryContainer,
+                                              ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: AppSpacing.xs),
                                   Text(
                                     diary.summary.isNotEmpty
                                         ? diary.summary
                                         : diary.content,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey.shade700,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   if (diary.activities.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: AppSpacing.xs),
                                     Wrap(
-                                      spacing: 6,
-                                      runSpacing: 4,
+                                      spacing: AppSpacing.xs,
+                                      runSpacing: AppSpacing.xxs,
                                       children: diary.activities.map((a) {
                                         return Chip(
                                           label: Text(
                                             '${a.type} ${a.details}',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                            ),
-                                          ),
-                                          backgroundColor: Colors.teal.shade50,
-                                          side: BorderSide(
-                                            color: Colors.teal.shade100,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.labelSmall,
                                           ),
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
+                                            horizontal: AppSpacing.xxs,
                                             vertical: 0,
                                           ),
                                           materialTapTargetSize:

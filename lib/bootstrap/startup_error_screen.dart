@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../core/theme/app_theme.dart';
+import '../core/theme/app_tokens.dart';
 import '../l10n/app_localizations.dart';
 
 class StartupErrorScreen extends StatelessWidget {
@@ -30,7 +32,9 @@ class StartupErrorScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Reset'),
           ),
         ],
@@ -47,6 +51,7 @@ class StartupErrorScreen extends StatelessWidget {
     // Use a standalone MaterialApp because this is shown before MyApp is loaded.
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -61,27 +66,29 @@ class StartupErrorScreen extends StatelessWidget {
             body: SafeArea(
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: AppInsets.dialog,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
                         size: 64,
-                        color: Colors.red,
+                        color: Theme.of(context).colorScheme.error,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.md),
                       Text(
                         loc.startupErrorTitle,
                         style: Theme.of(context).textTheme.titleLarge,
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.md),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(AppRadii.control),
                         ),
                         child: Text(
                           error.toString(),
@@ -90,20 +97,23 @@ class StartupErrorScreen extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: AppSpacing.xl),
                       ElevatedButton.icon(
                         onPressed: onRetry,
                         icon: const Icon(Icons.refresh),
                         label: Text(loc.startupRetry),
                         style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 48),
+                          minimumSize: const Size(
+                            double.infinity,
+                            AppSizes.minimumInteractiveDimension,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.md),
                       TextButton(
                         onPressed: () => _confirmReset(context, loc),
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
+                          foregroundColor: Theme.of(context).colorScheme.error,
                         ),
                         child: Text(loc.startupResetData),
                       ),

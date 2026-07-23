@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 
 class DraftResumeCard extends StatelessWidget {
@@ -20,9 +21,14 @@ class DraftResumeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Card(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        0,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: AppInsets.card,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -30,14 +36,14 @@ class DraftResumeCard extends StatelessWidget {
               loc.draftsInProgress(count),
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -45,7 +51,7 @@ class DraftResumeCard extends StatelessWidget {
                   onPressed: onStartNew,
                   child: Text(loc.startNewDraft),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 FilledButton(
                   onPressed: onContinue,
                   child: Text(loc.continueWriting),

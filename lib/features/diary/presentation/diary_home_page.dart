@@ -274,18 +274,11 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                 _selectedTab == 0
                     ? loc.appTitle
                     : (_selectedTab == 1 ? loc.dateTab : loc.searchTitle),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
               ),
-              backgroundColor: Colors.teal.shade700,
-              elevation: 4,
-              centerTitle: true,
               actions: [
                 if (_selectedTab == 0)
                   IconButton(
-                    icon: const Icon(Icons.settings, color: Colors.white),
+                    icon: const Icon(Icons.settings),
                     tooltip: loc.settingsTitle,
                     onPressed: () => _showSettingsPage(context),
                   ),
@@ -339,8 +332,6 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                   _navigateToFormPage(context);
                 }
               },
-              backgroundColor: Colors.teal.shade600,
-              foregroundColor: Colors.white,
               icon: Icon(todayDiary != null ? Icons.edit : Icons.add),
               label: Text(todayDiary != null ? loc.edit : loc.newDiary),
             ),
