@@ -382,10 +382,101 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "7:1274005795808046192",
+      "lastPropertyId": "16:5883450582164796972",
+      "name": "AiSummaryEntity",
+      "properties": [
+        {
+          "id": "1:8472272150271769072",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2369876829134574671",
+          "name": "summaryId",
+          "indexId": "11:3487020014901945097",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:3761827085135898139",
+          "name": "periodType",
+          "type": 9
+        },
+        {
+          "id": "4:3356702184210038280",
+          "name": "periodStart",
+          "type": 10
+        },
+        {
+          "id": "5:8001675043569373980",
+          "name": "periodEndExclusive",
+          "type": 10
+        },
+        {
+          "id": "6:2593101371806439557",
+          "name": "generatedText",
+          "type": 9
+        },
+        {
+          "id": "7:4689711996152700236",
+          "name": "editedText",
+          "type": 9
+        },
+        {
+          "id": "8:6947300514276150715",
+          "name": "generatedAt",
+          "type": 10
+        },
+        {
+          "id": "9:6956917335758808684",
+          "name": "cutoffAt",
+          "type": 10
+        },
+        {
+          "id": "10:4985915189953241040",
+          "name": "sourceFingerprint",
+          "type": 9
+        },
+        {
+          "id": "11:7251003495307522185",
+          "name": "evidenceJson",
+          "type": 9
+        },
+        {
+          "id": "12:3420237458636934122",
+          "name": "hidden",
+          "type": 1
+        },
+        {
+          "id": "13:3618811962475082024",
+          "name": "userEdited",
+          "type": 1
+        },
+        {
+          "id": "14:7320843511212094944",
+          "name": "automatic",
+          "type": 1
+        },
+        {
+          "id": "15:5734484681354813897",
+          "name": "modelVersion",
+          "type": 9
+        },
+        {
+          "id": "16:5883450582164796972",
+          "name": "algorithmVersion",
+          "type": 9
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "6:6674739285646046166",
-  "lastIndexId": "10:4219175356147692746",
+  "lastEntityId": "7:1274005795808046192",
+  "lastIndexId": "11:3487020014901945097",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

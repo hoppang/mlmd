@@ -15,6 +15,7 @@ import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
 import 'models/activity_entity.dart';
+import 'models/ai_summary_entity.dart';
 import 'models/author_profile_entity.dart';
 import 'models/device_profile_entity.dart';
 import 'models/diary_entity.dart';
@@ -470,6 +471,113 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(7, 1274005795808046192),
+    name: 'AiSummaryEntity',
+    lastPropertyId: const obx_int.IdUid(16, 5883450582164796972),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8472272150271769072),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 2369876829134574671),
+        name: 'summaryId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(11, 3487020014901945097),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 3761827085135898139),
+        name: 'periodType',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 3356702184210038280),
+        name: 'periodStart',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 8001675043569373980),
+        name: 'periodEndExclusive',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 2593101371806439557),
+        name: 'generatedText',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 4689711996152700236),
+        name: 'editedText',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 6947300514276150715),
+        name: 'generatedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 6956917335758808684),
+        name: 'cutoffAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 4985915189953241040),
+        name: 'sourceFingerprint',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 7251003495307522185),
+        name: 'evidenceJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 3420237458636934122),
+        name: 'hidden',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 3618811962475082024),
+        name: 'userEdited',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 7320843511212094944),
+        name: 'automatic',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 5734484681354813897),
+        name: 'modelVersion',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 5883450582164796972),
+        name: 'algorithmVersion',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -515,8 +623,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(6, 6674739285646046166),
-    lastIndexId: const obx_int.IdUid(10, 4219175356147692746),
+    lastEntityId: const obx_int.IdUid(7, 1274005795808046192),
+    lastIndexId: const obx_int.IdUid(11, 3487020014901945097),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -1115,6 +1223,132 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    AiSummaryEntity: obx_int.EntityDefinition<AiSummaryEntity>(
+      model: _entities[6],
+      toOneRelations: (AiSummaryEntity object) => [],
+      toManyRelations: (AiSummaryEntity object) => {},
+      getId: (AiSummaryEntity object) => object.id,
+      setId: (AiSummaryEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (AiSummaryEntity object, fb.Builder fbb) {
+        final summaryIdOffset = fbb.writeString(object.summaryId);
+        final periodTypeOffset = fbb.writeString(object.periodType);
+        final generatedTextOffset = fbb.writeString(object.generatedText);
+        final editedTextOffset = object.editedText == null
+            ? null
+            : fbb.writeString(object.editedText!);
+        final sourceFingerprintOffset = fbb.writeString(
+          object.sourceFingerprint,
+        );
+        final evidenceJsonOffset = fbb.writeString(object.evidenceJson);
+        final modelVersionOffset = fbb.writeString(object.modelVersion);
+        final algorithmVersionOffset = fbb.writeString(object.algorithmVersion);
+        fbb.startTable(17);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, summaryIdOffset);
+        fbb.addOffset(2, periodTypeOffset);
+        fbb.addInt64(3, object.periodStart.millisecondsSinceEpoch);
+        fbb.addInt64(4, object.periodEndExclusive.millisecondsSinceEpoch);
+        fbb.addOffset(5, generatedTextOffset);
+        fbb.addOffset(6, editedTextOffset);
+        fbb.addInt64(7, object.generatedAt.millisecondsSinceEpoch);
+        fbb.addInt64(8, object.cutoffAt.millisecondsSinceEpoch);
+        fbb.addOffset(9, sourceFingerprintOffset);
+        fbb.addOffset(10, evidenceJsonOffset);
+        fbb.addBool(11, object.hidden);
+        fbb.addBool(12, object.userEdited);
+        fbb.addBool(13, object.automatic);
+        fbb.addOffset(14, modelVersionOffset);
+        fbb.addOffset(15, algorithmVersionOffset);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final summaryIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final periodTypeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final periodStartParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 10, 0),
+        );
+        final periodEndExclusiveParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
+        );
+        final generatedTextParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 14, '');
+        final editedTextParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 16);
+        final generatedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+        );
+        final cutoffAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 20, 0),
+        );
+        final sourceFingerprintParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 22, '');
+        final evidenceJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 24, '');
+        final hiddenParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          26,
+          false,
+        );
+        final userEditedParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          28,
+          false,
+        );
+        final automaticParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          30,
+          false,
+        );
+        final modelVersionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 32, '');
+        final algorithmVersionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 34, '');
+        final object = AiSummaryEntity(
+          id: idParam,
+          summaryId: summaryIdParam,
+          periodType: periodTypeParam,
+          periodStart: periodStartParam,
+          periodEndExclusive: periodEndExclusiveParam,
+          generatedText: generatedTextParam,
+          editedText: editedTextParam,
+          generatedAt: generatedAtParam,
+          cutoffAt: cutoffAtParam,
+          sourceFingerprint: sourceFingerprintParam,
+          evidenceJson: evidenceJsonParam,
+          hidden: hiddenParam,
+          userEdited: userEditedParam,
+          automatic: automaticParam,
+          modelVersion: modelVersionParam,
+          algorithmVersion: algorithmVersionParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -1437,5 +1671,88 @@ class SearchDocumentEntity_ {
   /// See [SearchDocumentEntity.numericValue].
   static final numericValue = obx.QueryDoubleProperty<SearchDocumentEntity>(
     _entities[5].properties[14],
+  );
+}
+
+/// [AiSummaryEntity] entity fields to define ObjectBox queries.
+class AiSummaryEntity_ {
+  /// See [AiSummaryEntity.id].
+  static final id = obx.QueryIntegerProperty<AiSummaryEntity>(
+    _entities[6].properties[0],
+  );
+
+  /// See [AiSummaryEntity.summaryId].
+  static final summaryId = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[1],
+  );
+
+  /// See [AiSummaryEntity.periodType].
+  static final periodType = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[2],
+  );
+
+  /// See [AiSummaryEntity.periodStart].
+  static final periodStart = obx.QueryDateProperty<AiSummaryEntity>(
+    _entities[6].properties[3],
+  );
+
+  /// See [AiSummaryEntity.periodEndExclusive].
+  static final periodEndExclusive = obx.QueryDateProperty<AiSummaryEntity>(
+    _entities[6].properties[4],
+  );
+
+  /// See [AiSummaryEntity.generatedText].
+  static final generatedText = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[5],
+  );
+
+  /// See [AiSummaryEntity.editedText].
+  static final editedText = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[6],
+  );
+
+  /// See [AiSummaryEntity.generatedAt].
+  static final generatedAt = obx.QueryDateProperty<AiSummaryEntity>(
+    _entities[6].properties[7],
+  );
+
+  /// See [AiSummaryEntity.cutoffAt].
+  static final cutoffAt = obx.QueryDateProperty<AiSummaryEntity>(
+    _entities[6].properties[8],
+  );
+
+  /// See [AiSummaryEntity.sourceFingerprint].
+  static final sourceFingerprint = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[9],
+  );
+
+  /// See [AiSummaryEntity.evidenceJson].
+  static final evidenceJson = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[10],
+  );
+
+  /// See [AiSummaryEntity.hidden].
+  static final hidden = obx.QueryBooleanProperty<AiSummaryEntity>(
+    _entities[6].properties[11],
+  );
+
+  /// See [AiSummaryEntity.userEdited].
+  static final userEdited = obx.QueryBooleanProperty<AiSummaryEntity>(
+    _entities[6].properties[12],
+  );
+
+  /// See [AiSummaryEntity.automatic].
+  static final automatic = obx.QueryBooleanProperty<AiSummaryEntity>(
+    _entities[6].properties[13],
+  );
+
+  /// See [AiSummaryEntity.modelVersion].
+  static final modelVersion = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[14],
+  );
+
+  /// See [AiSummaryEntity.algorithmVersion].
+  static final algorithmVersion = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[15],
   );
 }

@@ -844,6 +844,144 @@ abstract class AppLocalizations {
   /// **'맥락을 위한 표시이며 원인이나 관련성을 뜻하지 않아요.'**
   String get searchSameDayContextHint;
 
+  /// No description provided for @dailyAiSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 일간 정리'**
+  String get dailyAiSummary;
+
+  /// No description provided for @weeklyAiSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 주간 정리'**
+  String get weeklyAiSummary;
+
+  /// No description provided for @summarizeDay.
+  ///
+  /// In ko, this message translates to:
+  /// **'이날 정리하기'**
+  String get summarizeDay;
+
+  /// No description provided for @summarizeWeek.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 주 정리하기'**
+  String get summarizeWeek;
+
+  /// No description provided for @summarizeWeekSoFar.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재까지 정리'**
+  String get summarizeWeekSoFar;
+
+  /// No description provided for @summaryGenerating.
+  ///
+  /// In ko, this message translates to:
+  /// **'원본 기록을 바탕으로 정리하고 있어요…'**
+  String get summaryGenerating;
+
+  /// No description provided for @summaryUnavailable.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 정리를 사용할 수 없어요. 원본 기록과 계산된 현황은 그대로 볼 수 있어요.'**
+  String get summaryUnavailable;
+
+  /// No description provided for @summaryFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'정리를 만들지 못했어요. 원본 기록은 변경되지 않았어요.'**
+  String get summaryFailed;
+
+  /// No description provided for @summaryNoRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'정리할 원본 기록이 없어요.'**
+  String get summaryNoRecords;
+
+  /// No description provided for @summaryBasis.
+  ///
+  /// In ko, this message translates to:
+  /// **'{time}까지의 원본 기록 {count}개 기준'**
+  String summaryBasis(int count, String time);
+
+  /// No description provided for @summaryNewRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 정리 이후 새 기록이 있어요.'**
+  String get summaryNewRecords;
+
+  /// No description provided for @summarySourceChanged.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 정리에 사용한 원본 기록이 변경되었어요.'**
+  String get summarySourceChanged;
+
+  /// No description provided for @summaryEdited.
+  ///
+  /// In ko, this message translates to:
+  /// **'직접 수정됨'**
+  String get summaryEdited;
+
+  /// No description provided for @summaryEvidence.
+  ///
+  /// In ko, this message translates to:
+  /// **'근거 기록 보기'**
+  String get summaryEvidence;
+
+  /// No description provided for @summaryEvidenceTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'정리에 사용한 원본 기록'**
+  String get summaryEvidenceTitle;
+
+  /// No description provided for @summaryEditTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'정리 수정'**
+  String get summaryEditTitle;
+
+  /// No description provided for @summaryHide.
+  ///
+  /// In ko, this message translates to:
+  /// **'숨기기'**
+  String get summaryHide;
+
+  /// No description provided for @summaryRestore.
+  ///
+  /// In ko, this message translates to:
+  /// **'정리 다시 보기'**
+  String get summaryRestore;
+
+  /// No description provided for @summaryRegenerate.
+  ///
+  /// In ko, this message translates to:
+  /// **'다시 생성'**
+  String get summaryRegenerate;
+
+  /// No description provided for @summaryPreviewTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 정리 확인'**
+  String get summaryPreviewTitle;
+
+  /// No description provided for @summaryReplace.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 정리로 교체'**
+  String get summaryReplace;
+
+  /// No description provided for @weeklyAutoSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'주간 AI 정리 자동 생성'**
+  String get weeklyAutoSummary;
+
+  /// No description provided for @weeklyAutoSummaryDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'월요일부터 일요일까지 완료된 주를 기기 내 AI로 조용히 정리해요.'**
+  String get weeklyAutoSummaryDescription;
+
   /// No description provided for @searchMemoResult.
   ///
   /// In ko, this message translates to:

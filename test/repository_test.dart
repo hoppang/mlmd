@@ -7,13 +7,16 @@ import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/models/author_profile_entity.dart';
 import 'package:mlmd/models/device_profile_entity.dart';
 import 'package:mlmd/models/search_document_entity.dart';
+import 'package:mlmd/models/ai_summary_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/activity_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
+import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'package:mlmd/services/embedding_service.dart';
+import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
 
 // ObjectBoxHelper의 테스트용 구현체 (임시 디렉터리에 데이터베이스 가동)
 class TestObjectBoxHelper implements ObjectBoxHelper {
@@ -31,6 +34,8 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<DeviceProfileEntity> deviceProfileBox;
   @override
   late final Box<SearchDocumentEntity> searchDocumentBox;
+  @override
+  late final Box<AiSummaryEntity> aiSummaryBox;
 
   TestObjectBoxHelper(this.store) {
     diaryBox = Box<DiaryEntity>(store);
@@ -39,6 +44,7 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
     authorProfileBox = Box<AuthorProfileEntity>(store);
     deviceProfileBox = Box<DeviceProfileEntity>(store);
     searchDocumentBox = Box<SearchDocumentEntity>(store);
+    aiSummaryBox = Box<AiSummaryEntity>(store);
   }
 
   static Future<TestObjectBoxHelper> createTemp() async {
@@ -74,6 +80,7 @@ void main() {
   late ActivityRepository activityRepo;
   late RecordDraftRepository draftRepo;
   late ProfileRepository profileRepo;
+  late AiSummaryRepository aiSummaryRepo;
 
   setUp(() async {
     obxHelper = await TestObjectBoxHelper.createTemp();
@@ -82,6 +89,7 @@ void main() {
     diaryRepo = DiaryRepositoryImpl(obxHelper, profileRepo);
     activityRepo = ActivityRepositoryImpl(obxHelper, profileRepo);
     draftRepo = RecordDraftRepositoryImpl(obxHelper);
+    aiSummaryRepo = AiSummaryRepositoryImpl(obxHelper);
   });
 
   tearDown(() async {
@@ -495,6 +503,111 @@ void main() {
       final restored = activityRepo.getActivity(activityId)!;
       expect(restored.time.millisecondsSinceEpoch, now.millisecondsSinceEpoch);
       expect(restored.hasExactTime, isFalse);
+    });
+  });
+
+  group('UX-015 derived AI summaries', () {
+    test('stores generated text, evidence, edits, and hidden state', () {
+      final occurredAt = DateTime(2026, 7, 20, 9);
+      final diary = DiaryEntity(
+        date: occurredAt,
+        title: '아침',
+        content: '공원에 다녀왔다',
+        lastModified: occurredAt,
+      );
+      diaryRepo.saveDiaryWithActivities(diary, [
+        ActivityEntity(
+          type: '수유',
+          time: occurredAt.add(const Duration(minutes: 30)),
+          details: '120mL',
+          lastModified: occurredAt,
+        ),
+      ]);
+      final snapshot = const SummarySourceSnapshotBuilder().build(
+        diaryRepo.getDiaries(),
+        periodType: SummaryPeriodType.daily,
+        start: DateTime(2026, 7, 20),
+        endExclusive: DateTime(2026, 7, 21),
+      );
+
+      final saved = aiSummaryRepo.saveGenerated(
+        snapshot,
+        '공원에 다녀오고 수유를 기록했다.',
+        automatic: false,
+        modelVersion: 'test-v1',
+      );
+
+      expect(saved.generatedText, contains('공원'));
+      expect(aiSummaryRepo.evidenceFor(saved), hasLength(2));
+      expect(
+        aiSummaryRepo.freshness(saved, snapshot),
+        AiSummaryFreshness.fresh,
+      );
+
+      final edited = aiSummaryRepo.edit(saved.id, '보호자가 고친 문장');
+      expect(edited.generatedText, contains('공원'));
+      expect(edited.displayText, '보호자가 고친 문장');
+      expect(edited.userEdited, isTrue);
+
+      final hidden = aiSummaryRepo.setHidden(saved.id, true);
+      expect(hidden.hidden, isTrue);
+      expect(aiSummaryRepo.setHidden(saved.id, false).hidden, isFalse);
+    });
+
+    test('distinguishes appended evidence from changed source text', () {
+      final occurredAt = DateTime(2026, 7, 20, 9);
+      final diary = DiaryEntity(
+        date: occurredAt,
+        title: '기록',
+        content: '처음 원문',
+        lastModified: occurredAt,
+      );
+      diaryRepo.saveDiary(diary);
+      final builder = const SummarySourceSnapshotBuilder();
+      final before = builder.build(
+        diaryRepo.getDiaries(),
+        periodType: SummaryPeriodType.daily,
+        start: DateTime(2026, 7, 20),
+        endExclusive: DateTime(2026, 7, 21),
+      );
+      final saved = aiSummaryRepo.saveGenerated(
+        before,
+        '처음 정리',
+        automatic: false,
+        modelVersion: 'test-v1',
+      );
+
+      diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: '수면',
+          time: occurredAt.add(const Duration(hours: 1)),
+          details: '낮잠',
+          lastModified: occurredAt,
+        ),
+      );
+      final withNewRecord = builder.build(
+        diaryRepo.getDiaries(),
+        periodType: SummaryPeriodType.daily,
+        start: DateTime(2026, 7, 20),
+        endExclusive: DateTime(2026, 7, 21),
+      );
+      expect(
+        aiSummaryRepo.freshness(saved, withNewRecord),
+        AiSummaryFreshness.newRecords,
+      );
+
+      diary.content = '수정한 원문';
+      diaryRepo.saveDiary(diary);
+      final changed = builder.build(
+        diaryRepo.getDiaries(),
+        periodType: SummaryPeriodType.daily,
+        start: DateTime(2026, 7, 20),
+        endExclusive: DateTime(2026, 7, 21),
+      );
+      expect(
+        aiSummaryRepo.freshness(saved, changed),
+        AiSummaryFreshness.sourceChanged,
+      );
     });
   });
 

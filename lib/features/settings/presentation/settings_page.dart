@@ -7,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../profiles/presentation/author_profile_page.dart';
+import '../../summaries/application/ai_summary_notifier.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({
@@ -86,6 +87,18 @@ class SettingsPage extends ConsumerWidget {
               onTap: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute<void>(builder: (_) => const HelpPage())),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Card(
+              child: SwitchListTile(
+                secondary: const Icon(Icons.auto_awesome_outlined),
+                title: Text(loc.weeklyAutoSummary),
+                subtitle: Text(loc.weeklyAutoSummaryDescription),
+                value: ref.watch(weeklyAiAutoSummaryProvider),
+                onChanged: (value) => ref
+                    .read(weeklyAiAutoSummaryProvider.notifier)
+                    .setEnabled(value),
+              ),
             ),
           ],
         ),

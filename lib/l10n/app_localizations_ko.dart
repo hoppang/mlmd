@@ -390,6 +390,79 @@ class AppLocalizationsKo extends AppLocalizations {
   String get searchSameDayContextHint => '맥락을 위한 표시이며 원인이나 관련성을 뜻하지 않아요.';
 
   @override
+  String get dailyAiSummary => 'AI 일간 정리';
+
+  @override
+  String get weeklyAiSummary => 'AI 주간 정리';
+
+  @override
+  String get summarizeDay => '이날 정리하기';
+
+  @override
+  String get summarizeWeek => '이 주 정리하기';
+
+  @override
+  String get summarizeWeekSoFar => '현재까지 정리';
+
+  @override
+  String get summaryGenerating => '원본 기록을 바탕으로 정리하고 있어요…';
+
+  @override
+  String get summaryUnavailable =>
+      'AI 정리를 사용할 수 없어요. 원본 기록과 계산된 현황은 그대로 볼 수 있어요.';
+
+  @override
+  String get summaryFailed => '정리를 만들지 못했어요. 원본 기록은 변경되지 않았어요.';
+
+  @override
+  String get summaryNoRecords => '정리할 원본 기록이 없어요.';
+
+  @override
+  String summaryBasis(int count, String time) {
+    return '$time까지의 원본 기록 $count개 기준';
+  }
+
+  @override
+  String get summaryNewRecords => '이 정리 이후 새 기록이 있어요.';
+
+  @override
+  String get summarySourceChanged => '이 정리에 사용한 원본 기록이 변경되었어요.';
+
+  @override
+  String get summaryEdited => '직접 수정됨';
+
+  @override
+  String get summaryEvidence => '근거 기록 보기';
+
+  @override
+  String get summaryEvidenceTitle => '정리에 사용한 원본 기록';
+
+  @override
+  String get summaryEditTitle => '정리 수정';
+
+  @override
+  String get summaryHide => '숨기기';
+
+  @override
+  String get summaryRestore => '정리 다시 보기';
+
+  @override
+  String get summaryRegenerate => '다시 생성';
+
+  @override
+  String get summaryPreviewTitle => '새 정리 확인';
+
+  @override
+  String get summaryReplace => '새 정리로 교체';
+
+  @override
+  String get weeklyAutoSummary => '주간 AI 정리 자동 생성';
+
+  @override
+  String get weeklyAutoSummaryDescription =>
+      '월요일부터 일요일까지 완료된 주를 기기 내 AI로 조용히 정리해요.';
+
+  @override
   String get searchMemoResult => '메모';
 
   @override

@@ -7,6 +7,8 @@ import 'package:mlmd/transfer/diary_transfer_service.dart';
 import 'package:mlmd/features/settings/presentation/settings_page.dart';
 import 'package:mlmd/widgets/import_preview_dialog.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
+import 'package:mlmd/providers/locale_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'support/test_profile_repository.dart';
 
 void main() {
@@ -52,10 +54,13 @@ void main() {
   });
 
   testWidgets('settings exposes five top-level destinations', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           profileRepositoryProvider.overrideWithValue(TestProfileRepository()),
+          sharedPreferencesProvider.overrideWithValue(preferences),
         ],
         child: MaterialApp(
           locale: const Locale('en'),

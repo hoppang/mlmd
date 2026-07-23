@@ -14,12 +14,16 @@ import 'package:mlmd/features/diary/presentation/diary_home_page.dart';
 import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
 import 'package:mlmd/l10n/app_localizations.dart';
 import 'package:mlmd/models/activity_entity.dart';
+import 'package:mlmd/models/ai_summary_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/services/llm_diary_service.dart';
+import 'package:mlmd/features/summaries/application/ai_summary_notifier.dart';
+import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
+import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'support/test_profile_repository.dart';
 
 class _TestDiaryListNotifier extends DiaryListNotifier {
@@ -106,6 +110,80 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   }
 }
 
+class _TestAiSummaryNotifier extends AiSummaryNotifier {
+  _TestAiSummaryNotifier({this.candidateText, this.automaticAvailable = false});
+
+  final String? candidateText;
+  final bool automaticAvailable;
+  List<SummaryEvidence> _savedEvidence = const [];
+  bool? lastAutomatic;
+
+  @override
+  List<AiSummaryEntity> build() => const [];
+
+  @override
+  bool get canGenerateAutomatically => automaticAvailable;
+
+  @override
+  Future<SummaryGenerationCandidate> generateCandidate(
+    SummarySourceSnapshot snapshot, {
+    required String languageCode,
+  }) async => candidateText == null
+      ? const SummaryGenerationCandidate(
+          status: SummaryGenerationStatus.unavailable,
+        )
+      : SummaryGenerationCandidate(
+          status: SummaryGenerationStatus.success,
+          text: candidateText,
+        );
+
+  @override
+  AiSummaryEntity saveCandidate(
+    SummarySourceSnapshot snapshot,
+    String text, {
+    required bool automatic,
+  }) {
+    _savedEvidence = snapshot.evidence;
+    lastAutomatic = automatic;
+    final entity = AiSummaryEntity(
+      id: 1,
+      summaryId: '${snapshot.periodType.name}:test',
+      periodType: snapshot.periodType == SummaryPeriodType.daily
+          ? AiSummaryEntity.periodDaily
+          : AiSummaryEntity.periodWeekly,
+      periodStart: snapshot.start,
+      periodEndExclusive: snapshot.endExclusive,
+      generatedText: text,
+      generatedAt: DateTime.now(),
+      cutoffAt: snapshot.cutoffAt!,
+      sourceFingerprint: snapshot.sourceFingerprint,
+      evidenceJson: '[]',
+      automatic: automatic,
+      modelVersion: 'test',
+    );
+    state = [entity];
+    return entity;
+  }
+
+  @override
+  List<SummaryEvidence> evidenceFor(AiSummaryEntity summary) => _savedEvidence;
+
+  @override
+  AiSummaryFreshness freshness(
+    AiSummaryEntity summary,
+    SummarySourceSnapshot snapshot,
+  ) => AiSummaryFreshness.fresh;
+}
+
+class _TestWeeklyAiAutoSummaryNotifier extends WeeklyAiAutoSummaryNotifier {
+  _TestWeeklyAiAutoSummaryNotifier(this.enabled);
+
+  final bool enabled;
+
+  @override
+  bool build() => enabled;
+}
+
 class _TestDiaryAnalysisService implements DiaryAnalysisService {
   _TestDiaryAnalysisService({
     required this.isAvailable,
@@ -188,6 +266,8 @@ Widget _buildApp({
   List<DiaryEntity> diaries = const [],
   List<RecordDraftEntity> drafts = const [],
   _TestDiaryListNotifier? diaryNotifier,
+  _TestAiSummaryNotifier? summaryNotifier,
+  bool weeklyAutoSummary = false,
   DiaryAnalysisService? analysisService,
   TextScaler? textScaler,
 }) {
@@ -203,6 +283,12 @@ Widget _buildApp({
         () => _TestDraftListNotifier(drafts),
       ),
       profileRepositoryProvider.overrideWithValue(TestProfileRepository()),
+      aiSummaryListProvider.overrideWith(
+        () => summaryNotifier ?? _TestAiSummaryNotifier(),
+      ),
+      weeklyAiAutoSummaryProvider.overrideWith(
+        () => _TestWeeklyAiAutoSummaryNotifier(weeklyAutoSummary),
+      ),
       if (analysisService != null)
         diaryAnalysisServiceProvider.overrideWithValue(analysisService),
     ],
@@ -765,6 +851,86 @@ void main() {
 
     expect(find.text('오늘 날짜 기록'), findsNothing);
     expect(find.text('어제 날짜 기록'), findsOneWidget);
+  });
+
+  testWidgets('날짜별 화면에서 원본 근거가 연결된 AI 일간 정리를 만든다', (tester) async {
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 71,
+      recordId: 'daily-summary-source',
+      date: now,
+      title: '하루 기록',
+      content: '오전에 산책했다.',
+      lastModified: now,
+    );
+    diary.activities.add(
+      ActivityEntity(
+        id: 72,
+        type: '수유',
+        time: now.add(const Duration(minutes: 10)),
+        details: '120mL',
+        lastModified: now,
+      ),
+    );
+    final summaryNotifier = _TestAiSummaryNotifier(
+      candidateText: '오전에 산책했고 수유 기록이 남아 있어요.',
+    );
+
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], summaryNotifier: summaryNotifier),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('날짜별'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, '이날 정리하기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('오전에 산책했고 수유 기록이 남아 있어요.'), findsOneWidget);
+    expect(find.textContaining('원본 기록 2개 기준'), findsOneWidget);
+
+    await tester.tap(find.text('근거 기록 보기'));
+    await tester.pumpAndSettle();
+    expect(find.text('정리에 사용한 원본 기록'), findsOneWidget);
+    expect(find.text('하루 기록'), findsAtLeastNWidgets(1));
+    expect(find.text('수유'), findsOneWidget);
+  });
+
+  testWidgets('완료된 월요일-일요일 주간 정리를 조용히 자동 생성한다', (tester) async {
+    final now = DateTime.now();
+    final previousSunday = DateUtils.dateOnly(
+      now,
+    ).subtract(Duration(days: now.weekday));
+    final diary = DiaryEntity(
+      id: 81,
+      recordId: 'weekly-summary-source',
+      date: previousSunday.add(const Duration(hours: 12)),
+      title: '지난주 기록',
+      content: '완료된 주의 원본',
+      lastModified: previousSunday,
+    );
+    final summaryNotifier = _TestAiSummaryNotifier(
+      candidateText: '완료된 지난주 기록을 정리했어요.',
+      automaticAvailable: true,
+    );
+
+    await tester.pumpWidget(
+      _buildApp(
+        diaries: [diary],
+        summaryNotifier: summaryNotifier,
+        weeklyAutoSummary: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('날짜별'));
+    await tester.pumpAndSettle();
+    for (var index = 0; index < now.weekday; index++) {
+      await tester.tap(find.byKey(const Key('date-previous-button')));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    expect(find.text('완료된 지난주 기록을 정리했어요.'), findsOneWidget);
+    expect(summaryNotifier.lastAutomatic, isTrue);
   });
 
   testWidgets('기록 수정 시 메모와 이벤트의 발생 시각을 보존한다', (tester) async {

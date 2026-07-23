@@ -400,6 +400,81 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shown as context only. This does not imply a cause or relationship.';
 
   @override
+  String get dailyAiSummary => 'AI daily recap';
+
+  @override
+  String get weeklyAiSummary => 'AI weekly recap';
+
+  @override
+  String get summarizeDay => 'Recap this day';
+
+  @override
+  String get summarizeWeek => 'Recap this week';
+
+  @override
+  String get summarizeWeekSoFar => 'Recap the week so far';
+
+  @override
+  String get summaryGenerating => 'Creating a recap from the original records…';
+
+  @override
+  String get summaryUnavailable =>
+      'AI recap is unavailable. Your original records and calculated counts remain available.';
+
+  @override
+  String get summaryFailed =>
+      'The recap could not be created. Your original records are unchanged.';
+
+  @override
+  String get summaryNoRecords => 'There are no original records to recap.';
+
+  @override
+  String summaryBasis(int count, String time) {
+    return 'Based on $count original records through $time';
+  }
+
+  @override
+  String get summaryNewRecords => 'There are new records since this recap.';
+
+  @override
+  String get summarySourceChanged =>
+      'An original record used by this recap has changed.';
+
+  @override
+  String get summaryEdited => 'Edited manually';
+
+  @override
+  String get summaryEvidence => 'View source records';
+
+  @override
+  String get summaryEvidenceTitle => 'Original records used';
+
+  @override
+  String get summaryEditTitle => 'Edit recap';
+
+  @override
+  String get summaryHide => 'Hide';
+
+  @override
+  String get summaryRestore => 'Show recap';
+
+  @override
+  String get summaryRegenerate => 'Create again';
+
+  @override
+  String get summaryPreviewTitle => 'Review the new recap';
+
+  @override
+  String get summaryReplace => 'Replace recap';
+
+  @override
+  String get weeklyAutoSummary => 'Automatic weekly AI recap';
+
+  @override
+  String get weeklyAutoSummaryDescription =>
+      'Quietly prepare a recap after a Monday–Sunday week ends, using the on-device AI model.';
+
+  @override
   String get searchMemoResult => 'Note';
 
   @override

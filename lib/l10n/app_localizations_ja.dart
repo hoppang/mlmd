@@ -389,6 +389,77 @@ class AppLocalizationsJa extends AppLocalizations {
   String get searchSameDayContextHint => '文脈のための表示であり、原因や関連性を示すものではありません。';
 
   @override
+  String get dailyAiSummary => 'AI日次まとめ';
+
+  @override
+  String get weeklyAiSummary => 'AI週間まとめ';
+
+  @override
+  String get summarizeDay => 'この日をまとめる';
+
+  @override
+  String get summarizeWeek => 'この週をまとめる';
+
+  @override
+  String get summarizeWeekSoFar => '現在までをまとめる';
+
+  @override
+  String get summaryGenerating => '元の記録をもとにまとめています…';
+
+  @override
+  String get summaryUnavailable => 'AIまとめは利用できません。元の記録と計算済みの状況はそのまま確認できます。';
+
+  @override
+  String get summaryFailed => 'まとめを作成できませんでした。元の記録は変更されていません。';
+
+  @override
+  String get summaryNoRecords => 'まとめる元の記録がありません。';
+
+  @override
+  String summaryBasis(int count, String time) {
+    return '$timeまでの元の記録$count件に基づく';
+  }
+
+  @override
+  String get summaryNewRecords => 'このまとめの後に新しい記録があります。';
+
+  @override
+  String get summarySourceChanged => 'このまとめに使用した元の記録が変更されました。';
+
+  @override
+  String get summaryEdited => '手動で編集済み';
+
+  @override
+  String get summaryEvidence => '元の記録を見る';
+
+  @override
+  String get summaryEvidenceTitle => 'まとめに使用した元の記録';
+
+  @override
+  String get summaryEditTitle => 'まとめを編集';
+
+  @override
+  String get summaryHide => '非表示';
+
+  @override
+  String get summaryRestore => 'まとめを再表示';
+
+  @override
+  String get summaryRegenerate => 'もう一度作成';
+
+  @override
+  String get summaryPreviewTitle => '新しいまとめを確認';
+
+  @override
+  String get summaryReplace => '新しいまとめに置換';
+
+  @override
+  String get weeklyAutoSummary => '週間AIまとめの自動作成';
+
+  @override
+  String get weeklyAutoSummaryDescription => '月曜から日曜までの完了した週を、端末内AIで静かにまとめます。';
+
+  @override
   String get searchMemoResult => 'メモ';
 
   @override
