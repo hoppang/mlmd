@@ -292,10 +292,100 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "6:6674739285646046166",
+      "lastPropertyId": "15:5359434314521682066",
+      "name": "SearchDocumentEntity",
+      "properties": [
+        {
+          "id": "1:8852462331684128025",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5940556623079841099",
+          "name": "searchDocumentId",
+          "indexId": "8:6999470648043991581",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:8746933511329514396",
+          "name": "sourceRecordId",
+          "indexId": "9:3332075985416719955",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:1423922043106314306",
+          "name": "sourceType",
+          "type": 9
+        },
+        {
+          "id": "5:5121302667546005270",
+          "name": "sourceEntityId",
+          "type": 6
+        },
+        {
+          "id": "6:4675003440705733717",
+          "name": "sourceDiaryId",
+          "type": 6
+        },
+        {
+          "id": "7:7618806571068054732",
+          "name": "searchableText",
+          "type": 9
+        },
+        {
+          "id": "8:7276354118035018946",
+          "name": "embedding",
+          "indexId": "10:4219175356147692746",
+          "type": 28,
+          "flags": 8
+        },
+        {
+          "id": "9:2528714130102780620",
+          "name": "embeddingModelVersion",
+          "type": 9
+        },
+        {
+          "id": "10:7383139652230636671",
+          "name": "sourceContentHash",
+          "type": 9
+        },
+        {
+          "id": "11:6596799292247530244",
+          "name": "indexedAt",
+          "type": 10
+        },
+        {
+          "id": "12:5925548340928607231",
+          "name": "occurredAt",
+          "type": 10
+        },
+        {
+          "id": "13:4534719732007071515",
+          "name": "authorProfileId",
+          "type": 9
+        },
+        {
+          "id": "14:8804171884950573107",
+          "name": "eventKind",
+          "type": 6
+        },
+        {
+          "id": "15:5359434314521682066",
+          "name": "numericValue",
+          "type": 8
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "5:7135689420437583296",
-  "lastIndexId": "7:5858733805991619695",
+  "lastEntityId": "6:6674739285646046166",
+  "lastIndexId": "10:4219175356147692746",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

@@ -284,7 +284,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchNoResultsHint =>
-      'Try a shorter query or a different phrase.';
+      'Your criteria are kept. Try a wider date range or remove one filter.';
 
   @override
   String get searchFailed =>
@@ -313,6 +313,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchMatchRelated => 'Related expression';
+
+  @override
+  String get searchMatchTemperature => 'Temperature condition match';
+
+  @override
+  String get searchMatchAuthor => 'Author filter match';
+
+  @override
+  String get searchMatchEvent => 'Event filter match';
+
+  @override
+  String get searchMatchDate => 'Date filter match';
+
+  @override
+  String get searchFilters => 'Search filters';
+
+  @override
+  String get searchClearFilters => 'Clear filters';
+
+  @override
+  String get searchApplyFilters => 'Apply filters';
+
+  @override
+  String get searchDate => 'Date';
+
+  @override
+  String get searchAll => 'All';
+
+  @override
+  String get searchAllDates => 'All dates';
+
+  @override
+  String get searchToday => 'Today';
+
+  @override
+  String get searchLast7Days => 'Last 7 days';
+
+  @override
+  String get searchLast30Days => 'Last 30 days';
+
+  @override
+  String get searchCustomDate => 'Custom dates';
+
+  @override
+  String get searchEventType => 'Event type';
+
+  @override
+  String get searchAuthor => 'Author';
+
+  @override
+  String get searchTemperature => 'Temperature at least';
+
+  @override
+  String searchTemperatureAtLeast(String value) {
+    return '$value°C or above';
+  }
+
+  @override
+  String get searchEventTemperature => 'Temperature';
+
+  @override
+  String get searchEventMedication => 'Medication';
+
+  @override
+  String get searchEventFeeding => 'Feeding';
+
+  @override
+  String get searchEventDiaper => 'Diaper';
+
+  @override
+  String get searchEventSleep => 'Sleep';
+
+  @override
+  String get searchEventHospital => 'Hospital visit';
+
+  @override
+  String get searchSemanticUnavailable =>
+      'Text and filter search remains available while semantic search is unavailable or indexing.';
+
+  @override
+  String get searchSameDayContext => 'Other records from the same day';
+
+  @override
+  String get searchSameDayContextHint =>
+      'Shown as context only. This does not imply a cause or relationship.';
 
   @override
   String get searchMemoResult => 'Note';

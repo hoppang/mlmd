@@ -7,6 +7,7 @@ import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/models/author_profile_entity.dart';
 import 'package:mlmd/models/device_profile_entity.dart';
+import 'package:mlmd/models/search_document_entity.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
@@ -26,6 +27,8 @@ class _TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<AuthorProfileEntity> authorProfileBox;
   @override
   late final Box<DeviceProfileEntity> deviceProfileBox;
+  @override
+  late final Box<SearchDocumentEntity> searchDocumentBox;
   final Directory directory;
 
   _TestObjectBoxHelper(this.store, this.directory) {
@@ -34,6 +37,7 @@ class _TestObjectBoxHelper implements ObjectBoxHelper {
     draftBox = Box<RecordDraftEntity>(store);
     authorProfileBox = Box<AuthorProfileEntity>(store);
     deviceProfileBox = Box<DeviceProfileEntity>(store);
+    searchDocumentBox = Box<SearchDocumentEntity>(store);
   }
 
   static Future<_TestObjectBoxHelper> create() async {

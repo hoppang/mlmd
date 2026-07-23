@@ -3,16 +3,26 @@ import '../models/activity_entity.dart';
 import '../models/diary_entity.dart';
 import '../models/author_profile_entity.dart';
 import '../models/device_profile_entity.dart';
+import '../models/search_document_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
+import '../features/search/domain/hybrid_search_query.dart';
 import '../transfer/canonical_transfer_document.dart';
 import 'package:uuid/uuid.dart';
 import 'profile_repository.dart';
 
 enum DiarySearchSource { memo, activity }
 
-enum DiarySearchMatchReason { exactText, activityType, relatedExpression }
+enum DiarySearchMatchReason {
+  exactText,
+  activityType,
+  relatedExpression,
+  structuredTemperature,
+  structuredAuthor,
+  structuredEvent,
+  dateRange,
+}
 
 /// 검색 화면에 표시할 메모 또는 개별 이벤트 결과입니다.
 class DiarySearchResult {
@@ -22,12 +32,14 @@ class DiarySearchResult {
 
   /// 사용자에게 노출하지 않는 내부 정렬 점수입니다.
   final double relevanceScore;
+  final double? matchedNumericValue;
 
   const DiarySearchResult({
     required this.diary,
     this.activity,
     required this.reason,
     required this.relevanceScore,
+    this.matchedNumericValue,
   });
 
   DiarySearchSource get source =>
@@ -90,10 +102,18 @@ abstract class DiaryRepository {
   /// 키워드가 일치하는 메모·이벤트와 선택형 의미 검색 결과를 반환합니다.
   /// 임베딩을 사용할 수 없어도 키워드 검색은 정상 동작합니다.
   Future<List<DiarySearchResult>> searchRecords(
-    String query,
-    EmbeddingService embeddingService, {
+    HybridSearchQuery query,
+    EmbeddingEngine embeddingService, {
     int limit = 50,
   });
+
+  /// 원본 메모·이벤트로부터 파생 검색 문서를 동기화하고 가능한 문서를 임베딩합니다.
+  Future<int> rebuildSearchIndex(
+    EmbeddingEngine embeddingService, {
+    Set<String>? recordIds,
+  });
+
+  bool get hasPendingSearchEmbeddings;
 }
 
 /// DiaryRepository의 ObjectBox 구현체
@@ -701,6 +721,14 @@ class DiaryRepositoryImpl implements DiaryRepository {
   @override
   bool deleteDiary(int id) {
     return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final searchQuery = _obxHelper.searchDocumentBox
+          .query(SearchDocumentEntity_.sourceDiaryId.equals(id))
+          .build();
+      final searchIds = searchQuery.findIds();
+      searchQuery.close();
+      if (searchIds.isNotEmpty) {
+        _obxHelper.searchDocumentBox.removeMany(searchIds);
+      }
       final activityQuery = _obxHelper.activityBox
           .query(ActivityEntity_.diary.equals(id))
           .build();
@@ -715,109 +743,377 @@ class DiaryRepositoryImpl implements DiaryRepository {
 
   @override
   Future<List<DiarySearchResult>> searchRecords(
-    String query,
-    EmbeddingService embeddingService, {
+    HybridSearchQuery query,
+    EmbeddingEngine embeddingService, {
     int limit = 50,
   }) async {
-    if (query.trim().isEmpty || limit <= 0) return [];
+    if (!query.hasCriteria || limit <= 0) return [];
+    _synchronizeSearchDocuments();
 
-    final normalizedQuery = query.trim();
-    final queryVector = await embeddingService.getQueryEmbedding(
-      normalizedQuery,
-    );
-    final exactQuery = _obxHelper.diaryBox
-        .query(
-          DiaryEntity_.title.contains(normalizedQuery, caseSensitive: false) |
-              DiaryEntity_.summary.contains(
-                normalizedQuery,
-                caseSensitive: false,
-              ) |
-              DiaryEntity_.content.contains(
-                normalizedQuery,
-                caseSensitive: false,
-              ),
-        )
-        .build();
-    exactQuery.limit = limit;
-    final activityQuery = _obxHelper.activityBox
-        .query(
-          ActivityEntity_.type.contains(normalizedQuery, caseSensitive: false) |
-              ActivityEntity_.details.contains(
-                normalizedQuery,
-                caseSensitive: false,
-              ),
-        )
-        .build();
-    activityQuery.limit = limit;
-
-    final vectorQuery = queryVector == null || queryVector.isEmpty
-        ? null
-        : _obxHelper.diaryBox
-              .query(
-                DiaryEntity_.embedding.nearestNeighborsF32(queryVector, limit),
-              )
-              .build();
-
-    try {
-      final results = <String, DiarySearchResult>{};
-      final exactMatches = await exactQuery.findAsync();
-      for (final diary in exactMatches) {
-        final result = DiarySearchResult(
-          diary: diary,
-          reason: DiarySearchMatchReason.exactText,
-          relevanceScore: 100,
-        );
-        results[result.resultKey] = result;
+    final normalizedText = query.text.trim().toLowerCase();
+    final results = <String, DiarySearchResult>{};
+    for (final document in _obxHelper.searchDocumentBox.getAll()) {
+      if (!_matchesStructuredCriteria(document, query)) continue;
+      if (normalizedText.isNotEmpty &&
+          !document.searchableText.toLowerCase().contains(normalizedText)) {
+        continue;
       }
+      final result = _resultForDocument(
+        document,
+        reason: _matchReason(document, query, normalizedText),
+        relevanceScore: normalizedText.isEmpty ? 120 : 100,
+      );
+      if (result != null) results[result.resultKey] = result;
+    }
 
-      final activityMatches = await activityQuery.findAsync();
-      for (final activity in activityMatches) {
-        final diary = activity.diary.target;
-        if (diary == null) continue;
-        final typeMatches = activity.type.toLowerCase().contains(
-          normalizedQuery.toLowerCase(),
-        );
-        final result = DiarySearchResult(
-          diary: diary,
-          activity: activity,
-          reason: typeMatches
-              ? DiarySearchMatchReason.activityType
-              : DiarySearchMatchReason.exactText,
-          relevanceScore: 100,
-        );
-        results[result.resultKey] = result;
-      }
-
-      final withScores = vectorQuery == null
-          ? const <ObjectWithScore<DiaryEntity>>[]
-          : await vectorQuery.findWithScoresAsync();
-      for (final item in withScores) {
-        final distance = item.score;
-        final cosSim = 1.0 - (distance / 2.0);
-        final mapped = (cosSim - 0.82) / (1.0 - 0.82) * 100.0;
-        final candidate = DiarySearchResult(
-          diary: item.object,
-          reason: DiarySearchMatchReason.relatedExpression,
-          relevanceScore: mapped.clamp(0.0, 99.0),
-        );
-        if (candidate.relevanceScore > 0 &&
-            !results.containsKey(candidate.resultKey)) {
-          results[candidate.resultKey] = candidate;
+    if (normalizedText.isNotEmpty) {
+      final queryVector = await embeddingService.getQueryEmbedding(
+        normalizedText,
+      );
+      if (queryVector != null && queryVector.isNotEmpty) {
+        final vectorQuery = _obxHelper.searchDocumentBox
+            .query(
+              SearchDocumentEntity_.embedding.nearestNeighborsF32(
+                queryVector,
+                limit * 4,
+              ),
+            )
+            .build();
+        try {
+          final vectorMatches = await vectorQuery.findWithScoresAsync();
+          for (final item in vectorMatches) {
+            final document = item.object;
+            if (!_matchesStructuredCriteria(document, query)) continue;
+            final similarity = 1.0 - (item.score / 2.0);
+            final score = ((similarity - 0.82) / 0.18 * 99).clamp(0.0, 99.0);
+            if (score <= 0) continue;
+            final result = _resultForDocument(
+              document,
+              reason: DiarySearchMatchReason.relatedExpression,
+              relevanceScore: score,
+            );
+            if (result != null && !results.containsKey(result.resultKey)) {
+              results[result.resultKey] = result;
+            }
+          }
+        } finally {
+          vectorQuery.close();
         }
       }
-
-      final sorted = results.values.toList()
-        ..sort((a, b) {
-          final relevance = b.relevanceScore.compareTo(a.relevanceScore);
-          if (relevance != 0) return relevance;
-          return b.occurredAt.compareTo(a.occurredAt);
-        });
-      return sorted.take(limit).toList(growable: false);
-    } finally {
-      exactQuery.close();
-      activityQuery.close();
-      vectorQuery?.close();
     }
+
+    final sorted = results.values.toList()
+      ..sort((a, b) {
+        final relevance = b.relevanceScore.compareTo(a.relevanceScore);
+        if (relevance != 0) return relevance;
+        return b.occurredAt.compareTo(a.occurredAt);
+      });
+    return sorted.take(limit).toList(growable: false);
+  }
+
+  @override
+  Future<int> rebuildSearchIndex(
+    EmbeddingEngine embeddingService, {
+    Set<String>? recordIds,
+  }) async {
+    _synchronizeSearchDocuments();
+    if (!embeddingService.isAvailable) {
+      return _obxHelper.searchDocumentBox
+          .getAll()
+          .where(
+            (document) =>
+                (recordIds == null ||
+                    recordIds.contains(document.sourceRecordId)) &&
+                document.embedding == null,
+          )
+          .length;
+    }
+
+    var failed = 0;
+    for (final document in _obxHelper.searchDocumentBox.getAll()) {
+      if (recordIds != null && !recordIds.contains(document.sourceRecordId)) {
+        continue;
+      }
+      if (document.embedding != null &&
+          document.embeddingModelVersion == embeddingService.modelVersion) {
+        continue;
+      }
+      try {
+        document.embedding = await embeddingService.getEmbedding(
+          document.searchableText,
+        );
+        document.embeddingModelVersion = embeddingService.modelVersion;
+        document.indexedAt = DateTime.now();
+        _obxHelper.searchDocumentBox.put(document);
+        if (document.embedding == null) failed++;
+      } catch (_) {
+        failed++;
+      }
+    }
+    return failed;
+  }
+
+  @override
+  bool get hasPendingSearchEmbeddings => _obxHelper.searchDocumentBox
+      .getAll()
+      .any((document) => document.embedding == null);
+
+  void _synchronizeSearchDocuments() {
+    final diaries = _obxHelper.diaryBox.getAll();
+    final activities = _obxHelper.activityBox.getAll();
+    final existing = {
+      for (final document in _obxHelper.searchDocumentBox.getAll())
+        document.searchDocumentId: document,
+    };
+    final currentIds = <String>{};
+    final changed = <SearchDocumentEntity>[];
+    final now = DateTime.now();
+
+    for (final diary in diaries) {
+      final recordId = diary.recordId;
+      if (recordId == null) continue;
+      final documentId = 'memo:$recordId';
+      currentIds.add(documentId);
+      final text = [
+        diary.title,
+        diary.summary,
+        diary.content,
+      ].where((part) => part.trim().isNotEmpty).join('\n');
+      changed.add(
+        _mergeSearchDocument(
+          existing[documentId],
+          searchDocumentId: documentId,
+          sourceRecordId: recordId,
+          sourceType: SearchDocumentEntity.sourceTypeMemo,
+          sourceEntityId: diary.id,
+          sourceDiaryId: diary.id,
+          searchableText: text,
+          occurredAt: diary.date,
+          authorProfileId: diary.createdByAuthorProfileId,
+          eventKind: 0,
+          numericValue: null,
+          indexedAt: now,
+        ),
+      );
+    }
+
+    for (final activity in activities) {
+      final diary = activity.diary.target;
+      final recordId = diary?.recordId;
+      if (diary == null || recordId == null) continue;
+      final documentId = 'event:${activity.id}';
+      currentIds.add(documentId);
+      final kind = _inferEventKind('${activity.type} ${activity.details}');
+      changed.add(
+        _mergeSearchDocument(
+          existing[documentId],
+          searchDocumentId: documentId,
+          sourceRecordId: recordId,
+          sourceType: SearchDocumentEntity.sourceTypeEvent,
+          sourceEntityId: activity.id,
+          sourceDiaryId: diary.id,
+          searchableText: '${activity.type}\n${activity.details}'.trim(),
+          occurredAt: activity.time,
+          authorProfileId: activity.createdByAuthorProfileId,
+          eventKind: kind == null ? 0 : kind.index + 1,
+          numericValue: kind == SearchEventKind.temperature
+              ? _extractTemperature('${activity.type} ${activity.details}')
+              : null,
+          indexedAt: now,
+        ),
+      );
+    }
+
+    _obxHelper.store.runInTransaction(TxMode.write, () {
+      if (changed.isNotEmpty) _obxHelper.searchDocumentBox.putMany(changed);
+      final staleIds = existing.values
+          .where((document) => !currentIds.contains(document.searchDocumentId))
+          .map((document) => document.id)
+          .toList(growable: false);
+      if (staleIds.isNotEmpty) {
+        _obxHelper.searchDocumentBox.removeMany(staleIds);
+      }
+    });
+  }
+
+  SearchDocumentEntity _mergeSearchDocument(
+    SearchDocumentEntity? previous, {
+    required String searchDocumentId,
+    required String sourceRecordId,
+    required String sourceType,
+    required int sourceEntityId,
+    required int sourceDiaryId,
+    required String searchableText,
+    required DateTime occurredAt,
+    required String? authorProfileId,
+    required int eventKind,
+    required double? numericValue,
+    required DateTime indexedAt,
+  }) {
+    final hash = _contentHash(
+      [
+        searchableText,
+        occurredAt.toIso8601String(),
+        authorProfileId ?? '',
+        eventKind.toString(),
+        numericValue?.toString() ?? '',
+      ].join('\u0000'),
+    );
+    final unchanged = previous?.sourceContentHash == hash;
+    return SearchDocumentEntity(
+      id: previous?.id ?? 0,
+      searchDocumentId: searchDocumentId,
+      sourceRecordId: sourceRecordId,
+      sourceType: sourceType,
+      sourceEntityId: sourceEntityId,
+      sourceDiaryId: sourceDiaryId,
+      searchableText: searchableText,
+      embedding: unchanged ? previous?.embedding : null,
+      embeddingModelVersion: unchanged
+          ? previous?.embeddingModelVersion ?? ''
+          : '',
+      sourceContentHash: hash,
+      indexedAt: unchanged ? previous!.indexedAt : indexedAt,
+      occurredAt: occurredAt,
+      authorProfileId: authorProfileId,
+      eventKind: eventKind,
+      numericValue: numericValue,
+    );
+  }
+
+  String _contentHash(String value) {
+    var hash = 0x811c9dc5;
+    for (final byte in value.codeUnits) {
+      hash ^= byte;
+      hash = (hash * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
+  }
+
+  bool _matchesStructuredCriteria(
+    SearchDocumentEntity document,
+    HybridSearchQuery query,
+  ) {
+    if (query.from != null && document.occurredAt.isBefore(query.from!)) {
+      return false;
+    }
+    if (query.untilExclusive != null &&
+        !document.occurredAt.isBefore(query.untilExclusive!)) {
+      return false;
+    }
+    if (query.authorProfileId != null &&
+        document.authorProfileId != query.authorProfileId) {
+      return false;
+    }
+    if (query.eventKind != null &&
+        document.eventKind != query.eventKind!.index + 1) {
+      return false;
+    }
+    final temperature = query.temperature;
+    if (temperature != null) {
+      final value = document.numericValue;
+      if (value == null) return false;
+      final matches = switch (temperature.comparison) {
+        NumericComparison.atLeast => value >= temperature.value,
+        NumericComparison.above => value > temperature.value,
+        NumericComparison.atMost => value <= temperature.value,
+        NumericComparison.below => value < temperature.value,
+      };
+      if (!matches) return false;
+    }
+    return true;
+  }
+
+  DiarySearchMatchReason _matchReason(
+    SearchDocumentEntity document,
+    HybridSearchQuery query,
+    String normalizedText,
+  ) {
+    if (query.temperature != null) {
+      return DiarySearchMatchReason.structuredTemperature;
+    }
+    if (query.eventKind != null) {
+      return DiarySearchMatchReason.structuredEvent;
+    }
+    if (query.authorProfileId != null) {
+      return DiarySearchMatchReason.structuredAuthor;
+    }
+    if (query.from != null || query.untilExclusive != null) {
+      return DiarySearchMatchReason.dateRange;
+    }
+    if (document.sourceType == SearchDocumentEntity.sourceTypeEvent) {
+      final activity = _obxHelper.activityBox.get(document.sourceEntityId);
+      if (activity != null &&
+          activity.type.toLowerCase().contains(normalizedText)) {
+        return DiarySearchMatchReason.activityType;
+      }
+    }
+    return DiarySearchMatchReason.exactText;
+  }
+
+  DiarySearchResult? _resultForDocument(
+    SearchDocumentEntity document, {
+    required DiarySearchMatchReason reason,
+    required double relevanceScore,
+  }) {
+    final diary = _obxHelper.diaryBox.get(document.sourceDiaryId);
+    if (diary == null) return null;
+    final activity = document.sourceType == SearchDocumentEntity.sourceTypeEvent
+        ? _obxHelper.activityBox.get(document.sourceEntityId)
+        : null;
+    if (document.sourceType == SearchDocumentEntity.sourceTypeEvent &&
+        activity == null) {
+      return null;
+    }
+    return DiarySearchResult(
+      diary: diary,
+      activity: activity,
+      reason: reason,
+      relevanceScore: relevanceScore,
+      matchedNumericValue: document.numericValue,
+    );
+  }
+
+  SearchEventKind? _inferEventKind(String text) {
+    final value = text.toLowerCase();
+    const aliases = <SearchEventKind, List<String>>{
+      SearchEventKind.temperature: [
+        '체온',
+        '열',
+        '발열',
+        'temperature',
+        'fever',
+        '体温',
+        '熱',
+      ],
+      SearchEventKind.medication: [
+        '투약',
+        '약',
+        '복용',
+        'medication',
+        'medicine',
+        '投薬',
+        '服薬',
+      ],
+      SearchEventKind.feeding: ['수유', '분유', 'feeding', 'feed', '授乳', 'ミルク'],
+      SearchEventKind.diaper: ['기저귀', 'diaper', 'おむつ', '尿布'],
+      SearchEventKind.sleep: ['수면', '잠', 'sleep', 'nap', '睡眠', '昼寝'],
+      SearchEventKind.hospital: ['병원', '진료', 'hospital', 'clinic', '病院', '診療'],
+    };
+    for (final entry in aliases.entries) {
+      if (entry.value.any(value.contains)) return entry.key;
+    }
+    return null;
+  }
+
+  double? _extractTemperature(String text) {
+    final match = RegExp(
+      r'(\d{2}(?:\.\d+)?)\s*(?:°\s*c|℃|도|度)?',
+      caseSensitive: false,
+    ).firstMatch(text);
+    final value = double.tryParse(match?.group(1) ?? '');
+    if (value == null || value < 30 || value > 45) return null;
+    return value;
   }
 }
 

@@ -4,10 +4,16 @@ import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/diary_repository.dart';
 import '../../../services/embedding_service.dart';
-import '../../../services/llm_diary_service.dart'
-    show ActivitySummary, buildEmbeddingText;
+import '../../../services/llm_diary_service.dart' show ActivitySummary;
+import '../../search/domain/hybrid_search_query.dart';
 
 class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
+  bool get isSemanticSearchAvailable =>
+      ref.read(embeddingServiceProvider).isAvailable;
+
+  bool get hasPendingSearchEmbeddings =>
+      ref.read(diaryRepositoryProvider).hasPendingSearchEmbeddings;
+
   @override
   List<DiaryEntity> build() {
     final repo = ref.watch(diaryRepositoryProvider);
@@ -45,13 +51,14 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
           ),
         )
         .toList();
-    final embeddingText = buildEmbeddingText(summary, activityEntities);
-    newDiary.embedding = await embeddingService.getEmbedding(embeddingText);
-
     repo.saveDiaryWithActivities(
       newDiary,
       activityEntities,
       consumedDraftId: consumedDraftId,
+    );
+    await repo.rebuildSearchIndex(
+      embeddingService,
+      recordIds: {newDiary.recordId!},
     );
     state = repo.getDiaries();
   }
@@ -70,11 +77,12 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
         lastModified: DateTime.now(),
       ),
     );
+    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
     state = repo.getDiaries();
   }
 
   Future<List<DiarySearchResult>> searchRecords(
-    String query, {
+    HybridSearchQuery query, {
     int limit = 50,
   }) {
     final repo = ref.read(diaryRepositoryProvider);
@@ -116,13 +124,14 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
           ),
         )
         .toList();
-    final embeddingText = buildEmbeddingText(newSummary, activityEntities);
-    updatedDiary.embedding = await embeddingService.getEmbedding(embeddingText);
-
     repo.saveDiaryWithActivities(
       updatedDiary,
       activityEntities,
       consumedDraftId: consumedDraftId,
+    );
+    await repo.rebuildSearchIndex(
+      embeddingService,
+      recordIds: {updatedDiary.recordId!},
     );
     state = repo.getDiaries();
   }
@@ -142,19 +151,10 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     if (ids.isEmpty) return 0;
     final repo = ref.read(diaryRepositoryProvider);
     final embeddingService = ref.read(embeddingServiceProvider);
-    var failed = 0;
-    for (final diary in repo.getDiaries()) {
-      final recordId = diary.recordId;
-      if (recordId == null || !ids.contains(recordId)) continue;
-      try {
-        final text = buildEmbeddingText(diary.summary, diary.activities);
-        final embedding = await embeddingService.getEmbedding(text);
-        repo.updateEmbeddingPreservingLastModified(recordId, embedding);
-        if (embedding == null) failed++;
-      } catch (_) {
-        failed++;
-      }
-    }
+    final failed = await repo.rebuildSearchIndex(
+      embeddingService,
+      recordIds: ids,
+    );
     state = repo.getDiaries();
     return failed;
   }

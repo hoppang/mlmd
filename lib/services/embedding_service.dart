@@ -10,14 +10,21 @@ import '../utils/logger.dart';
 
 /// Riverpod에서 사용할 EmbeddingService 프로바이더.
 /// main.dart에서 스토어 초기화와 함께 주입해야 합니다.
-final embeddingServiceProvider = Provider<EmbeddingService>(
+final embeddingServiceProvider = Provider<EmbeddingEngine>(
   (ref) => throw UnimplementedError(
     'embeddingServiceProvider가 초기화되지 않았습니다. main.dart에서 재정의해주십시오.',
   ),
   dependencies: const [],
 );
 
-class EmbeddingService {
+abstract interface class EmbeddingEngine {
+  bool get isAvailable;
+  String get modelVersion;
+  Future<List<double>?> getEmbedding(String text);
+  Future<List<double>?> getQueryEmbedding(String query);
+}
+
+class EmbeddingService implements EmbeddingEngine {
   static final EmbeddingService _instance = EmbeddingService._internal();
   factory EmbeddingService() => _instance;
   EmbeddingService._internal();
@@ -29,8 +36,11 @@ class EmbeddingService {
   int _nextRequestId = 0;
   Object? _initializationError;
 
+  @override
   bool get isAvailable =>
       _worker != null && _responses != null && _commands != null;
+  @override
+  String get modelVersion => 'bge-384-v1';
   Object? get initializationError => _initializationError;
 
   /// 임베딩 모델 및 토크나이저 파일을 로컬 영구 디렉터리로 복사하고 초기화합니다.
@@ -124,9 +134,11 @@ class EmbeddingService {
   }
 
   /// 일반 텍스트(문서/본문) 임베딩 벡터 추출 (E5 모델 기준 "passage: " 접두사 자동 추가)
+  @override
   Future<List<double>?> getEmbedding(String text) => _embed('passage: $text');
 
   /// 검색어 쿼리용 임베딩 벡터 추출 (E5 모델 기준 "query: " 접두사 자동 추가)
+  @override
   Future<List<double>?> getQueryEmbedding(String query) =>
       _embed('query: $query');
 

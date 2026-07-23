@@ -625,7 +625,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchNoResultsHint.
   ///
   /// In ko, this message translates to:
-  /// **'검색어를 줄이거나 다른 표현으로 다시 찾아보세요.'**
+  /// **'검색 조건은 유지돼요. 기간을 넓히거나 조건을 하나씩 빼보세요.'**
   String get searchNoResultsHint;
 
   /// No description provided for @searchFailed.
@@ -681,6 +681,168 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'관련 표현'**
   String get searchMatchRelated;
+
+  /// No description provided for @searchMatchTemperature.
+  ///
+  /// In ko, this message translates to:
+  /// **'체온 조건 일치'**
+  String get searchMatchTemperature;
+
+  /// No description provided for @searchMatchAuthor.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성자 조건 일치'**
+  String get searchMatchAuthor;
+
+  /// No description provided for @searchMatchEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'이벤트 조건 일치'**
+  String get searchMatchEvent;
+
+  /// No description provided for @searchMatchDate.
+  ///
+  /// In ko, this message translates to:
+  /// **'날짜 조건 일치'**
+  String get searchMatchDate;
+
+  /// No description provided for @searchFilters.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색 조건'**
+  String get searchFilters;
+
+  /// No description provided for @searchClearFilters.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건 지우기'**
+  String get searchClearFilters;
+
+  /// No description provided for @searchApplyFilters.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건 적용'**
+  String get searchApplyFilters;
+
+  /// No description provided for @searchDate.
+  ///
+  /// In ko, this message translates to:
+  /// **'날짜'**
+  String get searchDate;
+
+  /// No description provided for @searchAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get searchAll;
+
+  /// No description provided for @searchAllDates.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 기간'**
+  String get searchAllDates;
+
+  /// No description provided for @searchToday.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘'**
+  String get searchToday;
+
+  /// No description provided for @searchLast7Days.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 7일'**
+  String get searchLast7Days;
+
+  /// No description provided for @searchLast30Days.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 30일'**
+  String get searchLast30Days;
+
+  /// No description provided for @searchCustomDate.
+  ///
+  /// In ko, this message translates to:
+  /// **'직접 지정'**
+  String get searchCustomDate;
+
+  /// No description provided for @searchEventType.
+  ///
+  /// In ko, this message translates to:
+  /// **'이벤트 종류'**
+  String get searchEventType;
+
+  /// No description provided for @searchAuthor.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성자'**
+  String get searchAuthor;
+
+  /// No description provided for @searchTemperature.
+  ///
+  /// In ko, this message translates to:
+  /// **'최소 체온'**
+  String get searchTemperature;
+
+  /// No description provided for @searchTemperatureAtLeast.
+  ///
+  /// In ko, this message translates to:
+  /// **'{value}°C 이상'**
+  String searchTemperatureAtLeast(String value);
+
+  /// No description provided for @searchEventTemperature.
+  ///
+  /// In ko, this message translates to:
+  /// **'체온'**
+  String get searchEventTemperature;
+
+  /// No description provided for @searchEventMedication.
+  ///
+  /// In ko, this message translates to:
+  /// **'투약'**
+  String get searchEventMedication;
+
+  /// No description provided for @searchEventFeeding.
+  ///
+  /// In ko, this message translates to:
+  /// **'수유'**
+  String get searchEventFeeding;
+
+  /// No description provided for @searchEventDiaper.
+  ///
+  /// In ko, this message translates to:
+  /// **'기저귀'**
+  String get searchEventDiaper;
+
+  /// No description provided for @searchEventSleep.
+  ///
+  /// In ko, this message translates to:
+  /// **'수면'**
+  String get searchEventSleep;
+
+  /// No description provided for @searchEventHospital.
+  ///
+  /// In ko, this message translates to:
+  /// **'병원·진료'**
+  String get searchEventHospital;
+
+  /// No description provided for @searchSemanticUnavailable.
+  ///
+  /// In ko, this message translates to:
+  /// **'의미 검색을 사용할 수 없거나 인덱싱 중이어도 문구·조건 검색은 계속 사용할 수 있어요.'**
+  String get searchSemanticUnavailable;
+
+  /// No description provided for @searchSameDayContext.
+  ///
+  /// In ko, this message translates to:
+  /// **'같은 날의 다른 기록'**
+  String get searchSameDayContext;
+
+  /// No description provided for @searchSameDayContextHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'맥락을 위한 표시이며 원인이나 관련성을 뜻하지 않아요.'**
+  String get searchSameDayContextHint;
 
   /// No description provided for @searchMemoResult.
   ///

@@ -276,7 +276,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get searchNoResults => '일치하는 기록이 없어요.';
 
   @override
-  String get searchNoResultsHint => '검색어를 줄이거나 다른 표현으로 다시 찾아보세요.';
+  String get searchNoResultsHint => '검색 조건은 유지돼요. 기간을 넓히거나 조건을 하나씩 빼보세요.';
 
   @override
   String get searchFailed => '검색하지 못했어요. 원본 기록은 그대로 유지됩니다.';
@@ -304,6 +304,90 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get searchMatchRelated => '관련 표현';
+
+  @override
+  String get searchMatchTemperature => '체온 조건 일치';
+
+  @override
+  String get searchMatchAuthor => '작성자 조건 일치';
+
+  @override
+  String get searchMatchEvent => '이벤트 조건 일치';
+
+  @override
+  String get searchMatchDate => '날짜 조건 일치';
+
+  @override
+  String get searchFilters => '검색 조건';
+
+  @override
+  String get searchClearFilters => '조건 지우기';
+
+  @override
+  String get searchApplyFilters => '조건 적용';
+
+  @override
+  String get searchDate => '날짜';
+
+  @override
+  String get searchAll => '전체';
+
+  @override
+  String get searchAllDates => '전체 기간';
+
+  @override
+  String get searchToday => '오늘';
+
+  @override
+  String get searchLast7Days => '최근 7일';
+
+  @override
+  String get searchLast30Days => '최근 30일';
+
+  @override
+  String get searchCustomDate => '직접 지정';
+
+  @override
+  String get searchEventType => '이벤트 종류';
+
+  @override
+  String get searchAuthor => '작성자';
+
+  @override
+  String get searchTemperature => '최소 체온';
+
+  @override
+  String searchTemperatureAtLeast(String value) {
+    return '$value°C 이상';
+  }
+
+  @override
+  String get searchEventTemperature => '체온';
+
+  @override
+  String get searchEventMedication => '투약';
+
+  @override
+  String get searchEventFeeding => '수유';
+
+  @override
+  String get searchEventDiaper => '기저귀';
+
+  @override
+  String get searchEventSleep => '수면';
+
+  @override
+  String get searchEventHospital => '병원·진료';
+
+  @override
+  String get searchSemanticUnavailable =>
+      '의미 검색을 사용할 수 없거나 인덱싱 중이어도 문구·조건 검색은 계속 사용할 수 있어요.';
+
+  @override
+  String get searchSameDayContext => '같은 날의 다른 기록';
+
+  @override
+  String get searchSameDayContextHint => '맥락을 위한 표시이며 원인이나 관련성을 뜻하지 않아요.';
 
   @override
   String get searchMemoResult => '메모';

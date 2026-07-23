@@ -11,6 +11,7 @@ import 'package:mlmd/core/layout/adaptive_content_frame.dart';
 import 'package:mlmd/features/diary/application/diary_list_notifier.dart';
 import 'package:mlmd/features/diary/presentation/diary_form_page.dart';
 import 'package:mlmd/features/diary/presentation/diary_home_page.dart';
+import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
 import 'package:mlmd/l10n/app_localizations.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
@@ -39,17 +40,23 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   String? addedTitle;
   String? addedSummary;
   String? addedContent;
-  String? searchedQuery;
+  HybridSearchQuery? searchedQuery;
   String? addedActivityType;
   String? addedActivityDetails;
   DateTime? addedActivityOccurredAt;
+
+  @override
+  bool get isSemanticSearchAvailable => true;
+
+  @override
+  bool get hasPendingSearchEmbeddings => false;
 
   @override
   List<DiaryEntity> build() => diaries;
 
   @override
   Future<List<DiarySearchResult>> searchRecords(
-    String query, {
+    HybridSearchQuery query, {
     int limit = 50,
   }) async {
     searchedQuery = query;
@@ -583,7 +590,8 @@ void main() {
     await tester.tap(find.byKey(const Key('search-submit-button')));
     await tester.pumpAndSettle();
 
-    expect(notifier.searchedQuery, '투약');
+    expect(notifier.searchedQuery?.text, isEmpty);
+    expect(notifier.searchedQuery?.eventKind, SearchEventKind.medication);
     expect(find.text('검색 결과 2건'), findsOneWidget);
     expect(find.text('이벤트 종류 일치'), findsOneWidget);
     expect(find.text('정확한 문구 일치'), findsOneWidget);
@@ -611,6 +619,8 @@ void main() {
       lessThan(tester.getTopLeft(activityTitle).dy),
     );
 
+    await tester.ensureVisible(activityTitle);
+    await tester.pumpAndSettle();
     await tester.tap(activityTitle);
     await tester.pumpAndSettle();
 
@@ -640,7 +650,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('일치하는 기록이 없어요.'), findsOneWidget);
-    expect(find.text('검색어를 줄이거나 다른 표현으로 다시 찾아보세요.'), findsOneWidget);
+    expect(find.text('검색 조건은 유지돼요. 기간을 넓히거나 조건을 하나씩 빼보세요.'), findsOneWidget);
     expect(find.text('없는 기록'), findsOneWidget);
   });
 

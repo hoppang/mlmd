@@ -8,11 +8,13 @@ import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
+import '../../../models/author_profile_entity.dart';
 import '../../../repositories/diary_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../utils/logger.dart';
 import '../../diary/application/diary_list_notifier.dart';
 import '../../profiles/presentation/record_author_tag.dart';
+import '../domain/hybrid_search_query.dart';
 
 enum _DiarySearchSort { relevance, newest, oldest }
 
@@ -39,6 +41,8 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   bool _hasSearched = false;
   bool _hasError = false;
   int _searchGeneration = 0;
+  HybridSearchQuery _criteria = const HybridSearchQuery();
+  SearchDatePreset _datePreset = SearchDatePreset.all;
 
   @override
   void initState() {
@@ -69,13 +73,34 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   }
 
   Future<void> _search() async {
-    final query = _queryController.text.trim();
-    if (query.isEmpty || _isSearching) return;
+    final profiles = ref.read(profileRepositoryProvider).getAuthorProfiles();
+    final interpreted = const HybridSearchQueryParser().parse(
+      _queryController.text,
+      authorNicknames: profiles.map((profile) => profile.nickname).toList(),
+      authorProfileIdsByNickname: {
+        for (final profile in profiles)
+          profile.nickname: profile.authorProfileId,
+      },
+    );
+    final parsed = interpreted.query;
+    final query = HybridSearchQuery(
+      text: parsed.text,
+      from: parsed.from ?? _criteria.from,
+      untilExclusive: parsed.untilExclusive ?? _criteria.untilExclusive,
+      eventKind: parsed.eventKind ?? _criteria.eventKind,
+      authorProfileId: parsed.authorProfileId ?? _criteria.authorProfileId,
+      temperature: parsed.temperature ?? _criteria.temperature,
+    );
+    if (!query.hasCriteria || _isSearching) return;
 
     final generation = ++_searchGeneration;
     setState(() {
       _isSearching = true;
       _hasError = false;
+      _criteria = query;
+      if (interpreted.datePreset != SearchDatePreset.all) {
+        _datePreset = interpreted.datePreset;
+      }
     });
     try {
       final results = await ref
@@ -101,6 +126,34 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
     }
   }
 
+  Future<void> _openFilters() async {
+    final profiles = ref.read(profileRepositoryProvider).getAuthorProfiles();
+    final result =
+        await showModalBottomSheet<
+          ({HybridSearchQuery query, SearchDatePreset preset})
+        >(
+          context: context,
+          isScrollControlled: true,
+          builder: (context) => _SearchFilterSheet(
+            initialQuery: _criteria,
+            initialPreset: _datePreset,
+            profiles: profiles,
+          ),
+        );
+    if (result == null || !mounted) return;
+    setState(() {
+      _criteria = result.query.copyWith(text: _criteria.text);
+      _datePreset = result.preset;
+    });
+  }
+
+  void _clearCriteria() {
+    setState(() {
+      _criteria = HybridSearchQuery(text: _queryController.text.trim());
+      _datePreset = SearchDatePreset.all;
+    });
+  }
+
   List<DiarySearchResult> get _sortedResults {
     final results = [..._results];
     results.sort((a, b) {
@@ -123,8 +176,11 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
     );
     final shouldEdit = await showAdaptiveDetail<bool>(
       context: context,
-      builder: (context) =>
-          _SearchResultDetail(result: result, showAuthorTag: showAuthorTags),
+      builder: (context) => _SearchResultDetail(
+        result: result,
+        showAuthorTag: showAuthorTags,
+        allDiaries: ref.read(diaryListProvider),
+      ),
     );
     if (shouldEdit == true && mounted) widget.onEditDiary(result.diary);
   }
@@ -137,6 +193,7 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
       diaries,
       ref.watch(profileRepositoryProvider),
     );
+    final searchNotifier = ref.read(diaryListProvider.notifier);
 
     return AdaptiveContentFrame(
       child: Padding(
@@ -185,14 +242,100 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
                         )
                       : Text(loc.searchAction),
                 ),
+                const SizedBox(width: AppSpacing.xs),
+                IconButton.filledTonal(
+                  key: const Key('search-filter-button'),
+                  onPressed: _isSearching ? null : _openFilters,
+                  tooltip: loc.searchFilters,
+                  icon: const Icon(Icons.tune),
+                ),
               ],
             ),
+            if (_criteria.from != null ||
+                _criteria.untilExclusive != null ||
+                _criteria.eventKind != null ||
+                _criteria.authorProfileId != null ||
+                _criteria.temperature != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              _buildCriteriaChips(loc),
+            ],
+            if (!searchNotifier.isSemanticSearchAvailable ||
+                searchNotifier.hasPendingSearchEmbeddings)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
+                child: Text(
+                  loc.searchSemanticUnavailable,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             const SizedBox(height: AppSpacing.md),
             if (_results.isNotEmpty && !_hasError) _buildResultHeader(loc),
             Expanded(child: _buildBody(loc, showAuthorTags)),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCriteriaChips(AppLocalizations loc) {
+    final profiles = ref.read(profileRepositoryProvider).getAuthorProfiles();
+    final author = profiles
+        .where(
+          (profile) => profile.authorProfileId == _criteria.authorProfileId,
+        )
+        .firstOrNull;
+    return Wrap(
+      spacing: AppSpacing.xs,
+      runSpacing: AppSpacing.xxs,
+      children: [
+        if (_criteria.from != null || _criteria.untilExclusive != null)
+          InputChip(
+            key: const Key('search-date-chip'),
+            label: Text(_datePresetLabel(loc, _datePreset)),
+            onDeleted: () => setState(() {
+              _criteria = _criteria.copyWith(from: null, untilExclusive: null);
+              _datePreset = SearchDatePreset.all;
+            }),
+          ),
+        if (_criteria.eventKind != null)
+          InputChip(
+            key: const Key('search-event-chip'),
+            label: Text(_eventLabel(loc, _criteria.eventKind!)),
+            onDeleted: () =>
+                setState(() => _criteria = _criteria.copyWith(eventKind: null)),
+          ),
+        if (author != null)
+          InputChip(
+            key: const Key('search-author-chip'),
+            label: Text('${loc.searchAuthor}: ${author.nickname}'),
+            onDeleted: () => setState(
+              () => _criteria = _criteria.copyWith(authorProfileId: null),
+            ),
+          ),
+        if (_criteria.temperature case final temperature?)
+          InputChip(
+            key: const Key('search-temperature-chip'),
+            label: Text(
+              loc.searchTemperatureAtLeast(
+                temperature.value.toStringAsFixed(
+                  temperature.value.truncateToDouble() == temperature.value
+                      ? 0
+                      : 1,
+                ),
+              ),
+            ),
+            onDeleted: () => setState(
+              () => _criteria = _criteria.copyWith(temperature: null),
+            ),
+          ),
+        TextButton(
+          key: const Key('search-clear-filters'),
+          onPressed: _clearCriteria,
+          child: Text(loc.searchClearFilters),
+        ),
+      ],
     );
   }
 
@@ -324,6 +467,10 @@ class _SearchResultCard extends StatelessWidget {
     DiarySearchMatchReason.exactText => loc.searchMatchExact,
     DiarySearchMatchReason.activityType => loc.searchMatchActivityType,
     DiarySearchMatchReason.relatedExpression => loc.searchMatchRelated,
+    DiarySearchMatchReason.structuredTemperature => loc.searchMatchTemperature,
+    DiarySearchMatchReason.structuredAuthor => loc.searchMatchAuthor,
+    DiarySearchMatchReason.structuredEvent => loc.searchMatchEvent,
+    DiarySearchMatchReason.dateRange => loc.searchMatchDate,
   };
 
   @override
@@ -425,16 +572,39 @@ class _SearchResultDetail extends StatelessWidget {
   const _SearchResultDetail({
     required this.result,
     required this.showAuthorTag,
+    required this.allDiaries,
   });
 
   final DiarySearchResult result;
   final bool showAuthorTag;
+  final List<DiaryEntity> allDiaries;
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final diary = result.diary;
     final activity = result.activity;
+    final surrounding = <({DateTime occurredAt, String label})>[];
+    for (final candidate in allDiaries) {
+      if (!_isSameDate(candidate.date, result.occurredAt)) continue;
+      if ((activity != null || candidate.id != diary.id) &&
+          candidate.title.trim().isNotEmpty) {
+        surrounding.add((
+          occurredAt: candidate.date,
+          label: candidate.title.trim(),
+        ));
+      }
+      for (final item in candidate.activities) {
+        if (item.id == activity?.id) continue;
+        surrounding.add((
+          occurredAt: item.time,
+          label: item.details.trim().isEmpty
+              ? item.type
+              : '${item.type} · ${item.details.trim()}',
+        ));
+      }
+    }
+    surrounding.sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -517,6 +687,27 @@ class _SearchResultDetail extends StatelessWidget {
                 Text(diary.content.trim()),
               ],
             ],
+            if (surrounding.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                loc.searchSameDayContext,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              for (final item in surrounding.take(5))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
+                  child: Text(
+                    '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(item.occurredAt))} · ${item.label}',
+                  ),
+                ),
+              Text(
+                loc.searchSameDayContextHint,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
               key: const Key('search-result-edit-button'),
@@ -531,6 +722,11 @@ class _SearchResultDetail extends StatelessWidget {
   }
 }
 
+bool _isSameDate(DateTime first, DateTime second) =>
+    first.year == second.year &&
+    first.month == second.month &&
+    first.day == second.day;
+
 String _formatResultTime(BuildContext context, DiarySearchResult result) {
   final materialLoc = MaterialLocalizations.of(context);
   final date = materialLoc.formatShortDate(result.occurredAt);
@@ -543,3 +739,179 @@ String _formatResultTime(BuildContext context, DiarySearchResult result) {
   );
   return '$date · $time';
 }
+
+class _SearchFilterSheet extends StatefulWidget {
+  const _SearchFilterSheet({
+    required this.initialQuery,
+    required this.initialPreset,
+    required this.profiles,
+  });
+
+  final HybridSearchQuery initialQuery;
+  final SearchDatePreset initialPreset;
+  final List<AuthorProfileEntity> profiles;
+
+  @override
+  State<_SearchFilterSheet> createState() => _SearchFilterSheetState();
+}
+
+class _SearchFilterSheetState extends State<_SearchFilterSheet> {
+  late SearchDatePreset _preset = widget.initialPreset;
+  late SearchEventKind? _eventKind = widget.initialQuery.eventKind;
+  late String? _authorProfileId = widget.initialQuery.authorProfileId;
+  late final TextEditingController _temperatureController =
+      TextEditingController(
+        text: widget.initialQuery.temperature?.value.toString() ?? '',
+      );
+
+  @override
+  void dispose() {
+    _temperatureController.dispose();
+    super.dispose();
+  }
+
+  void _apply() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final (from, until) = switch (_preset) {
+      SearchDatePreset.today => (today, today.add(const Duration(days: 1))),
+      SearchDatePreset.last7Days => (
+        today.subtract(const Duration(days: 6)),
+        today.add(const Duration(days: 1)),
+      ),
+      SearchDatePreset.last30Days => (
+        today.subtract(const Duration(days: 29)),
+        today.add(const Duration(days: 1)),
+      ),
+      _ => (null, null),
+    };
+    final temperature = double.tryParse(_temperatureController.text.trim());
+    Navigator.pop(context, (
+      query: HybridSearchQuery(
+        text: widget.initialQuery.text,
+        from: from,
+        untilExclusive: until,
+        eventKind: _eventKind,
+        authorProfileId: _authorProfileId,
+        temperature: temperature == null
+            ? null
+            : TemperatureFilter(
+                value: temperature,
+                comparison: NumericComparison.atLeast,
+              ),
+      ),
+      preset: _preset,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              loc.searchFilters,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            DropdownButtonFormField<SearchDatePreset>(
+              key: const Key('search-date-filter'),
+              initialValue: _preset,
+              decoration: InputDecoration(labelText: loc.searchDate),
+              items: SearchDatePreset.values
+                  .where((preset) => preset != SearchDatePreset.custom)
+                  .map(
+                    (preset) => DropdownMenuItem(
+                      value: preset,
+                      child: Text(_datePresetLabel(loc, preset)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => _preset = value);
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<SearchEventKind?>(
+              key: const Key('search-event-filter'),
+              initialValue: _eventKind,
+              decoration: InputDecoration(labelText: loc.searchEventType),
+              items: [
+                DropdownMenuItem(value: null, child: Text(loc.searchAll)),
+                ...SearchEventKind.values.map(
+                  (kind) => DropdownMenuItem(
+                    value: kind,
+                    child: Text(_eventLabel(loc, kind)),
+                  ),
+                ),
+              ],
+              onChanged: (value) => setState(() => _eventKind = value),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<String?>(
+              key: const Key('search-author-filter'),
+              initialValue: _authorProfileId,
+              decoration: InputDecoration(labelText: loc.searchAuthor),
+              items: [
+                DropdownMenuItem(value: null, child: Text(loc.searchAll)),
+                ...widget.profiles.map(
+                  (profile) => DropdownMenuItem(
+                    value: profile.authorProfileId,
+                    child: Text(profile.nickname),
+                  ),
+                ),
+              ],
+              onChanged: (value) => setState(() => _authorProfileId = value),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              key: const Key('search-temperature-filter'),
+              controller: _temperatureController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: loc.searchTemperature,
+                suffixText: '°C+',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              key: const Key('search-apply-filters'),
+              onPressed: _apply,
+              child: Text(loc.searchApplyFilters),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _datePresetLabel(AppLocalizations loc, SearchDatePreset preset) =>
+    switch (preset) {
+      SearchDatePreset.all => loc.searchAllDates,
+      SearchDatePreset.today => loc.searchToday,
+      SearchDatePreset.last7Days => loc.searchLast7Days,
+      SearchDatePreset.last30Days => loc.searchLast30Days,
+      SearchDatePreset.custom => loc.searchCustomDate,
+    };
+
+String _eventLabel(AppLocalizations loc, SearchEventKind kind) =>
+    switch (kind) {
+      SearchEventKind.temperature => loc.searchEventTemperature,
+      SearchEventKind.medication => loc.searchEventMedication,
+      SearchEventKind.feeding => loc.searchEventFeeding,
+      SearchEventKind.diaper => loc.searchEventDiaper,
+      SearchEventKind.sleep => loc.searchEventSleep,
+      SearchEventKind.hospital => loc.searchEventHospital,
+    };

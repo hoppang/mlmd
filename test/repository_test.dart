@@ -6,7 +6,9 @@ import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/models/author_profile_entity.dart';
 import 'package:mlmd/models/device_profile_entity.dart';
+import 'package:mlmd/models/search_document_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
+import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/activity_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
@@ -27,6 +29,8 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<AuthorProfileEntity> authorProfileBox;
   @override
   late final Box<DeviceProfileEntity> deviceProfileBox;
+  @override
+  late final Box<SearchDocumentEntity> searchDocumentBox;
 
   TestObjectBoxHelper(this.store) {
     diaryBox = Box<DiaryEntity>(store);
@@ -34,6 +38,7 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
     draftBox = Box<RecordDraftEntity>(store);
     authorProfileBox = Box<AuthorProfileEntity>(store);
     deviceProfileBox = Box<DeviceProfileEntity>(store);
+    searchDocumentBox = Box<SearchDocumentEntity>(store);
   }
 
   static Future<TestObjectBoxHelper> createTemp() async {
@@ -45,6 +50,22 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   Future<void> close() async {
     store.close();
   }
+}
+
+class _FakeEmbeddingEngine implements EmbeddingEngine {
+  @override
+  bool get isAvailable => true;
+
+  @override
+  String get modelVersion => 'fake-384-v1';
+
+  @override
+  Future<List<double>?> getEmbedding(String text) async => _vector;
+
+  @override
+  Future<List<double>?> getQueryEmbedding(String query) async => _vector;
+
+  List<double> get _vector => [1, ...List<double>.filled(383, 0)];
 }
 
 void main() {
@@ -278,7 +299,7 @@ void main() {
       );
 
       final results = await diaryRepo.searchRecords(
-        '정확키워드',
+        const HybridSearchQuery(text: '정확키워드'),
         EmbeddingService(),
       );
 
@@ -307,9 +328,12 @@ void main() {
           ),
         ]);
 
-        final byType = await diaryRepo.searchRecords('투약', EmbeddingService());
+        final byType = await diaryRepo.searchRecords(
+          const HybridSearchQuery(text: '투약'),
+          EmbeddingService(),
+        );
         final byDetail = await diaryRepo.searchRecords(
-          '해열제',
+          const HybridSearchQuery(text: '해열제'),
           EmbeddingService(),
         );
 
@@ -322,6 +346,130 @@ void main() {
         expect(byDetail.single.reason, DiarySearchMatchReason.exactText);
       },
     );
+
+    test(
+      'Structured event, temperature, date, and author filters work without text',
+      () async {
+        final authorId = profileRepo.currentAuthor!.authorProfileId;
+        final occurredAt = DateTime(2026, 7, 20, 9, 30);
+        final diary = DiaryEntity(
+          date: occurredAt,
+          title: '아침 기록',
+          content: '',
+          lastModified: occurredAt,
+        );
+        diaryRepo.saveDiaryWithActivities(diary, [
+          ActivityEntity(
+            type: '체온',
+            time: occurredAt,
+            details: '38.4도',
+            lastModified: occurredAt,
+          ),
+        ]);
+
+        final results = await diaryRepo.searchRecords(
+          HybridSearchQuery(
+            from: DateTime(2026, 7, 20),
+            untilExclusive: DateTime(2026, 7, 21),
+            eventKind: SearchEventKind.temperature,
+            authorProfileId: authorId,
+            temperature: const TemperatureFilter(
+              value: 38,
+              comparison: NumericComparison.atLeast,
+            ),
+          ),
+          EmbeddingService(),
+        );
+
+        expect(results, hasLength(1));
+        expect(results.single.activity?.type, '체온');
+        expect(results.single.matchedNumericValue, 38.4);
+        expect(
+          results.single.reason,
+          DiarySearchMatchReason.structuredTemperature,
+        );
+      },
+    );
+
+    test(
+      'Derived search documents follow source updates and deletion',
+      () async {
+        final occurredAt = DateTime(2026, 7, 20, 9, 30);
+        final diary = DiaryEntity(
+          date: occurredAt,
+          title: '하루 기록',
+          content: '메모',
+          lastModified: occurredAt,
+        );
+        diaryRepo.saveDiaryWithActivities(diary, [
+          ActivityEntity(
+            type: '체온',
+            time: occurredAt,
+            details: '38.4도',
+            lastModified: occurredAt,
+          ),
+        ]);
+        await diaryRepo.searchRecords(
+          const HybridSearchQuery(eventKind: SearchEventKind.temperature),
+          EmbeddingService(),
+        );
+        expect(obxHelper.searchDocumentBox.count(), 2);
+
+        diaryRepo.saveDiaryWithActivities(diary, [
+          ActivityEntity(
+            type: '체온',
+            time: occurredAt,
+            details: '37.2도',
+            lastModified: occurredAt,
+          ),
+        ]);
+        final highTemperature = await diaryRepo.searchRecords(
+          const HybridSearchQuery(
+            eventKind: SearchEventKind.temperature,
+            temperature: TemperatureFilter(
+              value: 38,
+              comparison: NumericComparison.atLeast,
+            ),
+          ),
+          EmbeddingService(),
+        );
+        expect(highTemperature, isEmpty);
+        expect(obxHelper.searchDocumentBox.count(), 2);
+
+        expect(diaryRepo.deleteDiary(diary.id), isTrue);
+        expect(obxHelper.searchDocumentBox.count(), 0);
+      },
+    );
+
+    test('Semantic results use the derived document index', () async {
+      final engine = _FakeEmbeddingEngine();
+      final diary = DiaryEntity(
+        date: DateTime(2026, 7, 20),
+        title: '밤 기록',
+        content: '아기가 편안하게 오래 잤다',
+        lastModified: DateTime(2026, 7, 20),
+      );
+      diaryRepo.saveDiary(diary);
+      expect(
+        await diaryRepo.rebuildSearchIndex(
+          engine,
+          recordIds: {diary.recordId!},
+        ),
+        0,
+      );
+
+      final results = await diaryRepo.searchRecords(
+        const HybridSearchQuery(text: '숙면'),
+        engine,
+      );
+
+      expect(results, hasLength(1));
+      expect(results.single.diary.id, diary.id);
+      expect(results.single.reason, DiarySearchMatchReason.relatedExpression);
+      final document = obxHelper.searchDocumentBox.getAll().single;
+      expect(document.embeddingModelVersion, engine.modelVersion);
+      expect(document.sourceContentHash, isNotEmpty);
+    });
 
     test('Activity occurrence precision persists independently of time', () {
       final now = DateTime.now();

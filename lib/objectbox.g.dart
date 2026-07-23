@@ -19,6 +19,7 @@ import 'models/author_profile_entity.dart';
 import 'models/device_profile_entity.dart';
 import 'models/diary_entity.dart';
 import 'models/record_draft_entity.dart';
+import 'models/search_document_entity.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
@@ -365,6 +366,110 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(6, 6674739285646046166),
+    name: 'SearchDocumentEntity',
+    lastPropertyId: const obx_int.IdUid(15, 5359434314521682066),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8852462331684128025),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 5940556623079841099),
+        name: 'searchDocumentId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(8, 6999470648043991581),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 8746933511329514396),
+        name: 'sourceRecordId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(9, 3332075985416719955),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 1423922043106314306),
+        name: 'sourceType',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 5121302667546005270),
+        name: 'sourceEntityId',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 4675003440705733717),
+        name: 'sourceDiaryId',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 7618806571068054732),
+        name: 'searchableText',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 7276354118035018946),
+        name: 'embedding',
+        type: 28,
+        flags: 8,
+        indexId: const obx_int.IdUid(10, 4219175356147692746),
+        hnswParams: obx_int.ModelHnswParams(dimensions: 384),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 2528714130102780620),
+        name: 'embeddingModelVersion',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 7383139652230636671),
+        name: 'sourceContentHash',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 6596799292247530244),
+        name: 'indexedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 5925548340928607231),
+        name: 'occurredAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 4534719732007071515),
+        name: 'authorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 8804171884950573107),
+        name: 'eventKind',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 5359434314521682066),
+        name: 'numericValue',
+        type: 8,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -410,8 +515,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(5, 7135689420437583296),
-    lastIndexId: const obx_int.IdUid(7, 5858733805991619695),
+    lastEntityId: const obx_int.IdUid(6, 6674739285646046166),
+    lastIndexId: const obx_int.IdUid(10, 4219175356147692746),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -882,6 +987,134 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    SearchDocumentEntity: obx_int.EntityDefinition<SearchDocumentEntity>(
+      model: _entities[5],
+      toOneRelations: (SearchDocumentEntity object) => [],
+      toManyRelations: (SearchDocumentEntity object) => {},
+      getId: (SearchDocumentEntity object) => object.id,
+      setId: (SearchDocumentEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (SearchDocumentEntity object, fb.Builder fbb) {
+        final searchDocumentIdOffset = fbb.writeString(object.searchDocumentId);
+        final sourceRecordIdOffset = fbb.writeString(object.sourceRecordId);
+        final sourceTypeOffset = fbb.writeString(object.sourceType);
+        final searchableTextOffset = fbb.writeString(object.searchableText);
+        final embeddingOffset = object.embedding == null
+            ? null
+            : fbb.writeListFloat32(object.embedding!);
+        final embeddingModelVersionOffset = fbb.writeString(
+          object.embeddingModelVersion,
+        );
+        final sourceContentHashOffset = fbb.writeString(
+          object.sourceContentHash,
+        );
+        final authorProfileIdOffset = object.authorProfileId == null
+            ? null
+            : fbb.writeString(object.authorProfileId!);
+        fbb.startTable(16);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, searchDocumentIdOffset);
+        fbb.addOffset(2, sourceRecordIdOffset);
+        fbb.addOffset(3, sourceTypeOffset);
+        fbb.addInt64(4, object.sourceEntityId);
+        fbb.addInt64(5, object.sourceDiaryId);
+        fbb.addOffset(6, searchableTextOffset);
+        fbb.addOffset(7, embeddingOffset);
+        fbb.addOffset(8, embeddingModelVersionOffset);
+        fbb.addOffset(9, sourceContentHashOffset);
+        fbb.addInt64(10, object.indexedAt.millisecondsSinceEpoch);
+        fbb.addInt64(11, object.occurredAt.millisecondsSinceEpoch);
+        fbb.addOffset(12, authorProfileIdOffset);
+        fbb.addInt64(13, object.eventKind);
+        fbb.addFloat64(14, object.numericValue);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final searchDocumentIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final sourceRecordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final sourceTypeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final sourceEntityIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          12,
+          0,
+        );
+        final sourceDiaryIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          0,
+        );
+        final searchableTextParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final embeddingParam = const fb.ListReader<double>(
+          fb.Float32Reader(),
+          lazy: false,
+        ).vTableGetNullable(buffer, rootOffset, 18);
+        final embeddingModelVersionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 20, '');
+        final sourceContentHashParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 22, '');
+        final indexedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0),
+        );
+        final occurredAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 26, 0),
+        );
+        final authorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 28);
+        final eventKindParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          30,
+          0,
+        );
+        final numericValueParam = const fb.Float64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          32,
+        );
+        final object = SearchDocumentEntity(
+          id: idParam,
+          searchDocumentId: searchDocumentIdParam,
+          sourceRecordId: sourceRecordIdParam,
+          sourceType: sourceTypeParam,
+          sourceEntityId: sourceEntityIdParam,
+          sourceDiaryId: sourceDiaryIdParam,
+          searchableText: searchableTextParam,
+          embedding: embeddingParam,
+          embeddingModelVersion: embeddingModelVersionParam,
+          sourceContentHash: sourceContentHashParam,
+          indexedAt: indexedAtParam,
+          occurredAt: occurredAtParam,
+          authorProfileId: authorProfileIdParam,
+          eventKind: eventKindParam,
+          numericValue: numericValueParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -1128,5 +1361,81 @@ class DeviceProfileEntity_ {
   /// See [DeviceProfileEntity.hasSharedHistory].
   static final hasSharedHistory = obx.QueryBooleanProperty<DeviceProfileEntity>(
     _entities[4].properties[4],
+  );
+}
+
+/// [SearchDocumentEntity] entity fields to define ObjectBox queries.
+class SearchDocumentEntity_ {
+  /// See [SearchDocumentEntity.id].
+  static final id = obx.QueryIntegerProperty<SearchDocumentEntity>(
+    _entities[5].properties[0],
+  );
+
+  /// See [SearchDocumentEntity.searchDocumentId].
+  static final searchDocumentId = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[1],
+  );
+
+  /// See [SearchDocumentEntity.sourceRecordId].
+  static final sourceRecordId = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[2],
+  );
+
+  /// See [SearchDocumentEntity.sourceType].
+  static final sourceType = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[3],
+  );
+
+  /// See [SearchDocumentEntity.sourceEntityId].
+  static final sourceEntityId = obx.QueryIntegerProperty<SearchDocumentEntity>(
+    _entities[5].properties[4],
+  );
+
+  /// See [SearchDocumentEntity.sourceDiaryId].
+  static final sourceDiaryId = obx.QueryIntegerProperty<SearchDocumentEntity>(
+    _entities[5].properties[5],
+  );
+
+  /// See [SearchDocumentEntity.searchableText].
+  static final searchableText = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[6],
+  );
+
+  /// See [SearchDocumentEntity.embedding].
+  static final embedding = obx.QueryHnswProperty<SearchDocumentEntity>(
+    _entities[5].properties[7],
+  );
+
+  /// See [SearchDocumentEntity.embeddingModelVersion].
+  static final embeddingModelVersion =
+      obx.QueryStringProperty<SearchDocumentEntity>(_entities[5].properties[8]);
+
+  /// See [SearchDocumentEntity.sourceContentHash].
+  static final sourceContentHash =
+      obx.QueryStringProperty<SearchDocumentEntity>(_entities[5].properties[9]);
+
+  /// See [SearchDocumentEntity.indexedAt].
+  static final indexedAt = obx.QueryDateProperty<SearchDocumentEntity>(
+    _entities[5].properties[10],
+  );
+
+  /// See [SearchDocumentEntity.occurredAt].
+  static final occurredAt = obx.QueryDateProperty<SearchDocumentEntity>(
+    _entities[5].properties[11],
+  );
+
+  /// See [SearchDocumentEntity.authorProfileId].
+  static final authorProfileId = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[12],
+  );
+
+  /// See [SearchDocumentEntity.eventKind].
+  static final eventKind = obx.QueryIntegerProperty<SearchDocumentEntity>(
+    _entities[5].properties[13],
+  );
+
+  /// See [SearchDocumentEntity.numericValue].
+  static final numericValue = obx.QueryDoubleProperty<SearchDocumentEntity>(
+    _entities[5].properties[14],
   );
 }
