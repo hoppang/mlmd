@@ -460,6 +460,49 @@ class AppLocalizationsJa extends AppLocalizations {
   String get weeklyAutoSummaryDescription => '月曜から日曜までの完了した週を、端末内AIで静かにまとめます。';
 
   @override
+  String get medicalBriefingTitle => '受診前ブリーフィング';
+
+  @override
+  String get medicalBriefingDescription =>
+      '受診前に記録した体温、投薬、症状、受診、予防接種、事故・けがの事実を確認します。';
+
+  @override
+  String get briefingSafetyNotice =>
+      '記録された事実のみを表示します。診断、因果関係、治療の助言は行いません。重要な内容は元の記録で再確認してください。';
+
+  @override
+  String get briefingPeriod => 'ブリーフィング期間';
+
+  @override
+  String briefingDateRange(String from, String to) {
+    return '$from～$to';
+  }
+
+  @override
+  String briefingFactCount(int count) {
+    return '記録された事実$count件';
+  }
+
+  @override
+  String get briefingNoFacts => '条件に合う健康記録がありません。';
+
+  @override
+  String get briefingNoFactsHint =>
+      '期間をそのままにするか、広げてください。一般メモや医療以外のイベントを医療上の事実として推測しません。';
+
+  @override
+  String get briefingCopy => 'ブリーフィングをコピー';
+
+  @override
+  String get briefingCopied => 'ブリーフィングをコピーしました。';
+
+  @override
+  String get briefingShare => 'ブリーフィングを共有';
+
+  @override
+  String get briefingOpenOriginal => '元の記録を開く';
+
+  @override
   String get searchMemoResult => 'メモ';
 
   @override

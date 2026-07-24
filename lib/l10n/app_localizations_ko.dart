@@ -463,6 +463,49 @@ class AppLocalizationsKo extends AppLocalizations {
       '월요일부터 일요일까지 완료된 주를 기기 내 AI로 조용히 정리해요.';
 
   @override
+  String get medicalBriefingTitle => '병원 방문 브리핑';
+
+  @override
+  String get medicalBriefingDescription =>
+      '병원 방문 전 기록한 체온, 투약, 증상, 진료, 예방접종과 사고·다침 사실을 모아 확인해요.';
+
+  @override
+  String get briefingSafetyNotice =>
+      '기록된 사실만 보여 줍니다. 진단, 인과관계나 치료 조언을 제공하지 않아요. 중요한 내용은 원본 기록에서 다시 확인하세요.';
+
+  @override
+  String get briefingPeriod => '브리핑 기간';
+
+  @override
+  String briefingDateRange(String from, String to) {
+    return '$from~$to';
+  }
+
+  @override
+  String briefingFactCount(int count) {
+    return '기록된 사실 $count건';
+  }
+
+  @override
+  String get briefingNoFacts => '조건에 맞는 건강 기록이 없어요.';
+
+  @override
+  String get briefingNoFactsHint =>
+      '기간을 유지하거나 더 넓혀 보세요. 일반 메모와 비의료 이벤트를 의료 사실로 추정하지 않아요.';
+
+  @override
+  String get briefingCopy => '브리핑 복사';
+
+  @override
+  String get briefingCopied => '브리핑을 복사했어요.';
+
+  @override
+  String get briefingShare => '브리핑 공유';
+
+  @override
+  String get briefingOpenOriginal => '원본 기록 열기';
+
+  @override
   String get searchMemoResult => '메모';
 
   @override

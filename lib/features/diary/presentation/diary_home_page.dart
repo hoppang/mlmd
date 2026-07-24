@@ -18,6 +18,7 @@ import '../../search/presentation/diary_search_page.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../../events/domain/event_catalog.dart';
 import '../../events/presentation/record_entry_sheet.dart';
+import '../../medical_briefing/presentation/medical_briefing_page.dart';
 import '../application/diary_list_notifier.dart';
 import 'diary_form_page.dart';
 import 'diary_list_page.dart';
@@ -219,6 +220,16 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     );
   }
 
+  void _showMedicalBriefingPage(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MedicalBriefingPage(
+          onOpenOriginal: (diary) => _navigateToFormPage(context, diary),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showRecordEntry() async {
     final diaries = ref.read(diaryListProvider);
     final quickIds = defaultQuickEventIds.toSet();
@@ -280,12 +291,19 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                     : (_selectedTab == 1 ? loc.dateTab : loc.searchTitle),
               ),
               actions: [
-                if (_selectedTab == 0)
+                if (_selectedTab == 0) ...[
+                  IconButton(
+                    key: const Key('medical-briefing-button'),
+                    icon: const Icon(Icons.medical_information_outlined),
+                    tooltip: loc.medicalBriefingTitle,
+                    onPressed: () => _showMedicalBriefingPage(context),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.settings),
                     tooltip: loc.settingsTitle,
                     onPressed: () => _showSettingsPage(context),
                   ),
+                ],
               ],
             ),
             body: Padding(

@@ -982,6 +982,78 @@ abstract class AppLocalizations {
   /// **'월요일부터 일요일까지 완료된 주를 기기 내 AI로 조용히 정리해요.'**
   String get weeklyAutoSummaryDescription;
 
+  /// No description provided for @medicalBriefingTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'병원 방문 브리핑'**
+  String get medicalBriefingTitle;
+
+  /// No description provided for @medicalBriefingDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'병원 방문 전 기록한 체온, 투약, 증상, 진료, 예방접종과 사고·다침 사실을 모아 확인해요.'**
+  String get medicalBriefingDescription;
+
+  /// No description provided for @briefingSafetyNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록된 사실만 보여 줍니다. 진단, 인과관계나 치료 조언을 제공하지 않아요. 중요한 내용은 원본 기록에서 다시 확인하세요.'**
+  String get briefingSafetyNotice;
+
+  /// No description provided for @briefingPeriod.
+  ///
+  /// In ko, this message translates to:
+  /// **'브리핑 기간'**
+  String get briefingPeriod;
+
+  /// No description provided for @briefingDateRange.
+  ///
+  /// In ko, this message translates to:
+  /// **'{from}~{to}'**
+  String briefingDateRange(String from, String to);
+
+  /// No description provided for @briefingFactCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록된 사실 {count}건'**
+  String briefingFactCount(int count);
+
+  /// No description provided for @briefingNoFacts.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건에 맞는 건강 기록이 없어요.'**
+  String get briefingNoFacts;
+
+  /// No description provided for @briefingNoFactsHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'기간을 유지하거나 더 넓혀 보세요. 일반 메모와 비의료 이벤트를 의료 사실로 추정하지 않아요.'**
+  String get briefingNoFactsHint;
+
+  /// No description provided for @briefingCopy.
+  ///
+  /// In ko, this message translates to:
+  /// **'브리핑 복사'**
+  String get briefingCopy;
+
+  /// No description provided for @briefingCopied.
+  ///
+  /// In ko, this message translates to:
+  /// **'브리핑을 복사했어요.'**
+  String get briefingCopied;
+
+  /// No description provided for @briefingShare.
+  ///
+  /// In ko, this message translates to:
+  /// **'브리핑 공유'**
+  String get briefingShare;
+
+  /// No description provided for @briefingOpenOriginal.
+  ///
+  /// In ko, this message translates to:
+  /// **'원본 기록 열기'**
+  String get briefingOpenOriginal;
+
   /// No description provided for @searchMemoResult.
   ///
   /// In ko, this message translates to:

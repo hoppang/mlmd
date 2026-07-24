@@ -475,6 +475,49 @@ class AppLocalizationsEn extends AppLocalizations {
       'Quietly prepare a recap after a Monday–Sunday week ends, using the on-device AI model.';
 
   @override
+  String get medicalBriefingTitle => 'Visit briefing';
+
+  @override
+  String get medicalBriefingDescription =>
+      'Review recorded temperatures, medications, symptoms, visits, vaccinations, and injuries before a medical visit.';
+
+  @override
+  String get briefingSafetyNotice =>
+      'This shows recorded facts only. It does not provide a diagnosis, causal conclusion, or treatment advice. Verify important details in the original records.';
+
+  @override
+  String get briefingPeriod => 'Briefing period';
+
+  @override
+  String briefingDateRange(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
+  String briefingFactCount(int count) {
+    return '$count recorded facts';
+  }
+
+  @override
+  String get briefingNoFacts => 'No matching health records.';
+
+  @override
+  String get briefingNoFactsHint =>
+      'Keep this period or choose a wider range. General notes and non-health events are not inferred as medical facts.';
+
+  @override
+  String get briefingCopy => 'Copy briefing';
+
+  @override
+  String get briefingCopied => 'The briefing was copied.';
+
+  @override
+  String get briefingShare => 'Share briefing';
+
+  @override
+  String get briefingOpenOriginal => 'Open original record';
+
+  @override
   String get searchMemoResult => 'Note';
 
   @override

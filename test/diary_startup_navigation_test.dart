@@ -818,6 +818,62 @@ void main() {
     expect(find.byType(DiaryFormPage), findsOneWidget);
   });
 
+  testWidgets('병원 방문 브리핑은 의료 사실만 모으고 원본으로 이동한다', (tester) async {
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 91,
+      recordId: 'medical-briefing-source',
+      date: now,
+      title: '건강 기록',
+      content: '원본 메모',
+      lastModified: now,
+    );
+    diary.activities.addAll([
+      ActivityEntity(
+        id: 92,
+        type: '체온',
+        time: now.subtract(const Duration(hours: 2)),
+        details: '38.2°C · 이마',
+        lastModified: now,
+      ),
+      ActivityEntity(
+        id: 93,
+        type: '투약',
+        time: now.subtract(const Duration(hours: 1)),
+        details: '해열제 1회',
+        lastModified: now,
+      ),
+      ActivityEntity(
+        id: 94,
+        type: '수유',
+        time: now,
+        details: '120mL',
+        lastModified: now,
+      ),
+    ]);
+
+    await tester.pumpWidget(_buildApp(diaries: [diary]));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('medical-briefing-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('병원 방문 브리핑'), findsOneWidget);
+    expect(find.text('기록된 사실 2건'), findsOneWidget);
+    expect(find.textContaining('진단, 인과관계나 치료 조언'), findsOneWidget);
+    await tester.drag(find.byType(ListView).last, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('38.2°C · 이마'), findsOneWidget);
+    expect(find.textContaining('해열제 1회'), findsOneWidget);
+    expect(find.text('120mL'), findsNothing);
+
+    await tester.tap(find.text('체온').last);
+    await tester.pumpAndSettle();
+    expect(find.text('읽기 전용'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('briefing-open-original')));
+    await tester.pumpAndSettle();
+    expect(find.byType(DiaryFormPage), findsOneWidget);
+  });
+
   testWidgets('날짜별 탭은 선택한 날짜의 기록만 표시한다', (tester) async {
     final now = DateTime.now();
     final todayDiary = DiaryEntity(
