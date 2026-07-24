@@ -69,6 +69,7 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     required String type,
     required String details,
     required DateTime occurredAt,
+    String? structuredDataJson,
   }) async {
     final repo = ref.read(diaryRepositoryProvider);
     repo.addActivityRecord(
@@ -76,6 +77,7 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
         type: type,
         time: occurredAt,
         details: details,
+        structuredDataJson: structuredDataJson,
         lastModified: DateTime.now(),
       ),
     );

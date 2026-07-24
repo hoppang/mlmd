@@ -112,6 +112,136 @@ class AppLocalizationsEn extends AppLocalizations {
   String get waterSnackEvent => 'Water · snack';
 
   @override
+  String get waterEvent => 'Water';
+
+  @override
+  String get snackEvent => 'Snack';
+
+  @override
+  String get feedingMethodLabel => 'Feeding method';
+
+  @override
+  String get breastFeedingOption => 'Breast';
+
+  @override
+  String get bottleFeedingOption => 'Bottle';
+
+  @override
+  String get feedingTimeOnlyOption => 'Time only';
+
+  @override
+  String get breastSideLabel => 'Breast side';
+
+  @override
+  String get leftSideOption => 'Left';
+
+  @override
+  String get rightSideOption => 'Right';
+
+  @override
+  String get bottleContentsLabel => 'Bottle contents';
+
+  @override
+  String get formulaOption => 'Formula';
+
+  @override
+  String get expressedMilkOption => 'Expressed milk';
+
+  @override
+  String get otherOption => 'Other';
+
+  @override
+  String get amountStyleLabel => 'Amount eaten';
+
+  @override
+  String get qualitativeAmountOption => 'By impression';
+
+  @override
+  String get fractionAmountOption => 'Of amount served';
+
+  @override
+  String get exactAmountOption => 'Exact amount';
+
+  @override
+  String get sipAmountOption => 'A sip';
+
+  @override
+  String get biteAmountOption => 'Just tasted';
+
+  @override
+  String get littleAmountOption => 'A little';
+
+  @override
+  String get normalAmountOption => 'Average';
+
+  @override
+  String get muchAmountOption => 'A lot';
+
+  @override
+  String get quarterAmountOption => '¼';
+
+  @override
+  String get halfAmountOption => 'Half';
+
+  @override
+  String get almostAllAmountOption => 'Almost all';
+
+  @override
+  String get allAmountOption => 'All';
+
+  @override
+  String get exactAmountLabel => 'Amount';
+
+  @override
+  String get amountUnitLabel => 'Unit';
+
+  @override
+  String get mealTypeLabel => 'Meal';
+
+  @override
+  String get breakfastOption => 'Breakfast';
+
+  @override
+  String get lunchOption => 'Lunch';
+
+  @override
+  String get dinnerOption => 'Dinner';
+
+  @override
+  String get foodNameLabel => 'Food (optional)';
+
+  @override
+  String get snackNameLabel => 'Snack (optional)';
+
+  @override
+  String get reactionLabel => 'Reaction (optional)';
+
+  @override
+  String get ateWellOption => 'Ate well';
+
+  @override
+  String get averageReactionOption => 'Average';
+
+  @override
+  String get refusedOption => 'Refused';
+
+  @override
+  String get memoOptionalLabel => 'Note (optional)';
+
+  @override
+  String get cupAmountOption => 'By cup';
+
+  @override
+  String get cupAmountInfoTitle => 'About cup amounts';
+
+  @override
+  String get cupAmountInfoBody =>
+      'Baby cups vary by product, but many are around 200 mL. Cup amounts are approximate and are not converted to exact mL.';
+
+  @override
+  String get exactAmountRequired => 'Enter an amount greater than zero.';
+
+  @override
   String get sleepEvent => 'Sleep';
 
   @override

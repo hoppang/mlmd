@@ -27,6 +27,12 @@ class ActivityEntity {
 
   String details; // 상세정보(용량, 시간 등)
 
+  /// 이벤트별 구조화 입력을 원문 정밀도 그대로 보존하는 버전 JSON입니다.
+  ///
+  /// 기존 기록과 구조화 폼이 없는 이벤트는 null입니다. 화면 표시와 검색용
+  /// [details]를 대체하지 않으므로 이전 앱과도 읽을 수 있습니다.
+  String? structuredDataJson;
+
   /// 커스텀 이벤트 기록일 때 공유 정의의 안정 UUID를 가리킨다.
   @Index()
   String? customEventTypeId;
@@ -55,6 +61,7 @@ class ActivityEntity {
     required this.time,
     this.timePrecision = timePrecisionExact,
     required this.details,
+    this.structuredDataJson,
     this.customEventTypeId,
     this.customEventNameSnapshot,
     required this.lastModified,

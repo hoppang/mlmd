@@ -42,10 +42,7 @@ void main() {
       diary,
     ], excludedIds: defaultQuickEventIds.toSet());
 
-    expect(presets.map((preset) => preset.item.id), [
-      EventTypeId.meal,
-      EventTypeId.medication,
-    ]);
-    expect(presets.first.details, '120g');
+    expect(presets.map((preset) => preset.item.id), [EventTypeId.medication]);
+    expect(presets.first.details, '2.5mL');
   });
 }

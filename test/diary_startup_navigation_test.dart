@@ -25,6 +25,7 @@ import 'package:mlmd/features/summaries/application/ai_summary_notifier.dart';
 import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
 import 'package:mlmd/features/duplicate_review/application/duplicate_review_notifier.dart';
 import 'package:mlmd/features/events/application/custom_event_notifier.dart';
+import 'package:mlmd/features/events/domain/intake_record.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'package:mlmd/repositories/duplicate_review_repository.dart';
 import 'package:mlmd/models/duplicate_review_edge_entity.dart';
@@ -53,6 +54,7 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   String? addedActivityType;
   String? addedActivityDetails;
   DateTime? addedActivityOccurredAt;
+  String? addedActivityStructuredDataJson;
   String? addedCustomEventTypeId;
   String? addedCustomEventName;
   String? addedCustomEventMemo;
@@ -96,11 +98,13 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     required String type,
     required String details,
     required DateTime occurredAt,
+    String? structuredDataJson,
   }) async {
     if (activitySaveError != null) throw activitySaveError!;
     addedActivityType = type;
     addedActivityDetails = details;
     addedActivityOccurredAt = occurredAt;
+    addedActivityStructuredDataJson = structuredDataJson;
   }
 
   @override
@@ -499,7 +503,7 @@ void main() {
     expect(find.text('빠른 기록'), findsOneWidget);
     expect(find.text('최근 사용'), findsOneWidget);
     expect(find.text('이유식·식사 · 120g'), findsOneWidget);
-    expect(find.text('수유 · 180mL'), findsNothing);
+    expect(find.text('수유 · 180mL'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('event-category-healthMedical')));
     await tester.pumpAndSettle();
@@ -507,16 +511,21 @@ void main() {
 
     await tester.tap(find.byKey(const Key('quick-record-feeding')));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('quick-record-details')),
-      '200mL',
-    );
+    expect(find.byKey(const Key('intake-record-form')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('feeding-method-bottle')));
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key('exact-amount-value')), '200');
     await tester.tap(find.byKey(const Key('save-quick-record')));
     await tester.pumpAndSettle();
 
     expect(notifier.addedActivityType, '수유');
-    expect(notifier.addedActivityDetails, '200mL');
+    expect(notifier.addedActivityDetails, '젖병 · 분유 · 200 mL');
     expect(notifier.addedActivityOccurredAt, isNotNull);
+    final savedIntake = IntakeRecord.decode(
+      notifier.addedActivityStructuredDataJson!,
+    );
+    expect(savedIntake?.method, FeedingMethod.bottle);
+    expect(savedIntake?.amountExpression?.exactValue, 200);
     expect(find.text('수유 기록을 저장했어요.'), findsOneWidget);
   });
 

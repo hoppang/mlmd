@@ -208,6 +208,11 @@ class V2DiaryImporter implements DiaryImporter {
           time: validator.wallClock(item, 'time', activityPath),
           timePrecision: timePrecision,
           details: validator.string(item, 'details', activityPath),
+          structuredDataJson: validator.optionalString(
+            item,
+            'structuredDataJson',
+            activityPath,
+          ),
           createdAt: validator.utcInstant(item, 'createdAt', activityPath),
           createdByAuthorProfileId: createdByAuthor,
           createdByDeviceProfileId: createdByDevice,

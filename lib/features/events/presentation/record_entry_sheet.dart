@@ -7,9 +7,15 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/shared_custom_event_definition_entity.dart';
 import '../application/custom_event_notifier.dart';
 import '../domain/event_catalog.dart';
+import 'intake_event_form.dart';
 
 typedef SaveEventRecord =
-    Future<void> Function(String type, String details, DateTime occurredAt);
+    Future<void> Function(
+      String type,
+      String details,
+      DateTime occurredAt,
+      String? structuredDataJson,
+    );
 typedef SaveCustomEventRecord =
     Future<void> Function(
       String customEventTypeId,
@@ -40,6 +46,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   final _detailsController = TextEditingController();
   EventCatalogItem? _selectedItem;
   SharedCustomEventDefinitionEntity? _selectedCustomEvent;
+  String? _structuredDataJson;
   DateTime _occurredAt = DateTime.now();
   bool _saving = false;
   String? _error;
@@ -50,11 +57,16 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     super.dispose();
   }
 
-  void _select(EventCatalogItem item, {String details = ''}) {
+  void _select(
+    EventCatalogItem item, {
+    String details = '',
+    String? structuredDataJson,
+  }) {
     setState(() {
       _selectedItem = item;
       _selectedCustomEvent = null;
       _detailsController.text = details;
+      _structuredDataJson = structuredDataJson;
       _occurredAt = DateTime.now();
       _error = null;
     });
@@ -65,6 +77,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       _selectedItem = null;
       _selectedCustomEvent = definition;
       _detailsController.clear();
+      _structuredDataJson = null;
       _occurredAt = DateTime.now();
       _error = null;
     });
@@ -103,6 +116,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
           savedName,
           _detailsController.text.trim(),
           _occurredAt,
+          null,
         );
       } else {
         await widget.onSaveCustom(
@@ -115,6 +129,31 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       if (mounted) {
         Navigator.pop(context, savedName);
       }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _saveIntake(IntakeFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = selected.label(AppLocalizations.of(context)!);
+      await widget.onSave(
+        savedName,
+        result.details,
+        _occurredAt,
+        result.record.encode(),
+      );
+      if (mounted) Navigator.pop(context, savedName);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -208,6 +247,22 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                 },
                 onOpenDetailedRecord: widget.onOpenDetailedRecord,
               )
+            : custom == null && _isIntakeEvent(selected!.id)
+            ? IntakeEventForm(
+                key: ValueKey(selected.id.name),
+                item: selected,
+                occurredAt: _occurredAt,
+                saving: _saving,
+                error: _error,
+                initialStructuredDataJson: _structuredDataJson,
+                onBack: () => setState(() {
+                  _selectedItem = null;
+                  _structuredDataJson = null;
+                  _error = null;
+                }),
+                onChangeTime: _changeTime,
+                onSave: _saveIntake,
+              )
             : _EventForm(
                 key: ValueKey(custom?.customEventTypeId ?? selected!.id.name),
                 label:
@@ -222,6 +277,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                 onBack: () => setState(() {
                   _selectedItem = null;
                   _selectedCustomEvent = null;
+                  _structuredDataJson = null;
                   _error = null;
                 }),
                 onChangeTime: _changeTime,
@@ -248,7 +304,12 @@ class _EventPicker extends StatelessWidget {
 
   final List<RecentEventPreset> recentPresets;
   final CustomEventCatalogState customState;
-  final void Function(EventCatalogItem item, {String details}) onSelect;
+  final void Function(
+    EventCatalogItem item, {
+    String details,
+    String? structuredDataJson,
+  })
+  onSelect;
   final ValueChanged<SharedCustomEventDefinitionEntity> onSelectCustom;
   final VoidCallback onCreateCustom;
   final ValueChanged<SharedCustomEventDefinitionEntity> onRenameCustom;
@@ -308,8 +369,11 @@ class _EventPicker extends StatelessWidget {
                     key: Key('recent-record-${preset.item.id.name}'),
                     avatar: Icon(preset.item.icon, size: 18),
                     label: Text(preset.label(loc)),
-                    onPressed: () =>
-                        onSelect(preset.item, details: preset.details),
+                    onPressed: () => onSelect(
+                      preset.item,
+                      details: preset.details,
+                      structuredDataJson: preset.structuredDataJson,
+                    ),
                   ),
               ],
             ),
@@ -535,6 +599,12 @@ class _EventForm extends StatelessWidget {
 }
 
 enum _CustomEventAction { rename, archive }
+
+bool _isIntakeEvent(EventTypeId id) =>
+    id == EventTypeId.feeding ||
+    id == EventTypeId.meal ||
+    id == EventTypeId.water ||
+    id == EventTypeId.snack;
 
 class _CustomEventNameDialog extends StatefulWidget {
   const _CustomEventNameDialog({required this.initialName});

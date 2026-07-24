@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:3014340625497478550",
-      "lastPropertyId": "16:4295721424088215806",
+      "lastPropertyId": "17:8109000737919216196",
       "name": "ActivityEntity",
       "properties": [
         {
@@ -94,6 +94,11 @@
         {
           "id": "16:4295721424088215806",
           "name": "customEventNameSnapshot",
+          "type": 9
+        },
+        {
+          "id": "17:8109000737919216196",
+          "name": "structuredDataJson",
           "type": 9
         }
       ],

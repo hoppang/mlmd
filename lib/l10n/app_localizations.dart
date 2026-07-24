@@ -298,6 +298,264 @@ abstract class AppLocalizations {
   /// **'물·간식'**
   String get waterSnackEvent;
 
+  /// No description provided for @waterEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'물'**
+  String get waterEvent;
+
+  /// No description provided for @snackEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'간식'**
+  String get snackEvent;
+
+  /// No description provided for @feedingMethodLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'수유 방식'**
+  String get feedingMethodLabel;
+
+  /// No description provided for @breastFeedingOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'모유'**
+  String get breastFeedingOption;
+
+  /// No description provided for @bottleFeedingOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'젖병'**
+  String get bottleFeedingOption;
+
+  /// No description provided for @feedingTimeOnlyOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'시각만'**
+  String get feedingTimeOnlyOption;
+
+  /// No description provided for @breastSideLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'수유한 쪽'**
+  String get breastSideLabel;
+
+  /// No description provided for @leftSideOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'왼쪽'**
+  String get leftSideOption;
+
+  /// No description provided for @rightSideOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'오른쪽'**
+  String get rightSideOption;
+
+  /// No description provided for @bottleContentsLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'젖병 내용'**
+  String get bottleContentsLabel;
+
+  /// No description provided for @formulaOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'분유'**
+  String get formulaOption;
+
+  /// No description provided for @expressedMilkOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'유축 모유'**
+  String get expressedMilkOption;
+
+  /// No description provided for @otherOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get otherOption;
+
+  /// No description provided for @amountStyleLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'먹은 양'**
+  String get amountStyleLabel;
+
+  /// No description provided for @qualitativeAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'느낌으로'**
+  String get qualitativeAmountOption;
+
+  /// No description provided for @fractionAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'제공량 기준'**
+  String get fractionAmountOption;
+
+  /// No description provided for @exactAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'정확한 양'**
+  String get exactAmountOption;
+
+  /// No description provided for @sipAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'한 모금'**
+  String get sipAmountOption;
+
+  /// No description provided for @biteAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'맛만 봄'**
+  String get biteAmountOption;
+
+  /// No description provided for @littleAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'조금'**
+  String get littleAmountOption;
+
+  /// No description provided for @normalAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'보통'**
+  String get normalAmountOption;
+
+  /// No description provided for @muchAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'많이'**
+  String get muchAmountOption;
+
+  /// No description provided for @quarterAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'¼'**
+  String get quarterAmountOption;
+
+  /// No description provided for @halfAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'절반'**
+  String get halfAmountOption;
+
+  /// No description provided for @almostAllAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'거의 다'**
+  String get almostAllAmountOption;
+
+  /// No description provided for @allAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'전부'**
+  String get allAmountOption;
+
+  /// No description provided for @exactAmountLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'수치'**
+  String get exactAmountLabel;
+
+  /// No description provided for @amountUnitLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'단위'**
+  String get amountUnitLabel;
+
+  /// No description provided for @mealTypeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'식사 구분'**
+  String get mealTypeLabel;
+
+  /// No description provided for @breakfastOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'아침'**
+  String get breakfastOption;
+
+  /// No description provided for @lunchOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'점심'**
+  String get lunchOption;
+
+  /// No description provided for @dinnerOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'저녁'**
+  String get dinnerOption;
+
+  /// No description provided for @foodNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'음식 이름 (선택)'**
+  String get foodNameLabel;
+
+  /// No description provided for @snackNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'간식 이름 (선택)'**
+  String get snackNameLabel;
+
+  /// No description provided for @reactionLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'반응 (선택)'**
+  String get reactionLabel;
+
+  /// No description provided for @ateWellOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'잘 먹음'**
+  String get ateWellOption;
+
+  /// No description provided for @averageReactionOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'보통'**
+  String get averageReactionOption;
+
+  /// No description provided for @refusedOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'거부함'**
+  String get refusedOption;
+
+  /// No description provided for @memoOptionalLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모 (선택)'**
+  String get memoOptionalLabel;
+
+  /// No description provided for @cupAmountOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'컵 기준'**
+  String get cupAmountOption;
+
+  /// No description provided for @cupAmountInfoTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'컵 단위 안내'**
+  String get cupAmountInfoTitle;
+
+  /// No description provided for @cupAmountInfoBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'아기용 컵은 제품마다 다르지만 대략 200mL 전후인 경우가 많아요. 컵 단위는 대략적인 기록이며 정확한 mL로 환산하지 않아요.'**
+  String get cupAmountInfoBody;
+
+  /// No description provided for @exactAmountRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'0보다 큰 수치를 입력해 주세요.'**
+  String get exactAmountRequired;
+
   /// No description provided for @sleepEvent.
   ///
   /// In ko, this message translates to:

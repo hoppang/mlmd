@@ -243,18 +243,18 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
 
   Future<void> _showRecordEntry() async {
     final diaries = ref.read(diaryListProvider);
-    final quickIds = defaultQuickEventIds.toSet();
     var openDetailedRecord = false;
     final savedType = await showAdaptiveDetail<String>(
       context: context,
       builder: (sheetContext) => RecordEntrySheet(
-        recentPresets: buildRecentEventPresets(diaries, excludedIds: quickIds),
-        onSave: (type, details, occurredAt) => ref
+        recentPresets: buildRecentEventPresets(diaries),
+        onSave: (type, details, occurredAt, structuredDataJson) => ref
             .read(diaryListProvider.notifier)
             .addActivityRecord(
               type: type,
               details: details,
               occurredAt: occurredAt,
+              structuredDataJson: structuredDataJson,
             ),
         onSaveCustom: (customEventTypeId, nameSnapshot, memo, occurredAt) => ref
             .read(diaryListProvider.notifier)

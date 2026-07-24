@@ -162,6 +162,8 @@ void main() {
               type: '수유',
               time: DateTime(2026, 7, 24, 10),
               details: '120mL',
+              structuredDataJson:
+                  '{"version":1,"kind":"feeding","method":"bottle","bottleContents":"formula","amountExpression":{"kind":"exact","exactValue":120,"unit":"ml"}}',
               createdAt: createdAt,
               createdByAuthorProfileId: authorId,
               createdByDeviceProfileId: deviceId,
@@ -184,6 +186,10 @@ void main() {
     expect(
       decoded.diaries.single.activities.single.createdByDeviceProfileId,
       deviceId,
+    );
+    expect(
+      decoded.diaries.single.activities.single.structuredDataJson,
+      contains('"kind":"feeding"'),
     );
   });
 

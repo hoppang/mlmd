@@ -77,6 +77,7 @@ class CanonicalActivity {
   final DateTime time;
   final int timePrecision;
   final String details;
+  final String? structuredDataJson;
   final DateTime? createdAt;
   final String? createdByAuthorProfileId;
   final String? createdByDeviceProfileId;
@@ -89,6 +90,7 @@ class CanonicalActivity {
     required this.time,
     this.timePrecision = 1,
     required this.details,
+    this.structuredDataJson,
     this.createdAt,
     this.createdByAuthorProfileId,
     this.createdByDeviceProfileId,

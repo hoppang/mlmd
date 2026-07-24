@@ -114,6 +114,7 @@ class ActivityRepositoryImpl implements ActivityRepository {
       left.time.isAtSameMomentAs(right.time) &&
       left.timePrecision == right.timePrecision &&
       left.details == right.details &&
+      left.structuredDataJson == right.structuredDataJson &&
       left.customEventTypeId == right.customEventTypeId &&
       left.customEventNameSnapshot == right.customEventNameSnapshot;
 

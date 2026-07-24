@@ -1001,6 +1001,8 @@ void main() {
           type: '수유',
           time: DateTime(2026, 7, 24, 11),
           details: '120mL',
+          structuredDataJson:
+              '{"version":1,"kind":"feeding","method":"bottle","bottleContents":"formula","amountExpression":{"kind":"exact","exactValue":120,"unit":"ml"}}',
           lastModified: DateTime.utc(2026),
         ),
       );
@@ -1011,6 +1013,7 @@ void main() {
       expect(activity.createdByDeviceProfileId, source.deviceProfileId);
       expect(activity.lastModifiedByAuthorProfileId, source.authorProfileId);
       expect(activity.lastModifiedByDeviceProfileId, source.deviceProfileId);
+      expect(activity.structuredDataJson, contains('"kind":"feeding"'));
     });
 
     test('removing an earlier event does not move its creator to another', () {

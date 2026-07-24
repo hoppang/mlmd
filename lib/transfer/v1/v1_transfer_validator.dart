@@ -32,6 +32,13 @@ class V1TransferValidator {
     return value;
   }
 
+  String? optionalString(Map<String, Object?> json, String key, String path) {
+    final value = json[key];
+    if (value == null) return null;
+    if (value is! String) _invalid('$path.$key', 'must be a string or null');
+    return value;
+  }
+
   int integer(Map<String, Object?> json, String key, String path) {
     final value = json[key];
     if (value is! int) _invalid('$path.$key', 'must be an integer');

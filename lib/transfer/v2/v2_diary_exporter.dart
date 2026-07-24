@@ -67,6 +67,8 @@ class V2DiaryExporter implements DiaryExporter {
     'time': _wallClock(activity.time),
     'timePrecision': activity.timePrecision,
     'details': activity.details,
+    if (activity.structuredDataJson != null)
+      'structuredDataJson': activity.structuredDataJson,
     'createdAt': _utc(activity.createdAt!),
     'createdByAuthorProfileId': activity.createdByAuthorProfileId,
     'createdByDeviceProfileId': activity.createdByDeviceProfileId,

@@ -108,6 +108,136 @@ class AppLocalizationsJa extends AppLocalizations {
   String get waterSnackEvent => '水分・おやつ';
 
   @override
+  String get waterEvent => '水分';
+
+  @override
+  String get snackEvent => 'おやつ';
+
+  @override
+  String get feedingMethodLabel => '授乳方法';
+
+  @override
+  String get breastFeedingOption => '母乳';
+
+  @override
+  String get bottleFeedingOption => '哺乳瓶';
+
+  @override
+  String get feedingTimeOnlyOption => '時刻のみ';
+
+  @override
+  String get breastSideLabel => '授乳した側';
+
+  @override
+  String get leftSideOption => '左';
+
+  @override
+  String get rightSideOption => '右';
+
+  @override
+  String get bottleContentsLabel => '哺乳瓶の内容';
+
+  @override
+  String get formulaOption => 'ミルク';
+
+  @override
+  String get expressedMilkOption => '搾乳';
+
+  @override
+  String get otherOption => 'その他';
+
+  @override
+  String get amountStyleLabel => '飲食量';
+
+  @override
+  String get qualitativeAmountOption => '感覚で';
+
+  @override
+  String get fractionAmountOption => '提供量に対して';
+
+  @override
+  String get exactAmountOption => '正確な量';
+
+  @override
+  String get sipAmountOption => 'ひと口';
+
+  @override
+  String get biteAmountOption => '味見だけ';
+
+  @override
+  String get littleAmountOption => '少し';
+
+  @override
+  String get normalAmountOption => '普通';
+
+  @override
+  String get muchAmountOption => 'たくさん';
+
+  @override
+  String get quarterAmountOption => '¼';
+
+  @override
+  String get halfAmountOption => '半分';
+
+  @override
+  String get almostAllAmountOption => 'ほぼ全部';
+
+  @override
+  String get allAmountOption => '全部';
+
+  @override
+  String get exactAmountLabel => '量';
+
+  @override
+  String get amountUnitLabel => '単位';
+
+  @override
+  String get mealTypeLabel => '食事区分';
+
+  @override
+  String get breakfastOption => '朝食';
+
+  @override
+  String get lunchOption => '昼食';
+
+  @override
+  String get dinnerOption => '夕食';
+
+  @override
+  String get foodNameLabel => '食べ物（任意）';
+
+  @override
+  String get snackNameLabel => 'おやつ名（任意）';
+
+  @override
+  String get reactionLabel => '反応（任意）';
+
+  @override
+  String get ateWellOption => 'よく食べた';
+
+  @override
+  String get averageReactionOption => '普通';
+
+  @override
+  String get refusedOption => '拒否';
+
+  @override
+  String get memoOptionalLabel => 'メモ（任意）';
+
+  @override
+  String get cupAmountOption => 'カップ基準';
+
+  @override
+  String get cupAmountInfoTitle => 'カップ単位について';
+
+  @override
+  String get cupAmountInfoBody =>
+      'ベビー用カップは製品ごとに異なりますが、200mL前後のものが多いです。カップ単位は目安であり、正確なmLには換算しません。';
+
+  @override
+  String get exactAmountRequired => '0より大きい量を入力してください。';
+
+  @override
   String get sleepEvent => '睡眠';
 
   @override

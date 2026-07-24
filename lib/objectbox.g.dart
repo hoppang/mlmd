@@ -31,7 +31,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 3014340625497478550),
     name: 'ActivityEntity',
-    lastPropertyId: const obx_int.IdUid(16, 4295721424088215806),
+    lastPropertyId: const obx_int.IdUid(17, 8109000737919216196),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -132,6 +132,12 @@ final _entities = <obx_int.ModelEntity>[
       obx_int.ModelProperty(
         id: const obx_int.IdUid(16, 4295721424088215806),
         name: 'customEventNameSnapshot',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 8109000737919216196),
+        name: 'structuredDataJson',
         type: 9,
         flags: 0,
       ),
@@ -1001,7 +1007,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
             object.customEventNameSnapshot == null
             ? null
             : fbb.writeString(object.customEventNameSnapshot!);
-        fbb.startTable(17);
+        final structuredDataJsonOffset = object.structuredDataJson == null
+            ? null
+            : fbb.writeString(object.structuredDataJson!);
+        fbb.startTable(18);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, typeOffset);
         fbb.addInt64(2, object.time.millisecondsSinceEpoch);
@@ -1018,6 +1027,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(13, object.revision);
         fbb.addOffset(14, customEventTypeIdOffset);
         fbb.addOffset(15, customEventNameSnapshotOffset);
+        fbb.addOffset(16, structuredDataJsonOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -1059,6 +1069,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final detailsParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 10, '');
+        final structuredDataJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 36);
         final customEventTypeIdParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 32);
@@ -1091,6 +1104,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           time: timeParam,
           timePrecision: timePrecisionParam,
           details: detailsParam,
+          structuredDataJson: structuredDataJsonParam,
           customEventTypeId: customEventTypeIdParam,
           customEventNameSnapshot: customEventNameSnapshotParam,
           lastModified: lastModifiedParam,
@@ -2196,6 +2210,11 @@ class ActivityEntity_ {
   /// See [ActivityEntity.customEventNameSnapshot].
   static final customEventNameSnapshot =
       obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[15]);
+
+  /// See [ActivityEntity.structuredDataJson].
+  static final structuredDataJson = obx.QueryStringProperty<ActivityEntity>(
+    _entities[0].properties[16],
+  );
 }
 
 /// [DiaryEntity] entity fields to define ObjectBox queries.

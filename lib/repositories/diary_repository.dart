@@ -308,6 +308,8 @@ class DiaryRepositoryImpl implements DiaryRepository {
           unmatchedOldActivities,
         );
         activity
+          ..structuredDataJson =
+              activity.structuredDataJson ?? previous?.structuredDataJson
           ..customEventTypeId =
               activity.customEventTypeId ?? previous?.customEventTypeId
           ..customEventNameSnapshot =
@@ -483,6 +485,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
       left.time.isAtSameMomentAs(right.time) &&
       left.timePrecision == right.timePrecision &&
       left.details == right.details &&
+      left.structuredDataJson == right.structuredDataJson &&
       left.customEventTypeId == right.customEventTypeId &&
       left.customEventNameSnapshot == right.customEventNameSnapshot;
 
@@ -517,6 +520,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
                   time: activity.time,
                   timePrecision: activity.timePrecision,
                   details: activity.details,
+                  structuredDataJson: activity.structuredDataJson,
                   createdAt: activity.createdAt,
                   createdByAuthorProfileId: activity.createdByAuthorProfileId,
                   createdByDeviceProfileId: activity.createdByDeviceProfileId,
@@ -648,6 +652,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
     _wallClockSignature(activity.time),
     activity.timePrecision.toString(),
     activity.details,
+    activity.structuredDataJson ?? '',
   ].join('\u0000');
 
   String _canonicalActivitySignature(CanonicalActivity activity) => [
@@ -655,6 +660,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
     _wallClockSignature(activity.time),
     activity.timePrecision.toString(),
     activity.details,
+    activity.structuredDataJson ?? '',
   ].join('\u0000');
 
   String _wallClockSignature(DateTime value) => [
@@ -738,6 +744,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
                 time: item.time,
                 timePrecision: item.timePrecision,
                 details: item.details,
+                structuredDataJson: item.structuredDataJson,
                 createdAt: item.createdAt ?? item.lastModified,
                 createdByAuthorProfileId:
                     item.createdByAuthorProfileId ??

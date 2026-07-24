@@ -109,6 +109,136 @@ class AppLocalizationsKo extends AppLocalizations {
   String get waterSnackEvent => '물·간식';
 
   @override
+  String get waterEvent => '물';
+
+  @override
+  String get snackEvent => '간식';
+
+  @override
+  String get feedingMethodLabel => '수유 방식';
+
+  @override
+  String get breastFeedingOption => '모유';
+
+  @override
+  String get bottleFeedingOption => '젖병';
+
+  @override
+  String get feedingTimeOnlyOption => '시각만';
+
+  @override
+  String get breastSideLabel => '수유한 쪽';
+
+  @override
+  String get leftSideOption => '왼쪽';
+
+  @override
+  String get rightSideOption => '오른쪽';
+
+  @override
+  String get bottleContentsLabel => '젖병 내용';
+
+  @override
+  String get formulaOption => '분유';
+
+  @override
+  String get expressedMilkOption => '유축 모유';
+
+  @override
+  String get otherOption => '기타';
+
+  @override
+  String get amountStyleLabel => '먹은 양';
+
+  @override
+  String get qualitativeAmountOption => '느낌으로';
+
+  @override
+  String get fractionAmountOption => '제공량 기준';
+
+  @override
+  String get exactAmountOption => '정확한 양';
+
+  @override
+  String get sipAmountOption => '한 모금';
+
+  @override
+  String get biteAmountOption => '맛만 봄';
+
+  @override
+  String get littleAmountOption => '조금';
+
+  @override
+  String get normalAmountOption => '보통';
+
+  @override
+  String get muchAmountOption => '많이';
+
+  @override
+  String get quarterAmountOption => '¼';
+
+  @override
+  String get halfAmountOption => '절반';
+
+  @override
+  String get almostAllAmountOption => '거의 다';
+
+  @override
+  String get allAmountOption => '전부';
+
+  @override
+  String get exactAmountLabel => '수치';
+
+  @override
+  String get amountUnitLabel => '단위';
+
+  @override
+  String get mealTypeLabel => '식사 구분';
+
+  @override
+  String get breakfastOption => '아침';
+
+  @override
+  String get lunchOption => '점심';
+
+  @override
+  String get dinnerOption => '저녁';
+
+  @override
+  String get foodNameLabel => '음식 이름 (선택)';
+
+  @override
+  String get snackNameLabel => '간식 이름 (선택)';
+
+  @override
+  String get reactionLabel => '반응 (선택)';
+
+  @override
+  String get ateWellOption => '잘 먹음';
+
+  @override
+  String get averageReactionOption => '보통';
+
+  @override
+  String get refusedOption => '거부함';
+
+  @override
+  String get memoOptionalLabel => '메모 (선택)';
+
+  @override
+  String get cupAmountOption => '컵 기준';
+
+  @override
+  String get cupAmountInfoTitle => '컵 단위 안내';
+
+  @override
+  String get cupAmountInfoBody =>
+      '아기용 컵은 제품마다 다르지만 대략 200mL 전후인 경우가 많아요. 컵 단위는 대략적인 기록이며 정확한 mL로 환산하지 않아요.';
+
+  @override
+  String get exactAmountRequired => '0보다 큰 수치를 입력해 주세요.';
+
+  @override
   String get sleepEvent => '수면';
 
   @override

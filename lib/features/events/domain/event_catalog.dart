@@ -9,7 +9,8 @@ enum EventCategoryId { basicCare, healthMedical, activityPlay, growthMemory }
 enum EventTypeId {
   feeding,
   meal,
-  waterSnack,
+  water,
+  snack,
   sleep,
   diaper,
   pumping,
@@ -44,7 +45,8 @@ class EventCatalogItem {
   String label(AppLocalizations loc) => switch (id) {
     EventTypeId.feeding => loc.feedingEvent,
     EventTypeId.meal => loc.mealEvent,
-    EventTypeId.waterSnack => loc.waterSnackEvent,
+    EventTypeId.water => loc.waterEvent,
+    EventTypeId.snack => loc.snackEvent,
     EventTypeId.sleep => loc.sleepEvent,
     EventTypeId.diaper => loc.diaperEvent,
     EventTypeId.pumping => loc.pumpingEvent,
@@ -80,10 +82,16 @@ const eventCatalog = <EventCatalogItem>[
     aliases: {'이유식·식사', 'Meal', '離乳食・食事'},
   ),
   EventCatalogItem(
-    id: EventTypeId.waterSnack,
+    id: EventTypeId.water,
     category: EventCategoryId.basicCare,
     icon: Icons.local_drink_outlined,
-    aliases: {'물·간식', 'Water · snack', '水分・おやつ'},
+    aliases: {'물', 'Water', '水', '물·간식', 'Water · snack', '水分・おやつ'},
+  ),
+  EventCatalogItem(
+    id: EventTypeId.snack,
+    category: EventCategoryId.basicCare,
+    icon: Icons.cookie_outlined,
+    aliases: {'간식', 'Snack', 'おやつ'},
   ),
   EventCatalogItem(
     id: EventTypeId.sleep,
@@ -167,6 +175,9 @@ const eventCatalog = <EventCatalogItem>[
 
 const defaultQuickEventIds = <EventTypeId>[
   EventTypeId.feeding,
+  EventTypeId.meal,
+  EventTypeId.water,
+  EventTypeId.snack,
   EventTypeId.sleep,
   EventTypeId.diaper,
   EventTypeId.temperature,
@@ -189,11 +200,13 @@ class RecentEventPreset {
     required this.item,
     required this.details,
     required this.occurredAt,
+    this.structuredDataJson,
   });
 
   final EventCatalogItem item;
   final String details;
   final DateTime occurredAt;
+  final String? structuredDataJson;
 
   String label(AppLocalizations loc) {
     final typeLabel = item.label(loc);
@@ -233,6 +246,7 @@ List<RecentEventPreset> buildRecentEventPresets(
         item: matched,
         details: activity.details,
         occurredAt: activity.time,
+        structuredDataJson: activity.structuredDataJson,
       ),
     );
     if (result.length == limit) break;
