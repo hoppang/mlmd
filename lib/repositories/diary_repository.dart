@@ -75,6 +75,13 @@ abstract class DiaryRepository {
   /// 없으면 타임라인용 빈 기록을 함께 만들어 이벤트가 고아가 되지 않게 합니다.
   int addActivityRecord(ActivityEntity activity);
 
+  /// 기존 이벤트를 같은 논리 레코드로 갱신합니다. 발생 시각의 날짜가
+  /// 달라지면 해당 날짜의 타임라인 컨테이너로 옮깁니다.
+  int updateActivityRecord(ActivityEntity activity);
+
+  /// 지정한 로컬 이벤트를 삭제합니다.
+  bool deleteActivityRecord(int id);
+
   /// 현재 저장소를 버전 독립적인 내보내기 모델로 스냅샷합니다.
   CanonicalExportDocument createExportDocument({required String appVersion});
 
@@ -378,6 +385,59 @@ class DiaryRepositoryImpl implements DiaryRepository {
       return _obxHelper.activityBox.put(activity);
     });
   }
+
+  @override
+  int updateActivityRecord(ActivityEntity activity) {
+    if (activity.id == 0) {
+      throw ArgumentError.value(activity.id, 'activity.id');
+    }
+    final previous = _obxHelper.activityBox.get(activity.id);
+    if (previous == null) {
+      throw StateError('Activity ${activity.id} does not exist.');
+    }
+    final sameDayDiaries =
+        _obxHelper.diaryBox
+            .getAll()
+            .where(
+              (diary) =>
+                  diary.date.year == activity.time.year &&
+                  diary.date.month == activity.time.month &&
+                  diary.date.day == activity.time.day,
+            )
+            .toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
+    final diary = sameDayDiaries.isEmpty
+        ? DiaryEntity(
+            date: activity.time,
+            title: '',
+            content: '',
+            lastModified: activity.lastModified,
+          )
+        : sameDayDiaries.first;
+    _prepareRecordId(diary);
+
+    return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final now = DateTime.now();
+      _prepareDiarySource(diary, now);
+      _obxHelper.diaryBox.put(diary);
+      activity.diary.target = diary;
+      _prepareActivityIdentity(
+        activity,
+        previous: previous,
+        used: _obxHelper.activityBox
+            .getAll()
+            .where((item) => item.id != activity.id)
+            .map((item) => item.recordId)
+            .whereType<String>()
+            .toSet(),
+      );
+      _prepareActivitySource(activity, now, previous: previous);
+      return _obxHelper.activityBox.put(activity);
+    });
+  }
+
+  @override
+  bool deleteActivityRecord(int id) => _obxHelper.activityBox.remove(id);
 
   void _prepareDiarySource(DiaryEntity diary, DateTime now) {
     final source = _profileRepository.requireCurrentSource();

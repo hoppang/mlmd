@@ -26,6 +26,7 @@ import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
 import 'package:mlmd/features/duplicate_review/application/duplicate_review_notifier.dart';
 import 'package:mlmd/features/events/application/custom_event_notifier.dart';
 import 'package:mlmd/features/events/domain/intake_record.dart';
+import 'package:mlmd/features/events/domain/sleep_record.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'package:mlmd/repositories/duplicate_review_repository.dart';
 import 'package:mlmd/models/duplicate_review_edge_entity.dart';
@@ -58,6 +59,10 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   String? addedCustomEventTypeId;
   String? addedCustomEventName;
   String? addedCustomEventMemo;
+  int sleepStartCallCount = 0;
+  bool sleepStartCreated = true;
+  ActivityEntity? completedSleep;
+  List<SleepRecordMarker>? updatedSleepMarkers;
 
   @override
   bool get isSemanticSearchAvailable => true;
@@ -119,6 +124,48 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     addedCustomEventName = nameSnapshot;
     addedCustomEventMemo = memo;
     addedActivityOccurredAt = occurredAt;
+  }
+
+  @override
+  Future<SleepStartResult> startSleep({
+    required String type,
+    DateTime? startedAt,
+  }) async {
+    if (activitySaveError != null) throw activitySaveError!;
+    sleepStartCallCount++;
+    final activity = ActivityEntity(
+      id: 99,
+      recordId: 'sleep-record',
+      type: type,
+      time: startedAt ?? DateTime.now(),
+      details: '',
+      structuredDataJson: SleepRecord(
+        status: SleepRecordStatus.active,
+        kind: SleepRecordKind.unspecified,
+        source: SleepRecordSource.suggested,
+        startedAt: startedAt ?? DateTime.now(),
+      ).encode(),
+      lastModified: DateTime.now(),
+    );
+    return SleepStartResult(activity: activity, created: sleepStartCreated);
+  }
+
+  @override
+  Future<void> completeSleep(
+    ActivityEntity activity, {
+    DateTime? endedAt,
+    required String details,
+  }) async {
+    completedSleep = activity;
+  }
+
+  @override
+  Future<void> updateSleepMarkers(
+    String recordId,
+    List<SleepRecordMarker> markers, {
+    required String details,
+  }) async {
+    updatedSleepMarkers = markers;
   }
 
   @override
@@ -572,6 +619,57 @@ void main() {
     expect(find.text('비타민 기록을 저장했어요.'), findsOneWidget);
   });
 
+  testWidgets('빠른 수면은 추가 입력 없이 즉시 시작하고 중복 시작을 알린다', (tester) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-record-sleep')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.sleepStartCallCount, 1);
+    expect(find.text('수면 기록을 시작했어요.'), findsOneWidget);
+    expect(find.byKey(const Key('record-entry-picker')), findsNothing);
+
+    notifier.sleepStartCreated = false;
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-record-sleep')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.sleepStartCallCount, 2);
+    expect(find.text('이미 진행 중인 수면이 있어요.'), findsOneWidget);
+  });
+
+  testWidgets('전체 카테고리의 수면은 끝난 구간과 관찰 표지를 직접 저장한다', (tester) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('event-category-basicCare')));
+    await tester.pumpAndSettle();
+    final sleepItem = find.byKey(const Key('category-event-sleep'));
+    await tester.ensureVisible(sleepItem);
+    await tester.tap(sleepItem);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('sleep-record-form')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('sleep-marker-restful')));
+    await tester.tap(find.byKey(const Key('save-sleep-record')));
+    await tester.pumpAndSettle();
+
+    final saved = SleepRecord.decode(notifier.addedActivityStructuredDataJson!);
+    expect(saved?.status, SleepRecordStatus.completed);
+    expect(saved?.endedAt?.isAfter(saved.startedAt), isTrue);
+    expect(saved?.markers, [SleepRecordMarker.restful]);
+    expect(notifier.addedActivityOccurredAt, saved?.endedAt);
+    expect(notifier.addedActivityDetails, contains('푹 잠'));
+  });
+
   testWidgets('빠른 기록 저장 실패 시 입력을 유지하고 다시 시도할 수 있다', (tester) async {
     final notifier = _TestDiaryListNotifier(
       const [],
@@ -583,7 +681,7 @@ void main() {
     await tester.tap(find.byKey(const Key('record-entry-button')));
     await tester.pumpAndSettle();
     expect(find.text('최근 사용'), findsNothing);
-    await tester.tap(find.byKey(const Key('quick-record-sleep')));
+    await tester.tap(find.byKey(const Key('quick-record-temperature')));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('quick-record-details')),
@@ -648,6 +746,93 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DiaryFormPage), findsOneWidget);
+  });
+
+  testWidgets('오늘 화면은 진행 중 수면을 별도 카드에서 즉시 종료한다', (tester) async {
+    final now = DateTime.now();
+    final startedAt = now.subtract(const Duration(hours: 1, minutes: 5));
+    final diary = DiaryEntity(
+      id: 1,
+      recordId: 'sleep-container',
+      date: startedAt,
+      title: '',
+      content: '',
+      lastModified: now,
+    );
+    final sleep = ActivityEntity(
+      id: 88,
+      recordId: 'active-sleep-record',
+      type: '수면',
+      time: startedAt,
+      details: '',
+      structuredDataJson: SleepRecord(
+        status: SleepRecordStatus.active,
+        kind: SleepRecordKind.unspecified,
+        source: SleepRecordSource.suggested,
+        startedAt: startedAt,
+      ).encode(),
+      lastModified: now,
+    );
+    diary.activities.add(sleep);
+    final notifier = _TestDiaryListNotifier([diary]);
+
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('active-sleep-active-sleep-record')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('edit-active-sleep-start')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('end-active-sleep')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.completedSleep?.recordId, 'active-sleep-record');
+    expect(find.text('수면 기록을 종료했어요.'), findsOneWidget);
+  });
+
+  testWidgets('종료된 수면의 관찰 표지는 타임라인에서 나중에 추가한다', (tester) async {
+    final now = DateTime.now();
+    final startedAt = now.subtract(const Duration(hours: 2));
+    final diary = DiaryEntity(
+      id: 1,
+      recordId: 'completed-sleep-container',
+      date: now,
+      title: '',
+      content: '',
+      lastModified: now,
+    );
+    final sleep = ActivityEntity(
+      id: 89,
+      recordId: 'completed-sleep-record',
+      type: '수면',
+      time: now,
+      details: '2시간 · 낮잠',
+      structuredDataJson: SleepRecord(
+        status: SleepRecordStatus.completed,
+        kind: SleepRecordKind.nap,
+        source: SleepRecordSource.suggested,
+        startedAt: startedAt,
+        endedAt: now,
+      ).encode(),
+      lastModified: now,
+    );
+    diary.activities.add(sleep);
+    final notifier = _TestDiaryListNotifier([diary]);
+
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('add-sleep-markers-completed-sleep-record')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('edit-sleep-marker-frequentWaking')));
+    await tester.tap(find.byKey(const Key('save-sleep-markers')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.updatedSleepMarkers, [SleepRecordMarker.frequentWaking]);
+    expect(find.text('수면 상태를 저장했어요.'), findsOneWidget);
   });
 
   testWidgets('저장된 초안은 홈 카드에 표시하고 명시적으로 이어서 작성한다', (tester) async {

@@ -15,6 +15,7 @@ import 'package:mlmd/models/shared_custom_event_definition_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
 import 'package:mlmd/features/events/application/custom_event_notifier.dart';
+import 'package:mlmd/features/events/domain/sleep_record.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/activity_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
@@ -1014,6 +1015,62 @@ void main() {
       expect(activity.lastModifiedByAuthorProfileId, source.authorProfileId);
       expect(activity.lastModifiedByDeviceProfileId, source.deviceProfileId);
       expect(activity.structuredDataJson, contains('"kind":"feeding"'));
+    });
+
+    test('sleep completion preserves identity and moves to the end date', () {
+      final firstSource = profileRepo.requireCurrentSource();
+      final startedAt = DateTime(2026, 7, 24, 23);
+      final endedAt = DateTime(2026, 7, 25, 1);
+      diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: '수면',
+          time: startedAt,
+          details: '',
+          structuredDataJson: SleepRecord(
+            status: SleepRecordStatus.active,
+            kind: SleepRecordKind.unspecified,
+            source: SleepRecordSource.suggested,
+            startedAt: startedAt,
+          ).encode(),
+          lastModified: startedAt,
+        ),
+      );
+      final started = activityRepo.getActivities().single;
+      final recordId = started.recordId;
+
+      final secondAuthor = profileRepo.createAuthor(
+        nickname: '종료한 작성자',
+        colorValue: 0xFF6A1B9A,
+      );
+      started
+        ..time = endedAt
+        ..details = '2시간 · 밤잠'
+        ..structuredDataJson = SleepRecord(
+          status: SleepRecordStatus.completed,
+          kind: SleepRecordKind.night,
+          source: SleepRecordSource.suggested,
+          startedAt: startedAt,
+          endedAt: endedAt,
+          endedByAuthorProfileId: secondAuthor.authorProfileId,
+          endedByDeviceProfileId: firstSource.deviceProfileId,
+        ).encode();
+      diaryRepo.updateActivityRecord(started);
+
+      final completed = activityRepo.getActivities().single;
+      expect(completed.recordId, recordId);
+      expect(completed.revision, 2);
+      expect(completed.createdByAuthorProfileId, firstSource.authorProfileId);
+      expect(
+        completed.lastModifiedByAuthorProfileId,
+        secondAuthor.authorProfileId,
+      );
+      final endDay = diaryRepo.getDiaries().firstWhere(
+        (diary) =>
+            diary.date.year == endedAt.year &&
+            diary.date.month == endedAt.month &&
+            diary.date.day == endedAt.day,
+      );
+      expect(endDay.activities.single.recordId, recordId);
     });
 
     test('removing an earlier event does not move its creator to another', () {

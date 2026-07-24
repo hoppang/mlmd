@@ -1077,4 +1077,112 @@ class AppLocalizationsEn extends AppLocalizations {
   String archiveCustomEventDescription(String name) {
     return '“$name” will be hidden from My records. Past records will remain unchanged.';
   }
+
+  @override
+  String get sleepStarted => 'Sleep tracking started.';
+
+  @override
+  String get sleepAlreadyActive => 'A sleep session is already in progress.';
+
+  @override
+  String sleepInProgress(String duration) {
+    return 'Sleeping · $duration';
+  }
+
+  @override
+  String sleepSince(String time) {
+    return 'Since $time';
+  }
+
+  @override
+  String get wakeUp => 'Woke up';
+
+  @override
+  String get sleepEnded => 'Sleep tracking ended.';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get editStartTime => 'Edit start time';
+
+  @override
+  String get addSleepMarkers => 'Add observations';
+
+  @override
+  String get sleepMarkersTitle => 'Observed sleep';
+
+  @override
+  String get sleepMarkersHint =>
+      'Select any that apply. These are observations, not measured sleep depth.';
+
+  @override
+  String get sleepMarkerRestful => 'Slept well';
+
+  @override
+  String get sleepMarkerRestless => 'Restless';
+
+  @override
+  String get sleepMarkerWokeUp => 'Woke during sleep';
+
+  @override
+  String get sleepMarkerFrequentWaking => 'Woke often';
+
+  @override
+  String get sleepMarkersSaved => 'Sleep observations saved.';
+
+  @override
+  String get directSleepEntry => 'Enter completed sleep';
+
+  @override
+  String get sleepStartTime => 'Start time';
+
+  @override
+  String get sleepEndTime => 'End time';
+
+  @override
+  String get sleepKind => 'Sleep type';
+
+  @override
+  String get sleepKindUnspecified => 'Not specified';
+
+  @override
+  String get sleepKindNap => 'Nap';
+
+  @override
+  String get sleepKindNight => 'Night sleep';
+
+  @override
+  String get sleepKindSuggested =>
+      'Suggested from the time. You can change it.';
+
+  @override
+  String get sleepNote => 'Note (optional)';
+
+  @override
+  String get sleepTimeInvalid => 'The end time must be after the start time.';
+
+  @override
+  String get sleepFutureInvalid => 'Completed sleep cannot end in the future.';
+
+  @override
+  String get saveSleep => 'Save sleep';
+
+  @override
+  String sleepDurationHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String sleepDurationHours(int hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String sleepDurationMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String get sleepDurationLessThanMinute => 'Less than 1m';
 }

@@ -1043,4 +1043,110 @@ class AppLocalizationsJa extends AppLocalizations {
   String archiveCustomEventDescription(String name) {
     return '「$name」は自分の記録から非表示になりますが、過去の記録はそのまま残ります。';
   }
+
+  @override
+  String get sleepStarted => '睡眠記録を開始しました。';
+
+  @override
+  String get sleepAlreadyActive => '進行中の睡眠があります。';
+
+  @override
+  String sleepInProgress(String duration) {
+    return '睡眠中・$duration';
+  }
+
+  @override
+  String sleepSince(String time) {
+    return '$timeから';
+  }
+
+  @override
+  String get wakeUp => '起きました';
+
+  @override
+  String get sleepEnded => '睡眠記録を終了しました。';
+
+  @override
+  String get undo => '元に戻す';
+
+  @override
+  String get editStartTime => '開始時刻を修正';
+
+  @override
+  String get addSleepMarkers => '状態を追加';
+
+  @override
+  String get sleepMarkersTitle => '観察した睡眠状態';
+
+  @override
+  String get sleepMarkersHint => '複数選択できます。実際の睡眠の深さを測定した値ではありません。';
+
+  @override
+  String get sleepMarkerRestful => 'よく眠った';
+
+  @override
+  String get sleepMarkerRestless => '寝返りが多い';
+
+  @override
+  String get sleepMarkerWokeUp => '途中で起きた';
+
+  @override
+  String get sleepMarkerFrequentWaking => '何度も起きた';
+
+  @override
+  String get sleepMarkersSaved => '睡眠状態を保存しました。';
+
+  @override
+  String get directSleepEntry => '終了した睡眠を入力';
+
+  @override
+  String get sleepStartTime => '開始時刻';
+
+  @override
+  String get sleepEndTime => '終了時刻';
+
+  @override
+  String get sleepKind => '睡眠区分';
+
+  @override
+  String get sleepKindUnspecified => '指定しない';
+
+  @override
+  String get sleepKindNap => '昼寝';
+
+  @override
+  String get sleepKindNight => '夜の睡眠';
+
+  @override
+  String get sleepKindSuggested => '時刻をもとに提案しました。必要に応じて変更できます。';
+
+  @override
+  String get sleepNote => 'メモ（任意）';
+
+  @override
+  String get sleepTimeInvalid => '終了時刻は開始時刻より後にしてください。';
+
+  @override
+  String get sleepFutureInvalid => '終了した睡眠を未来の時刻で保存することはできません。';
+
+  @override
+  String get saveSleep => '睡眠記録を保存';
+
+  @override
+  String sleepDurationHoursMinutes(int hours, int minutes) {
+    return '$hours時間$minutes分';
+  }
+
+  @override
+  String sleepDurationHours(int hours) {
+    return '$hours時間';
+  }
+
+  @override
+  String sleepDurationMinutes(int minutes) {
+    return '$minutes分';
+  }
+
+  @override
+  String get sleepDurationLessThanMinute => '1分未満';
 }

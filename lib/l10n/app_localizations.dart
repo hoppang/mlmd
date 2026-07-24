@@ -2055,6 +2055,198 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'‘{name}’은 나만의 기록에서 숨겨지지만 과거 기록은 그대로 유지됩니다.'**
   String archiveCustomEventDescription(String name);
+
+  /// No description provided for @sleepStarted.
+  ///
+  /// In ko, this message translates to:
+  /// **'수면 기록을 시작했어요.'**
+  String get sleepStarted;
+
+  /// No description provided for @sleepAlreadyActive.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미 진행 중인 수면이 있어요.'**
+  String get sleepAlreadyActive;
+
+  /// No description provided for @sleepInProgress.
+  ///
+  /// In ko, this message translates to:
+  /// **'수면 중 · {duration}'**
+  String sleepInProgress(String duration);
+
+  /// No description provided for @sleepSince.
+  ///
+  /// In ko, this message translates to:
+  /// **'{time}부터'**
+  String sleepSince(String time);
+
+  /// No description provided for @wakeUp.
+  ///
+  /// In ko, this message translates to:
+  /// **'깨어났어요'**
+  String get wakeUp;
+
+  /// No description provided for @sleepEnded.
+  ///
+  /// In ko, this message translates to:
+  /// **'수면 기록을 종료했어요.'**
+  String get sleepEnded;
+
+  /// No description provided for @undo.
+  ///
+  /// In ko, this message translates to:
+  /// **'실행 취소'**
+  String get undo;
+
+  /// No description provided for @editStartTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 시각 수정'**
+  String get editStartTime;
+
+  /// No description provided for @addSleepMarkers.
+  ///
+  /// In ko, this message translates to:
+  /// **'상태 추가'**
+  String get addSleepMarkers;
+
+  /// No description provided for @sleepMarkersTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'관찰한 수면 상태'**
+  String get sleepMarkersTitle;
+
+  /// No description provided for @sleepMarkersHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'여러 개를 선택할 수 있어요. 실제 수면 깊이를 측정한 값은 아닙니다.'**
+  String get sleepMarkersHint;
+
+  /// No description provided for @sleepMarkerRestful.
+  ///
+  /// In ko, this message translates to:
+  /// **'푹 잠'**
+  String get sleepMarkerRestful;
+
+  /// No description provided for @sleepMarkerRestless.
+  ///
+  /// In ko, this message translates to:
+  /// **'뒤척임'**
+  String get sleepMarkerRestless;
+
+  /// No description provided for @sleepMarkerWokeUp.
+  ///
+  /// In ko, this message translates to:
+  /// **'중간에 깸'**
+  String get sleepMarkerWokeUp;
+
+  /// No description provided for @sleepMarkerFrequentWaking.
+  ///
+  /// In ko, this message translates to:
+  /// **'자주 깸'**
+  String get sleepMarkerFrequentWaking;
+
+  /// No description provided for @sleepMarkersSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'수면 상태를 저장했어요.'**
+  String get sleepMarkersSaved;
+
+  /// No description provided for @directSleepEntry.
+  ///
+  /// In ko, this message translates to:
+  /// **'끝난 수면 직접 입력'**
+  String get directSleepEntry;
+
+  /// No description provided for @sleepStartTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 시각'**
+  String get sleepStartTime;
+
+  /// No description provided for @sleepEndTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'종료 시각'**
+  String get sleepEndTime;
+
+  /// No description provided for @sleepKind.
+  ///
+  /// In ko, this message translates to:
+  /// **'수면 구분'**
+  String get sleepKind;
+
+  /// No description provided for @sleepKindUnspecified.
+  ///
+  /// In ko, this message translates to:
+  /// **'구분 안 함'**
+  String get sleepKindUnspecified;
+
+  /// No description provided for @sleepKindNap.
+  ///
+  /// In ko, this message translates to:
+  /// **'낮잠'**
+  String get sleepKindNap;
+
+  /// No description provided for @sleepKindNight.
+  ///
+  /// In ko, this message translates to:
+  /// **'밤잠'**
+  String get sleepKindNight;
+
+  /// No description provided for @sleepKindSuggested.
+  ///
+  /// In ko, this message translates to:
+  /// **'시각을 기준으로 제안했어요. 필요하면 바꿀 수 있습니다.'**
+  String get sleepKindSuggested;
+
+  /// No description provided for @sleepNote.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모 (선택)'**
+  String get sleepNote;
+
+  /// No description provided for @sleepTimeInvalid.
+  ///
+  /// In ko, this message translates to:
+  /// **'종료 시각은 시작 시각보다 늦어야 해요.'**
+  String get sleepTimeInvalid;
+
+  /// No description provided for @sleepFutureInvalid.
+  ///
+  /// In ko, this message translates to:
+  /// **'끝난 수면은 미래 시각으로 저장할 수 없어요.'**
+  String get sleepFutureInvalid;
+
+  /// No description provided for @saveSleep.
+  ///
+  /// In ko, this message translates to:
+  /// **'수면 기록 저장'**
+  String get saveSleep;
+
+  /// No description provided for @sleepDurationHoursMinutes.
+  ///
+  /// In ko, this message translates to:
+  /// **'{hours}시간 {minutes}분'**
+  String sleepDurationHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @sleepDurationHours.
+  ///
+  /// In ko, this message translates to:
+  /// **'{hours}시간'**
+  String sleepDurationHours(int hours);
+
+  /// No description provided for @sleepDurationMinutes.
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분'**
+  String sleepDurationMinutes(int minutes);
+
+  /// No description provided for @sleepDurationLessThanMinute.
+  ///
+  /// In ko, this message translates to:
+  /// **'1분 미만'**
+  String get sleepDurationLessThanMinute;
 }
 
 class _AppLocalizationsDelegate

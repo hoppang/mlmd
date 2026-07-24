@@ -244,7 +244,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
   Future<void> _showRecordEntry() async {
     final diaries = ref.read(diaryListProvider);
     var openDetailedRecord = false;
-    final savedType = await showAdaptiveDetail<String>(
+    final result = await showAdaptiveDetail<RecordEntryResult>(
       context: context,
       builder: (sheetContext) => RecordEntrySheet(
         recentPresets: buildRecentEventPresets(diaries),
@@ -264,6 +264,12 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
               memo: memo,
               occurredAt: occurredAt,
             ),
+        onStartSleep: (type, startedAt) async {
+          final result = await ref
+              .read(diaryListProvider.notifier)
+              .startSleep(type: type, startedAt: startedAt);
+          return result.created;
+        },
         onOpenDetailedRecord: () {
           openDetailedRecord = true;
           Navigator.pop(sheetContext);
@@ -275,13 +281,32 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       _navigateToFormPage(context);
       return;
     }
-    if (savedType != null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
+    if (result == null) return;
+    final loc = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    switch (result.kind) {
+      case RecordEntryResultKind.saved:
+        messenger.showSnackBar(
+          SnackBar(content: Text(loc.quickRecordSaved(result.savedName!))),
+        );
+      case RecordEntryResultKind.sleepAlreadyActive:
+        messenger.showSnackBar(SnackBar(content: Text(loc.sleepAlreadyActive)));
+      case RecordEntryResultKind.sleepStarted:
+        messenger.showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.quickRecordSaved(savedType),
+            content: Text(loc.sleepStarted),
+            action: SnackBarAction(
+              label: loc.undo,
+              onPressed: () {
+                final active = activeSleepActivities(
+                  ref.read(diaryListProvider),
+                );
+                if (active.isNotEmpty && active.first.recordId != null) {
+                  ref
+                      .read(diaryListProvider.notifier)
+                      .deleteActivityRecord(active.first.recordId!);
+                }
+              },
             ),
           ),
         );

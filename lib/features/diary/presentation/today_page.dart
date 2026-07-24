@@ -16,6 +16,8 @@ import '../../../repositories/record_draft_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../drafts/presentation/draft_resume_card.dart';
 import '../../duplicate_review/application/duplicate_review_notifier.dart';
+import '../../events/domain/sleep_record.dart';
+import '../../events/presentation/sleep_event_form.dart';
 import '../../../models/duplicate_review_edge_entity.dart';
 import '../../profiles/presentation/record_author_tag.dart';
 import '../application/diary_draft_payload.dart';
@@ -38,17 +40,22 @@ class TodayPage extends ConsumerStatefulWidget {
 class _TodayPageState extends ConsumerState<TodayPage> {
   late DateTime _today;
   Timer? _midnightTimer;
+  Timer? _elapsedTimer;
 
   @override
   void initState() {
     super.initState();
     _today = DateTime.now();
     _scheduleMidnightRefresh();
+    _elapsedTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _midnightTimer?.cancel();
+    _elapsedTimer?.cancel();
     super.dispose();
   }
 
@@ -108,6 +115,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         entries.add(_TodayTimelineEntry(diary: diary));
       }
       for (final activity in diary.activities) {
+        final sleep = SleepRecord.decode(activity.structuredDataJson ?? '');
+        if (sleep?.status == SleepRecordStatus.active) continue;
         entries.add(_TodayTimelineEntry(diary: diary, activity: activity));
       }
     }
@@ -119,6 +128,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final counts = <String, int>{};
     for (final diary in todayDiaries) {
       for (final activity in diary.activities) {
+        final sleep = SleepRecord.decode(activity.structuredDataJson ?? '');
+        if (sleep?.status == SleepRecordStatus.active) continue;
         final type = activity.type.trim();
         if (type.isNotEmpty) {
           counts.update(type, (count) => count + 1, ifAbsent: () => 1);
@@ -145,6 +156,166 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     }
   }
 
+  Future<void> _completeSleep(ActivityEntity activity) async {
+    final record = SleepRecord.decode(activity.structuredDataJson ?? '');
+    if (record == null || record.status != SleepRecordStatus.active) return;
+    final endedAt = DateTime.now();
+    final completed = SleepRecord(
+      status: SleepRecordStatus.completed,
+      kind: suggestSleepKind(record.startedAt, endedAt),
+      source: SleepRecordSource.suggested,
+      startedAt: record.startedAt,
+      endedAt: endedAt,
+      markers: record.markers,
+      note: record.note,
+    );
+    await ref
+        .read(diaryListProvider.notifier)
+        .completeSleep(
+          activity,
+          endedAt: endedAt,
+          details: sleepRecordDetails(AppLocalizations.of(context)!, completed),
+        );
+    if (!mounted) return;
+    final recordId = activity.recordId;
+    final loc = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(loc.sleepEnded),
+          action: recordId == null
+              ? null
+              : SnackBarAction(
+                  label: loc.undo,
+                  onPressed: () => ref
+                      .read(diaryListProvider.notifier)
+                      .reopenSleep(recordId),
+                ),
+        ),
+      );
+  }
+
+  Future<void> _editActiveSleepStart(ActivityEntity activity) async {
+    final record = SleepRecord.decode(activity.structuredDataJson ?? '');
+    final recordId = activity.recordId;
+    if (record == null ||
+        record.status != SleepRecordStatus.active ||
+        recordId == null) {
+      return;
+    }
+    final date = await showDatePicker(
+      context: context,
+      initialDate: record.startedAt,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(record.startedAt),
+    );
+    if (time == null) return;
+    final value = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    if (value.isAfter(DateTime.now())) return;
+    await ref
+        .read(diaryListProvider.notifier)
+        .editActiveSleepStart(recordId, value);
+  }
+
+  Future<void> _editSleepMarkers(ActivityEntity activity) async {
+    final record = SleepRecord.decode(activity.structuredDataJson ?? '');
+    final recordId = activity.recordId;
+    if (record == null ||
+        record.status != SleepRecordStatus.completed ||
+        recordId == null) {
+      return;
+    }
+    final selected = record.markers.toSet();
+    final result = await showDialog<List<SleepRecordMarker>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final loc = AppLocalizations.of(context)!;
+          return AlertDialog(
+            title: Text(loc.sleepMarkersTitle),
+            content: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(loc.sleepMarkersHint),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      for (final marker in SleepRecordMarker.values)
+                        FilterChip(
+                          key: Key('edit-sleep-marker-${marker.name}'),
+                          label: Text(sleepMarkerLabel(loc, marker)),
+                          selected: selected.contains(marker),
+                          onSelected: (value) => setDialogState(() {
+                            value
+                                ? selected.add(marker)
+                                : selected.remove(marker);
+                          }),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(loc.cancel),
+              ),
+              FilledButton(
+                key: const Key('save-sleep-markers'),
+                onPressed: () => Navigator.pop(
+                  dialogContext,
+                  selected.toList(growable: false),
+                ),
+                child: Text(loc.saveRecord),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (result == null || !mounted) return;
+    final updated = SleepRecord(
+      status: record.status,
+      kind: record.kind,
+      source: record.source,
+      startedAt: record.startedAt,
+      endedAt: record.endedAt,
+      markers: result,
+      endedByAuthorProfileId: record.endedByAuthorProfileId,
+      endedByDeviceProfileId: record.endedByDeviceProfileId,
+      note: record.note,
+    );
+    await ref
+        .read(diaryListProvider.notifier)
+        .updateSleepMarkers(
+          recordId,
+          result,
+          details: sleepRecordDetails(AppLocalizations.of(context)!, updated),
+        );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.sleepMarkersSaved)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final diaries = ref.watch(diaryListProvider);
@@ -156,6 +327,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         )
         .length;
     final loc = AppLocalizations.of(context)!;
+    final activeSleeps = activeSleepActivities(diaries);
     final todayDiaries = diaries
         .where((diary) => _isToday(diary.date))
         .toList();
@@ -220,6 +392,21 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                 ),
               ),
             ),
+          if (activeSleeps.isNotEmpty) ...[
+            SliverAppSectionHeader(title: loc.sleepEvent),
+            SliverList.separated(
+              itemCount: activeSleeps.length,
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
+              itemBuilder: (context, index) {
+                final activity = activeSleeps[index];
+                return _ActiveSleepCard(
+                  activity: activity,
+                  onEnd: () => _completeSleep(activity),
+                  onEditStart: () => _editActiveSleepStart(activity),
+                );
+              },
+            ),
+          ],
           if (counts.isNotEmpty) ...[
             SliverAppSectionHeader(title: loc.todayStatusTitle),
             SliverToBoxAdapter(
@@ -273,6 +460,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                   entry: entry,
                   showAuthorTag: showAuthorTags,
                   onTap: () => _openEntry(entry),
+                  onAddSleepMarkers:
+                      entry.sleepRecord?.status == SleepRecordStatus.completed
+                      ? () => _editSleepMarkers(entry.activity!)
+                      : null,
                 );
               },
             ),
@@ -317,6 +508,71 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   }
 }
 
+class _ActiveSleepCard extends StatelessWidget {
+  const _ActiveSleepCard({
+    required this.activity,
+    required this.onEnd,
+    required this.onEditStart,
+  });
+
+  final ActivityEntity activity;
+  final VoidCallback onEnd;
+  final VoidCallback onEditStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final record = SleepRecord.decode(activity.structuredDataJson ?? '');
+    if (record == null) return const SizedBox.shrink();
+    final elapsed = DateTime.now().difference(record.startedAt);
+    final time = MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay.fromDateTime(record.startedAt));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Card(
+        key: Key('active-sleep-${activity.recordId ?? activity.id}'),
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        child: Padding(
+          padding: AppInsets.card,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                loc.sleepInProgress(formatSleepDuration(loc, elapsed)),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                loc.sleepSince(time),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  TextButton.icon(
+                    key: const Key('edit-active-sleep-start'),
+                    onPressed: onEditStart,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(loc.editStartTime),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    key: const Key('end-active-sleep'),
+                    onPressed: onEnd,
+                    icon: const Icon(Icons.wb_sunny_outlined),
+                    label: Text(loc.wakeUp),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TodayTimelineEntry {
   const _TodayTimelineEntry({required this.diary, this.activity});
 
@@ -335,6 +591,8 @@ class _TodayTimelineEntry {
       : 'today-activity:${activity!.id}';
   String? get authorProfileId =>
       activity?.createdByAuthorProfileId ?? diary.createdByAuthorProfileId;
+  SleepRecord? get sleepRecord =>
+      SleepRecord.decode(activity?.structuredDataJson ?? '');
 }
 
 class _TimelineItem extends StatelessWidget {
@@ -342,12 +600,14 @@ class _TimelineItem extends StatelessWidget {
     required this.entry,
     required this.showAuthorTag,
     required this.onTap,
+    this.onAddSleepMarkers,
     super.key,
   });
 
   final _TodayTimelineEntry entry;
   final bool showAuthorTag;
   final VoidCallback onTap;
+  final VoidCallback? onAddSleepMarkers;
 
   @override
   Widget build(BuildContext context) {
@@ -410,6 +670,20 @@ class _TimelineItem extends StatelessWidget {
                         entry.content,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (onAddSleepMarkers != null) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          key: Key(
+                            'add-sleep-markers-${entry.activity!.recordId ?? entry.activity!.id}',
+                          ),
+                          onPressed: onAddSleepMarkers,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: Text(loc.addSleepMarkers),
+                        ),
                       ),
                     ],
                   ],

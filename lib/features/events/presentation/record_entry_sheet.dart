@@ -8,6 +8,7 @@ import '../../../models/shared_custom_event_definition_entity.dart';
 import '../application/custom_event_notifier.dart';
 import '../domain/event_catalog.dart';
 import 'intake_event_form.dart';
+import 'sleep_event_form.dart';
 
 typedef SaveEventRecord =
     Future<void> Function(
@@ -23,12 +24,24 @@ typedef SaveCustomEventRecord =
       String memo,
       DateTime occurredAt,
     );
+typedef StartSleepRecord =
+    Future<bool> Function(String type, DateTime startedAt);
+
+enum RecordEntryResultKind { saved, sleepStarted, sleepAlreadyActive }
+
+class RecordEntryResult {
+  const RecordEntryResult(this.kind, {this.savedName});
+
+  final RecordEntryResultKind kind;
+  final String? savedName;
+}
 
 class RecordEntrySheet extends ConsumerStatefulWidget {
   const RecordEntrySheet({
     required this.recentPresets,
     required this.onSave,
     required this.onSaveCustom,
+    required this.onStartSleep,
     required this.onOpenDetailedRecord,
     super.key,
   });
@@ -36,6 +49,7 @@ class RecordEntrySheet extends ConsumerStatefulWidget {
   final List<RecentEventPreset> recentPresets;
   final SaveEventRecord onSave;
   final SaveCustomEventRecord onSaveCustom;
+  final StartSleepRecord onStartSleep;
   final VoidCallback onOpenDetailedRecord;
 
   @override
@@ -127,7 +141,10 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
         );
       }
       if (mounted) {
-        Navigator.pop(context, savedName);
+        Navigator.pop(
+          context,
+          RecordEntryResult(RecordEntryResultKind.saved, savedName: savedName),
+        );
       }
     } catch (_) {
       if (!mounted) return;
@@ -153,7 +170,71 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
         _occurredAt,
         result.record.encode(),
       );
-      if (mounted) Navigator.pop(context, savedName);
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(RecordEntryResultKind.saved, savedName: savedName),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _startSleep(EventCatalogItem item) async {
+    if (_saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final created = await widget.onStartSleep(
+        item.label(AppLocalizations.of(context)!),
+        DateTime.now(),
+      );
+      if (!mounted) return;
+      Navigator.pop(
+        context,
+        RecordEntryResult(
+          created
+              ? RecordEntryResultKind.sleepStarted
+              : RecordEntryResultKind.sleepAlreadyActive,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _saveSleep(SleepFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = selected.label(AppLocalizations.of(context)!);
+      await widget.onSave(
+        savedName,
+        result.details,
+        result.record.endedAt!,
+        result.record.encode(),
+      );
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(RecordEntryResultKind.saved, savedName: savedName),
+        );
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -230,7 +311,10 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                 key: const ValueKey('event-picker'),
                 recentPresets: widget.recentPresets,
                 customState: customState,
+                saving: _saving,
+                error: _error,
                 onSelect: _select,
+                onStartSleep: _startSleep,
                 onSelectCustom: _selectCustom,
                 onCreateCustom: _createCustomEvent,
                 onRenameCustom: _renameCustomEvent,
@@ -246,6 +330,17 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                       );
                 },
                 onOpenDetailedRecord: widget.onOpenDetailedRecord,
+              )
+            : custom == null && selected!.id == EventTypeId.sleep
+            ? SleepEventForm(
+                key: const ValueKey('sleep'),
+                saving: _saving,
+                error: _error,
+                onBack: () => setState(() {
+                  _selectedItem = null;
+                  _error = null;
+                }),
+                onSave: _saveSleep,
               )
             : custom == null && _isIntakeEvent(selected!.id)
             ? IntakeEventForm(
@@ -292,7 +387,10 @@ class _EventPicker extends StatelessWidget {
   const _EventPicker({
     required this.recentPresets,
     required this.customState,
+    required this.saving,
+    required this.error,
     required this.onSelect,
+    required this.onStartSleep,
     required this.onSelectCustom,
     required this.onCreateCustom,
     required this.onRenameCustom,
@@ -304,12 +402,15 @@ class _EventPicker extends StatelessWidget {
 
   final List<RecentEventPreset> recentPresets;
   final CustomEventCatalogState customState;
+  final bool saving;
+  final String? error;
   final void Function(
     EventCatalogItem item, {
     String details,
     String? structuredDataJson,
   })
   onSelect;
+  final ValueChanged<EventCatalogItem> onStartSleep;
   final ValueChanged<SharedCustomEventDefinitionEntity> onSelectCustom;
   final VoidCallback onCreateCustom;
   final ValueChanged<SharedCustomEventDefinitionEntity> onRenameCustom;
@@ -346,7 +447,11 @@ class _EventPicker extends StatelessWidget {
                 _EventChoiceChip(
                   key: Key('quick-record-${item.id.name}'),
                   item: item,
-                  onTap: () => onSelect(item),
+                  onTap: saving
+                      ? null
+                      : () => item.id == EventTypeId.sleep
+                            ? onStartSleep(item)
+                            : onSelect(item),
                 ),
               for (final definition in customState.pinnedDefinitions)
                 ActionChip(
@@ -357,6 +462,14 @@ class _EventPicker extends StatelessWidget {
                 ),
             ],
           ),
+          if (error != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              error!,
+              key: const Key('quick-record-error'),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
           if (recentPresets.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             AppSectionHeader(title: loc.recentRecordsTitle),
@@ -474,7 +587,7 @@ class _EventChoiceChip extends StatelessWidget {
   const _EventChoiceChip({required this.item, required this.onTap, super.key});
 
   final EventCatalogItem item;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
