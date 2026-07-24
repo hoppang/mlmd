@@ -868,4 +868,49 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get duplicateReviewEmptyHint => '新しい候補は「今日」に表示されます。';
+
+  @override
+  String get myRecordsTitle => '自分の記録';
+
+  @override
+  String get createCustomEvent => '新しい記録を作成';
+
+  @override
+  String get customEventNameLabel => '記録名';
+
+  @override
+  String get customEventNameHint => '例：ビタミン、散歩の準備';
+
+  @override
+  String get customEventNameRequired => '名前を入力してください。';
+
+  @override
+  String get customEventMemoOptionalLabel => 'メモ（任意）';
+
+  @override
+  String get customEventMemoOptionalHint => '必要な内容だけを短く残してください。';
+
+  @override
+  String get customEventMedicationHint =>
+      '薬の場合は基本の「投薬」で薬名と用量を記録できます。この記録もそのまま作成できます。';
+
+  @override
+  String get pinToQuickRecords => 'クイック記録に固定';
+
+  @override
+  String get removeFromQuickRecords => 'クイック記録から解除';
+
+  @override
+  String get renameCustomEvent => '名前を変更';
+
+  @override
+  String get archiveCustomEvent => 'アーカイブ';
+
+  @override
+  String get archiveCustomEventTitle => 'この記録タイプをアーカイブしますか？';
+
+  @override
+  String archiveCustomEventDescription(String name) {
+    return '「$name」は自分の記録から非表示になりますが、過去の記録はそのまま残ります。';
+  }
 }

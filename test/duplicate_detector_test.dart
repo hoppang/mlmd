@@ -37,7 +37,7 @@ void main() {
     expect(candidate.firstDiary, same(secondDiary));
     expect(candidate.secondDiary, same(firstDiary));
     expect(candidate.detectorVersion, duplicateDetectorVersion);
-    expect(candidate.detectorVersion, 'exact-duplicate-v1');
+    expect(candidate.detectorVersion, 'exact-duplicate-v2');
     expect(candidate.reasons, {
       DuplicateReason.sameType,
       DuplicateReason.exactTime,
@@ -45,6 +45,7 @@ void main() {
       DuplicateReason.differentDevices,
     });
     expect(candidate.firstCoreSignature.eventTypeId, EventTypeId.medication);
+    expect(candidate.firstCoreSignature.customEventName, isNull);
     expect(candidate.firstCoreSignature.occurredAt, occurredAt);
     expect(
       candidate.firstCoreSignature.timePrecision,
@@ -198,6 +199,33 @@ void main() {
       isEmpty,
     );
   });
+
+  test('커스텀 이벤트는 정의 UUID가 달라도 이름과 정확한 내용으로 검출한다', () {
+    final first = _activity(
+      recordId: 'custom-a',
+      type: '비타민',
+      time: occurredAt,
+      details: ' 아침  식후 ',
+      deviceId: 'device-a',
+      customEventTypeId: 'custom-type-a',
+      customEventNameSnapshot: '비타민',
+    );
+    final second = _activity(
+      recordId: 'custom-b',
+      type: '비타민',
+      time: occurredAt,
+      details: '아침 식후',
+      deviceId: 'device-b',
+      customEventTypeId: 'custom-type-b',
+      customEventNameSnapshot: ' 비타민 ',
+    );
+
+    final candidate = _detectPair(first, second).single;
+
+    expect(candidate.firstCoreSignature.eventTypeId, isNull);
+    expect(candidate.firstCoreSignature.customEventName, '비타민');
+    expect(candidate.reasons, contains(DuplicateReason.differentDevices));
+  });
 }
 
 List<DuplicateCandidate> _detectPair(
@@ -228,6 +256,8 @@ ActivityEntity _activity({
   required String deviceId,
   int revision = 1,
   int timePrecision = ActivityEntity.timePrecisionExact,
+  String? customEventTypeId,
+  String? customEventNameSnapshot,
 }) => ActivityEntity(
   recordId: recordId,
   revision: revision,
@@ -235,6 +265,8 @@ ActivityEntity _activity({
   time: time,
   timePrecision: timePrecision,
   details: details,
+  customEventTypeId: customEventTypeId,
+  customEventNameSnapshot: customEventNameSnapshot,
   lastModified: time,
   createdByDeviceProfileId: deviceId,
 );

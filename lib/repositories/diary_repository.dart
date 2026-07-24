@@ -307,6 +307,12 @@ class DiaryRepositoryImpl implements DiaryRepository {
           activity,
           unmatchedOldActivities,
         );
+        activity
+          ..customEventTypeId =
+              activity.customEventTypeId ?? previous?.customEventTypeId
+          ..customEventNameSnapshot =
+              activity.customEventNameSnapshot ??
+              previous?.customEventNameSnapshot;
         _prepareActivityIdentity(
           activity,
           previous: previous,
@@ -476,7 +482,9 @@ class DiaryRepositoryImpl implements DiaryRepository {
       left.type == right.type &&
       left.time.isAtSameMomentAs(right.time) &&
       left.timePrecision == right.timePrecision &&
-      left.details == right.details;
+      left.details == right.details &&
+      left.customEventTypeId == right.customEventTypeId &&
+      left.customEventNameSnapshot == right.customEventNameSnapshot;
 
   void _prepareRecordId(DiaryEntity diary) {
     var value = diary.recordId?.trim().toLowerCase();

@@ -295,5 +295,20 @@
   "duplicateDecisionSaved": "Decision saved. The original records remain unchanged.",
   "duplicateChangeDecision": "Change duplicate decision",
   "duplicateReviewEmpty": "No records to review",
-  "duplicateReviewEmptyHint": "New candidates will appear on Today."
+  "duplicateReviewEmptyHint": "New candidates will appear on Today.",
+  "myRecordsTitle": "My records",
+  "createCustomEvent": "Create a record",
+  "customEventNameLabel": "Record name",
+  "customEventNameHint": "For example, vitamins or walk prep",
+  "customEventNameRequired": "Enter a name.",
+  "customEventMemoOptionalLabel": "Memo (optional)",
+  "customEventMemoOptionalHint": "Add only the details you want to remember.",
+  "customEventMedicationHint": "For medicine, the built-in Medication record can store its name and dose. You can still create this record.",
+  "pinToQuickRecords": "Pin to quick records",
+  "removeFromQuickRecords": "Remove from quick records",
+  "renameCustomEvent": "Rename",
+  "archiveCustomEvent": "Archive",
+  "archiveCustomEventTitle": "Archive this record type?",
+  "archiveCustomEventDescription": "“{name}” will be hidden from My records. Past records will remain unchanged.",
+  "@archiveCustomEventDescription": {"placeholders": {"name": {"type": "String"}}}
 }

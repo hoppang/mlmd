@@ -901,4 +901,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get duplicateReviewEmptyHint => 'New candidates will appear on Today.';
+
+  @override
+  String get myRecordsTitle => 'My records';
+
+  @override
+  String get createCustomEvent => 'Create a record';
+
+  @override
+  String get customEventNameLabel => 'Record name';
+
+  @override
+  String get customEventNameHint => 'For example, vitamins or walk prep';
+
+  @override
+  String get customEventNameRequired => 'Enter a name.';
+
+  @override
+  String get customEventMemoOptionalLabel => 'Memo (optional)';
+
+  @override
+  String get customEventMemoOptionalHint =>
+      'Add only the details you want to remember.';
+
+  @override
+  String get customEventMedicationHint =>
+      'For medicine, the built-in Medication record can store its name and dose. You can still create this record.';
+
+  @override
+  String get pinToQuickRecords => 'Pin to quick records';
+
+  @override
+  String get removeFromQuickRecords => 'Remove from quick records';
+
+  @override
+  String get renameCustomEvent => 'Rename';
+
+  @override
+  String get archiveCustomEvent => 'Archive';
+
+  @override
+  String get archiveCustomEventTitle => 'Archive this record type?';
+
+  @override
+  String archiveCustomEventDescription(String name) {
+    return '“$name” will be hidden from My records. Past records will remain unchanged.';
+  }
 }

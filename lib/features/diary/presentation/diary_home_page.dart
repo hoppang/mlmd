@@ -256,6 +256,14 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
               details: details,
               occurredAt: occurredAt,
             ),
+        onSaveCustom: (customEventTypeId, nameSnapshot, memo, occurredAt) => ref
+            .read(diaryListProvider.notifier)
+            .addCustomEventRecord(
+              customEventTypeId: customEventTypeId,
+              nameSnapshot: nameSnapshot,
+              memo: memo,
+              occurredAt: occurredAt,
+            ),
         onOpenDetailedRecord: () {
           openDetailedRecord = true;
           Navigator.pop(sheetContext);

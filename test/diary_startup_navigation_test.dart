@@ -24,9 +24,11 @@ import 'package:mlmd/services/llm_diary_service.dart';
 import 'package:mlmd/features/summaries/application/ai_summary_notifier.dart';
 import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
 import 'package:mlmd/features/duplicate_review/application/duplicate_review_notifier.dart';
+import 'package:mlmd/features/events/application/custom_event_notifier.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'package:mlmd/repositories/duplicate_review_repository.dart';
 import 'package:mlmd/models/duplicate_review_edge_entity.dart';
+import 'package:mlmd/models/shared_custom_event_definition_entity.dart';
 import 'support/test_profile_repository.dart';
 
 class _TestDiaryListNotifier extends DiaryListNotifier {
@@ -51,6 +53,9 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   String? addedActivityType;
   String? addedActivityDetails;
   DateTime? addedActivityOccurredAt;
+  String? addedCustomEventTypeId;
+  String? addedCustomEventName;
+  String? addedCustomEventMemo;
 
   @override
   bool get isSemanticSearchAvailable => true;
@@ -95,6 +100,20 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     if (activitySaveError != null) throw activitySaveError!;
     addedActivityType = type;
     addedActivityDetails = details;
+    addedActivityOccurredAt = occurredAt;
+  }
+
+  @override
+  Future<void> addCustomEventRecord({
+    required String customEventTypeId,
+    required String nameSnapshot,
+    required String memo,
+    required DateTime occurredAt,
+  }) async {
+    if (activitySaveError != null) throw activitySaveError!;
+    addedCustomEventTypeId = customEventTypeId;
+    addedCustomEventName = nameSnapshot;
+    addedCustomEventMemo = memo;
     addedActivityOccurredAt = occurredAt;
   }
 
@@ -176,6 +195,84 @@ class _TestAiSummaryNotifier extends AiSummaryNotifier {
     AiSummaryEntity summary,
     SummarySourceSnapshot snapshot,
   ) => AiSummaryFreshness.fresh;
+}
+
+class _TestCustomEventCatalogNotifier extends CustomEventCatalogNotifier {
+  _TestCustomEventCatalogNotifier({
+    List<SharedCustomEventDefinitionEntity> definitions = const [],
+    List<String> pinnedTypeIds = const [],
+  }) : _initial = CustomEventCatalogState(
+         definitions: definitions,
+         pinnedTypeIds: pinnedTypeIds,
+       );
+
+  final CustomEventCatalogState _initial;
+  var _nextId = 1;
+
+  @override
+  CustomEventCatalogState build() => _initial;
+
+  @override
+  SharedCustomEventDefinitionEntity create(String name) {
+    final now = DateTime.utc(2026);
+    final definition = SharedCustomEventDefinitionEntity(
+      customEventTypeId: 'custom-${_nextId++}',
+      familySpaceId: 'family-test',
+      name: name.trim(),
+      createdByAuthorProfileId: 'author-test',
+      createdByDeviceProfileId: 'device-test',
+      lastModifiedByAuthorProfileId: 'author-test',
+      lastModifiedByDeviceProfileId: 'device-test',
+      createdAt: now,
+      updatedAt: now,
+    );
+    state = CustomEventCatalogState(
+      definitions: [...state.definitions, definition],
+      pinnedTypeIds: state.pinnedTypeIds,
+    );
+    return definition;
+  }
+
+  @override
+  void rename(String customEventTypeId, String name) {
+    for (final definition in state.definitions) {
+      if (definition.customEventTypeId == customEventTypeId) {
+        definition.name = name.trim();
+      }
+    }
+    state = CustomEventCatalogState(
+      definitions: [...state.definitions],
+      pinnedTypeIds: state.pinnedTypeIds,
+    );
+  }
+
+  @override
+  void archive(String customEventTypeId) {
+    state = CustomEventCatalogState(
+      definitions: state.definitions
+          .where(
+            (definition) => definition.customEventTypeId != customEventTypeId,
+          )
+          .toList(),
+      pinnedTypeIds: state.pinnedTypeIds
+          .where((id) => id != customEventTypeId)
+          .toList(),
+    );
+  }
+
+  @override
+  void setPinned(String customEventTypeId, {required bool pinned}) {
+    final ids = [...state.pinnedTypeIds];
+    if (pinned && !ids.contains(customEventTypeId)) {
+      ids.add(customEventTypeId);
+    } else if (!pinned) {
+      ids.remove(customEventTypeId);
+    }
+    state = CustomEventCatalogState(
+      definitions: state.definitions,
+      pinnedTypeIds: ids,
+    );
+  }
 }
 
 class _TestWeeklyAiAutoSummaryNotifier extends WeeklyAiAutoSummaryNotifier {
@@ -315,6 +412,7 @@ Widget _buildApp({
   DiaryAnalysisService? analysisService,
   TextScaler? textScaler,
   List<DuplicateReviewItem> duplicateItems = const [],
+  _TestCustomEventCatalogNotifier? customEventNotifier,
 }) {
   return ProviderScope(
     overrides: [
@@ -336,6 +434,9 @@ Widget _buildApp({
       ),
       duplicateReviewListProvider.overrideWith(
         () => _TestDuplicateReviewNotifier(duplicateItems),
+      ),
+      customEventCatalogProvider.overrideWith(
+        () => customEventNotifier ?? _TestCustomEventCatalogNotifier(),
       ),
       if (analysisService != null)
         diaryAnalysisServiceProvider.overrideWithValue(analysisService),
@@ -417,6 +518,49 @@ void main() {
     expect(notifier.addedActivityDetails, '200mL');
     expect(notifier.addedActivityOccurredAt, isNotNull);
     expect(find.text('수유 기록을 저장했어요.'), findsOneWidget);
+  });
+
+  testWidgets('나만의 기록은 이름만으로 만들고 메모와 이름 스냅샷을 저장한다', (tester) async {
+    final diaryNotifier = _TestDiaryListNotifier(const []);
+    final customNotifier = _TestCustomEventCatalogNotifier();
+    await tester.pumpWidget(
+      _buildApp(
+        diaryNotifier: diaryNotifier,
+        customEventNotifier: customNotifier,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+    final createButton = find.byKey(const Key('create-custom-event'));
+    await tester.ensureVisible(createButton);
+    await tester.tap(createButton);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('custom-event-name')), '비타민');
+    await tester.pump();
+    expect(
+      find.byKey(const Key('custom-event-medication-hint')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('save-custom-event-name')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('record-entry-form')), findsOneWidget);
+    expect(find.text('비타민'), findsOneWidget);
+    expect(find.text('메모 (선택)'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('quick-record-details')),
+      '아침 식후',
+    );
+    await tester.tap(find.byKey(const Key('save-quick-record')));
+    await tester.pumpAndSettle();
+
+    expect(diaryNotifier.addedCustomEventTypeId, 'custom-1');
+    expect(diaryNotifier.addedCustomEventName, '비타민');
+    expect(diaryNotifier.addedCustomEventMemo, '아침 식후');
+    expect(find.text('비타민 기록을 저장했어요.'), findsOneWidget);
   });
 
   testWidgets('빠른 기록 저장 실패 시 입력을 유지하고 다시 시도할 수 있다', (tester) async {

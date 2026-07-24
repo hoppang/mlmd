@@ -295,5 +295,20 @@
   "duplicateDecisionSaved": "判断を保存しました。元の記録は変更されません。",
   "duplicateChangeDecision": "重複判断を変更",
   "duplicateReviewEmpty": "確認する記録はありません",
-  "duplicateReviewEmptyHint": "新しい候補は「今日」に表示されます。"
+  "duplicateReviewEmptyHint": "新しい候補は「今日」に表示されます。",
+  "myRecordsTitle": "自分の記録",
+  "createCustomEvent": "新しい記録を作成",
+  "customEventNameLabel": "記録名",
+  "customEventNameHint": "例：ビタミン、散歩の準備",
+  "customEventNameRequired": "名前を入力してください。",
+  "customEventMemoOptionalLabel": "メモ（任意）",
+  "customEventMemoOptionalHint": "必要な内容だけを短く残してください。",
+  "customEventMedicationHint": "薬の場合は基本の「投薬」で薬名と用量を記録できます。この記録もそのまま作成できます。",
+  "pinToQuickRecords": "クイック記録に固定",
+  "removeFromQuickRecords": "クイック記録から解除",
+  "renameCustomEvent": "名前を変更",
+  "archiveCustomEvent": "アーカイブ",
+  "archiveCustomEventTitle": "この記録タイプをアーカイブしますか？",
+  "archiveCustomEventDescription": "「{name}」は自分の記録から非表示になりますが、過去の記録はそのまま残ります。",
+  "@archiveCustomEventDescription": {"placeholders": {"name": {"type": "String"}}}
 }

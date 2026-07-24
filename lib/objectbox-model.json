@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:3014340625497478550",
-      "lastPropertyId": "14:535624408059055326",
+      "lastPropertyId": "16:4295721424088215806",
       "name": "ActivityEntity",
       "properties": [
         {
@@ -83,6 +83,18 @@
           "id": "14:535624408059055326",
           "name": "revision",
           "type": 6
+        },
+        {
+          "id": "15:1801448613055298410",
+          "name": "customEventTypeId",
+          "indexId": "15:853652375066275327",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "16:4295721424088215806",
+          "name": "customEventNameSnapshot",
+          "type": 9
         }
       ],
       "relations": []
@@ -637,10 +649,116 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "10:1398451294122712191",
+      "lastPropertyId": "4:8434493868015047620",
+      "name": "CustomEventPinEntity",
+      "properties": [
+        {
+          "id": "1:2829670373671520149",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4015742150683435520",
+          "name": "customEventTypeId",
+          "indexId": "16:5515876569022866943",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:2600678402001903128",
+          "name": "deviceProfileId",
+          "indexId": "17:1912046521252171253",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:8434493868015047620",
+          "name": "position",
+          "type": 6
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "11:7971801215811693102",
+      "lastPropertyId": "12:8903651125090731701",
+      "name": "SharedCustomEventDefinitionEntity",
+      "properties": [
+        {
+          "id": "1:2776073546180210061",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8559026757828462273",
+          "name": "customEventTypeId",
+          "indexId": "18:5839237464662962574",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:4916822997300382728",
+          "name": "familySpaceId",
+          "indexId": "19:1001239504874804710",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:1363006672684112657",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "5:474829389828710685",
+          "name": "revision",
+          "type": 6
+        },
+        {
+          "id": "6:1114306411599108110",
+          "name": "createdByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "7:984197537446275326",
+          "name": "createdByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "8:2892783179477501796",
+          "name": "lastModifiedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "9:7842124141654741833",
+          "name": "lastModifiedByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "10:5119674357169176219",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "11:1975845978020560359",
+          "name": "updatedAt",
+          "type": 10
+        },
+        {
+          "id": "12:8903651125090731701",
+          "name": "archivedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "9:6896287114912381137",
-  "lastIndexId": "14:9016088942154118137",
+  "lastEntityId": "11:7971801215811693102",
+  "lastIndexId": "19:1001239504874804710",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

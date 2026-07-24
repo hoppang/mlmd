@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/models/diary_entity.dart';
@@ -10,14 +11,17 @@ import 'package:mlmd/models/search_document_entity.dart';
 import 'package:mlmd/models/ai_summary_entity.dart';
 import 'package:mlmd/models/duplicate_review_edge_entity.dart';
 import 'package:mlmd/models/logical_event_group_entity.dart';
+import 'package:mlmd/models/shared_custom_event_definition_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
+import 'package:mlmd/features/events/application/custom_event_notifier.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/activity_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'package:mlmd/repositories/duplicate_review_repository.dart';
+import 'package:mlmd/repositories/custom_event_repository.dart';
 import 'package:mlmd/services/embedding_service.dart';
 import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
 
@@ -91,6 +95,7 @@ void main() {
   late ProfileRepository profileRepo;
   late AiSummaryRepository aiSummaryRepo;
   late DuplicateReviewRepository duplicateReviewRepo;
+  late CustomEventRepository customEventRepo;
 
   setUp(() async {
     obxHelper = await TestObjectBoxHelper.createTemp();
@@ -101,6 +106,11 @@ void main() {
     draftRepo = RecordDraftRepositoryImpl(obxHelper);
     aiSummaryRepo = AiSummaryRepositoryImpl(obxHelper);
     duplicateReviewRepo = DuplicateReviewRepositoryImpl(obxHelper, profileRepo);
+    customEventRepo = CustomEventRepositoryImpl(
+      obxHelper,
+      profileRepo,
+      familySpaceId: 'family-test',
+    );
   });
 
   tearDown(() async {
@@ -723,6 +733,168 @@ void main() {
       expect(
         aiSummaryRepo.freshness(saved, changed),
         AiSummaryFreshness.sourceChanged,
+      );
+    });
+  });
+
+  group('UX-018 shared custom events', () {
+    test('same names remain separate definitions with stable UUIDs', () {
+      final first = customEventRepo.create('산책 준비');
+      final second = customEventRepo.create('  산책   준비  ');
+
+      expect(first.customEventTypeId, isNot(second.customEventTypeId));
+      expect(first.familySpaceId, 'family-test');
+      expect(second.name, '산책 준비');
+      expect(
+        first.createdByDeviceProfileId,
+        profileRepo.currentDevice.deviceProfileId,
+      );
+      expect(customEventRepo.getDefinitions(), hasLength(2));
+    });
+
+    test('rename and archive preserve the record name snapshot', () async {
+      final definition = customEventRepo.create('산책 준비');
+      final occurredAt = DateTime(2026, 7, 24, 17, 30);
+      diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: definition.name,
+          time: occurredAt,
+          details: '모자 챙김',
+          customEventTypeId: definition.customEventTypeId,
+          customEventNameSnapshot: definition.name,
+          lastModified: occurredAt,
+        ),
+      );
+
+      customEventRepo.rename(definition.customEventTypeId, '외출 준비');
+      customEventRepo.setArchived(definition.customEventTypeId, archived: true);
+
+      expect(customEventRepo.getDefinitions(), isEmpty);
+      expect(
+        customEventRepo.getDefinitions(includeArchived: true).single.name,
+        '외출 준비',
+      );
+      final record = activityRepo.getActivities().single;
+      expect(record.customEventTypeId, definition.customEventTypeId);
+      expect(record.customEventNameSnapshot, '산책 준비');
+      expect(record.type, '산책 준비');
+
+      final byName = await diaryRepo.searchRecords(
+        const HybridSearchQuery(text: '산책 준비'),
+        EmbeddingService(),
+      );
+      final byMemo = await diaryRepo.searchRecords(
+        const HybridSearchQuery(text: '모자'),
+        EmbeddingService(),
+      );
+      expect(byName.single.activity?.id, record.id);
+      expect(byMemo.single.activity?.id, record.id);
+    });
+
+    test('shared merge uses UUID and revision instead of the name', () {
+      final now = DateTime.utc(2026, 7, 24);
+      SharedCustomEventDefinitionEntity incoming({
+        required String id,
+        required String name,
+        required int revision,
+        required DateTime updatedAt,
+      }) => SharedCustomEventDefinitionEntity(
+        customEventTypeId: id,
+        familySpaceId: 'family-test',
+        name: name,
+        revision: revision,
+        createdByAuthorProfileId: 'remote-author',
+        createdByDeviceProfileId: 'remote-device',
+        lastModifiedByAuthorProfileId: 'remote-author',
+        lastModifiedByDeviceProfileId: 'remote-device',
+        createdAt: now,
+        updatedAt: updatedAt,
+      );
+
+      customEventRepo.applySharedDefinition(
+        incoming(
+          id: '00000000-0000-4000-8000-000000000001',
+          name: '비타민',
+          revision: 2,
+          updatedAt: now.add(const Duration(minutes: 2)),
+        ),
+      );
+      customEventRepo.applySharedDefinition(
+        incoming(
+          id: '00000000-0000-4000-8000-000000000002',
+          name: '비타민',
+          revision: 1,
+          updatedAt: now,
+        ),
+      );
+      customEventRepo.applySharedDefinition(
+        incoming(
+          id: '00000000-0000-4000-8000-000000000001',
+          name: '오래된 이름',
+          revision: 1,
+          updatedAt: now.add(const Duration(days: 1)),
+        ),
+      );
+
+      final definitions = customEventRepo.getDefinitions();
+      expect(definitions, hasLength(2));
+      expect(
+        definitions
+            .firstWhere(
+              (item) =>
+                  item.customEventTypeId ==
+                  '00000000-0000-4000-8000-000000000001',
+            )
+            .name,
+        '비타민',
+      );
+    });
+
+    test('quick-record pins are device-local and archive removes them', () {
+      final definition = customEventRepo.create('등원 준비');
+      customEventRepo.setPinned(definition.customEventTypeId, pinned: true);
+      expect(customEventRepo.getPinnedTypeIds(), [
+        definition.customEventTypeId,
+      ]);
+
+      customEventRepo.setArchived(definition.customEventTypeId, archived: true);
+      expect(customEventRepo.getPinnedTypeIds(), isEmpty);
+      expect(
+        customEventRepo.getDefinitions(includeArchived: true).single.isArchived,
+        isTrue,
+      );
+    });
+
+    test('catalog notifier refreshes after create and pin actions', () {
+      final container = ProviderContainer(
+        overrides: [
+          objectBoxProvider.overrideWithValue(obxHelper),
+          profileRepositoryProvider.overrideWithValue(profileRepo),
+          customEventRepositoryProvider.overrideWithValue(customEventRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      expect(container.read(customEventCatalogProvider).definitions, isEmpty);
+      final notifier = container.read(customEventCatalogProvider.notifier);
+      final created = notifier.create('낮 산책');
+      expect(
+        container
+            .read(customEventCatalogProvider)
+            .definitions
+            .single
+            .customEventTypeId,
+        created.customEventTypeId,
+      );
+
+      notifier.setPinned(created.customEventTypeId, pinned: true);
+      expect(
+        container
+            .read(customEventCatalogProvider)
+            .pinnedDefinitions
+            .single
+            .name,
+        '낮 산책',
       );
     });
   });

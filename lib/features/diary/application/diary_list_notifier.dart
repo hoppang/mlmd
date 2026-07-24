@@ -83,6 +83,27 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     state = repo.getDiaries();
   }
 
+  Future<void> addCustomEventRecord({
+    required String customEventTypeId,
+    required String nameSnapshot,
+    required String memo,
+    required DateTime occurredAt,
+  }) async {
+    final repo = ref.read(diaryRepositoryProvider);
+    repo.addActivityRecord(
+      ActivityEntity(
+        type: nameSnapshot,
+        time: occurredAt,
+        details: memo,
+        customEventTypeId: customEventTypeId,
+        customEventNameSnapshot: nameSnapshot,
+        lastModified: DateTime.now(),
+      ),
+    );
+    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
+    state = repo.getDiaries();
+  }
+
   Future<List<DiarySearchResult>> searchRecords(
     HybridSearchQuery query, {
     int limit = 50,

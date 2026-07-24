@@ -873,4 +873,49 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get duplicateReviewEmptyHint => '새 후보가 생기면 오늘 화면에 표시됩니다.';
+
+  @override
+  String get myRecordsTitle => '나만의 기록';
+
+  @override
+  String get createCustomEvent => '새 기록 만들기';
+
+  @override
+  String get customEventNameLabel => '기록 이름';
+
+  @override
+  String get customEventNameHint => '예: 비타민, 산책 준비';
+
+  @override
+  String get customEventNameRequired => '이름을 입력해 주세요.';
+
+  @override
+  String get customEventMemoOptionalLabel => '메모 (선택)';
+
+  @override
+  String get customEventMemoOptionalHint => '필요한 내용만 짧게 남겨 주세요.';
+
+  @override
+  String get customEventMedicationHint =>
+      '약을 기록하려는 경우에는 기본 ‘투약’에서 약 이름과 용량을 남길 수 있어요. 이 기록도 그대로 만들 수 있습니다.';
+
+  @override
+  String get pinToQuickRecords => '빠른 기록에 고정';
+
+  @override
+  String get removeFromQuickRecords => '빠른 기록에서 해제';
+
+  @override
+  String get renameCustomEvent => '이름 변경';
+
+  @override
+  String get archiveCustomEvent => '보관';
+
+  @override
+  String get archiveCustomEventTitle => '이 기록 종류를 보관할까요?';
+
+  @override
+  String archiveCustomEventDescription(String name) {
+    return '‘$name’은 나만의 기록에서 숨겨지지만 과거 기록은 그대로 유지됩니다.';
+  }
 }

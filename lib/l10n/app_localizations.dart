@@ -1713,6 +1713,90 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'새 후보가 생기면 오늘 화면에 표시됩니다.'**
   String get duplicateReviewEmptyHint;
+
+  /// No description provided for @myRecordsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'나만의 기록'**
+  String get myRecordsTitle;
+
+  /// No description provided for @createCustomEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 기록 만들기'**
+  String get createCustomEvent;
+
+  /// No description provided for @customEventNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 이름'**
+  String get customEventNameLabel;
+
+  /// No description provided for @customEventNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: 비타민, 산책 준비'**
+  String get customEventNameHint;
+
+  /// No description provided for @customEventNameRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름을 입력해 주세요.'**
+  String get customEventNameRequired;
+
+  /// No description provided for @customEventMemoOptionalLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모 (선택)'**
+  String get customEventMemoOptionalLabel;
+
+  /// No description provided for @customEventMemoOptionalHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'필요한 내용만 짧게 남겨 주세요.'**
+  String get customEventMemoOptionalHint;
+
+  /// No description provided for @customEventMedicationHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'약을 기록하려는 경우에는 기본 ‘투약’에서 약 이름과 용량을 남길 수 있어요. 이 기록도 그대로 만들 수 있습니다.'**
+  String get customEventMedicationHint;
+
+  /// No description provided for @pinToQuickRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'빠른 기록에 고정'**
+  String get pinToQuickRecords;
+
+  /// No description provided for @removeFromQuickRecords.
+  ///
+  /// In ko, this message translates to:
+  /// **'빠른 기록에서 해제'**
+  String get removeFromQuickRecords;
+
+  /// No description provided for @renameCustomEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름 변경'**
+  String get renameCustomEvent;
+
+  /// No description provided for @archiveCustomEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'보관'**
+  String get archiveCustomEvent;
+
+  /// No description provided for @archiveCustomEventTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기록 종류를 보관할까요?'**
+  String get archiveCustomEventTitle;
+
+  /// No description provided for @archiveCustomEventDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'‘{name}’은 나만의 기록에서 숨겨지지만 과거 기록은 그대로 유지됩니다.'**
+  String archiveCustomEventDescription(String name);
 }
 
 class _AppLocalizationsDelegate

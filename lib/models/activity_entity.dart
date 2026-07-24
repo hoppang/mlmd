@@ -27,6 +27,13 @@ class ActivityEntity {
 
   String details; // 상세정보(용량, 시간 등)
 
+  /// 커스텀 이벤트 기록일 때 공유 정의의 안정 UUID를 가리킨다.
+  @Index()
+  String? customEventTypeId;
+
+  /// 정의의 이름이 나중에 변경·보관되어도 과거 기록을 보존하는 스냅샷이다.
+  String? customEventNameSnapshot;
+
   @Property(type: PropertyType.date)
   DateTime lastModified;
 
@@ -48,6 +55,8 @@ class ActivityEntity {
     required this.time,
     this.timePrecision = timePrecisionExact,
     required this.details,
+    this.customEventTypeId,
+    this.customEventNameSnapshot,
     required this.lastModified,
     this.createdAt,
     this.createdByAuthorProfileId,

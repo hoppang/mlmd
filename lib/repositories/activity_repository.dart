@@ -113,7 +113,9 @@ class ActivityRepositoryImpl implements ActivityRepository {
       left.type == right.type &&
       left.time.isAtSameMomentAs(right.time) &&
       left.timePrecision == right.timePrecision &&
-      left.details == right.details;
+      left.details == right.details &&
+      left.customEventTypeId == right.customEventTypeId &&
+      left.customEventNameSnapshot == right.customEventNameSnapshot;
 
   @override
   bool deleteActivity(int id) {

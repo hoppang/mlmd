@@ -295,5 +295,20 @@
   "duplicateDecisionSaved": "중복 판단을 저장했어요. 원본 기록은 그대로 유지됩니다.",
   "duplicateChangeDecision": "중복 판단 변경",
   "duplicateReviewEmpty": "확인할 기록이 없어요",
-  "duplicateReviewEmptyHint": "새 후보가 생기면 오늘 화면에 표시됩니다."
+  "duplicateReviewEmptyHint": "새 후보가 생기면 오늘 화면에 표시됩니다.",
+  "myRecordsTitle": "나만의 기록",
+  "createCustomEvent": "새 기록 만들기",
+  "customEventNameLabel": "기록 이름",
+  "customEventNameHint": "예: 비타민, 산책 준비",
+  "customEventNameRequired": "이름을 입력해 주세요.",
+  "customEventMemoOptionalLabel": "메모 (선택)",
+  "customEventMemoOptionalHint": "필요한 내용만 짧게 남겨 주세요.",
+  "customEventMedicationHint": "약을 기록하려는 경우에는 기본 ‘투약’에서 약 이름과 용량을 남길 수 있어요. 이 기록도 그대로 만들 수 있습니다.",
+  "pinToQuickRecords": "빠른 기록에 고정",
+  "removeFromQuickRecords": "빠른 기록에서 해제",
+  "renameCustomEvent": "이름 변경",
+  "archiveCustomEvent": "보관",
+  "archiveCustomEventTitle": "이 기록 종류를 보관할까요?",
+  "archiveCustomEventDescription": "‘{name}’은 나만의 기록에서 숨겨지지만 과거 기록은 그대로 유지됩니다.",
+  "@archiveCustomEventDescription": {"placeholders": {"name": {"type": "String"}}}
 }

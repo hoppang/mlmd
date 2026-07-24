@@ -1,32 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/presentation/app_section_header.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/shared_custom_event_definition_entity.dart';
+import '../application/custom_event_notifier.dart';
 import '../domain/event_catalog.dart';
 
 typedef SaveEventRecord =
     Future<void> Function(String type, String details, DateTime occurredAt);
+typedef SaveCustomEventRecord =
+    Future<void> Function(
+      String customEventTypeId,
+      String nameSnapshot,
+      String memo,
+      DateTime occurredAt,
+    );
 
-class RecordEntrySheet extends StatefulWidget {
+class RecordEntrySheet extends ConsumerStatefulWidget {
   const RecordEntrySheet({
     required this.recentPresets,
     required this.onSave,
+    required this.onSaveCustom,
     required this.onOpenDetailedRecord,
     super.key,
   });
 
   final List<RecentEventPreset> recentPresets;
   final SaveEventRecord onSave;
+  final SaveCustomEventRecord onSaveCustom;
   final VoidCallback onOpenDetailedRecord;
 
   @override
-  State<RecordEntrySheet> createState() => _RecordEntrySheetState();
+  ConsumerState<RecordEntrySheet> createState() => _RecordEntrySheetState();
 }
 
-class _RecordEntrySheetState extends State<RecordEntrySheet> {
+class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   final _detailsController = TextEditingController();
   EventCatalogItem? _selectedItem;
+  SharedCustomEventDefinitionEntity? _selectedCustomEvent;
   DateTime _occurredAt = DateTime.now();
   bool _saving = false;
   String? _error;
@@ -40,7 +53,18 @@ class _RecordEntrySheetState extends State<RecordEntrySheet> {
   void _select(EventCatalogItem item, {String details = ''}) {
     setState(() {
       _selectedItem = item;
+      _selectedCustomEvent = null;
       _detailsController.text = details;
+      _occurredAt = DateTime.now();
+      _error = null;
+    });
+  }
+
+  void _selectCustom(SharedCustomEventDefinitionEntity definition) {
+    setState(() {
+      _selectedItem = null;
+      _selectedCustomEvent = definition;
+      _detailsController.clear();
       _occurredAt = DateTime.now();
       _error = null;
     });
@@ -65,19 +89,31 @@ class _RecordEntrySheetState extends State<RecordEntrySheet> {
 
   Future<void> _save() async {
     final selected = _selectedItem;
-    if (selected == null || _saving) return;
+    final custom = _selectedCustomEvent;
+    if ((selected == null && custom == null) || _saving) return;
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
-      await widget.onSave(
-        selected.label(AppLocalizations.of(context)!),
-        _detailsController.text.trim(),
-        _occurredAt,
-      );
+      final loc = AppLocalizations.of(context)!;
+      final savedName = custom?.name ?? selected!.label(loc);
+      if (custom == null) {
+        await widget.onSave(
+          savedName,
+          _detailsController.text.trim(),
+          _occurredAt,
+        );
+      } else {
+        await widget.onSaveCustom(
+          custom.customEventTypeId,
+          custom.name,
+          _detailsController.text.trim(),
+          _occurredAt,
+        );
+      }
       if (mounted) {
-        Navigator.pop(context, selected.label(AppLocalizations.of(context)!));
+        Navigator.pop(context, savedName);
       }
     } catch (_) {
       if (!mounted) return;
@@ -88,28 +124,104 @@ class _RecordEntrySheetState extends State<RecordEntrySheet> {
     }
   }
 
+  Future<String?> _requestCustomEventName({String initialName = ''}) {
+    return showDialog<String>(
+      context: context,
+      builder: (_) => _CustomEventNameDialog(initialName: initialName),
+    );
+  }
+
+  Future<void> _createCustomEvent() async {
+    final name = await _requestCustomEventName();
+    if (name == null || !mounted) return;
+    final definition = ref
+        .read(customEventCatalogProvider.notifier)
+        .create(name);
+    _selectCustom(definition);
+  }
+
+  Future<void> _renameCustomEvent(
+    SharedCustomEventDefinitionEntity definition,
+  ) async {
+    final name = await _requestCustomEventName(initialName: definition.name);
+    if (name == null || !mounted) return;
+    ref
+        .read(customEventCatalogProvider.notifier)
+        .rename(definition.customEventTypeId, name);
+  }
+
+  Future<void> _archiveCustomEvent(
+    SharedCustomEventDefinitionEntity definition,
+  ) async {
+    final loc = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.archiveCustomEventTitle),
+        content: Text(loc.archiveCustomEventDescription(definition.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            key: const Key('confirm-archive-custom-event'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(loc.archiveCustomEvent),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    ref
+        .read(customEventCatalogProvider.notifier)
+        .archive(definition.customEventTypeId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final selected = _selectedItem;
+    final custom = _selectedCustomEvent;
+    final customState = ref.watch(customEventCatalogProvider);
     return SafeArea(
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 180),
-        child: selected == null
+        child: selected == null && custom == null
             ? _EventPicker(
                 key: const ValueKey('event-picker'),
                 recentPresets: widget.recentPresets,
+                customState: customState,
                 onSelect: _select,
+                onSelectCustom: _selectCustom,
+                onCreateCustom: _createCustomEvent,
+                onRenameCustom: _renameCustomEvent,
+                onArchiveCustom: _archiveCustomEvent,
+                onToggleCustomPin: (definition) {
+                  ref
+                      .read(customEventCatalogProvider.notifier)
+                      .setPinned(
+                        definition.customEventTypeId,
+                        pinned: !customState.isPinned(
+                          definition.customEventTypeId,
+                        ),
+                      );
+                },
                 onOpenDetailedRecord: widget.onOpenDetailedRecord,
               )
             : _EventForm(
-                key: ValueKey(selected.id),
-                item: selected,
+                key: ValueKey(custom?.customEventTypeId ?? selected!.id.name),
+                label:
+                    custom?.name ??
+                    selected!.label(AppLocalizations.of(context)!),
+                icon: custom == null ? selected!.icon : Icons.bookmark_outline,
+                custom: custom != null,
                 detailsController: _detailsController,
                 occurredAt: _occurredAt,
                 saving: _saving,
                 error: _error,
                 onBack: () => setState(() {
                   _selectedItem = null;
+                  _selectedCustomEvent = null;
                   _error = null;
                 }),
                 onChangeTime: _changeTime,
@@ -123,13 +235,25 @@ class _RecordEntrySheetState extends State<RecordEntrySheet> {
 class _EventPicker extends StatelessWidget {
   const _EventPicker({
     required this.recentPresets,
+    required this.customState,
     required this.onSelect,
+    required this.onSelectCustom,
+    required this.onCreateCustom,
+    required this.onRenameCustom,
+    required this.onArchiveCustom,
+    required this.onToggleCustomPin,
     required this.onOpenDetailedRecord,
     super.key,
   });
 
   final List<RecentEventPreset> recentPresets;
+  final CustomEventCatalogState customState;
   final void Function(EventCatalogItem item, {String details}) onSelect;
+  final ValueChanged<SharedCustomEventDefinitionEntity> onSelectCustom;
+  final VoidCallback onCreateCustom;
+  final ValueChanged<SharedCustomEventDefinitionEntity> onRenameCustom;
+  final ValueChanged<SharedCustomEventDefinitionEntity> onArchiveCustom;
+  final ValueChanged<SharedCustomEventDefinitionEntity> onToggleCustomPin;
   final VoidCallback onOpenDetailedRecord;
 
   @override
@@ -162,6 +286,13 @@ class _EventPicker extends StatelessWidget {
                   key: Key('quick-record-${item.id.name}'),
                   item: item,
                   onTap: () => onSelect(item),
+                ),
+              for (final definition in customState.pinnedDefinitions)
+                ActionChip(
+                  key: Key('quick-custom-${definition.customEventTypeId}'),
+                  avatar: const Icon(Icons.bookmark_outline, size: 18),
+                  label: Text(definition.name),
+                  onPressed: () => onSelectCustom(definition),
                 ),
             ],
           ),
@@ -207,6 +338,62 @@ class _EventPicker extends StatelessWidget {
               ],
             ),
           const SizedBox(height: AppSpacing.md),
+          AppSectionHeader(title: loc.myRecordsTitle),
+          for (final definition in customState.definitions)
+            ListTile(
+              key: Key('custom-event-${definition.customEventTypeId}'),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs,
+              ),
+              leading: const Icon(Icons.bookmark_outline),
+              title: Text(definition.name),
+              onTap: () => onSelectCustom(definition),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    key: Key('pin-custom-${definition.customEventTypeId}'),
+                    tooltip: customState.isPinned(definition.customEventTypeId)
+                        ? loc.removeFromQuickRecords
+                        : loc.pinToQuickRecords,
+                    onPressed: () => onToggleCustomPin(definition),
+                    icon: Icon(
+                      customState.isPinned(definition.customEventTypeId)
+                          ? Icons.push_pin
+                          : Icons.push_pin_outlined,
+                    ),
+                  ),
+                  PopupMenuButton<_CustomEventAction>(
+                    key: Key('manage-custom-${definition.customEventTypeId}'),
+                    onSelected: (action) {
+                      switch (action) {
+                        case _CustomEventAction.rename:
+                          onRenameCustom(definition);
+                        case _CustomEventAction.archive:
+                          onArchiveCustom(definition);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: _CustomEventAction.rename,
+                        child: Text(loc.renameCustomEvent),
+                      ),
+                      PopupMenuItem(
+                        value: _CustomEventAction.archive,
+                        child: Text(loc.archiveCustomEvent),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          OutlinedButton.icon(
+            key: const Key('create-custom-event'),
+            onPressed: onCreateCustom,
+            icon: const Icon(Icons.add),
+            label: Text(loc.createCustomEvent),
+          ),
+          const SizedBox(height: AppSpacing.md),
           OutlinedButton.icon(
             key: const Key('open-detailed-record'),
             onPressed: onOpenDetailedRecord,
@@ -237,7 +424,9 @@ class _EventChoiceChip extends StatelessWidget {
 
 class _EventForm extends StatelessWidget {
   const _EventForm({
-    required this.item,
+    required this.label,
+    required this.icon,
+    required this.custom,
     required this.detailsController,
     required this.occurredAt,
     required this.saving,
@@ -248,7 +437,9 @@ class _EventForm extends StatelessWidget {
     super.key,
   });
 
-  final EventCatalogItem item;
+  final String label;
+  final IconData icon;
+  final bool custom;
   final TextEditingController detailsController;
   final DateTime occurredAt;
   final bool saving;
@@ -281,11 +472,11 @@ class _EventForm extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back),
               ),
               const SizedBox(width: AppSpacing.xs),
-              Icon(item.icon),
+              Icon(icon),
               const SizedBox(width: AppSpacing.xs),
               Expanded(
                 child: Text(
-                  item.label(loc),
+                  label,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
@@ -299,8 +490,12 @@ class _EventForm extends StatelessWidget {
             minLines: 2,
             maxLines: 4,
             decoration: InputDecoration(
-              labelText: loc.eventDetailOptionalLabel,
-              hintText: loc.eventDetailOptionalHint,
+              labelText: custom
+                  ? loc.customEventMemoOptionalLabel
+                  : loc.eventDetailOptionalLabel,
+              hintText: custom
+                  ? loc.customEventMemoOptionalHint
+                  : loc.eventDetailOptionalHint,
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -335,6 +530,114 @@ class _EventForm extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+enum _CustomEventAction { rename, archive }
+
+class _CustomEventNameDialog extends StatefulWidget {
+  const _CustomEventNameDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_CustomEventNameDialog> createState() => _CustomEventNameDialogState();
+}
+
+class _CustomEventNameDialogState extends State<_CustomEventNameDialog> {
+  late final TextEditingController _controller;
+  bool _showRequired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _looksLikeMedication {
+    final normalized = _controller.text.trim().toLowerCase();
+    return const [
+      '약',
+      '투약',
+      '비타민',
+      'medicine',
+      'medication',
+      'vitamin',
+      '薬',
+      '投薬',
+      'ビタミン',
+    ].any(normalized.contains);
+  }
+
+  void _submit() {
+    final name = _controller.text.trim();
+    if (name.isEmpty) {
+      setState(() => _showRequired = true);
+      return;
+    }
+    Navigator.pop(context, name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(
+        widget.initialName.isEmpty
+            ? loc.createCustomEvent
+            : loc.renameCustomEvent,
+      ),
+      content: SizedBox(
+        width: 360,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: const Key('custom-event-name'),
+                controller: _controller,
+                autofocus: true,
+                maxLength: 40,
+                textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() => _showRequired = false),
+                onSubmitted: (_) => _submit(),
+                decoration: InputDecoration(
+                  labelText: loc.customEventNameLabel,
+                  hintText: loc.customEventNameHint,
+                  errorText: _showRequired ? loc.customEventNameRequired : null,
+                ),
+              ),
+              if (_looksLikeMedication) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  loc.customEventMedicationHint,
+                  key: const Key('custom-event-medication-hint'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(loc.cancel),
+        ),
+        FilledButton(
+          key: const Key('save-custom-event-name'),
+          onPressed: _submit,
+          child: Text(loc.saveRecord),
+        ),
+      ],
     );
   }
 }

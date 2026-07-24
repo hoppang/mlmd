@@ -2,19 +2,21 @@ import '../../../features/events/domain/event_catalog.dart';
 import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
 
-const duplicateDetectorVersion = 'exact-duplicate-v1';
+const duplicateDetectorVersion = 'exact-duplicate-v2';
 
 enum DuplicateReason { sameType, exactTime, exactDetails, differentDevices }
 
 class DuplicateCoreSignature {
   const DuplicateCoreSignature({
     required this.eventTypeId,
+    required this.customEventName,
     required this.occurredAt,
     required this.timePrecision,
     required this.normalizedDetails,
   });
 
-  final EventTypeId eventTypeId;
+  final EventTypeId? eventTypeId;
+  final String? customEventName;
   final DateTime occurredAt;
   final int timePrecision;
   final String normalizedDetails;
@@ -67,7 +69,15 @@ List<DuplicateCandidate> detectDuplicateCandidates(
       }
 
       final eventTypeId = _canonicalEventType(activity.type);
-      if (eventTypeId == null || eventTypeId == EventTypeId.temperature) {
+      final customEventName =
+          eventTypeId == null && activity.customEventTypeId != null
+          ? normalizeDuplicateDetails(
+              activity.customEventNameSnapshot ?? activity.type,
+            )
+          : null;
+      if ((eventTypeId == null &&
+              (customEventName == null || customEventName.isEmpty)) ||
+          eventTypeId == EventTypeId.temperature) {
         continue;
       }
 
@@ -79,6 +89,7 @@ List<DuplicateCandidate> detectDuplicateCandidates(
           deviceId: deviceId,
           coreSignature: DuplicateCoreSignature(
             eventTypeId: eventTypeId,
+            customEventName: customEventName,
             occurredAt: activity.time,
             timePrecision: activity.timePrecision,
             normalizedDetails: normalizeDuplicateDetails(activity.details),
@@ -148,6 +159,7 @@ bool _sameCoreSignature(
   DuplicateCoreSignature second,
 ) =>
     first.eventTypeId == second.eventTypeId &&
+    first.customEventName == second.customEventName &&
     first.occurredAt.isAtSameMomentAs(second.occurredAt) &&
     first.timePrecision == second.timePrecision &&
     first.normalizedDetails == second.normalizedDetails;
