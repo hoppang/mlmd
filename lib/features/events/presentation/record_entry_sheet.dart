@@ -6,17 +6,26 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/shared_custom_event_definition_entity.dart';
 import '../application/custom_event_notifier.dart';
+import '../domain/elimination_record.dart';
 import '../domain/event_catalog.dart';
+import 'elimination_event_form.dart';
 import 'intake_event_form.dart';
 import 'sleep_event_form.dart';
 
 typedef SaveEventRecord =
-    Future<void> Function(
+    Future<String> Function(
       String type,
       String details,
       DateTime occurredAt,
       String? structuredDataJson,
     );
+typedef UpdateEventRecord =
+    Future<void> Function(
+      String recordId,
+      String details,
+      String structuredDataJson,
+    );
+typedef DeleteEventRecord = Future<void> Function(String recordId);
 typedef SaveCustomEventRecord =
     Future<void> Function(
       String customEventTypeId,
@@ -30,16 +39,19 @@ typedef StartSleepRecord =
 enum RecordEntryResultKind { saved, sleepStarted, sleepAlreadyActive }
 
 class RecordEntryResult {
-  const RecordEntryResult(this.kind, {this.savedName});
+  const RecordEntryResult(this.kind, {this.savedName, this.recordId});
 
   final RecordEntryResultKind kind;
   final String? savedName;
+  final String? recordId;
 }
 
 class RecordEntrySheet extends ConsumerStatefulWidget {
   const RecordEntrySheet({
     required this.recentPresets,
     required this.onSave,
+    required this.onUpdate,
+    required this.onDelete,
     required this.onSaveCustom,
     required this.onStartSleep,
     required this.onOpenDetailedRecord,
@@ -48,6 +60,8 @@ class RecordEntrySheet extends ConsumerStatefulWidget {
 
   final List<RecentEventPreset> recentPresets;
   final SaveEventRecord onSave;
+  final UpdateEventRecord onUpdate;
+  final DeleteEventRecord onDelete;
   final SaveCustomEventRecord onSaveCustom;
   final StartSleepRecord onStartSleep;
   final VoidCallback onOpenDetailedRecord;
@@ -61,6 +75,8 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   EventCatalogItem? _selectedItem;
   SharedCustomEventDefinitionEntity? _selectedCustomEvent;
   String? _structuredDataJson;
+  String? _savedEliminationRecordId;
+  EliminationRecord? _savedEliminationRecord;
   DateTime _occurredAt = DateTime.now();
   bool _saving = false;
   String? _error;
@@ -81,6 +97,8 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       _selectedCustomEvent = null;
       _detailsController.text = details;
       _structuredDataJson = structuredDataJson;
+      _savedEliminationRecordId = null;
+      _savedEliminationRecord = null;
       _occurredAt = DateTime.now();
       _error = null;
     });
@@ -92,6 +110,8 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       _selectedCustomEvent = definition;
       _detailsController.clear();
       _structuredDataJson = null;
+      _savedEliminationRecordId = null;
+      _savedEliminationRecord = null;
       _occurredAt = DateTime.now();
       _error = null;
     });
@@ -125,8 +145,9 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     try {
       final loc = AppLocalizations.of(context)!;
       final savedName = custom?.name ?? selected!.label(loc);
+      String? recordId;
       if (custom == null) {
-        await widget.onSave(
+        recordId = await widget.onSave(
           savedName,
           _detailsController.text.trim(),
           _occurredAt,
@@ -143,7 +164,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       if (mounted) {
         Navigator.pop(
           context,
-          RecordEntryResult(RecordEntryResultKind.saved, savedName: savedName),
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
         );
       }
     } catch (_) {
@@ -164,7 +189,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      await widget.onSave(
+      final recordId = await widget.onSave(
         savedName,
         result.details,
         _occurredAt,
@@ -173,7 +198,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       if (mounted) {
         Navigator.pop(
           context,
-          RecordEntryResult(RecordEntryResultKind.saved, savedName: savedName),
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
         );
       }
     } catch (_) {
@@ -214,6 +243,121 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     }
   }
 
+  Future<void> _saveElimination(
+    EventCatalogItem item,
+    EliminationKind kind, {
+    EliminationRecord? preset,
+  }) async {
+    if (_saving || _savedEliminationRecordId != null) return;
+    final now = DateTime.now();
+    final record = EliminationRecord(
+      kind: kind,
+      occurredAt: now,
+      urineAmount: preset?.urineAmount,
+      stoolAmount: preset?.stoolAmount,
+      stoolConsistency: preset?.stoolConsistency,
+      stoolColor: preset?.stoolColor,
+      note: preset?.note,
+    );
+    setState(() {
+      _selectedItem = item;
+      _selectedCustomEvent = null;
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final loc = AppLocalizations.of(context)!;
+      final recordId = await widget.onSave(
+        item.label(loc),
+        eliminationRecordDetails(loc, record),
+        record.occurredAt,
+        record.encode(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _savedEliminationRecordId = recordId;
+        _savedEliminationRecord = record;
+        _saving = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _updateElimination(EliminationRecord record) async {
+    final recordId = _savedEliminationRecordId;
+    if (recordId == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final loc = AppLocalizations.of(context)!;
+      await widget.onUpdate(
+        recordId,
+        eliminationRecordDetails(loc, record),
+        record.encode(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _savedEliminationRecord = record;
+        _saving = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.eliminationChangesSaved)));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _undoElimination() async {
+    final recordId = _savedEliminationRecordId;
+    if (recordId == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.onDelete(recordId);
+      if (!mounted) return;
+      _savedEliminationRecordId = null;
+      _savedEliminationRecord = null;
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  void _finishElimination() {
+    final recordId = _savedEliminationRecordId;
+    final selected = _selectedItem;
+    if (recordId == null || selected == null) return;
+    final savedName = selected.label(AppLocalizations.of(context)!);
+    _savedEliminationRecordId = null;
+    _savedEliminationRecord = null;
+    Navigator.pop(
+      context,
+      RecordEntryResult(
+        RecordEntryResultKind.saved,
+        savedName: savedName,
+        recordId: recordId,
+      ),
+    );
+  }
+
   Future<void> _saveSleep(SleepFormResult result) async {
     final selected = _selectedItem;
     if (selected == null || _saving) return;
@@ -223,7 +367,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      await widget.onSave(
+      final recordId = await widget.onSave(
         savedName,
         result.details,
         result.record.endedAt!,
@@ -232,7 +376,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       if (mounted) {
         Navigator.pop(
           context,
-          RecordEntryResult(RecordEntryResultKind.saved, savedName: savedName),
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
         );
       }
     } catch (_) {
@@ -303,81 +451,105 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     final selected = _selectedItem;
     final custom = _selectedCustomEvent;
     final customState = ref.watch(customEventCatalogProvider);
-    return SafeArea(
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 180),
-        child: selected == null && custom == null
-            ? _EventPicker(
-                key: const ValueKey('event-picker'),
-                recentPresets: widget.recentPresets,
-                customState: customState,
-                saving: _saving,
-                error: _error,
-                onSelect: _select,
-                onStartSleep: _startSleep,
-                onSelectCustom: _selectCustom,
-                onCreateCustom: _createCustomEvent,
-                onRenameCustom: _renameCustomEvent,
-                onArchiveCustom: _archiveCustomEvent,
-                onToggleCustomPin: (definition) {
-                  ref
-                      .read(customEventCatalogProvider.notifier)
-                      .setPinned(
-                        definition.customEventTypeId,
-                        pinned: !customState.isPinned(
+    return PopScope<RecordEntryResult>(
+      canPop: _savedEliminationRecordId == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _finishElimination();
+      },
+      child: SafeArea(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: selected == null && custom == null
+              ? _EventPicker(
+                  key: const ValueKey('event-picker'),
+                  recentPresets: widget.recentPresets,
+                  customState: customState,
+                  saving: _saving,
+                  error: _error,
+                  onSelect: _select,
+                  onStartSleep: _startSleep,
+                  onQuickElimination: _saveElimination,
+                  onSelectCustom: _selectCustom,
+                  onCreateCustom: _createCustomEvent,
+                  onRenameCustom: _renameCustomEvent,
+                  onArchiveCustom: _archiveCustomEvent,
+                  onToggleCustomPin: (definition) {
+                    ref
+                        .read(customEventCatalogProvider.notifier)
+                        .setPinned(
                           definition.customEventTypeId,
-                        ),
-                      );
-                },
-                onOpenDetailedRecord: widget.onOpenDetailedRecord,
-              )
-            : custom == null && selected!.id == EventTypeId.sleep
-            ? SleepEventForm(
-                key: const ValueKey('sleep'),
-                saving: _saving,
-                error: _error,
-                onBack: () => setState(() {
-                  _selectedItem = null;
-                  _error = null;
-                }),
-                onSave: _saveSleep,
-              )
-            : custom == null && _isIntakeEvent(selected!.id)
-            ? IntakeEventForm(
-                key: ValueKey(selected.id.name),
-                item: selected,
-                occurredAt: _occurredAt,
-                saving: _saving,
-                error: _error,
-                initialStructuredDataJson: _structuredDataJson,
-                onBack: () => setState(() {
-                  _selectedItem = null;
-                  _structuredDataJson = null;
-                  _error = null;
-                }),
-                onChangeTime: _changeTime,
-                onSave: _saveIntake,
-              )
-            : _EventForm(
-                key: ValueKey(custom?.customEventTypeId ?? selected!.id.name),
-                label:
-                    custom?.name ??
-                    selected!.label(AppLocalizations.of(context)!),
-                icon: custom == null ? selected!.icon : Icons.bookmark_outline,
-                custom: custom != null,
-                detailsController: _detailsController,
-                occurredAt: _occurredAt,
-                saving: _saving,
-                error: _error,
-                onBack: () => setState(() {
-                  _selectedItem = null;
-                  _selectedCustomEvent = null;
-                  _structuredDataJson = null;
-                  _error = null;
-                }),
-                onChangeTime: _changeTime,
-                onSave: _save,
-              ),
+                          pinned: !customState.isPinned(
+                            definition.customEventTypeId,
+                          ),
+                        );
+                  },
+                  onOpenDetailedRecord: widget.onOpenDetailedRecord,
+                )
+              : custom == null && selected!.id == EventTypeId.diaper
+              ? EliminationEventForm(
+                  key: const ValueKey('elimination'),
+                  savedRecord: _savedEliminationRecord,
+                  saving: _saving,
+                  error: _error,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _error = null;
+                  }),
+                  onQuickSave: (kind) => _saveElimination(selected, kind),
+                  onUpdate: _updateElimination,
+                  onUndo: _undoElimination,
+                  onDone: _finishElimination,
+                )
+              : custom == null && selected!.id == EventTypeId.sleep
+              ? SleepEventForm(
+                  key: const ValueKey('sleep'),
+                  saving: _saving,
+                  error: _error,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _error = null;
+                  }),
+                  onSave: _saveSleep,
+                )
+              : custom == null && _isIntakeEvent(selected!.id)
+              ? IntakeEventForm(
+                  key: ValueKey(selected.id.name),
+                  item: selected,
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  initialStructuredDataJson: _structuredDataJson,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _structuredDataJson = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _saveIntake,
+                )
+              : _EventForm(
+                  key: ValueKey(custom?.customEventTypeId ?? selected!.id.name),
+                  label:
+                      custom?.name ??
+                      selected!.label(AppLocalizations.of(context)!),
+                  icon: custom == null
+                      ? selected!.icon
+                      : Icons.bookmark_outline,
+                  custom: custom != null,
+                  detailsController: _detailsController,
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _selectedCustomEvent = null;
+                    _structuredDataJson = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _save,
+                ),
+        ),
       ),
     );
   }
@@ -391,6 +563,7 @@ class _EventPicker extends StatelessWidget {
     required this.error,
     required this.onSelect,
     required this.onStartSleep,
+    required this.onQuickElimination,
     required this.onSelectCustom,
     required this.onCreateCustom,
     required this.onRenameCustom,
@@ -411,6 +584,12 @@ class _EventPicker extends StatelessWidget {
   })
   onSelect;
   final ValueChanged<EventCatalogItem> onStartSleep;
+  final void Function(
+    EventCatalogItem item,
+    EliminationKind kind, {
+    EliminationRecord? preset,
+  })
+  onQuickElimination;
   final ValueChanged<SharedCustomEventDefinitionEntity> onSelectCustom;
   final VoidCallback onCreateCustom;
   final ValueChanged<SharedCustomEventDefinitionEntity> onRenameCustom;
@@ -444,15 +623,33 @@ class _EventPicker extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             children: [
               for (final item in quickItems)
-                _EventChoiceChip(
-                  key: Key('quick-record-${item.id.name}'),
-                  item: item,
-                  onTap: saving
-                      ? null
-                      : () => item.id == EventTypeId.sleep
-                            ? onStartSleep(item)
-                            : onSelect(item),
-                ),
+                if (item.id == EventTypeId.diaper) ...[
+                  _EliminationPresetChip(
+                    key: const Key('quick-record-diaper-urine'),
+                    label: loc.eliminationUrinePreset,
+                    icon: Icons.water_drop_outlined,
+                    onTap: saving
+                        ? null
+                        : () => onQuickElimination(item, EliminationKind.urine),
+                  ),
+                  _EliminationPresetChip(
+                    key: const Key('quick-record-diaper-stool'),
+                    label: loc.eliminationStoolPreset,
+                    icon: Icons.circle_outlined,
+                    onTap: saving
+                        ? null
+                        : () => onQuickElimination(item, EliminationKind.stool),
+                  ),
+                ] else
+                  _EventChoiceChip(
+                    key: Key('quick-record-${item.id.name}'),
+                    item: item,
+                    onTap: saving
+                        ? null
+                        : () => item.id == EventTypeId.sleep
+                              ? onStartSleep(item)
+                              : onSelect(item),
+                  ),
               for (final definition in customState.pinnedDefinitions)
                 ActionChip(
                   key: Key('quick-custom-${definition.customEventTypeId}'),
@@ -482,11 +679,26 @@ class _EventPicker extends StatelessWidget {
                     key: Key('recent-record-${preset.item.id.name}'),
                     avatar: Icon(preset.item.icon, size: 18),
                     label: Text(preset.label(loc)),
-                    onPressed: () => onSelect(
-                      preset.item,
-                      details: preset.details,
-                      structuredDataJson: preset.structuredDataJson,
-                    ),
+                    onPressed: () {
+                      if (preset.item.id == EventTypeId.diaper) {
+                        final elimination = EliminationRecord.decode(
+                          preset.structuredDataJson ?? '',
+                        );
+                        if (elimination != null) {
+                          onQuickElimination(
+                            preset.item,
+                            elimination.kind,
+                            preset: elimination,
+                          );
+                          return;
+                        }
+                      }
+                      onSelect(
+                        preset.item,
+                        details: preset.details,
+                        structuredDataJson: preset.structuredDataJson,
+                      );
+                    },
                   ),
               ],
             ),
@@ -594,6 +806,28 @@ class _EventChoiceChip extends StatelessWidget {
     return ActionChip(
       avatar: Icon(item.icon, size: 18),
       label: Text(item.label(AppLocalizations.of(context)!)),
+      onPressed: onTap,
+    );
+  }
+}
+
+class _EliminationPresetChip extends StatelessWidget {
+  const _EliminationPresetChip({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      avatar: Icon(icon, size: 18),
+      label: Text(label),
       onPressed: onTap,
     );
   }

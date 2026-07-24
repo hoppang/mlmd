@@ -1149,4 +1149,92 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sleepDurationLessThanMinute => '1分未満';
+
+  @override
+  String get eliminationUrineAction => 'おしっこをしました';
+
+  @override
+  String get eliminationStoolAction => 'うんちをしました';
+
+  @override
+  String get eliminationBothAction => 'おしっことうんちをしました';
+
+  @override
+  String get eliminationUrinePreset => 'おむつ・おしっこ';
+
+  @override
+  String get eliminationStoolPreset => 'おむつ・うんち';
+
+  @override
+  String get eliminationBothPreset => 'おむつ・おしっこ＋うんち';
+
+  @override
+  String get eliminationUrineDetail => 'おしっこ';
+
+  @override
+  String get eliminationStoolDetail => 'うんち';
+
+  @override
+  String get eliminationBothDetail => 'おしっこ＋うんち';
+
+  @override
+  String get eliminationKindTitle => '記録した内容';
+
+  @override
+  String get eliminationSavedHint =>
+      '現在の時刻で保存しました。必要な情報だけ追加したり、種類をすぐに直したりできます。';
+
+  @override
+  String get eliminationOptionalDetailsTitle => '任意の詳細';
+
+  @override
+  String get eliminationAmountTitle => '量';
+
+  @override
+  String get eliminationAmountLittle => '少し';
+
+  @override
+  String get eliminationAmountNormal => '普通';
+
+  @override
+  String get eliminationAmountMuch => '多い';
+
+  @override
+  String get stoolConsistencyTitle => '状態';
+
+  @override
+  String get stoolConsistencyLoose => 'ゆるい';
+
+  @override
+  String get stoolConsistencyNormal => '普通';
+
+  @override
+  String get stoolConsistencyHard => '硬い';
+
+  @override
+  String get stoolColorTitle => '色';
+
+  @override
+  String get stoolColorYellow => '黄色';
+
+  @override
+  String get stoolColorBrown => '茶色';
+
+  @override
+  String get stoolColorGreen => '緑色';
+
+  @override
+  String get stoolColorBlack => '黒';
+
+  @override
+  String get stoolColorOther => 'その他';
+
+  @override
+  String get eliminationObservationHint => '観察した事実だけを保存し、病気や原因を判断しません。';
+
+  @override
+  String get saveEliminationChanges => '変更を保存';
+
+  @override
+  String get eliminationChangesSaved => 'おむつ・排便の情報を保存しました。';
 }

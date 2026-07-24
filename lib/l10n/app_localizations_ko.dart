@@ -1154,4 +1154,92 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sleepDurationLessThanMinute => '1분 미만';
+
+  @override
+  String get eliminationUrineAction => '소변을 봤어요';
+
+  @override
+  String get eliminationStoolAction => '대변을 봤어요';
+
+  @override
+  String get eliminationBothAction => '소변과 대변을 모두 봤어요';
+
+  @override
+  String get eliminationUrinePreset => '기저귀·소변';
+
+  @override
+  String get eliminationStoolPreset => '기저귀·대변';
+
+  @override
+  String get eliminationBothPreset => '기저귀·소변+대변';
+
+  @override
+  String get eliminationUrineDetail => '소변';
+
+  @override
+  String get eliminationStoolDetail => '대변';
+
+  @override
+  String get eliminationBothDetail => '소변+대변';
+
+  @override
+  String get eliminationKindTitle => '기록한 내용';
+
+  @override
+  String get eliminationSavedHint =>
+      '현재 시각으로 저장했어요. 필요한 정보만 더하거나 종류를 바로 바꿀 수 있습니다.';
+
+  @override
+  String get eliminationOptionalDetailsTitle => '선택 정보';
+
+  @override
+  String get eliminationAmountTitle => '양';
+
+  @override
+  String get eliminationAmountLittle => '조금';
+
+  @override
+  String get eliminationAmountNormal => '보통';
+
+  @override
+  String get eliminationAmountMuch => '많이';
+
+  @override
+  String get stoolConsistencyTitle => '상태';
+
+  @override
+  String get stoolConsistencyLoose => '묽음';
+
+  @override
+  String get stoolConsistencyNormal => '보통';
+
+  @override
+  String get stoolConsistencyHard => '단단함';
+
+  @override
+  String get stoolColorTitle => '색상';
+
+  @override
+  String get stoolColorYellow => '노랑';
+
+  @override
+  String get stoolColorBrown => '갈색';
+
+  @override
+  String get stoolColorGreen => '녹색';
+
+  @override
+  String get stoolColorBlack => '검정';
+
+  @override
+  String get stoolColorOther => '기타';
+
+  @override
+  String get eliminationObservationHint => '관찰한 사실만 저장하며 질환이나 원인을 판단하지 않습니다.';
+
+  @override
+  String get saveEliminationChanges => '변경사항 저장';
+
+  @override
+  String get eliminationChangesSaved => '기저귀·배변 정보를 저장했어요.';
 }

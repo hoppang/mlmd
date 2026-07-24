@@ -2247,6 +2247,180 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'1분 미만'**
   String get sleepDurationLessThanMinute;
+
+  /// No description provided for @eliminationUrineAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'소변을 봤어요'**
+  String get eliminationUrineAction;
+
+  /// No description provided for @eliminationStoolAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'대변을 봤어요'**
+  String get eliminationStoolAction;
+
+  /// No description provided for @eliminationBothAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'소변과 대변을 모두 봤어요'**
+  String get eliminationBothAction;
+
+  /// No description provided for @eliminationUrinePreset.
+  ///
+  /// In ko, this message translates to:
+  /// **'기저귀·소변'**
+  String get eliminationUrinePreset;
+
+  /// No description provided for @eliminationStoolPreset.
+  ///
+  /// In ko, this message translates to:
+  /// **'기저귀·대변'**
+  String get eliminationStoolPreset;
+
+  /// No description provided for @eliminationBothPreset.
+  ///
+  /// In ko, this message translates to:
+  /// **'기저귀·소변+대변'**
+  String get eliminationBothPreset;
+
+  /// No description provided for @eliminationUrineDetail.
+  ///
+  /// In ko, this message translates to:
+  /// **'소변'**
+  String get eliminationUrineDetail;
+
+  /// No description provided for @eliminationStoolDetail.
+  ///
+  /// In ko, this message translates to:
+  /// **'대변'**
+  String get eliminationStoolDetail;
+
+  /// No description provided for @eliminationBothDetail.
+  ///
+  /// In ko, this message translates to:
+  /// **'소변+대변'**
+  String get eliminationBothDetail;
+
+  /// No description provided for @eliminationKindTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록한 내용'**
+  String get eliminationKindTitle;
+
+  /// No description provided for @eliminationSavedHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 시각으로 저장했어요. 필요한 정보만 더하거나 종류를 바로 바꿀 수 있습니다.'**
+  String get eliminationSavedHint;
+
+  /// No description provided for @eliminationOptionalDetailsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택 정보'**
+  String get eliminationOptionalDetailsTitle;
+
+  /// No description provided for @eliminationAmountTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'양'**
+  String get eliminationAmountTitle;
+
+  /// No description provided for @eliminationAmountLittle.
+  ///
+  /// In ko, this message translates to:
+  /// **'조금'**
+  String get eliminationAmountLittle;
+
+  /// No description provided for @eliminationAmountNormal.
+  ///
+  /// In ko, this message translates to:
+  /// **'보통'**
+  String get eliminationAmountNormal;
+
+  /// No description provided for @eliminationAmountMuch.
+  ///
+  /// In ko, this message translates to:
+  /// **'많이'**
+  String get eliminationAmountMuch;
+
+  /// No description provided for @stoolConsistencyTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'상태'**
+  String get stoolConsistencyTitle;
+
+  /// No description provided for @stoolConsistencyLoose.
+  ///
+  /// In ko, this message translates to:
+  /// **'묽음'**
+  String get stoolConsistencyLoose;
+
+  /// No description provided for @stoolConsistencyNormal.
+  ///
+  /// In ko, this message translates to:
+  /// **'보통'**
+  String get stoolConsistencyNormal;
+
+  /// No description provided for @stoolConsistencyHard.
+  ///
+  /// In ko, this message translates to:
+  /// **'단단함'**
+  String get stoolConsistencyHard;
+
+  /// No description provided for @stoolColorTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'색상'**
+  String get stoolColorTitle;
+
+  /// No description provided for @stoolColorYellow.
+  ///
+  /// In ko, this message translates to:
+  /// **'노랑'**
+  String get stoolColorYellow;
+
+  /// No description provided for @stoolColorBrown.
+  ///
+  /// In ko, this message translates to:
+  /// **'갈색'**
+  String get stoolColorBrown;
+
+  /// No description provided for @stoolColorGreen.
+  ///
+  /// In ko, this message translates to:
+  /// **'녹색'**
+  String get stoolColorGreen;
+
+  /// No description provided for @stoolColorBlack.
+  ///
+  /// In ko, this message translates to:
+  /// **'검정'**
+  String get stoolColorBlack;
+
+  /// No description provided for @stoolColorOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get stoolColorOther;
+
+  /// No description provided for @eliminationObservationHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'관찰한 사실만 저장하며 질환이나 원인을 판단하지 않습니다.'**
+  String get eliminationObservationHint;
+
+  /// No description provided for @saveEliminationChanges.
+  ///
+  /// In ko, this message translates to:
+  /// **'변경사항 저장'**
+  String get saveEliminationChanges;
+
+  /// No description provided for @eliminationChangesSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'기저귀·배변 정보를 저장했어요.'**
+  String get eliminationChangesSaved;
 }
 
 class _AppLocalizationsDelegate

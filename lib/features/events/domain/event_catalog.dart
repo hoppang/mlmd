@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
+import 'elimination_record.dart';
 
 enum EventCategoryId { basicCare, healthMedical, activityPlay, growthMemory }
 
@@ -211,6 +212,20 @@ class RecentEventPreset {
   String label(AppLocalizations loc) {
     final typeLabel = item.label(loc);
     final normalizedDetails = details.trim();
+    if (item.id == EventTypeId.diaper) {
+      final elimination = EliminationRecord.decode(structuredDataJson ?? '');
+      if (elimination != null) {
+        final presetLabel = switch (elimination.kind) {
+          EliminationKind.urine => loc.eliminationUrinePreset,
+          EliminationKind.stool => loc.eliminationStoolPreset,
+          EliminationKind.both => loc.eliminationBothPreset,
+        };
+        final separator = normalizedDetails.indexOf(' · ');
+        return separator < 0
+            ? presetLabel
+            : '$presetLabel${normalizedDetails.substring(separator)}';
+      }
+    }
     return normalizedDetails.isEmpty
         ? typeLabel
         : '$typeLabel · $normalizedDetails';

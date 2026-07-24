@@ -25,6 +25,7 @@ import 'package:mlmd/features/summaries/application/ai_summary_notifier.dart';
 import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
 import 'package:mlmd/features/duplicate_review/application/duplicate_review_notifier.dart';
 import 'package:mlmd/features/events/application/custom_event_notifier.dart';
+import 'package:mlmd/features/events/domain/elimination_record.dart';
 import 'package:mlmd/features/events/domain/intake_record.dart';
 import 'package:mlmd/features/events/domain/sleep_record.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
@@ -56,6 +57,10 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   String? addedActivityDetails;
   DateTime? addedActivityOccurredAt;
   String? addedActivityStructuredDataJson;
+  String? updatedActivityRecordId;
+  String? updatedActivityDetails;
+  String? updatedActivityStructuredDataJson;
+  String? deletedActivityRecordId;
   String? addedCustomEventTypeId;
   String? addedCustomEventName;
   String? addedCustomEventMemo;
@@ -99,7 +104,7 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   }
 
   @override
-  Future<void> addActivityRecord({
+  Future<String> addActivityRecord({
     required String type,
     required String details,
     required DateTime occurredAt,
@@ -110,6 +115,24 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     addedActivityDetails = details;
     addedActivityOccurredAt = occurredAt;
     addedActivityStructuredDataJson = structuredDataJson;
+    return 'activity-record';
+  }
+
+  @override
+  Future<void> updateActivityDetails({
+    required String recordId,
+    required String details,
+    required String structuredDataJson,
+  }) async {
+    if (activitySaveError != null) throw activitySaveError!;
+    updatedActivityRecordId = recordId;
+    updatedActivityDetails = details;
+    updatedActivityStructuredDataJson = structuredDataJson;
+  }
+
+  @override
+  Future<void> deleteActivityRecord(String recordId) async {
+    deletedActivityRecordId = recordId;
   }
 
   @override
@@ -574,6 +597,97 @@ void main() {
     expect(savedIntake?.method, FeedingMethod.bottle);
     expect(savedIntake?.amountExpression?.exactValue, 200);
     expect(find.text('수유 기록을 저장했어요.'), findsOneWidget);
+  });
+
+  testWidgets('기저귀 빠른 프리셋은 즉시 저장하고 종류 정정·상세 추가·실행 취소를 지원한다', (tester) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('quick-record-diaper-urine')), findsOneWidget);
+    expect(find.byKey(const Key('quick-record-diaper-stool')), findsOneWidget);
+    expect(find.byKey(const Key('quick-record-diaper')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('quick-record-diaper-urine')));
+    await tester.pumpAndSettle();
+
+    final initial = EliminationRecord.decode(
+      notifier.addedActivityStructuredDataJson!,
+    );
+    expect(notifier.addedActivityType, '기저귀·배변');
+    expect(notifier.addedActivityDetails, '소변');
+    expect(initial?.kind, EliminationKind.urine);
+    expect(notifier.addedActivityOccurredAt, initial?.occurredAt);
+    expect(find.byKey(const Key('elimination-saved-hint')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('elimination-kind-both')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('elimination-amount-normal')));
+    await tester.tap(find.byKey(const Key('stool-consistency-hard')));
+    await tester.tap(find.byKey(const Key('stool-color-brown')));
+    await tester.enterText(find.byKey(const Key('elimination-note')), '저녁 관찰');
+    final saveChanges = find.byKey(const Key('save-elimination-changes'));
+    await tester.ensureVisible(saveChanges);
+    await tester.tap(saveChanges);
+    await tester.pumpAndSettle();
+
+    final updated = EliminationRecord.decode(
+      notifier.updatedActivityStructuredDataJson!,
+    );
+    expect(notifier.updatedActivityRecordId, 'activity-record');
+    expect(updated?.kind, EliminationKind.both);
+    expect(updated?.stoolAmount, EliminationAmount.normal);
+    expect(updated?.stoolConsistency, StoolConsistency.hard);
+    expect(updated?.stoolColor, StoolColor.brown);
+    expect(updated?.note, '저녁 관찰');
+    expect(notifier.updatedActivityDetails, contains('갈색'));
+
+    await tester.tap(find.byKey(const Key('finish-elimination-record')));
+    await tester.pumpAndSettle();
+    expect(find.text('기저귀·배변 기록을 저장했어요.'), findsOneWidget);
+
+    await tester.tap(find.text('실행 취소'));
+    await tester.pumpAndSettle();
+    expect(notifier.deletedActivityRecordId, 'activity-record');
+  });
+
+  testWidgets('전체 카테고리 기저귀는 소변·대변·둘 다를 넓은 버튼으로 명시한다', (tester) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('event-category-basicCare')));
+    await tester.pumpAndSettle();
+    final diaper = find.byKey(const Key('category-event-diaper'));
+    await tester.ensureVisible(diaper);
+    await tester.tap(diaper);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('save-elimination-urine')), findsOneWidget);
+    expect(find.byKey(const Key('save-elimination-stool')), findsOneWidget);
+    expect(find.byKey(const Key('save-elimination-both')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('save-elimination-both')));
+    await tester.pumpAndSettle();
+
+    final saved = EliminationRecord.decode(
+      notifier.addedActivityStructuredDataJson!,
+    );
+    expect(saved?.kind, EliminationKind.both);
+    expect(saved?.hasUrine, isTrue);
+    expect(saved?.hasStool, isTrue);
+
+    final undo = find.byKey(const Key('undo-elimination-record'));
+    await tester.ensureVisible(undo);
+    await tester.tap(undo);
+    await tester.pumpAndSettle();
+    expect(notifier.deletedActivityRecordId, 'activity-record');
+    expect(find.byKey(const Key('elimination-record-form')), findsNothing);
   });
 
   testWidgets('나만의 기록은 이름만으로 만들고 메모와 이름 스냅샷을 저장한다', (tester) async {

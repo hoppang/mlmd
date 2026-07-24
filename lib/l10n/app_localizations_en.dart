@@ -1185,4 +1185,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sleepDurationLessThanMinute => 'Less than 1m';
+
+  @override
+  String get eliminationUrineAction => 'Wet diaper';
+
+  @override
+  String get eliminationStoolAction => 'Bowel movement';
+
+  @override
+  String get eliminationBothAction => 'Wet diaper and bowel movement';
+
+  @override
+  String get eliminationUrinePreset => 'Diaper · urine';
+
+  @override
+  String get eliminationStoolPreset => 'Diaper · stool';
+
+  @override
+  String get eliminationBothPreset => 'Diaper · urine + stool';
+
+  @override
+  String get eliminationUrineDetail => 'Urine';
+
+  @override
+  String get eliminationStoolDetail => 'Stool';
+
+  @override
+  String get eliminationBothDetail => 'Urine + stool';
+
+  @override
+  String get eliminationKindTitle => 'What was recorded';
+
+  @override
+  String get eliminationSavedHint =>
+      'Saved at the current time. You can add only the details you need or correct the type now.';
+
+  @override
+  String get eliminationOptionalDetailsTitle => 'Optional details';
+
+  @override
+  String get eliminationAmountTitle => 'Amount';
+
+  @override
+  String get eliminationAmountLittle => 'A little';
+
+  @override
+  String get eliminationAmountNormal => 'Medium';
+
+  @override
+  String get eliminationAmountMuch => 'A lot';
+
+  @override
+  String get stoolConsistencyTitle => 'Consistency';
+
+  @override
+  String get stoolConsistencyLoose => 'Loose';
+
+  @override
+  String get stoolConsistencyNormal => 'Normal';
+
+  @override
+  String get stoolConsistencyHard => 'Hard';
+
+  @override
+  String get stoolColorTitle => 'Color';
+
+  @override
+  String get stoolColorYellow => 'Yellow';
+
+  @override
+  String get stoolColorBrown => 'Brown';
+
+  @override
+  String get stoolColorGreen => 'Green';
+
+  @override
+  String get stoolColorBlack => 'Black';
+
+  @override
+  String get stoolColorOther => 'Other';
+
+  @override
+  String get eliminationObservationHint =>
+      'The app stores observations only and does not infer an illness or cause.';
+
+  @override
+  String get saveEliminationChanges => 'Save changes';
+
+  @override
+  String get eliminationChangesSaved => 'Diaper and bowel details saved.';
 }

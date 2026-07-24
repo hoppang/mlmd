@@ -256,6 +256,15 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
               occurredAt: occurredAt,
               structuredDataJson: structuredDataJson,
             ),
+        onUpdate: (recordId, details, structuredDataJson) => ref
+            .read(diaryListProvider.notifier)
+            .updateActivityDetails(
+              recordId: recordId,
+              details: details,
+              structuredDataJson: structuredDataJson,
+            ),
+        onDelete: (recordId) =>
+            ref.read(diaryListProvider.notifier).deleteActivityRecord(recordId),
         onSaveCustom: (customEventTypeId, nameSnapshot, memo, occurredAt) => ref
             .read(diaryListProvider.notifier)
             .addCustomEventRecord(
@@ -287,7 +296,17 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     switch (result.kind) {
       case RecordEntryResultKind.saved:
         messenger.showSnackBar(
-          SnackBar(content: Text(loc.quickRecordSaved(result.savedName!))),
+          SnackBar(
+            content: Text(loc.quickRecordSaved(result.savedName!)),
+            action: result.recordId == null
+                ? null
+                : SnackBarAction(
+                    label: loc.undo,
+                    onPressed: () => ref
+                        .read(diaryListProvider.notifier)
+                        .deleteActivityRecord(result.recordId!),
+                  ),
+          ),
         );
       case RecordEntryResultKind.sleepAlreadyActive:
         messenger.showSnackBar(SnackBar(content: Text(loc.sleepAlreadyActive)));

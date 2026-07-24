@@ -75,24 +75,24 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     state = repo.getDiaries();
   }
 
-  Future<void> addActivityRecord({
+  Future<String> addActivityRecord({
     required String type,
     required String details,
     required DateTime occurredAt,
     String? structuredDataJson,
   }) async {
     final repo = ref.read(diaryRepositoryProvider);
-    repo.addActivityRecord(
-      ActivityEntity(
-        type: type,
-        time: occurredAt,
-        details: details,
-        structuredDataJson: structuredDataJson,
-        lastModified: DateTime.now(),
-      ),
+    final activity = ActivityEntity(
+      type: type,
+      time: occurredAt,
+      details: details,
+      structuredDataJson: structuredDataJson,
+      lastModified: DateTime.now(),
     );
+    repo.addActivityRecord(activity);
     await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
     state = repo.getDiaries();
+    return activity.recordId!;
   }
 
   Future<void> addCustomEventRecord({
@@ -255,6 +255,24 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     if (activity == null) return;
     final repo = ref.read(diaryRepositoryProvider);
     repo.deleteActivityRecord(activity.id);
+    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
+    state = repo.getDiaries();
+  }
+
+  Future<void> updateActivityDetails({
+    required String recordId,
+    required String details,
+    required String structuredDataJson,
+  }) async {
+    final activity = _activityByRecordId(recordId);
+    if (activity == null) {
+      throw StateError('Activity $recordId does not exist.');
+    }
+    final updated = _copyActivity(activity)
+      ..details = details
+      ..structuredDataJson = structuredDataJson;
+    final repo = ref.read(diaryRepositoryProvider);
+    repo.updateActivityRecord(updated);
     await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
     state = repo.getDiaries();
   }
