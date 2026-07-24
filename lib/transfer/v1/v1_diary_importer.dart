@@ -57,10 +57,22 @@ class V1DiaryImporter implements DiaryImporter {
           rawActivities[activityIndex],
           activityPath,
         );
+        final rawTimePrecision = activity['timePrecision'];
+        final timePrecision = rawTimePrecision == null
+            ? 1
+            : validator.integer(activity, 'timePrecision', activityPath);
+        if (timePrecision != 0 && timePrecision != 1) {
+          throw DiaryTransferException(
+            'invalid_document',
+            'Invalid diary backup at $activityPath.timePrecision: '
+                'must be 0 or 1.',
+          );
+        }
         activities.add(
           CanonicalActivity(
             type: validator.string(activity, 'type', activityPath),
             time: validator.wallClock(activity, 'time', activityPath),
+            timePrecision: timePrecision,
             details: validator.string(activity, 'details', activityPath),
             lastModified: validator.utcInstant(
               activity,

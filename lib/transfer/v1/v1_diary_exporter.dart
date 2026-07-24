@@ -34,6 +34,7 @@ class V1DiaryExporter implements DiaryExporter {
                     (activity) => V1ActivityItem(
                       type: activity.type,
                       time: _wallClock(activity.time),
+                      timePrecision: activity.timePrecision,
                       details: activity.details,
                       lastModified: _utc(activity.lastModified),
                     ),

@@ -1,4 +1,5 @@
 import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_entity.dart';
 import '../utils/logger.dart';
 
@@ -8,10 +9,19 @@ import '../utils/logger.dart';
 
 /// LLM이 추출한 이벤트 한 건의 요약 (집계 형태).
 class ActivitySummary {
+  final String? recordId;
+  final int revision;
   final String type; // 수유, 수면, 병원 등
   final String detail; // "[7, 9, 11]시", "2회", "저녁 소아과" 등
+  final DateTime? occurredAt;
 
-  const ActivitySummary({required this.type, required this.detail});
+  const ActivitySummary({
+    this.recordId,
+    this.revision = 1,
+    required this.type,
+    required this.detail,
+    this.occurredAt,
+  });
 }
 
 /// LLM 분석 결과 전체를 담는 DTO.
@@ -26,6 +36,37 @@ class DiaryExtractionResult {
     required this.activities,
   });
 }
+
+enum DiaryAnalysisStatus { success, unavailable, failed }
+
+class DiaryAnalysisOutcome {
+  const DiaryAnalysisOutcome._(this.status, this.result);
+
+  const DiaryAnalysisOutcome.success(DiaryExtractionResult result)
+    : this._(DiaryAnalysisStatus.success, result);
+
+  const DiaryAnalysisOutcome.unavailable()
+    : this._(DiaryAnalysisStatus.unavailable, null);
+
+  const DiaryAnalysisOutcome.failed()
+    : this._(DiaryAnalysisStatus.failed, null);
+
+  final DiaryAnalysisStatus status;
+  final DiaryExtractionResult? result;
+}
+
+abstract interface class DiaryAnalysisService {
+  bool get isAvailable;
+
+  Future<DiaryAnalysisOutcome> analyze(
+    String content, {
+    String languageCode = 'ko',
+  });
+}
+
+final diaryAnalysisServiceProvider = Provider<DiaryAnalysisService>((ref) {
+  return LlmDiaryService();
+});
 
 // ---------------------------------------------------------------------------
 // 이벤트 화이트리스트
@@ -87,7 +128,7 @@ String buildEmbeddingText(String summary, List<ActivityEntity> activities) {
 /// <타입> | <상세>
 /// ...
 /// ```
-class LlmDiaryService {
+class LlmDiaryService implements DiaryAnalysisService {
   static final LlmDiaryService _instance = LlmDiaryService._internal();
   factory LlmDiaryService() => _instance;
   LlmDiaryService._internal();
@@ -239,21 +280,19 @@ class LlmDiaryService {
   // -------------------------------------------------------------------------
 
   /// [content] 자유 텍스트를 분석하여 제목·요약·이벤트를 추출합니다.
-  Future<DiaryExtractionResult> generate(
+  @override
+  bool get isAvailable => FlutterGemma.hasActiveModel();
+
+  @override
+  Future<DiaryAnalysisOutcome> analyze(
     String content, {
     String languageCode = 'ko',
   }) async {
-    final fallback = DiaryExtractionResult(
-      title: content.length > 20 ? content.substring(0, 20) : content,
-      summary: content.length > 100 ? content.substring(0, 100) : content,
-      activities: const [],
-    );
+    if (content.trim().isEmpty) return const DiaryAnalysisOutcome.failed();
 
-    if (content.trim().isEmpty) return fallback;
-
-    if (!FlutterGemma.hasActiveModel()) {
-      logger.w('[LlmDiaryService] 활성 모델 없음. fallback 반환.');
-      return fallback;
+    if (!isAvailable) {
+      logger.w('[LlmDiaryService] 활성 모델 없음. 분석 사용 불가.');
+      return const DiaryAnalysisOutcome.unavailable();
     }
 
     InferenceModel? model;
@@ -279,10 +318,10 @@ class LlmDiaryService {
 
       final raw = buffer.toString();
       logger.d('[LlmDiaryService] raw output:\n$raw');
-      return _parse(raw, content);
+      return DiaryAnalysisOutcome.success(_parse(raw, content));
     } catch (e) {
       logger.e('[LlmDiaryService] 분석 실패: $e');
-      return fallback;
+      return const DiaryAnalysisOutcome.failed();
     } finally {
       await session?.close();
       await model?.close();

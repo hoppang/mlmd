@@ -3,6 +3,8 @@ import 'diary_transfer_exception.dart';
 import 'diary_transfer_header.dart';
 import 'v1/v1_diary_exporter.dart';
 import 'v1/v1_diary_importer.dart';
+import 'v2/v2_diary_exporter.dart';
+import 'v2/v2_diary_importer.dart';
 
 abstract interface class DiaryImporter {
   int get schemaVersion;
@@ -32,9 +34,9 @@ class DiaryTransferCodecRegistry {
   }
 
   factory DiaryTransferCodecRegistry.standard() => DiaryTransferCodecRegistry(
-    importers: [const V1DiaryImporter()],
-    exporters: [const V1DiaryExporter()],
-    latestSchemaVersion: 1,
+    importers: [const V1DiaryImporter(), const V2DiaryImporter()],
+    exporters: [const V1DiaryExporter(), const V2DiaryExporter()],
+    latestSchemaVersion: 2,
   );
 
   DiaryImporter importerFor(int version) {

@@ -1,25 +1,54 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_entity.dart';
 import '../models/diary_entity.dart';
+import '../models/author_profile_entity.dart';
+import '../models/device_profile_entity.dart';
+import '../models/search_document_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
-import '../services/llm_diary_service.dart'
-    show buildEmbeddingText, ActivitySummary;
+import '../features/search/domain/hybrid_search_query.dart';
 import '../transfer/canonical_transfer_document.dart';
 import 'package:uuid/uuid.dart';
+import 'profile_repository.dart';
 
-/// 유사 검색 결과 모델
-class SimilarDiaryResult {
+enum DiarySearchSource { memo, activity }
+
+enum DiarySearchMatchReason {
+  exactText,
+  activityType,
+  relatedExpression,
+  structuredTemperature,
+  structuredAuthor,
+  structuredEvent,
+  dateRange,
+}
+
+/// 검색 화면에 표시할 메모 또는 개별 이벤트 결과입니다.
+class DiarySearchResult {
   final DiaryEntity diary;
+  final ActivityEntity? activity;
+  final DiarySearchMatchReason reason;
 
-  /// 유사도 (0.0 ~ 100.0 %)
-  final double similarityPercent;
+  /// 사용자에게 노출하지 않는 내부 정렬 점수입니다.
+  final double relevanceScore;
+  final double? matchedNumericValue;
 
-  const SimilarDiaryResult({
+  const DiarySearchResult({
     required this.diary,
-    required this.similarityPercent,
+    this.activity,
+    required this.reason,
+    required this.relevanceScore,
+    this.matchedNumericValue,
   });
+
+  DiarySearchSource get source =>
+      activity == null ? DiarySearchSource.memo : DiarySearchSource.activity;
+
+  DateTime get occurredAt => activity?.time ?? diary.date;
+
+  String get resultKey =>
+      activity == null ? 'memo:${diary.id}' : 'activity:${activity!.id}';
 }
 
 /// 일기 CRUD 처리를 위한 Repository 인터페이스
@@ -38,8 +67,20 @@ abstract class DiaryRepository {
   /// 기존 활동 엔티티는 실제 삭제한 뒤 [activities]로 교체합니다.
   int saveDiaryWithActivities(
     DiaryEntity diary,
-    List<ActivityEntity> activities,
-  );
+    List<ActivityEntity> activities, {
+    String? consumedDraftId,
+  });
+
+  /// 발생한 이벤트를 같은 날짜의 기록에 추가합니다. 해당 날짜의 기록이
+  /// 없으면 타임라인용 빈 기록을 함께 만들어 이벤트가 고아가 되지 않게 합니다.
+  int addActivityRecord(ActivityEntity activity);
+
+  /// 기존 이벤트를 같은 논리 레코드로 갱신합니다. 발생 시각의 날짜가
+  /// 달라지면 해당 날짜의 타임라인 컨테이너로 옮깁니다.
+  int updateActivityRecord(ActivityEntity activity);
+
+  /// 지정한 로컬 이벤트를 삭제합니다.
+  bool deleteActivityRecord(int id);
 
   /// 현재 저장소를 버전 독립적인 내보내기 모델로 스냅샷합니다.
   CanonicalExportDocument createExportDocument({required String appVersion});
@@ -65,25 +106,35 @@ abstract class DiaryRepository {
   /// 지정한 ID의 일기를 삭제합니다.
   bool deleteDiary(int id);
 
-  /// 쿼리 텍스트와 의미적으로 유사한 일기를 HNSW 벡터 검색으로 조회합니다.
-  /// [embeddingService]로 쿼리를 임베딩한 뒤 가장 가까운 [limit]개를 반환합니다.
-  /// 반환값은 유사도(%) 내림차순으로 정렬됩니다.
-  Future<List<SimilarDiaryResult>> searchSimilar(
-    String query,
-    EmbeddingService embeddingService, {
-    int limit = 5,
+  /// 키워드가 일치하는 메모·이벤트와 선택형 의미 검색 결과를 반환합니다.
+  /// 임베딩을 사용할 수 없어도 키워드 검색은 정상 동작합니다.
+  Future<List<DiarySearchResult>> searchRecords(
+    HybridSearchQuery query,
+    EmbeddingEngine embeddingService, {
+    int limit = 50,
   });
+
+  /// 원본 메모·이벤트로부터 파생 검색 문서를 동기화하고 가능한 문서를 임베딩합니다.
+  Future<int> rebuildSearchIndex(
+    EmbeddingEngine embeddingService, {
+    Set<String>? recordIds,
+  });
+
+  bool get hasPendingSearchEmbeddings;
 }
 
 /// DiaryRepository의 ObjectBox 구현체
 class DiaryRepositoryImpl implements DiaryRepository {
   final ObjectBoxHelper _obxHelper;
+  final ProfileRepository _profileRepository;
   static const _uuid = Uuid();
   static final _uuidV4Pattern = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
   );
-  DiaryRepositoryImpl(this._obxHelper) {
+  DiaryRepositoryImpl(this._obxHelper, this._profileRepository) {
     _backfillRecordIds();
+    _backfillActivityIds();
+    _backfillRecordSources();
   }
 
   @override
@@ -125,44 +176,378 @@ class DiaryRepositoryImpl implements DiaryRepository {
     });
   }
 
+  void _backfillActivityIds() {
+    _obxHelper.store.runInTransaction(TxMode.write, () {
+      final activities = _obxHelper.activityBox.getAll();
+      final used = <String>{};
+      final changed = <ActivityEntity>[];
+      for (final activity in activities) {
+        var value = activity.recordId?.trim().toLowerCase();
+        var didChange = false;
+        if (value == null ||
+            !_uuidV4Pattern.hasMatch(value) ||
+            !used.add(value)) {
+          do {
+            value = _uuid.v4();
+          } while (!used.add(value));
+          activity.recordId = value;
+          didChange = true;
+        } else if (activity.recordId != value) {
+          activity.recordId = value;
+          didChange = true;
+        }
+        if (activity.revision < 1) {
+          activity.revision = 1;
+          didChange = true;
+        }
+        if (didChange) changed.add(activity);
+      }
+      if (changed.isNotEmpty) _obxHelper.activityBox.putMany(changed);
+    });
+  }
+
+  /// UX-012 이전의 로컬 데이터와 v1 백업에는 출처가 없다. 최초 마이그레이션
+  /// 시점의 현재 작성자·현재 설치를 출처로 채우고 원래 수정 시각은 보존한다.
+  void _backfillRecordSources() {
+    final source = _profileRepository.requireCurrentSource();
+    _obxHelper.store.runInTransaction(TxMode.write, () {
+      final diaries = _obxHelper.diaryBox.getAll();
+      final changedDiaries = <DiaryEntity>[];
+      for (final diary in diaries) {
+        var changed = false;
+        if (diary.createdAt == null) {
+          diary.createdAt = diary.lastModified;
+          changed = true;
+        }
+        if (diary.createdByAuthorProfileId == null) {
+          diary.createdByAuthorProfileId = source.authorProfileId;
+          changed = true;
+        }
+        if (diary.createdByDeviceProfileId == null) {
+          diary.createdByDeviceProfileId = source.deviceProfileId;
+          changed = true;
+        }
+        if (diary.lastModifiedByAuthorProfileId == null) {
+          diary.lastModifiedByAuthorProfileId = source.authorProfileId;
+          changed = true;
+        }
+        if (diary.lastModifiedByDeviceProfileId == null) {
+          diary.lastModifiedByDeviceProfileId = source.deviceProfileId;
+          changed = true;
+        }
+        if (changed) changedDiaries.add(diary);
+      }
+      if (changedDiaries.isNotEmpty) {
+        _obxHelper.diaryBox.putMany(changedDiaries);
+      }
+
+      final activities = _obxHelper.activityBox.getAll();
+      final changedActivities = <ActivityEntity>[];
+      for (final activity in activities) {
+        var changed = false;
+        if (activity.createdAt == null) {
+          activity.createdAt = activity.lastModified;
+          changed = true;
+        }
+        if (activity.createdByAuthorProfileId == null) {
+          activity.createdByAuthorProfileId = source.authorProfileId;
+          changed = true;
+        }
+        if (activity.createdByDeviceProfileId == null) {
+          activity.createdByDeviceProfileId = source.deviceProfileId;
+          changed = true;
+        }
+        if (activity.lastModifiedByAuthorProfileId == null) {
+          activity.lastModifiedByAuthorProfileId = source.authorProfileId;
+          changed = true;
+        }
+        if (activity.lastModifiedByDeviceProfileId == null) {
+          activity.lastModifiedByDeviceProfileId = source.deviceProfileId;
+          changed = true;
+        }
+        if (changed) changedActivities.add(activity);
+      }
+      if (changedActivities.isNotEmpty) {
+        _obxHelper.activityBox.putMany(changedActivities);
+      }
+    });
+  }
+
   @override
   int saveDiary(DiaryEntity diary) {
     _prepareRecordId(diary);
-    // 트리거: 생성 및 수정 시 자동으로 lastModified 갱신
-    diary.lastModified = DateTime.now();
+    final now = DateTime.now();
+    _prepareDiarySource(diary, now);
     return _obxHelper.diaryBox.put(diary);
   }
 
   @override
   int saveDiaryWithActivities(
     DiaryEntity diary,
-    List<ActivityEntity> activities,
-  ) {
+    List<ActivityEntity> activities, {
+    String? consumedDraftId,
+  }) {
     _prepareRecordId(diary);
     return _obxHelper.store.runInTransaction(TxMode.write, () {
       final now = DateTime.now();
-      diary.lastModified = now;
+      _prepareDiarySource(diary, now);
       final diaryId = _obxHelper.diaryBox.put(diary);
 
       final oldQuery = _obxHelper.activityBox
           .query(ActivityEntity_.diary.equals(diaryId))
           .build();
+      final oldActivities = oldQuery.find();
+      final unmatchedOldActivities = [...oldActivities];
       final oldIds = oldQuery.findIds();
       oldQuery.close();
       if (oldIds.isNotEmpty) {
         _obxHelper.activityBox.removeMany(oldIds);
       }
 
+      final usedActivityRecordIds = _obxHelper.activityBox
+          .getAll()
+          .map((activity) => activity.recordId)
+          .whereType<String>()
+          .toSet();
       for (final activity in activities) {
+        final previous = _takePreviousActivity(
+          activity,
+          unmatchedOldActivities,
+        );
+        activity
+          ..structuredDataJson =
+              activity.structuredDataJson ?? previous?.structuredDataJson
+          ..customEventTypeId =
+              activity.customEventTypeId ?? previous?.customEventTypeId
+          ..customEventNameSnapshot =
+              activity.customEventNameSnapshot ??
+              previous?.customEventNameSnapshot;
+        _prepareActivityIdentity(
+          activity,
+          previous: previous,
+          used: usedActivityRecordIds,
+        );
+        _prepareActivitySource(activity, now, previous: previous);
         activity.diary.target = diary;
-        activity.lastModified = now;
       }
       if (activities.isNotEmpty) {
         _obxHelper.activityBox.putMany(activities);
       }
+      if (consumedDraftId != null) {
+        final draftQuery = _obxHelper.draftBox
+            .query(RecordDraftEntity_.draftId.equals(consumedDraftId))
+            .build();
+        final draftId = draftQuery.findFirst()?.id;
+        draftQuery.close();
+        if (draftId != null) _obxHelper.draftBox.remove(draftId);
+      }
       return diaryId;
     });
   }
+
+  @override
+  int addActivityRecord(ActivityEntity activity) {
+    final sameDayDiaries =
+        _obxHelper.diaryBox
+            .getAll()
+            .where(
+              (diary) =>
+                  diary.date.year == activity.time.year &&
+                  diary.date.month == activity.time.month &&
+                  diary.date.day == activity.time.day,
+            )
+            .toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
+    final diary = sameDayDiaries.isEmpty
+        ? DiaryEntity(
+            date: activity.time,
+            title: '',
+            content: '',
+            lastModified: activity.lastModified,
+          )
+        : sameDayDiaries.first;
+    _prepareRecordId(diary);
+
+    return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final now = DateTime.now();
+      _prepareDiarySource(diary, now);
+      _obxHelper.diaryBox.put(diary);
+      activity.diary.target = diary;
+      _prepareActivityIdentity(
+        activity,
+        used: _obxHelper.activityBox
+            .getAll()
+            .map((item) => item.recordId)
+            .whereType<String>()
+            .toSet(),
+      );
+      _prepareActivitySource(activity, now);
+      return _obxHelper.activityBox.put(activity);
+    });
+  }
+
+  @override
+  int updateActivityRecord(ActivityEntity activity) {
+    if (activity.id == 0) {
+      throw ArgumentError.value(activity.id, 'activity.id');
+    }
+    final previous = _obxHelper.activityBox.get(activity.id);
+    if (previous == null) {
+      throw StateError('Activity ${activity.id} does not exist.');
+    }
+    final sameDayDiaries =
+        _obxHelper.diaryBox
+            .getAll()
+            .where(
+              (diary) =>
+                  diary.date.year == activity.time.year &&
+                  diary.date.month == activity.time.month &&
+                  diary.date.day == activity.time.day,
+            )
+            .toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
+    final diary = sameDayDiaries.isEmpty
+        ? DiaryEntity(
+            date: activity.time,
+            title: '',
+            content: '',
+            lastModified: activity.lastModified,
+          )
+        : sameDayDiaries.first;
+    _prepareRecordId(diary);
+
+    return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final now = DateTime.now();
+      _prepareDiarySource(diary, now);
+      _obxHelper.diaryBox.put(diary);
+      activity.diary.target = diary;
+      _prepareActivityIdentity(
+        activity,
+        previous: previous,
+        used: _obxHelper.activityBox
+            .getAll()
+            .where((item) => item.id != activity.id)
+            .map((item) => item.recordId)
+            .whereType<String>()
+            .toSet(),
+      );
+      _prepareActivitySource(activity, now, previous: previous);
+      return _obxHelper.activityBox.put(activity);
+    });
+  }
+
+  @override
+  bool deleteActivityRecord(int id) => _obxHelper.activityBox.remove(id);
+
+  void _prepareDiarySource(DiaryEntity diary, DateTime now) {
+    final source = _profileRepository.requireCurrentSource();
+    final previous = diary.id == 0 ? null : _obxHelper.diaryBox.get(diary.id);
+    diary
+      ..createdAt = diary.createdAt ?? previous?.createdAt ?? now
+      ..createdByAuthorProfileId =
+          diary.createdByAuthorProfileId ??
+          previous?.createdByAuthorProfileId ??
+          source.authorProfileId
+      ..createdByDeviceProfileId =
+          diary.createdByDeviceProfileId ??
+          previous?.createdByDeviceProfileId ??
+          source.deviceProfileId
+      ..lastModifiedByAuthorProfileId = source.authorProfileId
+      ..lastModifiedByDeviceProfileId = source.deviceProfileId
+      ..lastModified = now;
+  }
+
+  void _prepareActivitySource(
+    ActivityEntity activity,
+    DateTime now, {
+    ActivityEntity? previous,
+  }) {
+    final source = _profileRepository.requireCurrentSource();
+    activity
+      ..createdAt = activity.createdAt ?? previous?.createdAt ?? now
+      ..createdByAuthorProfileId =
+          activity.createdByAuthorProfileId ??
+          previous?.createdByAuthorProfileId ??
+          source.authorProfileId
+      ..createdByDeviceProfileId =
+          activity.createdByDeviceProfileId ??
+          previous?.createdByDeviceProfileId ??
+          source.deviceProfileId
+      ..lastModifiedByAuthorProfileId = source.authorProfileId
+      ..lastModifiedByDeviceProfileId = source.deviceProfileId
+      ..lastModified = now;
+  }
+
+  ActivityEntity? _takePreviousActivity(
+    ActivityEntity incoming,
+    List<ActivityEntity> candidates,
+  ) {
+    var matchIndex = incoming.recordId == null
+        ? -1
+        : candidates.indexWhere(
+            (candidate) => candidate.recordId == incoming.recordId,
+          );
+    matchIndex = matchIndex >= 0
+        ? matchIndex
+        : candidates.indexWhere(
+            (candidate) =>
+                candidate.type == incoming.type &&
+                candidate.time.isAtSameMomentAs(incoming.time) &&
+                candidate.timePrecision == incoming.timePrecision &&
+                candidate.details == incoming.details,
+          );
+    if (matchIndex < 0) {
+      final sameTime = <int>[];
+      for (var index = 0; index < candidates.length; index++) {
+        final candidate = candidates[index];
+        if (candidate.time.isAtSameMomentAs(incoming.time) &&
+            candidate.timePrecision == incoming.timePrecision) {
+          sameTime.add(index);
+        }
+      }
+      if (sameTime.length == 1) matchIndex = sameTime.single;
+    }
+    return matchIndex < 0 ? null : candidates.removeAt(matchIndex);
+  }
+
+  void _prepareActivityIdentity(
+    ActivityEntity activity, {
+    ActivityEntity? previous,
+    required Set<String> used,
+  }) {
+    var value = activity.recordId?.trim().toLowerCase();
+    if (value == null ||
+        !_uuidV4Pattern.hasMatch(value) ||
+        used.contains(value)) {
+      value = previous?.recordId;
+    }
+    if (value == null ||
+        !_uuidV4Pattern.hasMatch(value) ||
+        used.contains(value)) {
+      do {
+        value = _uuid.v4();
+      } while (used.contains(value));
+    }
+    used.add(value);
+    activity.recordId = value;
+
+    if (previous == null) {
+      if (activity.revision < 1) activity.revision = 1;
+      return;
+    }
+    activity.revision = _sameActivityCore(activity, previous)
+        ? previous.revision
+        : previous.revision + 1;
+  }
+
+  bool _sameActivityCore(ActivityEntity left, ActivityEntity right) =>
+      left.type == right.type &&
+      left.time.isAtSameMomentAs(right.time) &&
+      left.timePrecision == right.timePrecision &&
+      left.details == right.details &&
+      left.structuredDataJson == right.structuredDataJson &&
+      left.customEventTypeId == right.customEventTypeId &&
+      left.customEventNameSnapshot == right.customEventNameSnapshot;
 
   void _prepareRecordId(DiaryEntity diary) {
     var value = diary.recordId?.trim().toLowerCase();
@@ -193,7 +578,16 @@ class DiaryRepositoryImpl implements DiaryRepository {
                 (activity) => CanonicalActivity(
                   type: activity.type,
                   time: activity.time,
+                  timePrecision: activity.timePrecision,
                   details: activity.details,
+                  structuredDataJson: activity.structuredDataJson,
+                  createdAt: activity.createdAt,
+                  createdByAuthorProfileId: activity.createdByAuthorProfileId,
+                  createdByDeviceProfileId: activity.createdByDeviceProfileId,
+                  lastModifiedByAuthorProfileId:
+                      activity.lastModifiedByAuthorProfileId,
+                  lastModifiedByDeviceProfileId:
+                      activity.lastModifiedByDeviceProfileId,
                   lastModified: activity.lastModified,
                 ),
               )
@@ -204,6 +598,11 @@ class DiaryRepositoryImpl implements DiaryRepository {
             title: diary.title,
             summary: diary.summary,
             content: diary.content,
+            createdAt: diary.createdAt,
+            createdByAuthorProfileId: diary.createdByAuthorProfileId,
+            createdByDeviceProfileId: diary.createdByDeviceProfileId,
+            lastModifiedByAuthorProfileId: diary.lastModifiedByAuthorProfileId,
+            lastModifiedByDeviceProfileId: diary.lastModifiedByDeviceProfileId,
             lastModified: diary.lastModified,
             activities: activities,
           );
@@ -212,6 +611,26 @@ class DiaryRepositoryImpl implements DiaryRepository {
     return CanonicalExportDocument(
       exportedAt: DateTime.now().toUtc(),
       appVersion: appVersion,
+      authorProfiles: _obxHelper.authorProfileBox
+          .getAll()
+          .map(
+            (profile) => CanonicalAuthorProfile(
+              authorProfileId: profile.authorProfileId,
+              nickname: profile.nickname,
+              colorValue: profile.colorValue,
+              createdAt: profile.createdAt,
+            ),
+          )
+          .toList(growable: false),
+      deviceProfiles: _obxHelper.deviceProfileBox
+          .getAll()
+          .map(
+            (profile) => CanonicalDeviceProfile(
+              deviceProfileId: profile.deviceProfileId,
+              createdAt: profile.createdAt,
+            ),
+          )
+          .toList(growable: false),
       diaries: diaries,
     );
   }
@@ -227,6 +646,8 @@ class DiaryRepositoryImpl implements DiaryRepository {
     var newerCount = 0;
     var skippedCount = 0;
     var activityCount = 0;
+    var identicalCount = 0;
+    var conflictCount = 0;
     for (final incoming in document.diaries) {
       activityCount += incoming.activities.length;
       final local = existing[incoming.recordId];
@@ -234,6 +655,11 @@ class DiaryRepositoryImpl implements DiaryRepository {
         newCount++;
       } else {
         duplicateCount++;
+        if (_hasSameContent(local, incoming)) {
+          identicalCount++;
+        } else {
+          conflictCount++;
+        }
         if (policy == ImportConflictPolicy.overwriteIfNewer &&
             incoming.lastModified.isAfter(local.lastModified)) {
           newerCount++;
@@ -249,8 +675,63 @@ class DiaryRepositoryImpl implements DiaryRepository {
       newerCount: newerCount,
       skippedCount: skippedCount,
       activityCount: activityCount,
+      identicalCount: identicalCount,
+      conflictCount: conflictCount,
     );
   }
+
+  bool _hasSameContent(DiaryEntity local, CanonicalDiary incoming) {
+    if (!_sameWallClock(local.date, incoming.date) ||
+        local.title != incoming.title ||
+        local.summary != incoming.summary ||
+        local.content != incoming.content) {
+      return false;
+    }
+    final localActivities = local.activities.map(_activitySignature).toList()
+      ..sort();
+    final incomingActivities =
+        incoming.activities.map(_canonicalActivitySignature).toList()..sort();
+    if (localActivities.length != incomingActivities.length) return false;
+    for (var index = 0; index < localActivities.length; index++) {
+      if (localActivities[index] != incomingActivities[index]) return false;
+    }
+    return true;
+  }
+
+  bool _sameWallClock(DateTime first, DateTime second) =>
+      first.year == second.year &&
+      first.month == second.month &&
+      first.day == second.day &&
+      first.hour == second.hour &&
+      first.minute == second.minute &&
+      first.second == second.second &&
+      first.millisecond == second.millisecond;
+
+  String _activitySignature(ActivityEntity activity) => [
+    activity.type,
+    _wallClockSignature(activity.time),
+    activity.timePrecision.toString(),
+    activity.details,
+    activity.structuredDataJson ?? '',
+  ].join('\u0000');
+
+  String _canonicalActivitySignature(CanonicalActivity activity) => [
+    activity.type,
+    _wallClockSignature(activity.time),
+    activity.timePrecision.toString(),
+    activity.details,
+    activity.structuredDataJson ?? '',
+  ].join('\u0000');
+
+  String _wallClockSignature(DateTime value) => [
+    value.year,
+    value.month,
+    value.day,
+    value.hour,
+    value.minute,
+    value.second,
+    value.millisecond,
+  ].join(':');
 
   @override
   ImportResult importDocument(
@@ -258,6 +739,8 @@ class DiaryRepositoryImpl implements DiaryRepository {
     ImportConflictPolicy policy,
   ) {
     return _obxHelper.store.runInTransaction(TxMode.write, () {
+      _mergeImportedProfiles(document);
+      final migrationSource = _profileRepository.requireCurrentSource();
       final existing = _recordsByTransferId();
       var inserted = 0;
       var updated = 0;
@@ -282,6 +765,19 @@ class DiaryRepositoryImpl implements DiaryRepository {
           title: incoming.title,
           summary: incoming.summary,
           content: incoming.content,
+          createdAt: incoming.createdAt ?? incoming.lastModified,
+          createdByAuthorProfileId:
+              incoming.createdByAuthorProfileId ??
+              migrationSource.authorProfileId,
+          createdByDeviceProfileId:
+              incoming.createdByDeviceProfileId ??
+              migrationSource.deviceProfileId,
+          lastModifiedByAuthorProfileId:
+              incoming.lastModifiedByAuthorProfileId ??
+              migrationSource.authorProfileId,
+          lastModifiedByDeviceProfileId:
+              incoming.lastModifiedByDeviceProfileId ??
+              migrationSource.deviceProfileId,
           lastModified: incoming.lastModified,
           embedding: null,
         );
@@ -302,9 +798,26 @@ class DiaryRepositoryImpl implements DiaryRepository {
         final activities = incoming.activities
             .map((item) {
               final entity = ActivityEntity(
+                recordId: _uuid.v4(),
+                revision: 1,
                 type: item.type,
                 time: item.time,
+                timePrecision: item.timePrecision,
                 details: item.details,
+                structuredDataJson: item.structuredDataJson,
+                createdAt: item.createdAt ?? item.lastModified,
+                createdByAuthorProfileId:
+                    item.createdByAuthorProfileId ??
+                    migrationSource.authorProfileId,
+                createdByDeviceProfileId:
+                    item.createdByDeviceProfileId ??
+                    migrationSource.deviceProfileId,
+                lastModifiedByAuthorProfileId:
+                    item.lastModifiedByAuthorProfileId ??
+                    migrationSource.authorProfileId,
+                lastModifiedByDeviceProfileId:
+                    item.lastModifiedByDeviceProfileId ??
+                    migrationSource.deviceProfileId,
                 lastModified: item.lastModified,
               );
               entity.diary.targetId = diaryId;
@@ -323,6 +836,37 @@ class DiaryRepositoryImpl implements DiaryRepository {
         affectedRecordIds: List.unmodifiable(affected),
       );
     });
+  }
+
+  void _mergeImportedProfiles(CanonicalImportDocument document) {
+    final authorIds = _obxHelper.authorProfileBox
+        .getAll()
+        .map((item) => item.authorProfileId)
+        .toSet();
+    final deviceIds = _obxHelper.deviceProfileBox
+        .getAll()
+        .map((item) => item.deviceProfileId)
+        .toSet();
+    for (final profile in document.authorProfiles) {
+      if (!authorIds.add(profile.authorProfileId)) continue;
+      _obxHelper.authorProfileBox.put(
+        AuthorProfileEntity(
+          authorProfileId: profile.authorProfileId,
+          nickname: profile.nickname,
+          colorValue: profile.colorValue,
+          createdAt: profile.createdAt,
+        ),
+      );
+    }
+    for (final profile in document.deviceProfiles) {
+      if (!deviceIds.add(profile.deviceProfileId)) continue;
+      _obxHelper.deviceProfileBox.put(
+        DeviceProfileEntity(
+          deviceProfileId: profile.deviceProfileId,
+          createdAt: profile.createdAt,
+        ),
+      );
+    }
   }
 
   Map<String, DiaryEntity> _recordsByTransferId() => {
@@ -346,6 +890,14 @@ class DiaryRepositoryImpl implements DiaryRepository {
   @override
   bool deleteDiary(int id) {
     return _obxHelper.store.runInTransaction(TxMode.write, () {
+      final searchQuery = _obxHelper.searchDocumentBox
+          .query(SearchDocumentEntity_.sourceDiaryId.equals(id))
+          .build();
+      final searchIds = searchQuery.findIds();
+      searchQuery.close();
+      if (searchIds.isNotEmpty) {
+        _obxHelper.searchDocumentBox.removeMany(searchIds);
+      }
       final activityQuery = _obxHelper.activityBox
           .query(ActivityEntity_.diary.equals(id))
           .build();
@@ -359,201 +911,384 @@ class DiaryRepositoryImpl implements DiaryRepository {
   }
 
   @override
-  Future<List<SimilarDiaryResult>> searchSimilar(
-    String query,
-    EmbeddingService embeddingService, {
-    int limit = 5,
+  Future<List<DiarySearchResult>> searchRecords(
+    HybridSearchQuery query,
+    EmbeddingEngine embeddingService, {
+    int limit = 50,
   }) async {
-    if (query.trim().isEmpty || limit <= 0) return [];
+    if (!query.hasCriteria || limit <= 0) return [];
+    _synchronizeSearchDocuments();
 
-    final queryVector = await embeddingService.getQueryEmbedding(query);
-    final exactQuery = _obxHelper.diaryBox
-        .query(
-          DiaryEntity_.title.contains(query, caseSensitive: false) |
-              DiaryEntity_.summary.contains(query, caseSensitive: false) |
-              DiaryEntity_.content.contains(query, caseSensitive: false),
-        )
-        .build();
-    exactQuery.limit = limit;
-
-    final vectorQuery = queryVector == null || queryVector.isEmpty
-        ? null
-        : _obxHelper.diaryBox
-              .query(
-                DiaryEntity_.embedding.nearestNeighborsF32(queryVector, limit),
-              )
-              .build();
-
-    try {
-      final results = <int, SimilarDiaryResult>{};
-      final exactMatches = await exactQuery.findAsync();
-      for (final diary in exactMatches) {
-        results[diary.id] = SimilarDiaryResult(
-          diary: diary,
-          similarityPercent: 100,
-        );
+    final normalizedText = query.text.trim().toLowerCase();
+    final results = <String, DiarySearchResult>{};
+    for (final document in _obxHelper.searchDocumentBox.getAll()) {
+      if (!_matchesStructuredCriteria(document, query)) continue;
+      if (normalizedText.isNotEmpty &&
+          !document.searchableText.toLowerCase().contains(normalizedText)) {
+        continue;
       }
+      final result = _resultForDocument(
+        document,
+        reason: _matchReason(document, query, normalizedText),
+        relevanceScore: normalizedText.isEmpty ? 120 : 100,
+      );
+      if (result != null) results[result.resultKey] = result;
+    }
 
-      final withScores = vectorQuery == null
-          ? const <ObjectWithScore<DiaryEntity>>[]
-          : await vectorQuery.findWithScoresAsync();
-      for (final item in withScores) {
-        final distance = item.score;
-        final cosSim = 1.0 - (distance / 2.0);
-        final mapped = (cosSim - 0.82) / (1.0 - 0.82) * 100.0;
-        final candidate = SimilarDiaryResult(
-          diary: item.object,
-          similarityPercent: mapped.clamp(0.0, 100.0),
-        );
-        if (candidate.similarityPercent > 0 &&
-            !results.containsKey(candidate.diary.id)) {
-          results[candidate.diary.id] = candidate;
+    if (normalizedText.isNotEmpty) {
+      final queryVector = await embeddingService.getQueryEmbedding(
+        normalizedText,
+      );
+      if (queryVector != null && queryVector.isNotEmpty) {
+        final vectorQuery = _obxHelper.searchDocumentBox
+            .query(
+              SearchDocumentEntity_.embedding.nearestNeighborsF32(
+                queryVector,
+                limit * 4,
+              ),
+            )
+            .build();
+        try {
+          final vectorMatches = await vectorQuery.findWithScoresAsync();
+          for (final item in vectorMatches) {
+            final document = item.object;
+            if (!_matchesStructuredCriteria(document, query)) continue;
+            final similarity = 1.0 - (item.score / 2.0);
+            final score = ((similarity - 0.82) / 0.18 * 99).clamp(0.0, 99.0);
+            if (score <= 0) continue;
+            final result = _resultForDocument(
+              document,
+              reason: DiarySearchMatchReason.relatedExpression,
+              relevanceScore: score,
+            );
+            if (result != null && !results.containsKey(result.resultKey)) {
+              results[result.resultKey] = result;
+            }
+          }
+        } finally {
+          vectorQuery.close();
         }
       }
-
-      final sorted = results.values.toList()
-        ..sort((a, b) => b.similarityPercent.compareTo(a.similarityPercent));
-      return sorted.take(limit).toList(growable: false);
-    } finally {
-      exactQuery.close();
-      vectorQuery?.close();
     }
+
+    final sorted = results.values.toList()
+      ..sort((a, b) {
+        final relevance = b.relevanceScore.compareTo(a.relevanceScore);
+        if (relevance != 0) return relevance;
+        return b.occurredAt.compareTo(a.occurredAt);
+      });
+    return sorted.take(limit).toList(growable: false);
+  }
+
+  @override
+  Future<int> rebuildSearchIndex(
+    EmbeddingEngine embeddingService, {
+    Set<String>? recordIds,
+  }) async {
+    _synchronizeSearchDocuments();
+    if (!embeddingService.isAvailable) {
+      return _obxHelper.searchDocumentBox
+          .getAll()
+          .where(
+            (document) =>
+                (recordIds == null ||
+                    recordIds.contains(document.sourceRecordId)) &&
+                document.embedding == null,
+          )
+          .length;
+    }
+
+    var failed = 0;
+    for (final document in _obxHelper.searchDocumentBox.getAll()) {
+      if (recordIds != null && !recordIds.contains(document.sourceRecordId)) {
+        continue;
+      }
+      if (document.embedding != null &&
+          document.embeddingModelVersion == embeddingService.modelVersion) {
+        continue;
+      }
+      try {
+        document.embedding = await embeddingService.getEmbedding(
+          document.searchableText,
+        );
+        document.embeddingModelVersion = embeddingService.modelVersion;
+        document.indexedAt = DateTime.now();
+        _obxHelper.searchDocumentBox.put(document);
+        if (document.embedding == null) failed++;
+      } catch (_) {
+        failed++;
+      }
+    }
+    return failed;
+  }
+
+  @override
+  bool get hasPendingSearchEmbeddings => _obxHelper.searchDocumentBox
+      .getAll()
+      .any((document) => document.embedding == null);
+
+  void _synchronizeSearchDocuments() {
+    final diaries = _obxHelper.diaryBox.getAll();
+    final activities = _obxHelper.activityBox.getAll();
+    final existing = {
+      for (final document in _obxHelper.searchDocumentBox.getAll())
+        document.searchDocumentId: document,
+    };
+    final currentIds = <String>{};
+    final changed = <SearchDocumentEntity>[];
+    final now = DateTime.now();
+
+    for (final diary in diaries) {
+      final recordId = diary.recordId;
+      if (recordId == null) continue;
+      final documentId = 'memo:$recordId';
+      currentIds.add(documentId);
+      final text = [
+        diary.title,
+        diary.summary,
+        diary.content,
+      ].where((part) => part.trim().isNotEmpty).join('\n');
+      changed.add(
+        _mergeSearchDocument(
+          existing[documentId],
+          searchDocumentId: documentId,
+          sourceRecordId: recordId,
+          sourceType: SearchDocumentEntity.sourceTypeMemo,
+          sourceEntityId: diary.id,
+          sourceDiaryId: diary.id,
+          searchableText: text,
+          occurredAt: diary.date,
+          authorProfileId: diary.createdByAuthorProfileId,
+          eventKind: 0,
+          numericValue: null,
+          indexedAt: now,
+        ),
+      );
+    }
+
+    for (final activity in activities) {
+      final diary = activity.diary.target;
+      final recordId = diary?.recordId;
+      if (diary == null || recordId == null) continue;
+      final documentId = 'event:${activity.recordId ?? activity.id}';
+      currentIds.add(documentId);
+      final kind = _inferEventKind('${activity.type} ${activity.details}');
+      changed.add(
+        _mergeSearchDocument(
+          existing[documentId],
+          searchDocumentId: documentId,
+          sourceRecordId: recordId,
+          sourceType: SearchDocumentEntity.sourceTypeEvent,
+          sourceEntityId: activity.id,
+          sourceDiaryId: diary.id,
+          searchableText: '${activity.type}\n${activity.details}'.trim(),
+          occurredAt: activity.time,
+          authorProfileId: activity.createdByAuthorProfileId,
+          eventKind: kind == null ? 0 : kind.index + 1,
+          numericValue: kind == SearchEventKind.temperature
+              ? _extractTemperature('${activity.type} ${activity.details}')
+              : null,
+          indexedAt: now,
+        ),
+      );
+    }
+
+    _obxHelper.store.runInTransaction(TxMode.write, () {
+      if (changed.isNotEmpty) _obxHelper.searchDocumentBox.putMany(changed);
+      final staleIds = existing.values
+          .where((document) => !currentIds.contains(document.searchDocumentId))
+          .map((document) => document.id)
+          .toList(growable: false);
+      if (staleIds.isNotEmpty) {
+        _obxHelper.searchDocumentBox.removeMany(staleIds);
+      }
+    });
+  }
+
+  SearchDocumentEntity _mergeSearchDocument(
+    SearchDocumentEntity? previous, {
+    required String searchDocumentId,
+    required String sourceRecordId,
+    required String sourceType,
+    required int sourceEntityId,
+    required int sourceDiaryId,
+    required String searchableText,
+    required DateTime occurredAt,
+    required String? authorProfileId,
+    required int eventKind,
+    required double? numericValue,
+    required DateTime indexedAt,
+  }) {
+    final hash = _contentHash(
+      [
+        searchableText,
+        occurredAt.toIso8601String(),
+        authorProfileId ?? '',
+        eventKind.toString(),
+        numericValue?.toString() ?? '',
+      ].join('\u0000'),
+    );
+    final unchanged = previous?.sourceContentHash == hash;
+    return SearchDocumentEntity(
+      id: previous?.id ?? 0,
+      searchDocumentId: searchDocumentId,
+      sourceRecordId: sourceRecordId,
+      sourceType: sourceType,
+      sourceEntityId: sourceEntityId,
+      sourceDiaryId: sourceDiaryId,
+      searchableText: searchableText,
+      embedding: unchanged ? previous?.embedding : null,
+      embeddingModelVersion: unchanged
+          ? previous?.embeddingModelVersion ?? ''
+          : '',
+      sourceContentHash: hash,
+      indexedAt: unchanged ? previous!.indexedAt : indexedAt,
+      occurredAt: occurredAt,
+      authorProfileId: authorProfileId,
+      eventKind: eventKind,
+      numericValue: numericValue,
+    );
+  }
+
+  String _contentHash(String value) {
+    var hash = 0x811c9dc5;
+    for (final byte in value.codeUnits) {
+      hash ^= byte;
+      hash = (hash * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
+  }
+
+  bool _matchesStructuredCriteria(
+    SearchDocumentEntity document,
+    HybridSearchQuery query,
+  ) {
+    if (query.from != null && document.occurredAt.isBefore(query.from!)) {
+      return false;
+    }
+    if (query.untilExclusive != null &&
+        !document.occurredAt.isBefore(query.untilExclusive!)) {
+      return false;
+    }
+    if (query.authorProfileId != null &&
+        document.authorProfileId != query.authorProfileId) {
+      return false;
+    }
+    if (query.eventKind != null &&
+        document.eventKind != query.eventKind!.index + 1) {
+      return false;
+    }
+    final temperature = query.temperature;
+    if (temperature != null) {
+      final value = document.numericValue;
+      if (value == null) return false;
+      final matches = switch (temperature.comparison) {
+        NumericComparison.atLeast => value >= temperature.value,
+        NumericComparison.above => value > temperature.value,
+        NumericComparison.atMost => value <= temperature.value,
+        NumericComparison.below => value < temperature.value,
+      };
+      if (!matches) return false;
+    }
+    return true;
+  }
+
+  DiarySearchMatchReason _matchReason(
+    SearchDocumentEntity document,
+    HybridSearchQuery query,
+    String normalizedText,
+  ) {
+    if (query.temperature != null) {
+      return DiarySearchMatchReason.structuredTemperature;
+    }
+    if (query.eventKind != null) {
+      return DiarySearchMatchReason.structuredEvent;
+    }
+    if (query.authorProfileId != null) {
+      return DiarySearchMatchReason.structuredAuthor;
+    }
+    if (query.from != null || query.untilExclusive != null) {
+      return DiarySearchMatchReason.dateRange;
+    }
+    if (document.sourceType == SearchDocumentEntity.sourceTypeEvent) {
+      final activity = _obxHelper.activityBox.get(document.sourceEntityId);
+      if (activity != null &&
+          activity.type.toLowerCase().contains(normalizedText)) {
+        return DiarySearchMatchReason.activityType;
+      }
+    }
+    return DiarySearchMatchReason.exactText;
+  }
+
+  DiarySearchResult? _resultForDocument(
+    SearchDocumentEntity document, {
+    required DiarySearchMatchReason reason,
+    required double relevanceScore,
+  }) {
+    final diary = _obxHelper.diaryBox.get(document.sourceDiaryId);
+    if (diary == null) return null;
+    final activity = document.sourceType == SearchDocumentEntity.sourceTypeEvent
+        ? _obxHelper.activityBox.get(document.sourceEntityId)
+        : null;
+    if (document.sourceType == SearchDocumentEntity.sourceTypeEvent &&
+        activity == null) {
+      return null;
+    }
+    return DiarySearchResult(
+      diary: diary,
+      activity: activity,
+      reason: reason,
+      relevanceScore: relevanceScore,
+      matchedNumericValue: document.numericValue,
+    );
+  }
+
+  SearchEventKind? _inferEventKind(String text) {
+    final value = text.toLowerCase();
+    const aliases = <SearchEventKind, List<String>>{
+      SearchEventKind.temperature: [
+        '체온',
+        '열',
+        '발열',
+        'temperature',
+        'fever',
+        '体温',
+        '熱',
+      ],
+      SearchEventKind.medication: [
+        '투약',
+        '약',
+        '복용',
+        'medication',
+        'medicine',
+        '投薬',
+        '服薬',
+      ],
+      SearchEventKind.feeding: ['수유', '분유', 'feeding', 'feed', '授乳', 'ミルク'],
+      SearchEventKind.diaper: ['기저귀', 'diaper', 'おむつ', '尿布'],
+      SearchEventKind.sleep: ['수면', '잠', 'sleep', 'nap', '睡眠', '昼寝'],
+      SearchEventKind.hospital: ['병원', '진료', 'hospital', 'clinic', '病院', '診療'],
+    };
+    for (final entry in aliases.entries) {
+      if (entry.value.any(value.contains)) return entry.key;
+    }
+    return null;
+  }
+
+  double? _extractTemperature(String text) {
+    final match = RegExp(
+      r'(\d{2}(?:\.\d+)?)\s*(?:°\s*c|℃|도|度)?',
+      caseSensitive: false,
+    ).firstMatch(text);
+    final value = double.tryParse(match?.group(1) ?? '');
+    if (value == null || value < 30 || value > 45) return null;
+    return value;
   }
 }
 
 /// Riverpod에서 제공할 DiaryRepository 프로바이더
 final diaryRepositoryProvider = Provider<DiaryRepository>((ref) {
   final obxHelper = ref.watch(objectBoxProvider);
-  return DiaryRepositoryImpl(obxHelper);
-});
-
-/// 일기 목록의 상태와 변경을 관리하는 Riverpod Notifier
-class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
-  @override
-  List<DiaryEntity> build() {
-    final repo = ref.watch(diaryRepositoryProvider);
-    return repo.getDiaries();
-  }
-
-  /// 새 일기를 추가합니다.
-  /// [summary]와 비일상 [activities]를 합산하여 임베딩 텍스트를 구성합니다.
-  Future<void> addDiary(
-    String title,
-    String summary,
-    String content, {
-    List<ActivitySummary> activitySummaries = const [],
-  }) async {
-    final repo = ref.read(diaryRepositoryProvider);
-    final embeddingService = ref.read(embeddingServiceProvider);
-    final now = DateTime.now();
-
-    final newDiary = DiaryEntity(
-      date: now,
-      title: title,
-      summary: summary,
-      content: content,
-      lastModified: now,
-    );
-
-    // ActivityEntity 생성. 관계 연결은 repository 트랜잭션에서 수행합니다.
-    final activityEntities = activitySummaries
-        .map(
-          (a) => ActivityEntity(
-            type: a.type,
-            time: now,
-            details: a.detail,
-            lastModified: now,
-          ),
-        )
-        .toList();
-    // 임베딩 텍스트 = summary + 비일상 이벤트
-    final embeddingText = buildEmbeddingText(summary, activityEntities);
-    newDiary.embedding = await embeddingService.getEmbedding(embeddingText);
-
-    repo.saveDiaryWithActivities(newDiary, activityEntities);
-    state = repo.getDiaries();
-  }
-
-  /// 현재 텍스트 쿼리와 유사한 일기를 검색합니다.
-  Future<List<SimilarDiaryResult>> searchSimilar(
-    String query, {
-    int limit = 5,
-  }) {
-    final repo = ref.read(diaryRepositoryProvider);
-    final embeddingService = ref.read(embeddingServiceProvider);
-    return repo.searchSimilar(query, embeddingService, limit: limit);
-  }
-
-  /// 기존 일기를 수정합니다.
-  Future<void> updateDiary(
-    DiaryEntity diary,
-    String newTitle,
-    String newSummary,
-    String newContent, {
-    List<ActivitySummary> activitySummaries = const [],
-  }) async {
-    final repo = ref.read(diaryRepositoryProvider);
-    final embeddingService = ref.read(embeddingServiceProvider);
-    final now = DateTime.now();
-
-    diary.title = newTitle;
-    diary.summary = newSummary;
-    diary.content = newContent;
-
-    // 기존 activities 교체
-    final activityEntities = activitySummaries
-        .map(
-          (a) => ActivityEntity(
-            type: a.type,
-            time: now,
-            details: a.detail,
-            lastModified: now,
-          ),
-        )
-        .toList();
-    // 임베딩 텍스트 = summary + 비일상 이벤트
-    final embeddingText = buildEmbeddingText(newSummary, activityEntities);
-    diary.embedding = await embeddingService.getEmbedding(embeddingText);
-
-    repo.saveDiaryWithActivities(diary, activityEntities);
-    state = repo.getDiaries();
-  }
-
-  void deleteDiary(int id) {
-    final repo = ref.read(diaryRepositoryProvider);
-    repo.deleteDiary(id);
-    state = repo.getDiaries();
-  }
-
-  void reload() {
-    state = ref.read(diaryRepositoryProvider).getDiaries();
-  }
-
-  /// 가져오기 성공 후 임베딩을 순차 재생성합니다. 실패한 항목 수를 반환합니다.
-  Future<int> regenerateEmbeddings(Iterable<String> recordIds) async {
-    final ids = recordIds.toSet();
-    if (ids.isEmpty) return 0;
-    final repo = ref.read(diaryRepositoryProvider);
-    final embeddingService = ref.read(embeddingServiceProvider);
-    var failed = 0;
-    for (final diary in repo.getDiaries()) {
-      final recordId = diary.recordId;
-      if (recordId == null || !ids.contains(recordId)) continue;
-      try {
-        final text = buildEmbeddingText(diary.summary, diary.activities);
-        final embedding = await embeddingService.getEmbedding(text);
-        repo.updateEmbeddingPreservingLastModified(recordId, embedding);
-        if (embedding == null) failed++;
-      } catch (_) {
-        failed++;
-      }
-    }
-    state = repo.getDiaries();
-    return failed;
-  }
-}
-
-final diaryListProvider =
-    NotifierProvider<DiaryListNotifier, List<DiaryEntity>>(
-      DiaryListNotifier.new,
-    );
+  final profiles = ref.watch(profileRepositoryProvider);
+  return DiaryRepositoryImpl(obxHelper, profiles);
+}, dependencies: [objectBoxProvider, profileRepositoryProvider]);

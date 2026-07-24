@@ -57,12 +57,14 @@ class V1DiaryItem {
 class V1ActivityItem {
   final String type;
   final String time;
+  final int timePrecision;
   final String details;
   final String lastModified;
 
   const V1ActivityItem({
     required this.type,
     required this.time,
+    required this.timePrecision,
     required this.details,
     required this.lastModified,
   });
@@ -70,6 +72,7 @@ class V1ActivityItem {
   Map<String, Object?> toJson() => {
     'type': type,
     'time': time,
+    'timePrecision': timePrecision,
     'details': details,
     'lastModified': lastModified,
   };

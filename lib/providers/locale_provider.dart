@@ -5,9 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum AppLocaleMode { system, korean, english, japanese }
 
 // SharedPreferences provider (initialized in main.dart)
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError();
-});
+final sharedPreferencesProvider = Provider<SharedPreferences>(
+  (ref) => throw UnimplementedError(),
+  dependencies: const [],
+);
 
 class LocaleNotifier extends Notifier<AppLocaleMode> {
   static const _prefsKey = 'app_locale_mode';
@@ -48,6 +49,7 @@ class LocaleNotifier extends Notifier<AppLocaleMode> {
   }
 }
 
-final localeProvider = NotifierProvider<LocaleNotifier, AppLocaleMode>(() {
-  return LocaleNotifier();
-});
+final localeProvider = NotifierProvider<LocaleNotifier, AppLocaleMode>(
+  LocaleNotifier.new,
+  dependencies: [sharedPreferencesProvider],
+);

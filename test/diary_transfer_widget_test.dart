@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mlmd/l10n/app_localizations.dart';
 import 'package:mlmd/transfer/canonical_transfer_document.dart';
 import 'package:mlmd/transfer/diary_transfer_service.dart';
+import 'package:mlmd/features/settings/presentation/settings_page.dart';
 import 'package:mlmd/widgets/import_preview_dialog.dart';
+import 'package:mlmd/repositories/profile_repository.dart';
+import 'package:mlmd/providers/locale_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'support/test_profile_repository.dart';
 
 void main() {
-  testWidgets('import preview updates counts when conflict policy changes', (
+  testWidgets('import preview explains safe merge and conflict counts', (
     tester,
   ) async {
     final prepared = PreparedDiaryImport(
@@ -27,29 +33,64 @@ void main() {
         home: ImportPreviewDialog(
           prepared: prepared,
           previewFor: (policy) => ImportPreview(
-            total: 1,
-            newCount: 0,
-            duplicateCount: 1,
-            newerCount: policy == ImportConflictPolicy.overwriteIfNewer ? 1 : 0,
-            skippedCount: policy == ImportConflictPolicy.overwriteIfNewer
-                ? 0
-                : 1,
+            total: 3,
+            newCount: 1,
+            duplicateCount: 2,
+            newerCount: 0,
+            skippedCount: 2,
             activityCount: 2,
+            identicalCount: 1,
+            conflictCount: 1,
           ),
         ),
       ),
     );
 
     expect(find.text('Import Preview'), findsOneWidget);
-    expect(find.text('Skipped 1'), findsOneWidget);
+    expect(find.text('Same content 1'), findsOneWidget);
+    expect(find.text('Conflicts to review 1'), findsOneWidget);
+    expect(find.textContaining('not overwritten'), findsOneWidget);
+    expect(find.text('Overwrite only when backup is newer'), findsNothing);
+  });
 
-    final overwriteOption = find.text('Overwrite only when backup is newer');
-    await tester.ensureVisible(overwriteOption);
-    await tester.pumpAndSettle();
-    await tester.tap(overwriteOption);
-    await tester.pumpAndSettle();
+  testWidgets('settings exposes five top-level destinations', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          profileRepositoryProvider.overrideWithValue(TestProfileRepository()),
+          sharedPreferencesProvider.overrideWithValue(preferences),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SettingsPage(
+            onExport: () async {},
+            onImport: () async {},
+            backupOverview: () => const BackupOverview(
+              diaryCount: 2,
+              activityCount: 3,
+              estimatedBackupBytes: 2048,
+            ),
+          ),
+        ),
+      ),
+    );
 
-    expect(find.text('Update from newer backup 1'), findsOneWidget);
-    expect(find.text('Skipped 0'), findsOneWidget);
+    expect(find.text('Child information'), findsOneWidget);
+    expect(find.text('My name and color'), findsOneWidget);
+    expect(find.text('Use with family'), findsOneWidget);
+    expect(find.text('Data storage and backup'), findsOneWidget);
+    expect(find.text('Help'), findsOneWidget);
+
+    await tester.tap(find.text('Data storage and backup'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('2 diaries · 3 activities\nEstimated file size 2.0 KB'),
+      findsOneWidget,
+    );
+    expect(find.text('Create backup file'), findsNWidgets(2));
   });
 }

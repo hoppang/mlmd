@@ -15,7 +15,15 @@ import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
 import 'models/activity_entity.dart';
+import 'models/ai_summary_entity.dart';
+import 'models/author_profile_entity.dart';
+import 'models/device_profile_entity.dart';
 import 'models/diary_entity.dart';
+import 'models/duplicate_review_edge_entity.dart';
+import 'models/logical_event_group_entity.dart';
+import 'models/record_draft_entity.dart';
+import 'models/search_document_entity.dart';
+import 'models/shared_custom_event_definition_entity.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
@@ -23,7 +31,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 3014340625497478550),
     name: 'ActivityEntity',
-    lastPropertyId: const obx_int.IdUid(6, 2147283445462106961),
+    lastPropertyId: const obx_int.IdUid(17, 8109000737919216196),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -65,6 +73,74 @@ final _entities = <obx_int.ModelEntity>[
         relationField: 'diary',
         relationTarget: 'DiaryEntity',
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 3951416368719840019),
+        name: 'timePrecision',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 2383309938337246146),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 7830290555750988587),
+        name: 'createdByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 1284952037618883009),
+        name: 'createdByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 7364008710423433252),
+        name: 'lastModifiedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 1109511130613721833),
+        name: 'lastModifiedByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 7971544294212112844),
+        name: 'recordId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(12, 5179967707708911083),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 535624408059055326),
+        name: 'revision',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 1801448613055298410),
+        name: 'customEventTypeId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(15, 853652375066275327),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 4295721424088215806),
+        name: 'customEventNameSnapshot',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 8109000737919216196),
+        name: 'structuredDataJson',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
@@ -72,7 +148,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(2, 7784148166755830454),
     name: 'DiaryEntity',
-    lastPropertyId: const obx_int.IdUid(8, 7610676040634885379),
+    lastPropertyId: const obx_int.IdUid(13, 8483514328196674486),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -126,6 +202,36 @@ final _entities = <obx_int.ModelEntity>[
         flags: 2048,
         indexId: const obx_int.IdUid(3, 4154334858951904683),
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 6204651566794506874),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 1391307458252641105),
+        name: 'createdByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 1756132609172896534),
+        name: 'createdByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 3492742934748550029),
+        name: 'lastModifiedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 8483514328196674486),
+        name: 'lastModifiedByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[
@@ -135,6 +241,675 @@ final _entities = <obx_int.ModelEntity>[
         srcField: 'diary',
       ),
     ],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(3, 7267053488527556749),
+    name: 'RecordDraftEntity',
+    lastPropertyId: const obx_int.IdUid(10, 7546525739943859305),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 297220628326684676),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 2039058292242704036),
+        name: 'draftId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(4, 3814644681440260711),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 8347721301641903710),
+        name: 'draftKind',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 3237704710357051558),
+        name: 'recordType',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 6911837752050715765),
+        name: 'targetRecordId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(5, 7756920370847829618),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 137211334806176683),
+        name: 'payloadSchemaVersion',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 431416241111935843),
+        name: 'fieldPayloadJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 9179149231182169138),
+        name: 'baseLastModified',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 4103476853539093946),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 7546525739943859305),
+        name: 'lastSavedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(4, 8617128554070098313),
+    name: 'AuthorProfileEntity',
+    lastPropertyId: const obx_int.IdUid(6, 5500009732612843260),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8030750345486684197),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 4540285916938291502),
+        name: 'authorProfileId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(6, 1419732821400451937),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 1665940262561319247),
+        name: 'nickname',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 5391189275906388874),
+        name: 'colorValue',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 6878555105160524880),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 5500009732612843260),
+        name: 'isCurrent',
+        type: 1,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(5, 7135689420437583296),
+    name: 'DeviceProfileEntity',
+    lastPropertyId: const obx_int.IdUid(5, 8613089406167071831),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 1308888238229311538),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 3026279456824822832),
+        name: 'deviceProfileId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(7, 5858733805991619695),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 7698913700909905742),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 1750248484477288279),
+        name: 'isCurrent',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 8613089406167071831),
+        name: 'hasSharedHistory',
+        type: 1,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(6, 6674739285646046166),
+    name: 'SearchDocumentEntity',
+    lastPropertyId: const obx_int.IdUid(15, 5359434314521682066),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8852462331684128025),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 5940556623079841099),
+        name: 'searchDocumentId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(8, 6999470648043991581),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 8746933511329514396),
+        name: 'sourceRecordId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(9, 3332075985416719955),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 1423922043106314306),
+        name: 'sourceType',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 5121302667546005270),
+        name: 'sourceEntityId',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 4675003440705733717),
+        name: 'sourceDiaryId',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 7618806571068054732),
+        name: 'searchableText',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 7276354118035018946),
+        name: 'embedding',
+        type: 28,
+        flags: 8,
+        indexId: const obx_int.IdUid(10, 4219175356147692746),
+        hnswParams: obx_int.ModelHnswParams(dimensions: 384),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 2528714130102780620),
+        name: 'embeddingModelVersion',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 7383139652230636671),
+        name: 'sourceContentHash',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 6596799292247530244),
+        name: 'indexedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 5925548340928607231),
+        name: 'occurredAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 4534719732007071515),
+        name: 'authorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 8804171884950573107),
+        name: 'eventKind',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 5359434314521682066),
+        name: 'numericValue',
+        type: 8,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(7, 1274005795808046192),
+    name: 'AiSummaryEntity',
+    lastPropertyId: const obx_int.IdUid(16, 5883450582164796972),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8472272150271769072),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 2369876829134574671),
+        name: 'summaryId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(11, 3487020014901945097),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 3761827085135898139),
+        name: 'periodType',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 3356702184210038280),
+        name: 'periodStart',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 8001675043569373980),
+        name: 'periodEndExclusive',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 2593101371806439557),
+        name: 'generatedText',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 4689711996152700236),
+        name: 'editedText',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 6947300514276150715),
+        name: 'generatedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 6956917335758808684),
+        name: 'cutoffAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 4985915189953241040),
+        name: 'sourceFingerprint',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 7251003495307522185),
+        name: 'evidenceJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 3420237458636934122),
+        name: 'hidden',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 3618811962475082024),
+        name: 'userEdited',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 7320843511212094944),
+        name: 'automatic',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 5734484681354813897),
+        name: 'modelVersion',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 5883450582164796972),
+        name: 'algorithmVersion',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(8, 6182176239150724209),
+    name: 'DuplicateReviewEdgeEntity',
+    lastPropertyId: const obx_int.IdUid(18, 7918854623905359522),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8790548096698116147),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 2725454145487623321),
+        name: 'pairKey',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(13, 5108889001876544476),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 1988762938576146746),
+        name: 'recordAId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 8976445279783101067),
+        name: 'recordBId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 4049633611786986413),
+        name: 'status',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 5063148164503421859),
+        name: 'signatureA',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 8424822319902856729),
+        name: 'signatureB',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 352419338405312831),
+        name: 'revisionA',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 3704803337973484140),
+        name: 'revisionB',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 7117679420109749854),
+        name: 'detectionReasonsJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 6425861725740981253),
+        name: 'detectedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 1247978895500134431),
+        name: 'detectorVersion',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 5626882070582370954),
+        name: 'representativeRecordId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 531059919590603073),
+        name: 'logicalGroupId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 8911206256952293669),
+        name: 'deferredAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 8794067210863005451),
+        name: 'resolvedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 4889207859704077446),
+        name: 'resolvedByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(18, 7918854623905359522),
+        name: 'resolvedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(9, 6896287114912381137),
+    name: 'LogicalEventGroupEntity',
+    lastPropertyId: const obx_int.IdUid(8, 6362514436060409427),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 2886842321193008876),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 6446603388435571483),
+        name: 'groupId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(14, 9016088942154118137),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 2156463990609187977),
+        name: 'memberRecordIdsJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 8404928675973687686),
+        name: 'representativeRecordId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 213297293478877491),
+        name: 'memberRevisionsJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 6854378273176910105),
+        name: 'resolvedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 7256775667922064626),
+        name: 'resolvedByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 6362514436060409427),
+        name: 'resolvedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(10, 1398451294122712191),
+    name: 'CustomEventPinEntity',
+    lastPropertyId: const obx_int.IdUid(4, 8434493868015047620),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 2829670373671520149),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 4015742150683435520),
+        name: 'customEventTypeId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(16, 5515876569022866943),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 2600678402001903128),
+        name: 'deviceProfileId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(17, 1912046521252171253),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 8434493868015047620),
+        name: 'position',
+        type: 6,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(11, 7971801215811693102),
+    name: 'SharedCustomEventDefinitionEntity',
+    lastPropertyId: const obx_int.IdUid(12, 8903651125090731701),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 2776073546180210061),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 8559026757828462273),
+        name: 'customEventTypeId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(18, 5839237464662962574),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 4916822997300382728),
+        name: 'familySpaceId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(19, 1001239504874804710),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 1363006672684112657),
+        name: 'name',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 474829389828710685),
+        name: 'revision',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 1114306411599108110),
+        name: 'createdByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 984197537446275326),
+        name: 'createdByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 2892783179477501796),
+        name: 'lastModifiedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 7842124141654741833),
+        name: 'lastModifiedByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 5119674357169176219),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 1975845978020560359),
+        name: 'updatedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 8903651125090731701),
+        name: 'archivedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
   ),
 ];
 
@@ -181,8 +956,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(2, 7784148166755830454),
-    lastIndexId: const obx_int.IdUid(3, 4154334858951904683),
+    lastEntityId: const obx_int.IdUid(11, 7971801215811693102),
+    lastIndexId: const obx_int.IdUid(19, 1001239504874804710),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -206,23 +981,77 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectToFB: (ActivityEntity object, fb.Builder fbb) {
         final typeOffset = fbb.writeString(object.type);
         final detailsOffset = fbb.writeString(object.details);
-        fbb.startTable(7);
+        final createdByAuthorProfileIdOffset =
+            object.createdByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.createdByAuthorProfileId!);
+        final createdByDeviceProfileIdOffset =
+            object.createdByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.createdByDeviceProfileId!);
+        final lastModifiedByAuthorProfileIdOffset =
+            object.lastModifiedByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.lastModifiedByAuthorProfileId!);
+        final lastModifiedByDeviceProfileIdOffset =
+            object.lastModifiedByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.lastModifiedByDeviceProfileId!);
+        final recordIdOffset = object.recordId == null
+            ? null
+            : fbb.writeString(object.recordId!);
+        final customEventTypeIdOffset = object.customEventTypeId == null
+            ? null
+            : fbb.writeString(object.customEventTypeId!);
+        final customEventNameSnapshotOffset =
+            object.customEventNameSnapshot == null
+            ? null
+            : fbb.writeString(object.customEventNameSnapshot!);
+        final structuredDataJsonOffset = object.structuredDataJson == null
+            ? null
+            : fbb.writeString(object.structuredDataJson!);
+        fbb.startTable(18);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, typeOffset);
         fbb.addInt64(2, object.time.millisecondsSinceEpoch);
         fbb.addOffset(3, detailsOffset);
         fbb.addInt64(4, object.lastModified.millisecondsSinceEpoch);
         fbb.addInt64(5, object.diary.targetId);
+        fbb.addInt64(6, object.timePrecision);
+        fbb.addInt64(7, object.createdAt?.millisecondsSinceEpoch);
+        fbb.addOffset(8, createdByAuthorProfileIdOffset);
+        fbb.addOffset(9, createdByDeviceProfileIdOffset);
+        fbb.addOffset(10, lastModifiedByAuthorProfileIdOffset);
+        fbb.addOffset(11, lastModifiedByDeviceProfileIdOffset);
+        fbb.addOffset(12, recordIdOffset);
+        fbb.addInt64(13, object.revision);
+        fbb.addOffset(14, customEventTypeIdOffset);
+        fbb.addOffset(15, customEventNameSnapshotOffset);
+        fbb.addOffset(16, structuredDataJsonOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
+        final createdAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          18,
+        );
         final idParam = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
           4,
+          0,
+        );
+        final recordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 28);
+        final revisionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          30,
           0,
         );
         final typeParam = const fb.StringReader(
@@ -231,18 +1060,59 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final timeParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 8, 0),
         );
+        final timePrecisionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          16,
+          0,
+        );
         final detailsParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 10, '');
+        final structuredDataJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 36);
+        final customEventTypeIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 32);
+        final customEventNameSnapshotParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 34);
         final lastModifiedParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
         );
+        final createdAtParam = createdAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(createdAtValue);
+        final createdByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 20);
+        final createdByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 22);
+        final lastModifiedByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 24);
+        final lastModifiedByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 26);
         final object = ActivityEntity(
           id: idParam,
+          recordId: recordIdParam,
+          revision: revisionParam,
           type: typeParam,
           time: timeParam,
+          timePrecision: timePrecisionParam,
           details: detailsParam,
+          structuredDataJson: structuredDataJsonParam,
+          customEventTypeId: customEventTypeIdParam,
+          customEventNameSnapshot: customEventNameSnapshotParam,
           lastModified: lastModifiedParam,
+          createdAt: createdAtParam,
+          createdByAuthorProfileId: createdByAuthorProfileIdParam,
+          createdByDeviceProfileId: createdByDeviceProfileIdParam,
+          lastModifiedByAuthorProfileId: lastModifiedByAuthorProfileIdParam,
+          lastModifiedByDeviceProfileId: lastModifiedByDeviceProfileIdParam,
         );
         object.diary.targetId = const fb.Int64Reader().vTableGet(
           buffer,
@@ -278,7 +1148,23 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final recordIdOffset = object.recordId == null
             ? null
             : fbb.writeString(object.recordId!);
-        fbb.startTable(9);
+        final createdByAuthorProfileIdOffset =
+            object.createdByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.createdByAuthorProfileId!);
+        final createdByDeviceProfileIdOffset =
+            object.createdByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.createdByDeviceProfileId!);
+        final lastModifiedByAuthorProfileIdOffset =
+            object.lastModifiedByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.lastModifiedByAuthorProfileId!);
+        final lastModifiedByDeviceProfileIdOffset =
+            object.lastModifiedByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.lastModifiedByDeviceProfileId!);
+        fbb.startTable(14);
         fbb.addInt64(0, object.id);
         fbb.addInt64(1, object.date.millisecondsSinceEpoch);
         fbb.addOffset(2, titleOffset);
@@ -287,12 +1173,22 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(5, embeddingOffset);
         fbb.addOffset(6, summaryOffset);
         fbb.addOffset(7, recordIdOffset);
+        fbb.addInt64(8, object.createdAt?.millisecondsSinceEpoch);
+        fbb.addOffset(9, createdByAuthorProfileIdOffset);
+        fbb.addOffset(10, createdByDeviceProfileIdOffset);
+        fbb.addOffset(11, lastModifiedByAuthorProfileIdOffset);
+        fbb.addOffset(12, lastModifiedByDeviceProfileIdOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
+        final createdAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          20,
+        );
         final idParam = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -317,6 +1213,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final lastModifiedParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
         );
+        final createdAtParam = createdAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(createdAtValue);
+        final createdByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 22);
+        final createdByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 24);
+        final lastModifiedByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 26);
+        final lastModifiedByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 28);
         final embeddingParam = const fb.ListReader<double>(
           fb.Float32Reader(),
           lazy: false,
@@ -329,6 +1240,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           summary: summaryParam,
           content: contentParam,
           lastModified: lastModifiedParam,
+          createdAt: createdAtParam,
+          createdByAuthorProfileId: createdByAuthorProfileIdParam,
+          createdByDeviceProfileId: createdByDeviceProfileIdParam,
+          lastModifiedByAuthorProfileId: lastModifiedByAuthorProfileIdParam,
+          lastModifiedByDeviceProfileId: lastModifiedByDeviceProfileIdParam,
           embedding: embeddingParam,
         );
         obx_int.InternalToManyAccess.setRelInfo<DiaryEntity>(
@@ -343,6 +1259,876 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    RecordDraftEntity: obx_int.EntityDefinition<RecordDraftEntity>(
+      model: _entities[2],
+      toOneRelations: (RecordDraftEntity object) => [],
+      toManyRelations: (RecordDraftEntity object) => {},
+      getId: (RecordDraftEntity object) => object.id,
+      setId: (RecordDraftEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (RecordDraftEntity object, fb.Builder fbb) {
+        final draftIdOffset = fbb.writeString(object.draftId);
+        final draftKindOffset = fbb.writeString(object.draftKind);
+        final recordTypeOffset = fbb.writeString(object.recordType);
+        final targetRecordIdOffset = object.targetRecordId == null
+            ? null
+            : fbb.writeString(object.targetRecordId!);
+        final fieldPayloadJsonOffset = fbb.writeString(object.fieldPayloadJson);
+        fbb.startTable(11);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, draftIdOffset);
+        fbb.addOffset(2, draftKindOffset);
+        fbb.addOffset(3, recordTypeOffset);
+        fbb.addOffset(4, targetRecordIdOffset);
+        fbb.addInt64(5, object.payloadSchemaVersion);
+        fbb.addOffset(6, fieldPayloadJsonOffset);
+        fbb.addInt64(7, object.baseLastModified?.millisecondsSinceEpoch);
+        fbb.addInt64(8, object.createdAt.millisecondsSinceEpoch);
+        fbb.addInt64(9, object.lastSavedAt.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final baseLastModifiedValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          18,
+        );
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final draftIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final draftKindParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final recordTypeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final targetRecordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 12);
+        final payloadSchemaVersionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          0,
+        );
+        final fieldPayloadJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final baseLastModifiedParam = baseLastModifiedValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(baseLastModifiedValue);
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 20, 0),
+        );
+        final lastSavedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 22, 0),
+        );
+        final object = RecordDraftEntity(
+          id: idParam,
+          draftId: draftIdParam,
+          draftKind: draftKindParam,
+          recordType: recordTypeParam,
+          targetRecordId: targetRecordIdParam,
+          payloadSchemaVersion: payloadSchemaVersionParam,
+          fieldPayloadJson: fieldPayloadJsonParam,
+          baseLastModified: baseLastModifiedParam,
+          createdAt: createdAtParam,
+          lastSavedAt: lastSavedAtParam,
+        );
+
+        return object;
+      },
+    ),
+    AuthorProfileEntity: obx_int.EntityDefinition<AuthorProfileEntity>(
+      model: _entities[3],
+      toOneRelations: (AuthorProfileEntity object) => [],
+      toManyRelations: (AuthorProfileEntity object) => {},
+      getId: (AuthorProfileEntity object) => object.id,
+      setId: (AuthorProfileEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (AuthorProfileEntity object, fb.Builder fbb) {
+        final authorProfileIdOffset = fbb.writeString(object.authorProfileId);
+        final nicknameOffset = fbb.writeString(object.nickname);
+        fbb.startTable(7);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, authorProfileIdOffset);
+        fbb.addOffset(2, nicknameOffset);
+        fbb.addInt64(3, object.colorValue);
+        fbb.addInt64(4, object.createdAt.millisecondsSinceEpoch);
+        fbb.addBool(5, object.isCurrent);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final authorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final nicknameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final colorValueParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          10,
+          0,
+        );
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
+        );
+        final isCurrentParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          false,
+        );
+        final object = AuthorProfileEntity(
+          id: idParam,
+          authorProfileId: authorProfileIdParam,
+          nickname: nicknameParam,
+          colorValue: colorValueParam,
+          createdAt: createdAtParam,
+          isCurrent: isCurrentParam,
+        );
+
+        return object;
+      },
+    ),
+    DeviceProfileEntity: obx_int.EntityDefinition<DeviceProfileEntity>(
+      model: _entities[4],
+      toOneRelations: (DeviceProfileEntity object) => [],
+      toManyRelations: (DeviceProfileEntity object) => {},
+      getId: (DeviceProfileEntity object) => object.id,
+      setId: (DeviceProfileEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (DeviceProfileEntity object, fb.Builder fbb) {
+        final deviceProfileIdOffset = fbb.writeString(object.deviceProfileId);
+        fbb.startTable(6);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, deviceProfileIdOffset);
+        fbb.addInt64(2, object.createdAt.millisecondsSinceEpoch);
+        fbb.addBool(3, object.isCurrent);
+        fbb.addBool(4, object.hasSharedHistory);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final deviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 8, 0),
+        );
+        final isCurrentParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          10,
+          false,
+        );
+        final hasSharedHistoryParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          12,
+          false,
+        );
+        final object = DeviceProfileEntity(
+          id: idParam,
+          deviceProfileId: deviceProfileIdParam,
+          createdAt: createdAtParam,
+          isCurrent: isCurrentParam,
+          hasSharedHistory: hasSharedHistoryParam,
+        );
+
+        return object;
+      },
+    ),
+    SearchDocumentEntity: obx_int.EntityDefinition<SearchDocumentEntity>(
+      model: _entities[5],
+      toOneRelations: (SearchDocumentEntity object) => [],
+      toManyRelations: (SearchDocumentEntity object) => {},
+      getId: (SearchDocumentEntity object) => object.id,
+      setId: (SearchDocumentEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (SearchDocumentEntity object, fb.Builder fbb) {
+        final searchDocumentIdOffset = fbb.writeString(object.searchDocumentId);
+        final sourceRecordIdOffset = fbb.writeString(object.sourceRecordId);
+        final sourceTypeOffset = fbb.writeString(object.sourceType);
+        final searchableTextOffset = fbb.writeString(object.searchableText);
+        final embeddingOffset = object.embedding == null
+            ? null
+            : fbb.writeListFloat32(object.embedding!);
+        final embeddingModelVersionOffset = fbb.writeString(
+          object.embeddingModelVersion,
+        );
+        final sourceContentHashOffset = fbb.writeString(
+          object.sourceContentHash,
+        );
+        final authorProfileIdOffset = object.authorProfileId == null
+            ? null
+            : fbb.writeString(object.authorProfileId!);
+        fbb.startTable(16);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, searchDocumentIdOffset);
+        fbb.addOffset(2, sourceRecordIdOffset);
+        fbb.addOffset(3, sourceTypeOffset);
+        fbb.addInt64(4, object.sourceEntityId);
+        fbb.addInt64(5, object.sourceDiaryId);
+        fbb.addOffset(6, searchableTextOffset);
+        fbb.addOffset(7, embeddingOffset);
+        fbb.addOffset(8, embeddingModelVersionOffset);
+        fbb.addOffset(9, sourceContentHashOffset);
+        fbb.addInt64(10, object.indexedAt.millisecondsSinceEpoch);
+        fbb.addInt64(11, object.occurredAt.millisecondsSinceEpoch);
+        fbb.addOffset(12, authorProfileIdOffset);
+        fbb.addInt64(13, object.eventKind);
+        fbb.addFloat64(14, object.numericValue);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final searchDocumentIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final sourceRecordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final sourceTypeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final sourceEntityIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          12,
+          0,
+        );
+        final sourceDiaryIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          0,
+        );
+        final searchableTextParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final embeddingParam = const fb.ListReader<double>(
+          fb.Float32Reader(),
+          lazy: false,
+        ).vTableGetNullable(buffer, rootOffset, 18);
+        final embeddingModelVersionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 20, '');
+        final sourceContentHashParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 22, '');
+        final indexedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0),
+        );
+        final occurredAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 26, 0),
+        );
+        final authorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 28);
+        final eventKindParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          30,
+          0,
+        );
+        final numericValueParam = const fb.Float64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          32,
+        );
+        final object = SearchDocumentEntity(
+          id: idParam,
+          searchDocumentId: searchDocumentIdParam,
+          sourceRecordId: sourceRecordIdParam,
+          sourceType: sourceTypeParam,
+          sourceEntityId: sourceEntityIdParam,
+          sourceDiaryId: sourceDiaryIdParam,
+          searchableText: searchableTextParam,
+          embedding: embeddingParam,
+          embeddingModelVersion: embeddingModelVersionParam,
+          sourceContentHash: sourceContentHashParam,
+          indexedAt: indexedAtParam,
+          occurredAt: occurredAtParam,
+          authorProfileId: authorProfileIdParam,
+          eventKind: eventKindParam,
+          numericValue: numericValueParam,
+        );
+
+        return object;
+      },
+    ),
+    AiSummaryEntity: obx_int.EntityDefinition<AiSummaryEntity>(
+      model: _entities[6],
+      toOneRelations: (AiSummaryEntity object) => [],
+      toManyRelations: (AiSummaryEntity object) => {},
+      getId: (AiSummaryEntity object) => object.id,
+      setId: (AiSummaryEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (AiSummaryEntity object, fb.Builder fbb) {
+        final summaryIdOffset = fbb.writeString(object.summaryId);
+        final periodTypeOffset = fbb.writeString(object.periodType);
+        final generatedTextOffset = fbb.writeString(object.generatedText);
+        final editedTextOffset = object.editedText == null
+            ? null
+            : fbb.writeString(object.editedText!);
+        final sourceFingerprintOffset = fbb.writeString(
+          object.sourceFingerprint,
+        );
+        final evidenceJsonOffset = fbb.writeString(object.evidenceJson);
+        final modelVersionOffset = fbb.writeString(object.modelVersion);
+        final algorithmVersionOffset = fbb.writeString(object.algorithmVersion);
+        fbb.startTable(17);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, summaryIdOffset);
+        fbb.addOffset(2, periodTypeOffset);
+        fbb.addInt64(3, object.periodStart.millisecondsSinceEpoch);
+        fbb.addInt64(4, object.periodEndExclusive.millisecondsSinceEpoch);
+        fbb.addOffset(5, generatedTextOffset);
+        fbb.addOffset(6, editedTextOffset);
+        fbb.addInt64(7, object.generatedAt.millisecondsSinceEpoch);
+        fbb.addInt64(8, object.cutoffAt.millisecondsSinceEpoch);
+        fbb.addOffset(9, sourceFingerprintOffset);
+        fbb.addOffset(10, evidenceJsonOffset);
+        fbb.addBool(11, object.hidden);
+        fbb.addBool(12, object.userEdited);
+        fbb.addBool(13, object.automatic);
+        fbb.addOffset(14, modelVersionOffset);
+        fbb.addOffset(15, algorithmVersionOffset);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final summaryIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final periodTypeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final periodStartParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 10, 0),
+        );
+        final periodEndExclusiveParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
+        );
+        final generatedTextParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 14, '');
+        final editedTextParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 16);
+        final generatedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+        );
+        final cutoffAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 20, 0),
+        );
+        final sourceFingerprintParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 22, '');
+        final evidenceJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 24, '');
+        final hiddenParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          26,
+          false,
+        );
+        final userEditedParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          28,
+          false,
+        );
+        final automaticParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          30,
+          false,
+        );
+        final modelVersionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 32, '');
+        final algorithmVersionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 34, '');
+        final object = AiSummaryEntity(
+          id: idParam,
+          summaryId: summaryIdParam,
+          periodType: periodTypeParam,
+          periodStart: periodStartParam,
+          periodEndExclusive: periodEndExclusiveParam,
+          generatedText: generatedTextParam,
+          editedText: editedTextParam,
+          generatedAt: generatedAtParam,
+          cutoffAt: cutoffAtParam,
+          sourceFingerprint: sourceFingerprintParam,
+          evidenceJson: evidenceJsonParam,
+          hidden: hiddenParam,
+          userEdited: userEditedParam,
+          automatic: automaticParam,
+          modelVersion: modelVersionParam,
+          algorithmVersion: algorithmVersionParam,
+        );
+
+        return object;
+      },
+    ),
+    DuplicateReviewEdgeEntity:
+        obx_int.EntityDefinition<DuplicateReviewEdgeEntity>(
+          model: _entities[7],
+          toOneRelations: (DuplicateReviewEdgeEntity object) => [],
+          toManyRelations: (DuplicateReviewEdgeEntity object) => {},
+          getId: (DuplicateReviewEdgeEntity object) => object.id,
+          setId: (DuplicateReviewEdgeEntity object, int id) {
+            object.id = id;
+          },
+          objectToFB: (DuplicateReviewEdgeEntity object, fb.Builder fbb) {
+            final pairKeyOffset = fbb.writeString(object.pairKey);
+            final recordAIdOffset = fbb.writeString(object.recordAId);
+            final recordBIdOffset = fbb.writeString(object.recordBId);
+            final statusOffset = fbb.writeString(object.status);
+            final signatureAOffset = fbb.writeString(object.signatureA);
+            final signatureBOffset = fbb.writeString(object.signatureB);
+            final detectionReasonsJsonOffset = fbb.writeString(
+              object.detectionReasonsJson,
+            );
+            final detectorVersionOffset = fbb.writeString(
+              object.detectorVersion,
+            );
+            final representativeRecordIdOffset =
+                object.representativeRecordId == null
+                ? null
+                : fbb.writeString(object.representativeRecordId!);
+            final logicalGroupIdOffset = object.logicalGroupId == null
+                ? null
+                : fbb.writeString(object.logicalGroupId!);
+            final resolvedByAuthorProfileIdOffset =
+                object.resolvedByAuthorProfileId == null
+                ? null
+                : fbb.writeString(object.resolvedByAuthorProfileId!);
+            final resolvedByDeviceProfileIdOffset =
+                object.resolvedByDeviceProfileId == null
+                ? null
+                : fbb.writeString(object.resolvedByDeviceProfileId!);
+            fbb.startTable(19);
+            fbb.addInt64(0, object.id);
+            fbb.addOffset(1, pairKeyOffset);
+            fbb.addOffset(2, recordAIdOffset);
+            fbb.addOffset(3, recordBIdOffset);
+            fbb.addOffset(4, statusOffset);
+            fbb.addOffset(5, signatureAOffset);
+            fbb.addOffset(6, signatureBOffset);
+            fbb.addInt64(7, object.revisionA);
+            fbb.addInt64(8, object.revisionB);
+            fbb.addOffset(9, detectionReasonsJsonOffset);
+            fbb.addInt64(10, object.detectedAt.millisecondsSinceEpoch);
+            fbb.addOffset(11, detectorVersionOffset);
+            fbb.addOffset(12, representativeRecordIdOffset);
+            fbb.addOffset(13, logicalGroupIdOffset);
+            fbb.addInt64(14, object.deferredAt?.millisecondsSinceEpoch);
+            fbb.addOffset(15, resolvedByAuthorProfileIdOffset);
+            fbb.addOffset(16, resolvedByDeviceProfileIdOffset);
+            fbb.addInt64(17, object.resolvedAt?.millisecondsSinceEpoch);
+            fbb.finish(fbb.endTable());
+            return object.id;
+          },
+          objectFromFB: (obx.Store store, ByteData fbData) {
+            final buffer = fb.BufferContext(fbData);
+            final rootOffset = buffer.derefObject(0);
+            final deferredAtValue = const fb.Int64Reader().vTableGetNullable(
+              buffer,
+              rootOffset,
+              32,
+            );
+            final resolvedAtValue = const fb.Int64Reader().vTableGetNullable(
+              buffer,
+              rootOffset,
+              38,
+            );
+            final idParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              4,
+              0,
+            );
+            final pairKeyParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 6, '');
+            final recordAIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 8, '');
+            final recordBIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 10, '');
+            final statusParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 12, '');
+            final signatureAParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 14, '');
+            final signatureBParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 16, '');
+            final revisionAParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              18,
+              0,
+            );
+            final revisionBParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              20,
+              0,
+            );
+            final detectionReasonsJsonParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 22, '');
+            final detectedAtParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0),
+            );
+            final detectorVersionParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 26, '');
+            final representativeRecordIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 28);
+            final logicalGroupIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 30);
+            final deferredAtParam = deferredAtValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(deferredAtValue);
+            final resolvedByAuthorProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 34);
+            final resolvedByDeviceProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 36);
+            final resolvedAtParam = resolvedAtValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(resolvedAtValue);
+            final object = DuplicateReviewEdgeEntity(
+              id: idParam,
+              pairKey: pairKeyParam,
+              recordAId: recordAIdParam,
+              recordBId: recordBIdParam,
+              status: statusParam,
+              signatureA: signatureAParam,
+              signatureB: signatureBParam,
+              revisionA: revisionAParam,
+              revisionB: revisionBParam,
+              detectionReasonsJson: detectionReasonsJsonParam,
+              detectedAt: detectedAtParam,
+              detectorVersion: detectorVersionParam,
+              representativeRecordId: representativeRecordIdParam,
+              logicalGroupId: logicalGroupIdParam,
+              deferredAt: deferredAtParam,
+              resolvedByAuthorProfileId: resolvedByAuthorProfileIdParam,
+              resolvedByDeviceProfileId: resolvedByDeviceProfileIdParam,
+              resolvedAt: resolvedAtParam,
+            );
+
+            return object;
+          },
+        ),
+    LogicalEventGroupEntity: obx_int.EntityDefinition<LogicalEventGroupEntity>(
+      model: _entities[8],
+      toOneRelations: (LogicalEventGroupEntity object) => [],
+      toManyRelations: (LogicalEventGroupEntity object) => {},
+      getId: (LogicalEventGroupEntity object) => object.id,
+      setId: (LogicalEventGroupEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (LogicalEventGroupEntity object, fb.Builder fbb) {
+        final groupIdOffset = fbb.writeString(object.groupId);
+        final memberRecordIdsJsonOffset = fbb.writeString(
+          object.memberRecordIdsJson,
+        );
+        final representativeRecordIdOffset = fbb.writeString(
+          object.representativeRecordId,
+        );
+        final memberRevisionsJsonOffset = fbb.writeString(
+          object.memberRevisionsJson,
+        );
+        final resolvedByAuthorProfileIdOffset = fbb.writeString(
+          object.resolvedByAuthorProfileId,
+        );
+        final resolvedByDeviceProfileIdOffset = fbb.writeString(
+          object.resolvedByDeviceProfileId,
+        );
+        fbb.startTable(9);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, groupIdOffset);
+        fbb.addOffset(2, memberRecordIdsJsonOffset);
+        fbb.addOffset(3, representativeRecordIdOffset);
+        fbb.addOffset(4, memberRevisionsJsonOffset);
+        fbb.addOffset(5, resolvedByAuthorProfileIdOffset);
+        fbb.addOffset(6, resolvedByDeviceProfileIdOffset);
+        fbb.addInt64(7, object.resolvedAt.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final groupIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final memberRecordIdsJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final representativeRecordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final memberRevisionsJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 12, '');
+        final resolvedByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 14, '');
+        final resolvedByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final resolvedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+        );
+        final object = LogicalEventGroupEntity(
+          id: idParam,
+          groupId: groupIdParam,
+          memberRecordIdsJson: memberRecordIdsJsonParam,
+          representativeRecordId: representativeRecordIdParam,
+          memberRevisionsJson: memberRevisionsJsonParam,
+          resolvedByAuthorProfileId: resolvedByAuthorProfileIdParam,
+          resolvedByDeviceProfileId: resolvedByDeviceProfileIdParam,
+          resolvedAt: resolvedAtParam,
+        );
+
+        return object;
+      },
+    ),
+    CustomEventPinEntity: obx_int.EntityDefinition<CustomEventPinEntity>(
+      model: _entities[9],
+      toOneRelations: (CustomEventPinEntity object) => [],
+      toManyRelations: (CustomEventPinEntity object) => {},
+      getId: (CustomEventPinEntity object) => object.id,
+      setId: (CustomEventPinEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (CustomEventPinEntity object, fb.Builder fbb) {
+        final customEventTypeIdOffset = fbb.writeString(
+          object.customEventTypeId,
+        );
+        final deviceProfileIdOffset = fbb.writeString(object.deviceProfileId);
+        fbb.startTable(5);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, customEventTypeIdOffset);
+        fbb.addOffset(2, deviceProfileIdOffset);
+        fbb.addInt64(3, object.position);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final customEventTypeIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final deviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final positionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          10,
+          0,
+        );
+        final object = CustomEventPinEntity(
+          id: idParam,
+          customEventTypeId: customEventTypeIdParam,
+          deviceProfileId: deviceProfileIdParam,
+          position: positionParam,
+        );
+
+        return object;
+      },
+    ),
+    SharedCustomEventDefinitionEntity:
+        obx_int.EntityDefinition<SharedCustomEventDefinitionEntity>(
+          model: _entities[10],
+          toOneRelations: (SharedCustomEventDefinitionEntity object) => [],
+          toManyRelations: (SharedCustomEventDefinitionEntity object) => {},
+          getId: (SharedCustomEventDefinitionEntity object) => object.id,
+          setId: (SharedCustomEventDefinitionEntity object, int id) {
+            object.id = id;
+          },
+          objectToFB:
+              (SharedCustomEventDefinitionEntity object, fb.Builder fbb) {
+                final customEventTypeIdOffset = fbb.writeString(
+                  object.customEventTypeId,
+                );
+                final familySpaceIdOffset = fbb.writeString(
+                  object.familySpaceId,
+                );
+                final nameOffset = fbb.writeString(object.name);
+                final createdByAuthorProfileIdOffset = fbb.writeString(
+                  object.createdByAuthorProfileId,
+                );
+                final createdByDeviceProfileIdOffset = fbb.writeString(
+                  object.createdByDeviceProfileId,
+                );
+                final lastModifiedByAuthorProfileIdOffset = fbb.writeString(
+                  object.lastModifiedByAuthorProfileId,
+                );
+                final lastModifiedByDeviceProfileIdOffset = fbb.writeString(
+                  object.lastModifiedByDeviceProfileId,
+                );
+                fbb.startTable(13);
+                fbb.addInt64(0, object.id);
+                fbb.addOffset(1, customEventTypeIdOffset);
+                fbb.addOffset(2, familySpaceIdOffset);
+                fbb.addOffset(3, nameOffset);
+                fbb.addInt64(4, object.revision);
+                fbb.addOffset(5, createdByAuthorProfileIdOffset);
+                fbb.addOffset(6, createdByDeviceProfileIdOffset);
+                fbb.addOffset(7, lastModifiedByAuthorProfileIdOffset);
+                fbb.addOffset(8, lastModifiedByDeviceProfileIdOffset);
+                fbb.addInt64(9, object.createdAt.millisecondsSinceEpoch);
+                fbb.addInt64(10, object.updatedAt.millisecondsSinceEpoch);
+                fbb.addInt64(11, object.archivedAt?.millisecondsSinceEpoch);
+                fbb.finish(fbb.endTable());
+                return object.id;
+              },
+          objectFromFB: (obx.Store store, ByteData fbData) {
+            final buffer = fb.BufferContext(fbData);
+            final rootOffset = buffer.derefObject(0);
+            final archivedAtValue = const fb.Int64Reader().vTableGetNullable(
+              buffer,
+              rootOffset,
+              26,
+            );
+            final idParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              4,
+              0,
+            );
+            final customEventTypeIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 6, '');
+            final familySpaceIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 8, '');
+            final nameParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 10, '');
+            final revisionParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              12,
+              0,
+            );
+            final createdByAuthorProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 14, '');
+            final createdByDeviceProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 16, '');
+            final lastModifiedByAuthorProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 18, '');
+            final lastModifiedByDeviceProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 20, '');
+            final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 22, 0),
+            );
+            final updatedAtParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0),
+            );
+            final archivedAtParam = archivedAtValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(archivedAtValue);
+            final object = SharedCustomEventDefinitionEntity(
+              id: idParam,
+              customEventTypeId: customEventTypeIdParam,
+              familySpaceId: familySpaceIdParam,
+              name: nameParam,
+              revision: revisionParam,
+              createdByAuthorProfileId: createdByAuthorProfileIdParam,
+              createdByDeviceProfileId: createdByDeviceProfileIdParam,
+              lastModifiedByAuthorProfileId: lastModifiedByAuthorProfileIdParam,
+              lastModifiedByDeviceProfileId: lastModifiedByDeviceProfileIdParam,
+              createdAt: createdAtParam,
+              updatedAt: updatedAtParam,
+              archivedAt: archivedAtParam,
+            );
+
+            return object;
+          },
+        ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -378,6 +2164,56 @@ class ActivityEntity_ {
   /// See [ActivityEntity.diary].
   static final diary = obx.QueryRelationToOne<ActivityEntity, DiaryEntity>(
     _entities[0].properties[5],
+  );
+
+  /// See [ActivityEntity.timePrecision].
+  static final timePrecision = obx.QueryIntegerProperty<ActivityEntity>(
+    _entities[0].properties[6],
+  );
+
+  /// See [ActivityEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<ActivityEntity>(
+    _entities[0].properties[7],
+  );
+
+  /// See [ActivityEntity.createdByAuthorProfileId].
+  static final createdByAuthorProfileId =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[8]);
+
+  /// See [ActivityEntity.createdByDeviceProfileId].
+  static final createdByDeviceProfileId =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[9]);
+
+  /// See [ActivityEntity.lastModifiedByAuthorProfileId].
+  static final lastModifiedByAuthorProfileId =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[10]);
+
+  /// See [ActivityEntity.lastModifiedByDeviceProfileId].
+  static final lastModifiedByDeviceProfileId =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[11]);
+
+  /// See [ActivityEntity.recordId].
+  static final recordId = obx.QueryStringProperty<ActivityEntity>(
+    _entities[0].properties[12],
+  );
+
+  /// See [ActivityEntity.revision].
+  static final revision = obx.QueryIntegerProperty<ActivityEntity>(
+    _entities[0].properties[13],
+  );
+
+  /// See [ActivityEntity.customEventTypeId].
+  static final customEventTypeId = obx.QueryStringProperty<ActivityEntity>(
+    _entities[0].properties[14],
+  );
+
+  /// See [ActivityEntity.customEventNameSnapshot].
+  static final customEventNameSnapshot =
+      obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[15]);
+
+  /// See [ActivityEntity.structuredDataJson].
+  static final structuredDataJson = obx.QueryStringProperty<ActivityEntity>(
+    _entities[0].properties[16],
   );
 }
 
@@ -423,9 +2259,547 @@ class DiaryEntity_ {
     _entities[1].properties[7],
   );
 
+  /// See [DiaryEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<DiaryEntity>(
+    _entities[1].properties[8],
+  );
+
+  /// See [DiaryEntity.createdByAuthorProfileId].
+  static final createdByAuthorProfileId = obx.QueryStringProperty<DiaryEntity>(
+    _entities[1].properties[9],
+  );
+
+  /// See [DiaryEntity.createdByDeviceProfileId].
+  static final createdByDeviceProfileId = obx.QueryStringProperty<DiaryEntity>(
+    _entities[1].properties[10],
+  );
+
+  /// See [DiaryEntity.lastModifiedByAuthorProfileId].
+  static final lastModifiedByAuthorProfileId =
+      obx.QueryStringProperty<DiaryEntity>(_entities[1].properties[11]);
+
+  /// See [DiaryEntity.lastModifiedByDeviceProfileId].
+  static final lastModifiedByDeviceProfileId =
+      obx.QueryStringProperty<DiaryEntity>(_entities[1].properties[12]);
+
   /// see [DiaryEntity.activities]
   static final activities =
       obx.QueryBacklinkToMany<ActivityEntity, DiaryEntity>(
         ActivityEntity_.diary,
+      );
+}
+
+/// [RecordDraftEntity] entity fields to define ObjectBox queries.
+class RecordDraftEntity_ {
+  /// See [RecordDraftEntity.id].
+  static final id = obx.QueryIntegerProperty<RecordDraftEntity>(
+    _entities[2].properties[0],
+  );
+
+  /// See [RecordDraftEntity.draftId].
+  static final draftId = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[1],
+  );
+
+  /// See [RecordDraftEntity.draftKind].
+  static final draftKind = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[2],
+  );
+
+  /// See [RecordDraftEntity.recordType].
+  static final recordType = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[3],
+  );
+
+  /// See [RecordDraftEntity.targetRecordId].
+  static final targetRecordId = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[4],
+  );
+
+  /// See [RecordDraftEntity.payloadSchemaVersion].
+  static final payloadSchemaVersion =
+      obx.QueryIntegerProperty<RecordDraftEntity>(_entities[2].properties[5]);
+
+  /// See [RecordDraftEntity.fieldPayloadJson].
+  static final fieldPayloadJson = obx.QueryStringProperty<RecordDraftEntity>(
+    _entities[2].properties[6],
+  );
+
+  /// See [RecordDraftEntity.baseLastModified].
+  static final baseLastModified = obx.QueryDateProperty<RecordDraftEntity>(
+    _entities[2].properties[7],
+  );
+
+  /// See [RecordDraftEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<RecordDraftEntity>(
+    _entities[2].properties[8],
+  );
+
+  /// See [RecordDraftEntity.lastSavedAt].
+  static final lastSavedAt = obx.QueryDateProperty<RecordDraftEntity>(
+    _entities[2].properties[9],
+  );
+}
+
+/// [AuthorProfileEntity] entity fields to define ObjectBox queries.
+class AuthorProfileEntity_ {
+  /// See [AuthorProfileEntity.id].
+  static final id = obx.QueryIntegerProperty<AuthorProfileEntity>(
+    _entities[3].properties[0],
+  );
+
+  /// See [AuthorProfileEntity.authorProfileId].
+  static final authorProfileId = obx.QueryStringProperty<AuthorProfileEntity>(
+    _entities[3].properties[1],
+  );
+
+  /// See [AuthorProfileEntity.nickname].
+  static final nickname = obx.QueryStringProperty<AuthorProfileEntity>(
+    _entities[3].properties[2],
+  );
+
+  /// See [AuthorProfileEntity.colorValue].
+  static final colorValue = obx.QueryIntegerProperty<AuthorProfileEntity>(
+    _entities[3].properties[3],
+  );
+
+  /// See [AuthorProfileEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<AuthorProfileEntity>(
+    _entities[3].properties[4],
+  );
+
+  /// See [AuthorProfileEntity.isCurrent].
+  static final isCurrent = obx.QueryBooleanProperty<AuthorProfileEntity>(
+    _entities[3].properties[5],
+  );
+}
+
+/// [DeviceProfileEntity] entity fields to define ObjectBox queries.
+class DeviceProfileEntity_ {
+  /// See [DeviceProfileEntity.id].
+  static final id = obx.QueryIntegerProperty<DeviceProfileEntity>(
+    _entities[4].properties[0],
+  );
+
+  /// See [DeviceProfileEntity.deviceProfileId].
+  static final deviceProfileId = obx.QueryStringProperty<DeviceProfileEntity>(
+    _entities[4].properties[1],
+  );
+
+  /// See [DeviceProfileEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<DeviceProfileEntity>(
+    _entities[4].properties[2],
+  );
+
+  /// See [DeviceProfileEntity.isCurrent].
+  static final isCurrent = obx.QueryBooleanProperty<DeviceProfileEntity>(
+    _entities[4].properties[3],
+  );
+
+  /// See [DeviceProfileEntity.hasSharedHistory].
+  static final hasSharedHistory = obx.QueryBooleanProperty<DeviceProfileEntity>(
+    _entities[4].properties[4],
+  );
+}
+
+/// [SearchDocumentEntity] entity fields to define ObjectBox queries.
+class SearchDocumentEntity_ {
+  /// See [SearchDocumentEntity.id].
+  static final id = obx.QueryIntegerProperty<SearchDocumentEntity>(
+    _entities[5].properties[0],
+  );
+
+  /// See [SearchDocumentEntity.searchDocumentId].
+  static final searchDocumentId = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[1],
+  );
+
+  /// See [SearchDocumentEntity.sourceRecordId].
+  static final sourceRecordId = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[2],
+  );
+
+  /// See [SearchDocumentEntity.sourceType].
+  static final sourceType = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[3],
+  );
+
+  /// See [SearchDocumentEntity.sourceEntityId].
+  static final sourceEntityId = obx.QueryIntegerProperty<SearchDocumentEntity>(
+    _entities[5].properties[4],
+  );
+
+  /// See [SearchDocumentEntity.sourceDiaryId].
+  static final sourceDiaryId = obx.QueryIntegerProperty<SearchDocumentEntity>(
+    _entities[5].properties[5],
+  );
+
+  /// See [SearchDocumentEntity.searchableText].
+  static final searchableText = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[6],
+  );
+
+  /// See [SearchDocumentEntity.embedding].
+  static final embedding = obx.QueryHnswProperty<SearchDocumentEntity>(
+    _entities[5].properties[7],
+  );
+
+  /// See [SearchDocumentEntity.embeddingModelVersion].
+  static final embeddingModelVersion =
+      obx.QueryStringProperty<SearchDocumentEntity>(_entities[5].properties[8]);
+
+  /// See [SearchDocumentEntity.sourceContentHash].
+  static final sourceContentHash =
+      obx.QueryStringProperty<SearchDocumentEntity>(_entities[5].properties[9]);
+
+  /// See [SearchDocumentEntity.indexedAt].
+  static final indexedAt = obx.QueryDateProperty<SearchDocumentEntity>(
+    _entities[5].properties[10],
+  );
+
+  /// See [SearchDocumentEntity.occurredAt].
+  static final occurredAt = obx.QueryDateProperty<SearchDocumentEntity>(
+    _entities[5].properties[11],
+  );
+
+  /// See [SearchDocumentEntity.authorProfileId].
+  static final authorProfileId = obx.QueryStringProperty<SearchDocumentEntity>(
+    _entities[5].properties[12],
+  );
+
+  /// See [SearchDocumentEntity.eventKind].
+  static final eventKind = obx.QueryIntegerProperty<SearchDocumentEntity>(
+    _entities[5].properties[13],
+  );
+
+  /// See [SearchDocumentEntity.numericValue].
+  static final numericValue = obx.QueryDoubleProperty<SearchDocumentEntity>(
+    _entities[5].properties[14],
+  );
+}
+
+/// [AiSummaryEntity] entity fields to define ObjectBox queries.
+class AiSummaryEntity_ {
+  /// See [AiSummaryEntity.id].
+  static final id = obx.QueryIntegerProperty<AiSummaryEntity>(
+    _entities[6].properties[0],
+  );
+
+  /// See [AiSummaryEntity.summaryId].
+  static final summaryId = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[1],
+  );
+
+  /// See [AiSummaryEntity.periodType].
+  static final periodType = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[2],
+  );
+
+  /// See [AiSummaryEntity.periodStart].
+  static final periodStart = obx.QueryDateProperty<AiSummaryEntity>(
+    _entities[6].properties[3],
+  );
+
+  /// See [AiSummaryEntity.periodEndExclusive].
+  static final periodEndExclusive = obx.QueryDateProperty<AiSummaryEntity>(
+    _entities[6].properties[4],
+  );
+
+  /// See [AiSummaryEntity.generatedText].
+  static final generatedText = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[5],
+  );
+
+  /// See [AiSummaryEntity.editedText].
+  static final editedText = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[6],
+  );
+
+  /// See [AiSummaryEntity.generatedAt].
+  static final generatedAt = obx.QueryDateProperty<AiSummaryEntity>(
+    _entities[6].properties[7],
+  );
+
+  /// See [AiSummaryEntity.cutoffAt].
+  static final cutoffAt = obx.QueryDateProperty<AiSummaryEntity>(
+    _entities[6].properties[8],
+  );
+
+  /// See [AiSummaryEntity.sourceFingerprint].
+  static final sourceFingerprint = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[9],
+  );
+
+  /// See [AiSummaryEntity.evidenceJson].
+  static final evidenceJson = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[10],
+  );
+
+  /// See [AiSummaryEntity.hidden].
+  static final hidden = obx.QueryBooleanProperty<AiSummaryEntity>(
+    _entities[6].properties[11],
+  );
+
+  /// See [AiSummaryEntity.userEdited].
+  static final userEdited = obx.QueryBooleanProperty<AiSummaryEntity>(
+    _entities[6].properties[12],
+  );
+
+  /// See [AiSummaryEntity.automatic].
+  static final automatic = obx.QueryBooleanProperty<AiSummaryEntity>(
+    _entities[6].properties[13],
+  );
+
+  /// See [AiSummaryEntity.modelVersion].
+  static final modelVersion = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[14],
+  );
+
+  /// See [AiSummaryEntity.algorithmVersion].
+  static final algorithmVersion = obx.QueryStringProperty<AiSummaryEntity>(
+    _entities[6].properties[15],
+  );
+}
+
+/// [DuplicateReviewEdgeEntity] entity fields to define ObjectBox queries.
+class DuplicateReviewEdgeEntity_ {
+  /// See [DuplicateReviewEdgeEntity.id].
+  static final id = obx.QueryIntegerProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[0],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.pairKey].
+  static final pairKey = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[1],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.recordAId].
+  static final recordAId = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[2],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.recordBId].
+  static final recordBId = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[3],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.status].
+  static final status = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[4],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.signatureA].
+  static final signatureA = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[5],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.signatureB].
+  static final signatureB = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[6],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.revisionA].
+  static final revisionA = obx.QueryIntegerProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[7],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.revisionB].
+  static final revisionB = obx.QueryIntegerProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[8],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.detectionReasonsJson].
+  static final detectionReasonsJson =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[9],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.detectedAt].
+  static final detectedAt = obx.QueryDateProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[10],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.detectorVersion].
+  static final detectorVersion =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[11],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.representativeRecordId].
+  static final representativeRecordId =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[12],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.logicalGroupId].
+  static final logicalGroupId =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[13],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.deferredAt].
+  static final deferredAt = obx.QueryDateProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[14],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.resolvedByAuthorProfileId].
+  static final resolvedByAuthorProfileId =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[15],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.resolvedByDeviceProfileId].
+  static final resolvedByDeviceProfileId =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[16],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.resolvedAt].
+  static final resolvedAt = obx.QueryDateProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[17],
+  );
+}
+
+/// [LogicalEventGroupEntity] entity fields to define ObjectBox queries.
+class LogicalEventGroupEntity_ {
+  /// See [LogicalEventGroupEntity.id].
+  static final id = obx.QueryIntegerProperty<LogicalEventGroupEntity>(
+    _entities[8].properties[0],
+  );
+
+  /// See [LogicalEventGroupEntity.groupId].
+  static final groupId = obx.QueryStringProperty<LogicalEventGroupEntity>(
+    _entities[8].properties[1],
+  );
+
+  /// See [LogicalEventGroupEntity.memberRecordIdsJson].
+  static final memberRecordIdsJson =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[2],
+      );
+
+  /// See [LogicalEventGroupEntity.representativeRecordId].
+  static final representativeRecordId =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[3],
+      );
+
+  /// See [LogicalEventGroupEntity.memberRevisionsJson].
+  static final memberRevisionsJson =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[4],
+      );
+
+  /// See [LogicalEventGroupEntity.resolvedByAuthorProfileId].
+  static final resolvedByAuthorProfileId =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[5],
+      );
+
+  /// See [LogicalEventGroupEntity.resolvedByDeviceProfileId].
+  static final resolvedByDeviceProfileId =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[6],
+      );
+
+  /// See [LogicalEventGroupEntity.resolvedAt].
+  static final resolvedAt = obx.QueryDateProperty<LogicalEventGroupEntity>(
+    _entities[8].properties[7],
+  );
+}
+
+/// [CustomEventPinEntity] entity fields to define ObjectBox queries.
+class CustomEventPinEntity_ {
+  /// See [CustomEventPinEntity.id].
+  static final id = obx.QueryIntegerProperty<CustomEventPinEntity>(
+    _entities[9].properties[0],
+  );
+
+  /// See [CustomEventPinEntity.customEventTypeId].
+  static final customEventTypeId =
+      obx.QueryStringProperty<CustomEventPinEntity>(_entities[9].properties[1]);
+
+  /// See [CustomEventPinEntity.deviceProfileId].
+  static final deviceProfileId = obx.QueryStringProperty<CustomEventPinEntity>(
+    _entities[9].properties[2],
+  );
+
+  /// See [CustomEventPinEntity.position].
+  static final position = obx.QueryIntegerProperty<CustomEventPinEntity>(
+    _entities[9].properties[3],
+  );
+}
+
+/// [SharedCustomEventDefinitionEntity] entity fields to define ObjectBox queries.
+class SharedCustomEventDefinitionEntity_ {
+  /// See [SharedCustomEventDefinitionEntity.id].
+  static final id = obx.QueryIntegerProperty<SharedCustomEventDefinitionEntity>(
+    _entities[10].properties[0],
+  );
+
+  /// See [SharedCustomEventDefinitionEntity.customEventTypeId].
+  static final customEventTypeId =
+      obx.QueryStringProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[1],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.familySpaceId].
+  static final familySpaceId =
+      obx.QueryStringProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[2],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.name].
+  static final name =
+      obx.QueryStringProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[3],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.revision].
+  static final revision =
+      obx.QueryIntegerProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[4],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.createdByAuthorProfileId].
+  static final createdByAuthorProfileId =
+      obx.QueryStringProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[5],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.createdByDeviceProfileId].
+  static final createdByDeviceProfileId =
+      obx.QueryStringProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[6],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.lastModifiedByAuthorProfileId].
+  static final lastModifiedByAuthorProfileId =
+      obx.QueryStringProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[7],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.lastModifiedByDeviceProfileId].
+  static final lastModifiedByDeviceProfileId =
+      obx.QueryStringProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[8],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.createdAt].
+  static final createdAt =
+      obx.QueryDateProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[9],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.updatedAt].
+  static final updatedAt =
+      obx.QueryDateProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[10],
+      );
+
+  /// See [SharedCustomEventDefinitionEntity.archivedAt].
+  static final archivedAt =
+      obx.QueryDateProperty<SharedCustomEventDefinitionEntity>(
+        _entities[10].properties[11],
       );
 }

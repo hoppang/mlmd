@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
+import 'profile_repository.dart';
+import 'package:uuid/uuid.dart';
 
 /// 활동 로그 CRUD 처리를 위한 Repository 인터페이스
 abstract class ActivityRepository {
@@ -25,9 +27,11 @@ abstract class ActivityRepository {
 
 /// ActivityRepository의 ObjectBox 구현체
 class ActivityRepositoryImpl implements ActivityRepository {
+  static const _uuid = Uuid();
   final ObjectBoxHelper _obxHelper;
+  final ProfileRepository _profileRepository;
 
-  ActivityRepositoryImpl(this._obxHelper);
+  ActivityRepositoryImpl(this._obxHelper, this._profileRepository);
 
   @override
   List<ActivityEntity> getActivities() {
@@ -65,8 +69,38 @@ class ActivityRepositoryImpl implements ActivityRepository {
 
     // 2. 트리거: 활동 및 부모 일기의 lastModified 타임스탬프 갱신
     final now = DateTime.now();
-    activity.lastModified = now;
-    diary.lastModified = now;
+    final source = _profileRepository.requireCurrentSource();
+    final previous = activity.id == 0
+        ? null
+        : _obxHelper.activityBox.get(activity.id);
+    activity
+      ..recordId = activity.recordId ?? previous?.recordId ?? _uuid.v4()
+      ..revision = previous == null
+          ? (activity.revision < 1 ? 1 : activity.revision)
+          : (_sameCore(activity, previous)
+                ? previous.revision
+                : previous.revision + 1)
+      ..createdAt = activity.createdAt ?? previous?.createdAt ?? now
+      ..createdByAuthorProfileId =
+          activity.createdByAuthorProfileId ??
+          previous?.createdByAuthorProfileId ??
+          source.authorProfileId
+      ..createdByDeviceProfileId =
+          activity.createdByDeviceProfileId ??
+          previous?.createdByDeviceProfileId ??
+          source.deviceProfileId
+      ..lastModifiedByAuthorProfileId = source.authorProfileId
+      ..lastModifiedByDeviceProfileId = source.deviceProfileId
+      ..lastModified = now;
+    diary
+      ..createdAt = diary.createdAt ?? diary.lastModified
+      ..createdByAuthorProfileId =
+          diary.createdByAuthorProfileId ?? source.authorProfileId
+      ..createdByDeviceProfileId =
+          diary.createdByDeviceProfileId ?? source.deviceProfileId
+      ..lastModifiedByAuthorProfileId = source.authorProfileId
+      ..lastModifiedByDeviceProfileId = source.deviceProfileId
+      ..lastModified = now;
 
     // 3. ObjectBox 저장 수행
     final activityId = _obxHelper.activityBox.put(activity);
@@ -75,6 +109,15 @@ class ActivityRepositoryImpl implements ActivityRepository {
     return activityId;
   }
 
+  bool _sameCore(ActivityEntity left, ActivityEntity right) =>
+      left.type == right.type &&
+      left.time.isAtSameMomentAs(right.time) &&
+      left.timePrecision == right.timePrecision &&
+      left.details == right.details &&
+      left.structuredDataJson == right.structuredDataJson &&
+      left.customEventTypeId == right.customEventTypeId &&
+      left.customEventNameSnapshot == right.customEventNameSnapshot;
+
   @override
   bool deleteActivity(int id) {
     final activity = _obxHelper.activityBox.get(id);
@@ -82,7 +125,11 @@ class ActivityRepositoryImpl implements ActivityRepository {
       final diary = activity.diary.target;
       if (diary != null) {
         // 트리거: 활동 삭제 시 부모 일기의 lastModified 갱신
-        diary.lastModified = DateTime.now();
+        final source = _profileRepository.requireCurrentSource();
+        diary
+          ..lastModified = DateTime.now()
+          ..lastModifiedByAuthorProfileId = source.authorProfileId
+          ..lastModifiedByDeviceProfileId = source.deviceProfileId;
         _obxHelper.diaryBox.put(diary);
       }
       return _obxHelper.activityBox.remove(id);
@@ -94,5 +141,6 @@ class ActivityRepositoryImpl implements ActivityRepository {
 /// Riverpod에서 제공할 ActivityRepository 프로바이더
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
   final obxHelper = ref.watch(objectBoxProvider);
-  return ActivityRepositoryImpl(obxHelper);
-});
+  final profiles = ref.watch(profileRepositoryProvider);
+  return ActivityRepositoryImpl(obxHelper, profiles);
+}, dependencies: [objectBoxProvider, profileRepositoryProvider]);

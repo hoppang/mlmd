@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../transfer/canonical_transfer_document.dart';
 import '../transfer/diary_transfer_service.dart';
 
-class ImportPreviewDialog extends StatefulWidget {
+class ImportPreviewDialog extends StatelessWidget {
   final PreparedDiaryImport prepared;
   final ImportPreview Function(ImportConflictPolicy policy) previewFor;
 
@@ -15,17 +16,12 @@ class ImportPreviewDialog extends StatefulWidget {
   });
 
   @override
-  State<ImportPreviewDialog> createState() => _ImportPreviewDialogState();
-}
-
-class _ImportPreviewDialogState extends State<ImportPreviewDialog> {
-  ImportConflictPolicy _policy = ImportConflictPolicy.skipExisting;
-
-  @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final preview = widget.previewFor(_policy);
-    final document = widget.prepared.document;
+    final preview = previewFor(ImportConflictPolicy.skipExisting);
+    final document = prepared.document;
+    final dates = document.diaries.map((diary) => diary.date).toList()..sort();
+    final materialLoc = MaterialLocalizations.of(context);
     return AlertDialog(
       title: Text(loc.importPreviewTitle),
       content: SizedBox(
@@ -36,67 +32,64 @@ class _ImportPreviewDialogState extends State<ImportPreviewDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                widget.prepared.sourceName,
+                prepared.sourceName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleSmall,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 loc.backupInfo(
-                  widget.prepared.schemaVersion,
+                  prepared.schemaVersion,
                   document.appVersion,
                   document.exportedAt.toLocal().toString(),
                 ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
-              const SizedBox(height: 16),
+              if (dates.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  loc.importDateRange(
+                    materialLoc.formatMediumDate(dates.first),
+                    materialLoc.formatMediumDate(dates.last),
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
               Text(
                 loc.importCounts(preview.total, preview.activityCount),
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.titleSmall,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
                 children: [
                   _CountChip(label: loc.newRecords, count: preview.newCount),
                   _CountChip(
-                    label: loc.duplicateRecords,
-                    count: preview.duplicateCount,
+                    label: loc.identicalRecords,
+                    count: preview.identicalCount,
                   ),
                   _CountChip(
-                    label: loc.newerRecords,
-                    count: preview.newerCount,
-                  ),
-                  _CountChip(
-                    label: loc.skippedRecords,
-                    count: preview.skippedCount,
+                    label: loc.conflictingRecords,
+                    count: preview.conflictCount,
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
-              Text(
-                loc.conflictPolicy,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              RadioGroup<ImportConflictPolicy>(
-                groupValue: _policy,
-                onChanged: (value) {
-                  if (value != null) setState(() => _policy = value);
-                },
-                child: Column(
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppRadii.control),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    RadioListTile<ImportConflictPolicy>(
-                      contentPadding: EdgeInsets.zero,
-                      value: ImportConflictPolicy.skipExisting,
-                      title: Text(loc.skipExisting),
-                    ),
-                    RadioListTile<ImportConflictPolicy>(
-                      contentPadding: EdgeInsets.zero,
-                      value: ImportConflictPolicy.overwriteIfNewer,
-                      title: Text(loc.overwriteIfNewer),
-                    ),
+                    const Icon(Icons.shield_outlined),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: Text(loc.safeImportNotice)),
                   ],
                 ),
               ),
@@ -112,7 +105,7 @@ class _ImportPreviewDialogState extends State<ImportPreviewDialog> {
         FilledButton(
           onPressed: preview.appliedCount == 0
               ? null
-              : () => Navigator.pop(context, _policy),
+              : () => Navigator.pop(context, ImportConflictPolicy.skipExisting),
           child: Text(loc.importAction),
         ),
       ],

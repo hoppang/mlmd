@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:3014340625497478550",
-      "lastPropertyId": "6:2147283445462106961",
+      "lastPropertyId": "17:8109000737919216196",
       "name": "ActivityEntity",
       "properties": [
         {
@@ -41,13 +41,72 @@
           "type": 11,
           "flags": 520,
           "relationTarget": "DiaryEntity"
+        },
+        {
+          "id": "7:3951416368719840019",
+          "name": "timePrecision",
+          "type": 6
+        },
+        {
+          "id": "8:2383309938337246146",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "9:7830290555750988587",
+          "name": "createdByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "10:1284952037618883009",
+          "name": "createdByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "11:7364008710423433252",
+          "name": "lastModifiedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "12:1109511130613721833",
+          "name": "lastModifiedByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "13:7971544294212112844",
+          "name": "recordId",
+          "indexId": "12:5179967707708911083",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "14:535624408059055326",
+          "name": "revision",
+          "type": 6
+        },
+        {
+          "id": "15:1801448613055298410",
+          "name": "customEventTypeId",
+          "indexId": "15:853652375066275327",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "16:4295721424088215806",
+          "name": "customEventNameSnapshot",
+          "type": 9
+        },
+        {
+          "id": "17:8109000737919216196",
+          "name": "structuredDataJson",
+          "type": 9
         }
       ],
       "relations": []
     },
     {
       "id": "2:7784148166755830454",
-      "lastPropertyId": "8:7610676040634885379",
+      "lastPropertyId": "13:8483514328196674486",
       "name": "DiaryEntity",
       "properties": [
         {
@@ -94,13 +153,617 @@
           "indexId": "3:4154334858951904683",
           "type": 9,
           "flags": 2048
+        },
+        {
+          "id": "9:6204651566794506874",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "10:1391307458252641105",
+          "name": "createdByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "11:1756132609172896534",
+          "name": "createdByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "12:3492742934748550029",
+          "name": "lastModifiedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "13:8483514328196674486",
+          "name": "lastModifiedByDeviceProfileId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:7267053488527556749",
+      "lastPropertyId": "10:7546525739943859305",
+      "name": "RecordDraftEntity",
+      "properties": [
+        {
+          "id": "1:297220628326684676",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2039058292242704036",
+          "name": "draftId",
+          "indexId": "4:3814644681440260711",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:8347721301641903710",
+          "name": "draftKind",
+          "type": 9
+        },
+        {
+          "id": "4:3237704710357051558",
+          "name": "recordType",
+          "type": 9
+        },
+        {
+          "id": "5:6911837752050715765",
+          "name": "targetRecordId",
+          "indexId": "5:7756920370847829618",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "6:137211334806176683",
+          "name": "payloadSchemaVersion",
+          "type": 6
+        },
+        {
+          "id": "7:431416241111935843",
+          "name": "fieldPayloadJson",
+          "type": 9
+        },
+        {
+          "id": "8:9179149231182169138",
+          "name": "baseLastModified",
+          "type": 10
+        },
+        {
+          "id": "9:4103476853539093946",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "10:7546525739943859305",
+          "name": "lastSavedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "4:8617128554070098313",
+      "lastPropertyId": "6:5500009732612843260",
+      "name": "AuthorProfileEntity",
+      "properties": [
+        {
+          "id": "1:8030750345486684197",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4540285916938291502",
+          "name": "authorProfileId",
+          "indexId": "6:1419732821400451937",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:1665940262561319247",
+          "name": "nickname",
+          "type": 9
+        },
+        {
+          "id": "4:5391189275906388874",
+          "name": "colorValue",
+          "type": 6
+        },
+        {
+          "id": "5:6878555105160524880",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "6:5500009732612843260",
+          "name": "isCurrent",
+          "type": 1
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "5:7135689420437583296",
+      "lastPropertyId": "5:8613089406167071831",
+      "name": "DeviceProfileEntity",
+      "properties": [
+        {
+          "id": "1:1308888238229311538",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3026279456824822832",
+          "name": "deviceProfileId",
+          "indexId": "7:5858733805991619695",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:7698913700909905742",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "4:1750248484477288279",
+          "name": "isCurrent",
+          "type": 1
+        },
+        {
+          "id": "5:8613089406167071831",
+          "name": "hasSharedHistory",
+          "type": 1
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "6:6674739285646046166",
+      "lastPropertyId": "15:5359434314521682066",
+      "name": "SearchDocumentEntity",
+      "properties": [
+        {
+          "id": "1:8852462331684128025",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5940556623079841099",
+          "name": "searchDocumentId",
+          "indexId": "8:6999470648043991581",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:8746933511329514396",
+          "name": "sourceRecordId",
+          "indexId": "9:3332075985416719955",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:1423922043106314306",
+          "name": "sourceType",
+          "type": 9
+        },
+        {
+          "id": "5:5121302667546005270",
+          "name": "sourceEntityId",
+          "type": 6
+        },
+        {
+          "id": "6:4675003440705733717",
+          "name": "sourceDiaryId",
+          "type": 6
+        },
+        {
+          "id": "7:7618806571068054732",
+          "name": "searchableText",
+          "type": 9
+        },
+        {
+          "id": "8:7276354118035018946",
+          "name": "embedding",
+          "indexId": "10:4219175356147692746",
+          "type": 28,
+          "flags": 8
+        },
+        {
+          "id": "9:2528714130102780620",
+          "name": "embeddingModelVersion",
+          "type": 9
+        },
+        {
+          "id": "10:7383139652230636671",
+          "name": "sourceContentHash",
+          "type": 9
+        },
+        {
+          "id": "11:6596799292247530244",
+          "name": "indexedAt",
+          "type": 10
+        },
+        {
+          "id": "12:5925548340928607231",
+          "name": "occurredAt",
+          "type": 10
+        },
+        {
+          "id": "13:4534719732007071515",
+          "name": "authorProfileId",
+          "type": 9
+        },
+        {
+          "id": "14:8804171884950573107",
+          "name": "eventKind",
+          "type": 6
+        },
+        {
+          "id": "15:5359434314521682066",
+          "name": "numericValue",
+          "type": 8
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "7:1274005795808046192",
+      "lastPropertyId": "16:5883450582164796972",
+      "name": "AiSummaryEntity",
+      "properties": [
+        {
+          "id": "1:8472272150271769072",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2369876829134574671",
+          "name": "summaryId",
+          "indexId": "11:3487020014901945097",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:3761827085135898139",
+          "name": "periodType",
+          "type": 9
+        },
+        {
+          "id": "4:3356702184210038280",
+          "name": "periodStart",
+          "type": 10
+        },
+        {
+          "id": "5:8001675043569373980",
+          "name": "periodEndExclusive",
+          "type": 10
+        },
+        {
+          "id": "6:2593101371806439557",
+          "name": "generatedText",
+          "type": 9
+        },
+        {
+          "id": "7:4689711996152700236",
+          "name": "editedText",
+          "type": 9
+        },
+        {
+          "id": "8:6947300514276150715",
+          "name": "generatedAt",
+          "type": 10
+        },
+        {
+          "id": "9:6956917335758808684",
+          "name": "cutoffAt",
+          "type": 10
+        },
+        {
+          "id": "10:4985915189953241040",
+          "name": "sourceFingerprint",
+          "type": 9
+        },
+        {
+          "id": "11:7251003495307522185",
+          "name": "evidenceJson",
+          "type": 9
+        },
+        {
+          "id": "12:3420237458636934122",
+          "name": "hidden",
+          "type": 1
+        },
+        {
+          "id": "13:3618811962475082024",
+          "name": "userEdited",
+          "type": 1
+        },
+        {
+          "id": "14:7320843511212094944",
+          "name": "automatic",
+          "type": 1
+        },
+        {
+          "id": "15:5734484681354813897",
+          "name": "modelVersion",
+          "type": 9
+        },
+        {
+          "id": "16:5883450582164796972",
+          "name": "algorithmVersion",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "8:6182176239150724209",
+      "lastPropertyId": "18:7918854623905359522",
+      "name": "DuplicateReviewEdgeEntity",
+      "properties": [
+        {
+          "id": "1:8790548096698116147",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2725454145487623321",
+          "name": "pairKey",
+          "indexId": "13:5108889001876544476",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:1988762938576146746",
+          "name": "recordAId",
+          "type": 9
+        },
+        {
+          "id": "4:8976445279783101067",
+          "name": "recordBId",
+          "type": 9
+        },
+        {
+          "id": "5:4049633611786986413",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "6:5063148164503421859",
+          "name": "signatureA",
+          "type": 9
+        },
+        {
+          "id": "7:8424822319902856729",
+          "name": "signatureB",
+          "type": 9
+        },
+        {
+          "id": "8:352419338405312831",
+          "name": "revisionA",
+          "type": 6
+        },
+        {
+          "id": "9:3704803337973484140",
+          "name": "revisionB",
+          "type": 6
+        },
+        {
+          "id": "10:7117679420109749854",
+          "name": "detectionReasonsJson",
+          "type": 9
+        },
+        {
+          "id": "11:6425861725740981253",
+          "name": "detectedAt",
+          "type": 10
+        },
+        {
+          "id": "12:1247978895500134431",
+          "name": "detectorVersion",
+          "type": 9
+        },
+        {
+          "id": "13:5626882070582370954",
+          "name": "representativeRecordId",
+          "type": 9
+        },
+        {
+          "id": "14:531059919590603073",
+          "name": "logicalGroupId",
+          "type": 9
+        },
+        {
+          "id": "15:8911206256952293669",
+          "name": "deferredAt",
+          "type": 10
+        },
+        {
+          "id": "16:8794067210863005451",
+          "name": "resolvedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "17:4889207859704077446",
+          "name": "resolvedByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "18:7918854623905359522",
+          "name": "resolvedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "9:6896287114912381137",
+      "lastPropertyId": "8:6362514436060409427",
+      "name": "LogicalEventGroupEntity",
+      "properties": [
+        {
+          "id": "1:2886842321193008876",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6446603388435571483",
+          "name": "groupId",
+          "indexId": "14:9016088942154118137",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:2156463990609187977",
+          "name": "memberRecordIdsJson",
+          "type": 9
+        },
+        {
+          "id": "4:8404928675973687686",
+          "name": "representativeRecordId",
+          "type": 9
+        },
+        {
+          "id": "5:213297293478877491",
+          "name": "memberRevisionsJson",
+          "type": 9
+        },
+        {
+          "id": "6:6854378273176910105",
+          "name": "resolvedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "7:7256775667922064626",
+          "name": "resolvedByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "8:6362514436060409427",
+          "name": "resolvedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "10:1398451294122712191",
+      "lastPropertyId": "4:8434493868015047620",
+      "name": "CustomEventPinEntity",
+      "properties": [
+        {
+          "id": "1:2829670373671520149",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4015742150683435520",
+          "name": "customEventTypeId",
+          "indexId": "16:5515876569022866943",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:2600678402001903128",
+          "name": "deviceProfileId",
+          "indexId": "17:1912046521252171253",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:8434493868015047620",
+          "name": "position",
+          "type": 6
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "11:7971801215811693102",
+      "lastPropertyId": "12:8903651125090731701",
+      "name": "SharedCustomEventDefinitionEntity",
+      "properties": [
+        {
+          "id": "1:2776073546180210061",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8559026757828462273",
+          "name": "customEventTypeId",
+          "indexId": "18:5839237464662962574",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:4916822997300382728",
+          "name": "familySpaceId",
+          "indexId": "19:1001239504874804710",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:1363006672684112657",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "5:474829389828710685",
+          "name": "revision",
+          "type": 6
+        },
+        {
+          "id": "6:1114306411599108110",
+          "name": "createdByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "7:984197537446275326",
+          "name": "createdByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "8:2892783179477501796",
+          "name": "lastModifiedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "9:7842124141654741833",
+          "name": "lastModifiedByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "10:5119674357169176219",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "11:1975845978020560359",
+          "name": "updatedAt",
+          "type": 10
+        },
+        {
+          "id": "12:8903651125090731701",
+          "name": "archivedAt",
+          "type": 10
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "2:7784148166755830454",
-  "lastIndexId": "3:4154334858951904683",
+  "lastEntityId": "11:7971801215811693102",
+  "lastIndexId": "19:1001239504874804710",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
