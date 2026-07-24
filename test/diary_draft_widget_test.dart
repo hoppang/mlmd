@@ -23,8 +23,7 @@ class _MemoryDraftRepository implements RecordDraftRepository {
   List<RecordDraftEntity> getCreateDrafts(String recordType) => drafts.values
       .where(
         (draft) =>
-            draft.draftKind == 'createRecord' &&
-            draft.recordType == recordType,
+            draft.draftKind == 'createRecord' && draft.recordType == recordType,
       )
       .toList();
 
