@@ -13,6 +13,8 @@ import '../../../repositories/diary_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../utils/logger.dart';
 import '../../diary/application/diary_list_notifier.dart';
+import '../../events/domain/medical_guidance.dart';
+import '../../events/presentation/medical_guidance_widgets.dart';
 import '../../profiles/presentation/record_author_tag.dart';
 import '../domain/hybrid_search_query.dart';
 
@@ -477,6 +479,7 @@ class _SearchResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final activity = result.activity;
+    final guidance = evaluateMedicalGuidance(activity);
     final title = activity?.type ?? result.diary.title;
     final excerpt = activity == null
         ? (result.diary.content.trim().isNotEmpty
@@ -559,6 +562,10 @@ class _SearchResultCard extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (guidance.requiresAttention) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  const MedicalAttentionLabel(),
+                ],
               ],
             ),
           ),
@@ -667,6 +674,14 @@ class _SearchResultDetail extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
+              if (evaluateMedicalGuidance(activity).requiresAttention) ...[
+                const SizedBox(height: AppSpacing.sm),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: MedicalAttentionLabel(),
+                ),
+                MedicalGuidanceSection(activity: activity),
+              ],
             ] else ...[
               if (diary.summary.trim().isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.md),

@@ -1274,4 +1274,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eliminationChangesSaved => 'Diaper and bowel details saved.';
+
+  @override
+  String get temperatureValueLabel => 'Temperature';
+
+  @override
+  String get temperatureValueRequired => 'Enter a numeric temperature.';
+
+  @override
+  String get temperatureSiteLabel => 'Measurement site (optional)';
+
+  @override
+  String get temperatureSiteAxillary => 'Armpit';
+
+  @override
+  String get temperatureSiteEar => 'Ear';
+
+  @override
+  String get temperatureSiteForehead => 'Forehead';
+
+  @override
+  String get temperatureSiteRectal => 'Rectal';
+
+  @override
+  String get temperatureSiteOther => 'Other';
+
+  @override
+  String get temperatureNoteLabel => 'Note (optional)';
+
+  @override
+  String get medicalAttentionRequired => 'Needs attention';
+
+  @override
+  String get relatedOfficialGuidance => 'Related official guidance';
+
+  @override
+  String officialGuidanceMatchReason(String reason) {
+    return 'Matched condition · $reason';
+  }
+
+  @override
+  String get openInSystemBrowser => 'Open in system browser';
+
+  @override
+  String get officialGuidanceOpenFailed =>
+      'Could not open the official guidance. This record remains open.';
+
+  @override
+  String get officialGuidanceDisclaimer =>
+      'This external resource was reviewed and registered by the developer. The app does not make a diagnosis or treatment decision.';
 }

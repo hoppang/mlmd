@@ -1242,4 +1242,52 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eliminationChangesSaved => '기저귀·배변 정보를 저장했어요.';
+
+  @override
+  String get temperatureValueLabel => '체온';
+
+  @override
+  String get temperatureValueRequired => '체온을 숫자로 입력해 주세요.';
+
+  @override
+  String get temperatureSiteLabel => '측정 부위 (선택)';
+
+  @override
+  String get temperatureSiteAxillary => '겨드랑이';
+
+  @override
+  String get temperatureSiteEar => '귀';
+
+  @override
+  String get temperatureSiteForehead => '이마';
+
+  @override
+  String get temperatureSiteRectal => '항문';
+
+  @override
+  String get temperatureSiteOther => '기타';
+
+  @override
+  String get temperatureNoteLabel => '메모 (선택)';
+
+  @override
+  String get medicalAttentionRequired => '주의 필요';
+
+  @override
+  String get relatedOfficialGuidance => '관련 공식 자료';
+
+  @override
+  String officialGuidanceMatchReason(String reason) {
+    return '연결 조건 · $reason';
+  }
+
+  @override
+  String get openInSystemBrowser => '시스템 브라우저에서 확인';
+
+  @override
+  String get officialGuidanceOpenFailed => '공식 자료를 열지 못했어요. 기록 화면은 그대로 유지됩니다.';
+
+  @override
+  String get officialGuidanceDisclaimer =>
+      '개발자가 확인해 등록한 외부 자료입니다. 앱은 진단이나 치료 방법을 판단하지 않습니다.';
 }

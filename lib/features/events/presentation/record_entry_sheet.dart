@@ -11,6 +11,7 @@ import '../domain/event_catalog.dart';
 import 'elimination_event_form.dart';
 import 'intake_event_form.dart';
 import 'sleep_event_form.dart';
+import 'temperature_event_form.dart';
 
 typedef SaveEventRecord =
     Future<String> Function(
@@ -193,6 +194,40 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
         savedName,
         result.details,
         _occurredAt,
+        result.record.encode(),
+      );
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _saveTemperature(TemperatureFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = selected.label(AppLocalizations.of(context)!);
+      final recordId = await widget.onSave(
+        savedName,
+        result.details,
+        result.record.occurredAt,
         result.record.encode(),
       );
       if (mounted) {
@@ -510,6 +545,19 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                     _error = null;
                   }),
                   onSave: _saveSleep,
+                )
+              : custom == null && selected!.id == EventTypeId.temperature
+              ? TemperatureEventForm(
+                  key: const ValueKey('temperature'),
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _saveTemperature,
                 )
               : custom == null && _isIntakeEvent(selected!.id)
               ? IntakeEventForm(

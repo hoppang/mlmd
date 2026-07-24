@@ -2421,6 +2421,96 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'기저귀·배변 정보를 저장했어요.'**
   String get eliminationChangesSaved;
+
+  /// No description provided for @temperatureValueLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'체온'**
+  String get temperatureValueLabel;
+
+  /// No description provided for @temperatureValueRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'체온을 숫자로 입력해 주세요.'**
+  String get temperatureValueRequired;
+
+  /// No description provided for @temperatureSiteLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'측정 부위 (선택)'**
+  String get temperatureSiteLabel;
+
+  /// No description provided for @temperatureSiteAxillary.
+  ///
+  /// In ko, this message translates to:
+  /// **'겨드랑이'**
+  String get temperatureSiteAxillary;
+
+  /// No description provided for @temperatureSiteEar.
+  ///
+  /// In ko, this message translates to:
+  /// **'귀'**
+  String get temperatureSiteEar;
+
+  /// No description provided for @temperatureSiteForehead.
+  ///
+  /// In ko, this message translates to:
+  /// **'이마'**
+  String get temperatureSiteForehead;
+
+  /// No description provided for @temperatureSiteRectal.
+  ///
+  /// In ko, this message translates to:
+  /// **'항문'**
+  String get temperatureSiteRectal;
+
+  /// No description provided for @temperatureSiteOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get temperatureSiteOther;
+
+  /// No description provided for @temperatureNoteLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모 (선택)'**
+  String get temperatureNoteLabel;
+
+  /// No description provided for @medicalAttentionRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'주의 필요'**
+  String get medicalAttentionRequired;
+
+  /// No description provided for @relatedOfficialGuidance.
+  ///
+  /// In ko, this message translates to:
+  /// **'관련 공식 자료'**
+  String get relatedOfficialGuidance;
+
+  /// No description provided for @officialGuidanceMatchReason.
+  ///
+  /// In ko, this message translates to:
+  /// **'연결 조건 · {reason}'**
+  String officialGuidanceMatchReason(String reason);
+
+  /// No description provided for @openInSystemBrowser.
+  ///
+  /// In ko, this message translates to:
+  /// **'시스템 브라우저에서 확인'**
+  String get openInSystemBrowser;
+
+  /// No description provided for @officialGuidanceOpenFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'공식 자료를 열지 못했어요. 기록 화면은 그대로 유지됩니다.'**
+  String get officialGuidanceOpenFailed;
+
+  /// No description provided for @officialGuidanceDisclaimer.
+  ///
+  /// In ko, this message translates to:
+  /// **'개발자가 확인해 등록한 외부 자료입니다. 앱은 진단이나 치료 방법을 판단하지 않습니다.'**
+  String get officialGuidanceDisclaimer;
 }
 
 class _AppLocalizationsDelegate

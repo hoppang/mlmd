@@ -419,5 +419,21 @@
   "stoolColorOther": "その他",
   "eliminationObservationHint": "観察した事実だけを保存し、病気や原因を判断しません。",
   "saveEliminationChanges": "変更を保存",
-  "eliminationChangesSaved": "おむつ・排便の情報を保存しました。"
+  "eliminationChangesSaved": "おむつ・排便の情報を保存しました。",
+  "temperatureValueLabel": "体温",
+  "temperatureValueRequired": "体温を数値で入力してください。",
+  "temperatureSiteLabel": "測定部位（任意）",
+  "temperatureSiteAxillary": "わき",
+  "temperatureSiteEar": "耳",
+  "temperatureSiteForehead": "額",
+  "temperatureSiteRectal": "直腸",
+  "temperatureSiteOther": "その他",
+  "temperatureNoteLabel": "メモ（任意）",
+  "medicalAttentionRequired": "注意が必要",
+  "relatedOfficialGuidance": "関連する公式資料",
+  "officialGuidanceMatchReason": "該当条件 · {reason}",
+  "@officialGuidanceMatchReason": {"placeholders": {"reason": {"type": "String"}}},
+  "openInSystemBrowser": "システムブラウザで確認",
+  "officialGuidanceOpenFailed": "公式資料を開けませんでした。記録画面はそのままです。",
+  "officialGuidanceDisclaimer": "開発者が確認して登録した外部資料です。アプリは診断や治療方法を判断しません。"
 }

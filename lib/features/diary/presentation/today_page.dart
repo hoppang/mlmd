@@ -16,7 +16,9 @@ import '../../../repositories/record_draft_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../drafts/presentation/draft_resume_card.dart';
 import '../../duplicate_review/application/duplicate_review_notifier.dart';
+import '../../events/domain/medical_guidance.dart';
 import '../../events/domain/sleep_record.dart';
+import '../../events/presentation/medical_guidance_widgets.dart';
 import '../../events/presentation/sleep_event_form.dart';
 import '../../../models/duplicate_review_edge_entity.dart';
 import '../../profiles/presentation/record_author_tag.dart';
@@ -593,6 +595,8 @@ class _TodayTimelineEntry {
       activity?.createdByAuthorProfileId ?? diary.createdByAuthorProfileId;
   SleepRecord? get sleepRecord =>
       SleepRecord.decode(activity?.structuredDataJson ?? '');
+  bool get requiresMedicalAttention =>
+      evaluateMedicalGuidance(activity).requiresAttention;
 }
 
 class _TimelineItem extends StatelessWidget {
@@ -623,6 +627,7 @@ class _TimelineItem extends StatelessWidget {
       excludeSemantics: true,
       label:
           '${entry.title}, $timeLabel, ${loc.searchReadOnly}, '
+          '${entry.requiresMedicalAttention ? '${loc.medicalAttentionRequired}, ' : ''}'
           '${loc.searchResultDetail}',
       child: InkWell(
         onTap: onTap,
@@ -670,6 +675,13 @@ class _TimelineItem extends StatelessWidget {
                         entry.content,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (entry.requiresMedicalAttention) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: MedicalAttentionLabel(),
                       ),
                     ],
                     if (onAddSleepMarkers != null) ...[
@@ -753,6 +765,14 @@ class _TodayRecordDetail extends StatelessWidget {
             if (entry.content.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
               Text(entry.content),
+            ],
+            if (activity != null && entry.requiresMedicalAttention) ...[
+              const SizedBox(height: AppSpacing.sm),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: MedicalAttentionLabel(),
+              ),
+              MedicalGuidanceSection(activity: activity),
             ],
             if (activity != null && entry.diary.title.trim().isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),

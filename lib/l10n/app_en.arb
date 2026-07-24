@@ -419,5 +419,21 @@
   "stoolColorOther": "Other",
   "eliminationObservationHint": "The app stores observations only and does not infer an illness or cause.",
   "saveEliminationChanges": "Save changes",
-  "eliminationChangesSaved": "Diaper and bowel details saved."
+  "eliminationChangesSaved": "Diaper and bowel details saved.",
+  "temperatureValueLabel": "Temperature",
+  "temperatureValueRequired": "Enter a numeric temperature.",
+  "temperatureSiteLabel": "Measurement site (optional)",
+  "temperatureSiteAxillary": "Armpit",
+  "temperatureSiteEar": "Ear",
+  "temperatureSiteForehead": "Forehead",
+  "temperatureSiteRectal": "Rectal",
+  "temperatureSiteOther": "Other",
+  "temperatureNoteLabel": "Note (optional)",
+  "medicalAttentionRequired": "Needs attention",
+  "relatedOfficialGuidance": "Related official guidance",
+  "officialGuidanceMatchReason": "Matched condition · {reason}",
+  "@officialGuidanceMatchReason": {"placeholders": {"reason": {"type": "String"}}},
+  "openInSystemBrowser": "Open in system browser",
+  "officialGuidanceOpenFailed": "Could not open the official guidance. This record remains open.",
+  "officialGuidanceDisclaimer": "This external resource was reviewed and registered by the developer. The app does not make a diagnosis or treatment decision."
 }

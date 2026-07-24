@@ -28,6 +28,7 @@ import 'package:mlmd/features/events/application/custom_event_notifier.dart';
 import 'package:mlmd/features/events/domain/elimination_record.dart';
 import 'package:mlmd/features/events/domain/intake_record.dart';
 import 'package:mlmd/features/events/domain/sleep_record.dart';
+import 'package:mlmd/features/events/domain/temperature_record.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'package:mlmd/repositories/duplicate_review_repository.dart';
 import 'package:mlmd/models/duplicate_review_edge_entity.dart';
@@ -797,15 +798,14 @@ void main() {
     expect(find.text('최근 사용'), findsNothing);
     await tester.tap(find.byKey(const Key('quick-record-temperature')));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('quick-record-details')),
-      '낮잠 시작',
-    );
+    await tester.enterText(find.byKey(const Key('temperature-value')), '38.2');
+    await tester.enterText(find.byKey(const Key('temperature-note')), '저녁 측정');
     await tester.tap(find.byKey(const Key('save-quick-record')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('record-entry-form')), findsOneWidget);
-    expect(find.text('낮잠 시작'), findsOneWidget);
+    expect(find.byKey(const Key('temperature-event-form')), findsOneWidget);
+    expect(find.text('38.2'), findsOneWidget);
+    expect(find.text('저녁 측정'), findsOneWidget);
     expect(find.text('기록을 저장하지 못했어요. 입력 내용은 그대로 유지됩니다.'), findsOneWidget);
     expect(
       tester
@@ -1316,6 +1316,47 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DiaryFormPage), findsOneWidget);
+  });
+
+  testWidgets('38도 이상 체온은 목록에 주의 문구를, 상세에만 공식 자료를 표시한다', (tester) async {
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 61,
+      recordId: 'temperature-attention-diary',
+      date: now,
+      title: '',
+      summary: '',
+      content: '',
+      lastModified: now,
+    );
+    diary.activities.add(
+      ActivityEntity(
+        id: 62,
+        type: '체온',
+        time: now,
+        details: '38.2°C · 이마',
+        structuredDataJson: TemperatureRecord(
+          celsius: 38.2,
+          occurredAt: now,
+          measurementSite: TemperatureMeasurementSite.forehead,
+        ).encode(),
+        lastModified: now,
+      ),
+    );
+
+    await tester.pumpWidget(_buildApp(diaries: [diary]));
+    await tester.pumpAndSettle();
+
+    expect(find.text('주의 필요'), findsOneWidget);
+    expect(find.text('관련 공식 자료'), findsNothing);
+    expect(find.text('시스템 브라우저에서 확인'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('today-activity:62')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('관련 공식 자료'), findsOneWidget);
+    expect(find.text('American Academy of Pediatrics (US)'), findsOneWidget);
+    expect(find.text('시스템 브라우저에서 확인'), findsOneWidget);
   });
 
   testWidgets('병원 방문 브리핑은 의료 사실만 모으고 원본으로 이동한다', (tester) async {

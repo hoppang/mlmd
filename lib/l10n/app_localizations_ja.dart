@@ -1237,4 +1237,52 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get eliminationChangesSaved => 'おむつ・排便の情報を保存しました。';
+
+  @override
+  String get temperatureValueLabel => '体温';
+
+  @override
+  String get temperatureValueRequired => '体温を数値で入力してください。';
+
+  @override
+  String get temperatureSiteLabel => '測定部位（任意）';
+
+  @override
+  String get temperatureSiteAxillary => 'わき';
+
+  @override
+  String get temperatureSiteEar => '耳';
+
+  @override
+  String get temperatureSiteForehead => '額';
+
+  @override
+  String get temperatureSiteRectal => '直腸';
+
+  @override
+  String get temperatureSiteOther => 'その他';
+
+  @override
+  String get temperatureNoteLabel => 'メモ（任意）';
+
+  @override
+  String get medicalAttentionRequired => '注意が必要';
+
+  @override
+  String get relatedOfficialGuidance => '関連する公式資料';
+
+  @override
+  String officialGuidanceMatchReason(String reason) {
+    return '該当条件 · $reason';
+  }
+
+  @override
+  String get openInSystemBrowser => 'システムブラウザで確認';
+
+  @override
+  String get officialGuidanceOpenFailed => '公式資料を開けませんでした。記録画面はそのままです。';
+
+  @override
+  String get officialGuidanceDisclaimer =>
+      '開発者が確認して登録した外部資料です。アプリは診断や治療方法を判断しません。';
 }
