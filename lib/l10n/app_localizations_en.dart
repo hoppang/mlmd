@@ -840,4 +840,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String recordSourceDevice(String deviceId) {
     return 'Input device $deviceId';
   }
+
+  @override
+  String get duplicateReviewTitle => 'Records to review';
+
+  @override
+  String get duplicateReviewDescription =>
+      'Compare originals saved at the same time with the same content on different devices. Nothing is merged or deleted before you decide.';
+
+  @override
+  String duplicateReviewBanner(int count) {
+    return '$count records to review';
+  }
+
+  @override
+  String get duplicateReviewBannerHint =>
+      'Check whether these are the same event.';
+
+  @override
+  String duplicatePendingCount(int count) {
+    return '$count awaiting review';
+  }
+
+  @override
+  String get duplicateResolvedTitle => 'Reviewed records';
+
+  @override
+  String get duplicateNeedsReview => 'Two similar records';
+
+  @override
+  String get duplicateExactReason =>
+      'The type, time, and content match, but the input devices differ.';
+
+  @override
+  String duplicateUseSource(int number) {
+    return 'Show as one event using #$number';
+  }
+
+  @override
+  String get duplicateMarkDistinct => '#1 and #2 are separate events';
+
+  @override
+  String get duplicateReviewLater => 'Review later';
+
+  @override
+  String get duplicateSameEvent => 'Confirmed as the same event';
+
+  @override
+  String get duplicateDistinctEvents => 'Confirmed as separate events';
+
+  @override
+  String get duplicateDecisionSaved =>
+      'Decision saved. The original records remain unchanged.';
+
+  @override
+  String get duplicateChangeDecision => 'Change duplicate decision';
+
+  @override
+  String get duplicateReviewEmpty => 'No records to review';
+
+  @override
+  String get duplicateReviewEmptyHint => 'New candidates will appear on Today.';
 }

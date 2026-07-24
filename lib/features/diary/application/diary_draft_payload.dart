@@ -2,16 +2,22 @@ import 'dart:convert';
 
 class DiaryDraftActivity {
   const DiaryDraftActivity({
+    this.recordId,
+    this.revision = 1,
     required this.type,
     required this.detail,
     this.occurredAt,
   });
 
+  final String? recordId;
+  final int revision;
   final String type;
   final String detail;
   final DateTime? occurredAt;
 
   Map<String, Object?> toJson() => {
+    if (recordId != null) 'recordId': recordId,
+    'revision': revision,
     'type': type,
     'detail': detail,
     if (occurredAt != null) 'occurredAt': occurredAt!.toIso8601String(),
@@ -19,6 +25,8 @@ class DiaryDraftActivity {
 
   factory DiaryDraftActivity.fromJson(Map<String, Object?> json) {
     return DiaryDraftActivity(
+      recordId: json['recordId'] as String?,
+      revision: json['revision'] as int? ?? 1,
       type: json['type'] as String? ?? '',
       detail: json['detail'] as String? ?? '',
       occurredAt: _parseDateTime(json['occurredAt']),
@@ -26,6 +34,8 @@ class DiaryDraftActivity {
   }
 
   DiaryDraftActivity withFallbackTime(DateTime? fallback) => DiaryDraftActivity(
+    recordId: recordId,
+    revision: revision,
     type: type,
     detail: detail,
     occurredAt: occurredAt ?? fallback,
@@ -42,10 +52,10 @@ class DiaryDraftPayload {
     this.occurredAt,
   });
 
-  static const schemaVersion = 2;
+  static const schemaVersion = 3;
 
   static bool supportsSchemaVersion(int version) =>
-      version == 1 || version == 2;
+      version == 1 || version == 2 || version == 3;
 
   final String inputMode;
   final String title;
@@ -112,7 +122,7 @@ class DiaryDraftPayload {
       summary: summary,
       occurredAt: occurredAt ?? fallback.occurredAt,
       activities: List.unmodifiable(mergedActivities),
-    );
+    ).withFallbackActivityIdentity(fallback);
   }
 
   DiaryDraftPayload withFallbackRecordTime(DateTime? fallback) =>
@@ -124,6 +134,35 @@ class DiaryDraftPayload {
         occurredAt: occurredAt ?? fallback,
         activities: activities,
       );
+
+  DiaryDraftPayload withFallbackActivityIdentity(DiaryDraftPayload fallback) {
+    final merged = <DiaryDraftActivity>[];
+    for (var index = 0; index < activities.length; index++) {
+      final activity = activities[index];
+      final original = index < fallback.activities.length
+          ? fallback.activities[index]
+          : null;
+      merged.add(
+        DiaryDraftActivity(
+          recordId: activity.recordId ?? original?.recordId,
+          revision: activity.recordId == null
+              ? original?.revision ?? activity.revision
+              : activity.revision,
+          type: activity.type,
+          detail: activity.detail,
+          occurredAt: activity.occurredAt,
+        ),
+      );
+    }
+    return DiaryDraftPayload(
+      inputMode: inputMode,
+      title: title,
+      rawText: rawText,
+      summary: summary,
+      occurredAt: occurredAt,
+      activities: List.unmodifiable(merged),
+    );
+  }
 
   DiaryDraftPayload withRecordTime(DateTime value) => DiaryDraftPayload(
     inputMode: inputMode,

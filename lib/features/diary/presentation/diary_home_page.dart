@@ -19,6 +19,7 @@ import '../../settings/presentation/settings_page.dart';
 import '../../events/domain/event_catalog.dart';
 import '../../events/presentation/record_entry_sheet.dart';
 import '../../medical_briefing/presentation/medical_briefing_page.dart';
+import '../../duplicate_review/presentation/duplicate_review_page.dart';
 import '../application/diary_list_notifier.dart';
 import 'diary_form_page.dart';
 import 'diary_list_page.dart';
@@ -230,6 +231,16 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     );
   }
 
+  void _showDuplicateReviewPage(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DuplicateReviewPage(
+          onOpenOriginal: (diary) => _navigateToFormPage(context, diary),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showRecordEntry() async {
     final diaries = ref.read(diaryListProvider);
     final quickIds = defaultQuickEventIds.toSet();
@@ -316,6 +327,8 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                   TodayPage(
                     onNavigateToForm: (diary, draftId) =>
                         _navigateToFormPage(context, diary, draftId),
+                    onOpenDuplicateReviews: () =>
+                        _showDuplicateReviewPage(context),
                   ),
                   DiaryListPage(
                     onEditDiary: (diary) => _navigateToFormPage(context, diary),

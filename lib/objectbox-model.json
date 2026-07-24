@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:3014340625497478550",
-      "lastPropertyId": "12:1109511130613721833",
+      "lastPropertyId": "14:535624408059055326",
       "name": "ActivityEntity",
       "properties": [
         {
@@ -71,6 +71,18 @@
           "id": "12:1109511130613721833",
           "name": "lastModifiedByDeviceProfileId",
           "type": 9
+        },
+        {
+          "id": "13:7971544294212112844",
+          "name": "recordId",
+          "indexId": "12:5179967707708911083",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "14:535624408059055326",
+          "name": "revision",
+          "type": 6
         }
       ],
       "relations": []
@@ -473,10 +485,162 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "8:6182176239150724209",
+      "lastPropertyId": "18:7918854623905359522",
+      "name": "DuplicateReviewEdgeEntity",
+      "properties": [
+        {
+          "id": "1:8790548096698116147",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2725454145487623321",
+          "name": "pairKey",
+          "indexId": "13:5108889001876544476",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:1988762938576146746",
+          "name": "recordAId",
+          "type": 9
+        },
+        {
+          "id": "4:8976445279783101067",
+          "name": "recordBId",
+          "type": 9
+        },
+        {
+          "id": "5:4049633611786986413",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "6:5063148164503421859",
+          "name": "signatureA",
+          "type": 9
+        },
+        {
+          "id": "7:8424822319902856729",
+          "name": "signatureB",
+          "type": 9
+        },
+        {
+          "id": "8:352419338405312831",
+          "name": "revisionA",
+          "type": 6
+        },
+        {
+          "id": "9:3704803337973484140",
+          "name": "revisionB",
+          "type": 6
+        },
+        {
+          "id": "10:7117679420109749854",
+          "name": "detectionReasonsJson",
+          "type": 9
+        },
+        {
+          "id": "11:6425861725740981253",
+          "name": "detectedAt",
+          "type": 10
+        },
+        {
+          "id": "12:1247978895500134431",
+          "name": "detectorVersion",
+          "type": 9
+        },
+        {
+          "id": "13:5626882070582370954",
+          "name": "representativeRecordId",
+          "type": 9
+        },
+        {
+          "id": "14:531059919590603073",
+          "name": "logicalGroupId",
+          "type": 9
+        },
+        {
+          "id": "15:8911206256952293669",
+          "name": "deferredAt",
+          "type": 10
+        },
+        {
+          "id": "16:8794067210863005451",
+          "name": "resolvedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "17:4889207859704077446",
+          "name": "resolvedByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "18:7918854623905359522",
+          "name": "resolvedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "9:6896287114912381137",
+      "lastPropertyId": "8:6362514436060409427",
+      "name": "LogicalEventGroupEntity",
+      "properties": [
+        {
+          "id": "1:2886842321193008876",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6446603388435571483",
+          "name": "groupId",
+          "indexId": "14:9016088942154118137",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:2156463990609187977",
+          "name": "memberRecordIdsJson",
+          "type": 9
+        },
+        {
+          "id": "4:8404928675973687686",
+          "name": "representativeRecordId",
+          "type": 9
+        },
+        {
+          "id": "5:213297293478877491",
+          "name": "memberRevisionsJson",
+          "type": 9
+        },
+        {
+          "id": "6:6854378273176910105",
+          "name": "resolvedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "7:7256775667922064626",
+          "name": "resolvedByDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "8:6362514436060409427",
+          "name": "resolvedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "7:1274005795808046192",
-  "lastIndexId": "11:3487020014901945097",
+  "lastEntityId": "9:6896287114912381137",
+  "lastIndexId": "14:9016088942154118137",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

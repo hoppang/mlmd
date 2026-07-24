@@ -126,6 +126,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
   );
   DiaryRepositoryImpl(this._obxHelper, this._profileRepository) {
     _backfillRecordIds();
+    _backfillActivityIds();
     _backfillRecordSources();
   }
 
@@ -165,6 +166,36 @@ class DiaryRepositoryImpl implements DiaryRepository {
         }
       }
       if (changed.isNotEmpty) _obxHelper.diaryBox.putMany(changed);
+    });
+  }
+
+  void _backfillActivityIds() {
+    _obxHelper.store.runInTransaction(TxMode.write, () {
+      final activities = _obxHelper.activityBox.getAll();
+      final used = <String>{};
+      final changed = <ActivityEntity>[];
+      for (final activity in activities) {
+        var value = activity.recordId?.trim().toLowerCase();
+        var didChange = false;
+        if (value == null ||
+            !_uuidV4Pattern.hasMatch(value) ||
+            !used.add(value)) {
+          do {
+            value = _uuid.v4();
+          } while (!used.add(value));
+          activity.recordId = value;
+          didChange = true;
+        } else if (activity.recordId != value) {
+          activity.recordId = value;
+          didChange = true;
+        }
+        if (activity.revision < 1) {
+          activity.revision = 1;
+          didChange = true;
+        }
+        if (didChange) changed.add(activity);
+      }
+      if (changed.isNotEmpty) _obxHelper.activityBox.putMany(changed);
     });
   }
 
@@ -266,12 +297,22 @@ class DiaryRepositoryImpl implements DiaryRepository {
         _obxHelper.activityBox.removeMany(oldIds);
       }
 
+      final usedActivityRecordIds = _obxHelper.activityBox
+          .getAll()
+          .map((activity) => activity.recordId)
+          .whereType<String>()
+          .toSet();
       for (final activity in activities) {
-        _prepareActivitySource(
+        final previous = _takePreviousActivity(
           activity,
-          now,
-          previous: _takePreviousActivity(activity, unmatchedOldActivities),
+          unmatchedOldActivities,
         );
+        _prepareActivityIdentity(
+          activity,
+          previous: previous,
+          used: usedActivityRecordIds,
+        );
+        _prepareActivitySource(activity, now, previous: previous);
         activity.diary.target = diary;
       }
       if (activities.isNotEmpty) {
@@ -317,6 +358,14 @@ class DiaryRepositoryImpl implements DiaryRepository {
       _prepareDiarySource(diary, now);
       _obxHelper.diaryBox.put(diary);
       activity.diary.target = diary;
+      _prepareActivityIdentity(
+        activity,
+        used: _obxHelper.activityBox
+            .getAll()
+            .map((item) => item.recordId)
+            .whereType<String>()
+            .toSet(),
+      );
       _prepareActivitySource(activity, now);
       return _obxHelper.activityBox.put(activity);
     });
@@ -365,13 +414,20 @@ class DiaryRepositoryImpl implements DiaryRepository {
     ActivityEntity incoming,
     List<ActivityEntity> candidates,
   ) {
-    var matchIndex = candidates.indexWhere(
-      (candidate) =>
-          candidate.type == incoming.type &&
-          candidate.time.isAtSameMomentAs(incoming.time) &&
-          candidate.timePrecision == incoming.timePrecision &&
-          candidate.details == incoming.details,
-    );
+    var matchIndex = incoming.recordId == null
+        ? -1
+        : candidates.indexWhere(
+            (candidate) => candidate.recordId == incoming.recordId,
+          );
+    matchIndex = matchIndex >= 0
+        ? matchIndex
+        : candidates.indexWhere(
+            (candidate) =>
+                candidate.type == incoming.type &&
+                candidate.time.isAtSameMomentAs(incoming.time) &&
+                candidate.timePrecision == incoming.timePrecision &&
+                candidate.details == incoming.details,
+          );
     if (matchIndex < 0) {
       final sameTime = <int>[];
       for (var index = 0; index < candidates.length; index++) {
@@ -385,6 +441,42 @@ class DiaryRepositoryImpl implements DiaryRepository {
     }
     return matchIndex < 0 ? null : candidates.removeAt(matchIndex);
   }
+
+  void _prepareActivityIdentity(
+    ActivityEntity activity, {
+    ActivityEntity? previous,
+    required Set<String> used,
+  }) {
+    var value = activity.recordId?.trim().toLowerCase();
+    if (value == null ||
+        !_uuidV4Pattern.hasMatch(value) ||
+        used.contains(value)) {
+      value = previous?.recordId;
+    }
+    if (value == null ||
+        !_uuidV4Pattern.hasMatch(value) ||
+        used.contains(value)) {
+      do {
+        value = _uuid.v4();
+      } while (used.contains(value));
+    }
+    used.add(value);
+    activity.recordId = value;
+
+    if (previous == null) {
+      if (activity.revision < 1) activity.revision = 1;
+      return;
+    }
+    activity.revision = _sameActivityCore(activity, previous)
+        ? previous.revision
+        : previous.revision + 1;
+  }
+
+  bool _sameActivityCore(ActivityEntity left, ActivityEntity right) =>
+      left.type == right.type &&
+      left.time.isAtSameMomentAs(right.time) &&
+      left.timePrecision == right.timePrecision &&
+      left.details == right.details;
 
   void _prepareRecordId(DiaryEntity diary) {
     var value = diary.recordId?.trim().toLowerCase();
@@ -632,6 +724,8 @@ class DiaryRepositoryImpl implements DiaryRepository {
         final activities = incoming.activities
             .map((item) {
               final entity = ActivityEntity(
+                recordId: _uuid.v4(),
+                revision: 1,
                 type: item.type,
                 time: item.time,
                 timePrecision: item.timePrecision,
@@ -901,7 +995,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
       final diary = activity.diary.target;
       final recordId = diary?.recordId;
       if (diary == null || recordId == null) continue;
-      final documentId = 'event:${activity.id}';
+      final documentId = 'event:${activity.recordId ?? activity.id}';
       currentIds.add(documentId);
       final kind = _inferEventKind('${activity.type} ${activity.details}');
       changed.add(

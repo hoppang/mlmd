@@ -8,6 +8,8 @@ import 'package:mlmd/models/author_profile_entity.dart';
 import 'package:mlmd/models/device_profile_entity.dart';
 import 'package:mlmd/models/search_document_entity.dart';
 import 'package:mlmd/models/ai_summary_entity.dart';
+import 'package:mlmd/models/duplicate_review_edge_entity.dart';
+import 'package:mlmd/models/logical_event_group_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
@@ -15,6 +17,7 @@ import 'package:mlmd/repositories/activity_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
+import 'package:mlmd/repositories/duplicate_review_repository.dart';
 import 'package:mlmd/services/embedding_service.dart';
 import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
 
@@ -36,6 +39,10 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<SearchDocumentEntity> searchDocumentBox;
   @override
   late final Box<AiSummaryEntity> aiSummaryBox;
+  @override
+  late final Box<DuplicateReviewEdgeEntity> duplicateReviewEdgeBox;
+  @override
+  late final Box<LogicalEventGroupEntity> logicalEventGroupBox;
 
   TestObjectBoxHelper(this.store) {
     diaryBox = Box<DiaryEntity>(store);
@@ -45,6 +52,8 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
     deviceProfileBox = Box<DeviceProfileEntity>(store);
     searchDocumentBox = Box<SearchDocumentEntity>(store);
     aiSummaryBox = Box<AiSummaryEntity>(store);
+    duplicateReviewEdgeBox = Box<DuplicateReviewEdgeEntity>(store);
+    logicalEventGroupBox = Box<LogicalEventGroupEntity>(store);
   }
 
   static Future<TestObjectBoxHelper> createTemp() async {
@@ -81,6 +90,7 @@ void main() {
   late RecordDraftRepository draftRepo;
   late ProfileRepository profileRepo;
   late AiSummaryRepository aiSummaryRepo;
+  late DuplicateReviewRepository duplicateReviewRepo;
 
   setUp(() async {
     obxHelper = await TestObjectBoxHelper.createTemp();
@@ -90,6 +100,7 @@ void main() {
     activityRepo = ActivityRepositoryImpl(obxHelper, profileRepo);
     draftRepo = RecordDraftRepositoryImpl(obxHelper);
     aiSummaryRepo = AiSummaryRepositoryImpl(obxHelper);
+    duplicateReviewRepo = DuplicateReviewRepositoryImpl(obxHelper, profileRepo);
   });
 
   tearDown(() async {
@@ -97,6 +108,111 @@ void main() {
   });
 
   group('Diary & Activity Repository CRUD + Trigger Tests', () {
+    test('activity UUID survives editing and core edits raise revision', () {
+      final time = DateTime(2026, 7, 24, 10);
+      final diary = DiaryEntity(
+        date: time,
+        title: '',
+        content: '',
+        lastModified: time,
+      );
+      diaryRepo.saveDiaryWithActivities(diary, [
+        ActivityEntity(
+          type: '수유',
+          time: time,
+          details: '180mL',
+          lastModified: time,
+        ),
+      ]);
+      final original = activityRepo.getActivities().single;
+
+      diaryRepo.saveDiaryWithActivities(diary, [
+        ActivityEntity(
+          recordId: original.recordId,
+          revision: original.revision,
+          type: '수유',
+          time: time,
+          details: '200mL',
+          lastModified: time,
+        ),
+      ]);
+      final edited = activityRepo.getActivities().single;
+
+      expect(edited.recordId, original.recordId);
+      expect(edited.revision, original.revision + 1);
+    });
+
+    test(
+      'duplicate decisions preserve originals and reopen after revision',
+      () {
+        final time = DateTime(2026, 7, 24, 11);
+        for (final device in ['device-a', 'device-b']) {
+          final diary = DiaryEntity(
+            date: time,
+            title: '',
+            content: '',
+            lastModified: time,
+          );
+          diaryRepo.saveDiaryWithActivities(diary, [
+            ActivityEntity(
+              type: '수유',
+              time: time,
+              details: '180mL',
+              createdByDeviceProfileId: device,
+              lastModified: time,
+            ),
+          ]);
+        }
+
+        var items = duplicateReviewRepo.synchronize(diaryRepo.getDiaries());
+        expect(items, hasLength(1));
+        final pairKey = items.single.edge.pairKey;
+        final representative = items.single.firstActivity.recordId!;
+
+        duplicateReviewRepo.defer(pairKey);
+        items = duplicateReviewRepo.synchronize(diaryRepo.getDiaries());
+        expect(items, hasLength(1));
+        expect(items.single.edge.deferredAt, isNotNull);
+
+        duplicateReviewRepo.useRepresentative(pairKey, representative);
+        expect(obxHelper.activityBox.count(), 2);
+        expect(obxHelper.logicalEventGroupBox.count(), 1);
+        expect(
+          duplicateReviewRepo.synchronize(diaryRepo.getDiaries()),
+          isEmpty,
+        );
+
+        duplicateReviewRepo.resetDecision(pairKey);
+        duplicateReviewRepo.markDistinct(pairKey);
+        expect(obxHelper.logicalEventGroupBox.count(), 0);
+        expect(
+          duplicateReviewRepo.synchronize(diaryRepo.getDiaries()),
+          isEmpty,
+        );
+
+        final first = activityRepo.getActivities().first;
+        activityRepo.saveActivity(
+          ActivityEntity(
+            id: first.id,
+            recordId: first.recordId,
+            revision: first.revision,
+            type: first.type,
+            time: first.time,
+            details: '200mL',
+            lastModified: first.lastModified,
+          ),
+          first.diary.targetId,
+        );
+        items = duplicateReviewRepo.synchronize(diaryRepo.getDiaries());
+        expect(items, hasLength(1));
+        expect(
+          items.single.edge.status,
+          DuplicateReviewEdgeEntity.statusPending,
+        );
+        expect(obxHelper.activityBox.count(), 2);
+      },
+    );
+
     test('Saving a Diary should automatically set lastModified', () async {
       final diary = DiaryEntity(
         date: DateTime.now(),

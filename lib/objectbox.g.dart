@@ -19,6 +19,8 @@ import 'models/ai_summary_entity.dart';
 import 'models/author_profile_entity.dart';
 import 'models/device_profile_entity.dart';
 import 'models/diary_entity.dart';
+import 'models/duplicate_review_edge_entity.dart';
+import 'models/logical_event_group_entity.dart';
 import 'models/record_draft_entity.dart';
 import 'models/search_document_entity.dart';
 
@@ -28,7 +30,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 3014340625497478550),
     name: 'ActivityEntity',
-    lastPropertyId: const obx_int.IdUid(12, 1109511130613721833),
+    lastPropertyId: const obx_int.IdUid(14, 535624408059055326),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -104,6 +106,19 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(12, 1109511130613721833),
         name: 'lastModifiedByDeviceProfileId',
         type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 7971544294212112844),
+        name: 'recordId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(12, 5179967707708911083),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 535624408059055326),
+        name: 'revision',
+        type: 6,
         flags: 0,
       ),
     ],
@@ -578,6 +593,184 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(8, 6182176239150724209),
+    name: 'DuplicateReviewEdgeEntity',
+    lastPropertyId: const obx_int.IdUid(18, 7918854623905359522),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8790548096698116147),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 2725454145487623321),
+        name: 'pairKey',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(13, 5108889001876544476),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 1988762938576146746),
+        name: 'recordAId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 8976445279783101067),
+        name: 'recordBId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 4049633611786986413),
+        name: 'status',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 5063148164503421859),
+        name: 'signatureA',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 8424822319902856729),
+        name: 'signatureB',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 352419338405312831),
+        name: 'revisionA',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 3704803337973484140),
+        name: 'revisionB',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 7117679420109749854),
+        name: 'detectionReasonsJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 6425861725740981253),
+        name: 'detectedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 1247978895500134431),
+        name: 'detectorVersion',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 5626882070582370954),
+        name: 'representativeRecordId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 531059919590603073),
+        name: 'logicalGroupId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 8911206256952293669),
+        name: 'deferredAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 8794067210863005451),
+        name: 'resolvedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 4889207859704077446),
+        name: 'resolvedByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(18, 7918854623905359522),
+        name: 'resolvedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(9, 6896287114912381137),
+    name: 'LogicalEventGroupEntity',
+    lastPropertyId: const obx_int.IdUid(8, 6362514436060409427),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 2886842321193008876),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 6446603388435571483),
+        name: 'groupId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(14, 9016088942154118137),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 2156463990609187977),
+        name: 'memberRecordIdsJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 8404928675973687686),
+        name: 'representativeRecordId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 213297293478877491),
+        name: 'memberRevisionsJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 6854378273176910105),
+        name: 'resolvedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 7256775667922064626),
+        name: 'resolvedByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 6362514436060409427),
+        name: 'resolvedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -623,8 +816,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(7, 1274005795808046192),
-    lastIndexId: const obx_int.IdUid(11, 3487020014901945097),
+    lastEntityId: const obx_int.IdUid(9, 6896287114912381137),
+    lastIndexId: const obx_int.IdUid(14, 9016088942154118137),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -664,7 +857,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
             object.lastModifiedByDeviceProfileId == null
             ? null
             : fbb.writeString(object.lastModifiedByDeviceProfileId!);
-        fbb.startTable(13);
+        final recordIdOffset = object.recordId == null
+            ? null
+            : fbb.writeString(object.recordId!);
+        fbb.startTable(15);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, typeOffset);
         fbb.addInt64(2, object.time.millisecondsSinceEpoch);
@@ -677,6 +873,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(9, createdByDeviceProfileIdOffset);
         fbb.addOffset(10, lastModifiedByAuthorProfileIdOffset);
         fbb.addOffset(11, lastModifiedByDeviceProfileIdOffset);
+        fbb.addOffset(12, recordIdOffset);
+        fbb.addInt64(13, object.revision);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -692,6 +890,15 @@ obx_int.ModelDefinition getObjectBoxModel() {
           buffer,
           rootOffset,
           4,
+          0,
+        );
+        final recordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 28);
+        final revisionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          30,
           0,
         );
         final typeParam = const fb.StringReader(
@@ -729,6 +936,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         ).vTableGetNullable(buffer, rootOffset, 26);
         final object = ActivityEntity(
           id: idParam,
+          recordId: recordIdParam,
+          revision: revisionParam,
           type: typeParam,
           time: timeParam,
           timePrecision: timePrecisionParam,
@@ -1349,6 +1558,246 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    DuplicateReviewEdgeEntity:
+        obx_int.EntityDefinition<DuplicateReviewEdgeEntity>(
+          model: _entities[7],
+          toOneRelations: (DuplicateReviewEdgeEntity object) => [],
+          toManyRelations: (DuplicateReviewEdgeEntity object) => {},
+          getId: (DuplicateReviewEdgeEntity object) => object.id,
+          setId: (DuplicateReviewEdgeEntity object, int id) {
+            object.id = id;
+          },
+          objectToFB: (DuplicateReviewEdgeEntity object, fb.Builder fbb) {
+            final pairKeyOffset = fbb.writeString(object.pairKey);
+            final recordAIdOffset = fbb.writeString(object.recordAId);
+            final recordBIdOffset = fbb.writeString(object.recordBId);
+            final statusOffset = fbb.writeString(object.status);
+            final signatureAOffset = fbb.writeString(object.signatureA);
+            final signatureBOffset = fbb.writeString(object.signatureB);
+            final detectionReasonsJsonOffset = fbb.writeString(
+              object.detectionReasonsJson,
+            );
+            final detectorVersionOffset = fbb.writeString(
+              object.detectorVersion,
+            );
+            final representativeRecordIdOffset =
+                object.representativeRecordId == null
+                ? null
+                : fbb.writeString(object.representativeRecordId!);
+            final logicalGroupIdOffset = object.logicalGroupId == null
+                ? null
+                : fbb.writeString(object.logicalGroupId!);
+            final resolvedByAuthorProfileIdOffset =
+                object.resolvedByAuthorProfileId == null
+                ? null
+                : fbb.writeString(object.resolvedByAuthorProfileId!);
+            final resolvedByDeviceProfileIdOffset =
+                object.resolvedByDeviceProfileId == null
+                ? null
+                : fbb.writeString(object.resolvedByDeviceProfileId!);
+            fbb.startTable(19);
+            fbb.addInt64(0, object.id);
+            fbb.addOffset(1, pairKeyOffset);
+            fbb.addOffset(2, recordAIdOffset);
+            fbb.addOffset(3, recordBIdOffset);
+            fbb.addOffset(4, statusOffset);
+            fbb.addOffset(5, signatureAOffset);
+            fbb.addOffset(6, signatureBOffset);
+            fbb.addInt64(7, object.revisionA);
+            fbb.addInt64(8, object.revisionB);
+            fbb.addOffset(9, detectionReasonsJsonOffset);
+            fbb.addInt64(10, object.detectedAt.millisecondsSinceEpoch);
+            fbb.addOffset(11, detectorVersionOffset);
+            fbb.addOffset(12, representativeRecordIdOffset);
+            fbb.addOffset(13, logicalGroupIdOffset);
+            fbb.addInt64(14, object.deferredAt?.millisecondsSinceEpoch);
+            fbb.addOffset(15, resolvedByAuthorProfileIdOffset);
+            fbb.addOffset(16, resolvedByDeviceProfileIdOffset);
+            fbb.addInt64(17, object.resolvedAt?.millisecondsSinceEpoch);
+            fbb.finish(fbb.endTable());
+            return object.id;
+          },
+          objectFromFB: (obx.Store store, ByteData fbData) {
+            final buffer = fb.BufferContext(fbData);
+            final rootOffset = buffer.derefObject(0);
+            final deferredAtValue = const fb.Int64Reader().vTableGetNullable(
+              buffer,
+              rootOffset,
+              32,
+            );
+            final resolvedAtValue = const fb.Int64Reader().vTableGetNullable(
+              buffer,
+              rootOffset,
+              38,
+            );
+            final idParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              4,
+              0,
+            );
+            final pairKeyParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 6, '');
+            final recordAIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 8, '');
+            final recordBIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 10, '');
+            final statusParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 12, '');
+            final signatureAParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 14, '');
+            final signatureBParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 16, '');
+            final revisionAParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              18,
+              0,
+            );
+            final revisionBParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              20,
+              0,
+            );
+            final detectionReasonsJsonParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 22, '');
+            final detectedAtParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0),
+            );
+            final detectorVersionParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 26, '');
+            final representativeRecordIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 28);
+            final logicalGroupIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 30);
+            final deferredAtParam = deferredAtValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(deferredAtValue);
+            final resolvedByAuthorProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 34);
+            final resolvedByDeviceProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 36);
+            final resolvedAtParam = resolvedAtValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(resolvedAtValue);
+            final object = DuplicateReviewEdgeEntity(
+              id: idParam,
+              pairKey: pairKeyParam,
+              recordAId: recordAIdParam,
+              recordBId: recordBIdParam,
+              status: statusParam,
+              signatureA: signatureAParam,
+              signatureB: signatureBParam,
+              revisionA: revisionAParam,
+              revisionB: revisionBParam,
+              detectionReasonsJson: detectionReasonsJsonParam,
+              detectedAt: detectedAtParam,
+              detectorVersion: detectorVersionParam,
+              representativeRecordId: representativeRecordIdParam,
+              logicalGroupId: logicalGroupIdParam,
+              deferredAt: deferredAtParam,
+              resolvedByAuthorProfileId: resolvedByAuthorProfileIdParam,
+              resolvedByDeviceProfileId: resolvedByDeviceProfileIdParam,
+              resolvedAt: resolvedAtParam,
+            );
+
+            return object;
+          },
+        ),
+    LogicalEventGroupEntity: obx_int.EntityDefinition<LogicalEventGroupEntity>(
+      model: _entities[8],
+      toOneRelations: (LogicalEventGroupEntity object) => [],
+      toManyRelations: (LogicalEventGroupEntity object) => {},
+      getId: (LogicalEventGroupEntity object) => object.id,
+      setId: (LogicalEventGroupEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (LogicalEventGroupEntity object, fb.Builder fbb) {
+        final groupIdOffset = fbb.writeString(object.groupId);
+        final memberRecordIdsJsonOffset = fbb.writeString(
+          object.memberRecordIdsJson,
+        );
+        final representativeRecordIdOffset = fbb.writeString(
+          object.representativeRecordId,
+        );
+        final memberRevisionsJsonOffset = fbb.writeString(
+          object.memberRevisionsJson,
+        );
+        final resolvedByAuthorProfileIdOffset = fbb.writeString(
+          object.resolvedByAuthorProfileId,
+        );
+        final resolvedByDeviceProfileIdOffset = fbb.writeString(
+          object.resolvedByDeviceProfileId,
+        );
+        fbb.startTable(9);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, groupIdOffset);
+        fbb.addOffset(2, memberRecordIdsJsonOffset);
+        fbb.addOffset(3, representativeRecordIdOffset);
+        fbb.addOffset(4, memberRevisionsJsonOffset);
+        fbb.addOffset(5, resolvedByAuthorProfileIdOffset);
+        fbb.addOffset(6, resolvedByDeviceProfileIdOffset);
+        fbb.addInt64(7, object.resolvedAt.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final groupIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final memberRecordIdsJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final representativeRecordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final memberRevisionsJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 12, '');
+        final resolvedByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 14, '');
+        final resolvedByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final resolvedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+        );
+        final object = LogicalEventGroupEntity(
+          id: idParam,
+          groupId: groupIdParam,
+          memberRecordIdsJson: memberRecordIdsJsonParam,
+          representativeRecordId: representativeRecordIdParam,
+          memberRevisionsJson: memberRevisionsJsonParam,
+          resolvedByAuthorProfileId: resolvedByAuthorProfileIdParam,
+          resolvedByDeviceProfileId: resolvedByDeviceProfileIdParam,
+          resolvedAt: resolvedAtParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -1411,6 +1860,16 @@ class ActivityEntity_ {
   /// See [ActivityEntity.lastModifiedByDeviceProfileId].
   static final lastModifiedByDeviceProfileId =
       obx.QueryStringProperty<ActivityEntity>(_entities[0].properties[11]);
+
+  /// See [ActivityEntity.recordId].
+  static final recordId = obx.QueryStringProperty<ActivityEntity>(
+    _entities[0].properties[12],
+  );
+
+  /// See [ActivityEntity.revision].
+  static final revision = obx.QueryIntegerProperty<ActivityEntity>(
+    _entities[0].properties[13],
+  );
 }
 
 /// [DiaryEntity] entity fields to define ObjectBox queries.
@@ -1754,5 +2213,152 @@ class AiSummaryEntity_ {
   /// See [AiSummaryEntity.algorithmVersion].
   static final algorithmVersion = obx.QueryStringProperty<AiSummaryEntity>(
     _entities[6].properties[15],
+  );
+}
+
+/// [DuplicateReviewEdgeEntity] entity fields to define ObjectBox queries.
+class DuplicateReviewEdgeEntity_ {
+  /// See [DuplicateReviewEdgeEntity.id].
+  static final id = obx.QueryIntegerProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[0],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.pairKey].
+  static final pairKey = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[1],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.recordAId].
+  static final recordAId = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[2],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.recordBId].
+  static final recordBId = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[3],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.status].
+  static final status = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[4],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.signatureA].
+  static final signatureA = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[5],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.signatureB].
+  static final signatureB = obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[6],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.revisionA].
+  static final revisionA = obx.QueryIntegerProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[7],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.revisionB].
+  static final revisionB = obx.QueryIntegerProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[8],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.detectionReasonsJson].
+  static final detectionReasonsJson =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[9],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.detectedAt].
+  static final detectedAt = obx.QueryDateProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[10],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.detectorVersion].
+  static final detectorVersion =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[11],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.representativeRecordId].
+  static final representativeRecordId =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[12],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.logicalGroupId].
+  static final logicalGroupId =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[13],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.deferredAt].
+  static final deferredAt = obx.QueryDateProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[14],
+  );
+
+  /// See [DuplicateReviewEdgeEntity.resolvedByAuthorProfileId].
+  static final resolvedByAuthorProfileId =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[15],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.resolvedByDeviceProfileId].
+  static final resolvedByDeviceProfileId =
+      obx.QueryStringProperty<DuplicateReviewEdgeEntity>(
+        _entities[7].properties[16],
+      );
+
+  /// See [DuplicateReviewEdgeEntity.resolvedAt].
+  static final resolvedAt = obx.QueryDateProperty<DuplicateReviewEdgeEntity>(
+    _entities[7].properties[17],
+  );
+}
+
+/// [LogicalEventGroupEntity] entity fields to define ObjectBox queries.
+class LogicalEventGroupEntity_ {
+  /// See [LogicalEventGroupEntity.id].
+  static final id = obx.QueryIntegerProperty<LogicalEventGroupEntity>(
+    _entities[8].properties[0],
+  );
+
+  /// See [LogicalEventGroupEntity.groupId].
+  static final groupId = obx.QueryStringProperty<LogicalEventGroupEntity>(
+    _entities[8].properties[1],
+  );
+
+  /// See [LogicalEventGroupEntity.memberRecordIdsJson].
+  static final memberRecordIdsJson =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[2],
+      );
+
+  /// See [LogicalEventGroupEntity.representativeRecordId].
+  static final representativeRecordId =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[3],
+      );
+
+  /// See [LogicalEventGroupEntity.memberRevisionsJson].
+  static final memberRevisionsJson =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[4],
+      );
+
+  /// See [LogicalEventGroupEntity.resolvedByAuthorProfileId].
+  static final resolvedByAuthorProfileId =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[5],
+      );
+
+  /// See [LogicalEventGroupEntity.resolvedByDeviceProfileId].
+  static final resolvedByDeviceProfileId =
+      obx.QueryStringProperty<LogicalEventGroupEntity>(
+        _entities[8].properties[6],
+      );
+
+  /// See [LogicalEventGroupEntity.resolvedAt].
+  static final resolvedAt = obx.QueryDateProperty<LogicalEventGroupEntity>(
+    _entities[8].properties[7],
   );
 }

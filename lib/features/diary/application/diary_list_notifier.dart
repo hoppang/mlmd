@@ -41,6 +41,8 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     final activityEntities = activitySummaries
         .map(
           (activity) => ActivityEntity(
+            recordId: activity.recordId,
+            revision: activity.revision,
             type: activity.type,
             time: activity.occurredAt ?? occurredAt,
             timePrecision: activity.occurredAt == null
@@ -114,6 +116,8 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     final activityEntities = activitySummaries
         .map(
           (activity) => ActivityEntity(
+            recordId: activity.recordId,
+            revision: activity.revision,
             type: activity.type,
             time: activity.occurredAt ?? occurredAt,
             timePrecision: activity.occurredAt == null

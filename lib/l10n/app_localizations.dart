@@ -1611,6 +1611,108 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'입력 기기 {deviceId}'**
   String recordSourceDevice(String deviceId);
+
+  /// No description provided for @duplicateReviewTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인할 기록'**
+  String get duplicateReviewTitle;
+
+  /// No description provided for @duplicateReviewDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'서로 다른 기기에서 같은 시각과 내용으로 저장된 원본을 비교합니다. 확인하기 전에는 어떤 기록도 합치거나 삭제하지 않아요.'**
+  String get duplicateReviewDescription;
+
+  /// No description provided for @duplicateReviewBanner.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인할 기록 {count}개'**
+  String duplicateReviewBanner(int count);
+
+  /// No description provided for @duplicateReviewBannerHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'비슷한 기록인지 확인해 주세요.'**
+  String get duplicateReviewBannerHint;
+
+  /// No description provided for @duplicatePendingCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인 필요 {count}개'**
+  String duplicatePendingCount(int count);
+
+  /// No description provided for @duplicateResolvedTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인한 기록'**
+  String get duplicateResolvedTitle;
+
+  /// No description provided for @duplicateNeedsReview.
+  ///
+  /// In ko, this message translates to:
+  /// **'비슷한 기록 2개'**
+  String get duplicateNeedsReview;
+
+  /// No description provided for @duplicateExactReason.
+  ///
+  /// In ko, this message translates to:
+  /// **'종류, 발생 시각과 내용이 같고 입력 기기가 달라요.'**
+  String get duplicateExactReason;
+
+  /// No description provided for @duplicateUseSource.
+  ///
+  /// In ko, this message translates to:
+  /// **'{number}번을 기준으로 한 건으로 표시'**
+  String duplicateUseSource(int number);
+
+  /// No description provided for @duplicateMarkDistinct.
+  ///
+  /// In ko, this message translates to:
+  /// **'1번과 2번은 각각 다른 일'**
+  String get duplicateMarkDistinct;
+
+  /// No description provided for @duplicateReviewLater.
+  ///
+  /// In ko, this message translates to:
+  /// **'나중에 확인'**
+  String get duplicateReviewLater;
+
+  /// No description provided for @duplicateSameEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'같은 사건으로 확인됨'**
+  String get duplicateSameEvent;
+
+  /// No description provided for @duplicateDistinctEvents.
+  ///
+  /// In ko, this message translates to:
+  /// **'각각 다른 일로 확인됨'**
+  String get duplicateDistinctEvents;
+
+  /// No description provided for @duplicateDecisionSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'중복 판단을 저장했어요. 원본 기록은 그대로 유지됩니다.'**
+  String get duplicateDecisionSaved;
+
+  /// No description provided for @duplicateChangeDecision.
+  ///
+  /// In ko, this message translates to:
+  /// **'중복 판단 변경'**
+  String get duplicateChangeDecision;
+
+  /// No description provided for @duplicateReviewEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인할 기록이 없어요'**
+  String get duplicateReviewEmpty;
+
+  /// No description provided for @duplicateReviewEmptyHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 후보가 생기면 오늘 화면에 표시됩니다.'**
+  String get duplicateReviewEmptyHint;
 }
 
 class _AppLocalizationsDelegate

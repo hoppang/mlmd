@@ -3,6 +3,7 @@ import '../models/activity_entity.dart';
 import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import 'profile_repository.dart';
+import 'package:uuid/uuid.dart';
 
 /// 활동 로그 CRUD 처리를 위한 Repository 인터페이스
 abstract class ActivityRepository {
@@ -26,6 +27,7 @@ abstract class ActivityRepository {
 
 /// ActivityRepository의 ObjectBox 구현체
 class ActivityRepositoryImpl implements ActivityRepository {
+  static const _uuid = Uuid();
   final ObjectBoxHelper _obxHelper;
   final ProfileRepository _profileRepository;
 
@@ -72,6 +74,12 @@ class ActivityRepositoryImpl implements ActivityRepository {
         ? null
         : _obxHelper.activityBox.get(activity.id);
     activity
+      ..recordId = activity.recordId ?? previous?.recordId ?? _uuid.v4()
+      ..revision = previous == null
+          ? (activity.revision < 1 ? 1 : activity.revision)
+          : (_sameCore(activity, previous)
+                ? previous.revision
+                : previous.revision + 1)
       ..createdAt = activity.createdAt ?? previous?.createdAt ?? now
       ..createdByAuthorProfileId =
           activity.createdByAuthorProfileId ??
@@ -100,6 +108,12 @@ class ActivityRepositoryImpl implements ActivityRepository {
 
     return activityId;
   }
+
+  bool _sameCore(ActivityEntity left, ActivityEntity right) =>
+      left.type == right.type &&
+      left.time.isAtSameMomentAs(right.time) &&
+      left.timePrecision == right.timePrecision &&
+      left.details == right.details;
 
   @override
   bool deleteActivity(int id) {

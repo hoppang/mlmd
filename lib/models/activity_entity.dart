@@ -9,6 +9,13 @@ class ActivityEntity {
   @Id()
   int id;
 
+  /// ObjectBox 로컬 ID와 별개로 편집·기기 이동 뒤에도 같은 활동을 가리키는 UUID입니다.
+  @Index()
+  String? recordId;
+
+  /// 중복 판정의 핵심값이 바뀔 때 증가합니다.
+  int revision;
+
   String type; // 활동 타입 (수유, 수면, 투약 등)
 
   @Property(type: PropertyType.date)
@@ -35,6 +42,8 @@ class ActivityEntity {
 
   ActivityEntity({
     this.id = 0,
+    this.recordId,
+    this.revision = 1,
     required this.type,
     required this.time,
     this.timePrecision = timePrecisionExact,

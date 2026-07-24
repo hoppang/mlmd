@@ -23,7 +23,10 @@ import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/services/llm_diary_service.dart';
 import 'package:mlmd/features/summaries/application/ai_summary_notifier.dart';
 import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
+import 'package:mlmd/features/duplicate_review/application/duplicate_review_notifier.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
+import 'package:mlmd/repositories/duplicate_review_repository.dart';
+import 'package:mlmd/models/duplicate_review_edge_entity.dart';
 import 'support/test_profile_repository.dart';
 
 class _TestDiaryListNotifier extends DiaryListNotifier {
@@ -184,6 +187,47 @@ class _TestWeeklyAiAutoSummaryNotifier extends WeeklyAiAutoSummaryNotifier {
   bool build() => enabled;
 }
 
+class _TestDuplicateReviewNotifier extends DuplicateReviewNotifier {
+  _TestDuplicateReviewNotifier(this.items);
+
+  final List<DuplicateReviewItem> items;
+
+  @override
+  List<DuplicateReviewItem> build() => items;
+
+  @override
+  void useRepresentative(String pairKey, String recordId) {
+    final item = state.firstWhere((value) => value.edge.pairKey == pairKey);
+    item.edge
+      ..status = DuplicateReviewEdgeEntity.statusSameEvent
+      ..representativeRecordId = recordId;
+    state = [...state];
+  }
+
+  @override
+  void markDistinct(String pairKey) {
+    final item = state.firstWhere((value) => value.edge.pairKey == pairKey);
+    item.edge.status = DuplicateReviewEdgeEntity.statusDistinctEvents;
+    state = [...state];
+  }
+
+  @override
+  void defer(String pairKey) {
+    final item = state.firstWhere((value) => value.edge.pairKey == pairKey);
+    item.edge.deferredAt = DateTime.now();
+    state = [...state];
+  }
+
+  @override
+  void resetDecision(String pairKey) {
+    final item = state.firstWhere((value) => value.edge.pairKey == pairKey);
+    item.edge
+      ..status = DuplicateReviewEdgeEntity.statusPending
+      ..representativeRecordId = null;
+    state = [...state];
+  }
+}
+
 class _TestDiaryAnalysisService implements DiaryAnalysisService {
   _TestDiaryAnalysisService({
     required this.isAvailable,
@@ -270,6 +314,7 @@ Widget _buildApp({
   bool weeklyAutoSummary = false,
   DiaryAnalysisService? analysisService,
   TextScaler? textScaler,
+  List<DuplicateReviewItem> duplicateItems = const [],
 }) {
   return ProviderScope(
     overrides: [
@@ -288,6 +333,9 @@ Widget _buildApp({
       ),
       weeklyAiAutoSummaryProvider.overrideWith(
         () => _TestWeeklyAiAutoSummaryNotifier(weeklyAutoSummary),
+      ),
+      duplicateReviewListProvider.overrideWith(
+        () => _TestDuplicateReviewNotifier(duplicateItems),
       ),
       if (analysisService != null)
         diaryAnalysisServiceProvider.overrideWithValue(analysisService),
@@ -872,6 +920,107 @@ void main() {
     await tester.tap(find.byKey(const Key('briefing-open-original')));
     await tester.pumpAndSettle();
     expect(find.byType(DiaryFormPage), findsOneWidget);
+  });
+
+  testWidgets('중복 후보는 두 원본을 보존한 채 대표 기록을 사용자가 확정한다', (tester) async {
+    final now = DateTime.now();
+    final firstDiary = DiaryEntity(
+      id: 101,
+      recordId: 'duplicate-diary-a',
+      date: now,
+      title: '',
+      content: '',
+      lastModified: now,
+    );
+    final firstActivity = ActivityEntity(
+      id: 102,
+      recordId: 'duplicate-activity-a',
+      type: '수유',
+      time: now,
+      details: '180mL',
+      createdByDeviceProfileId: 'device-a',
+      lastModified: now,
+    );
+    firstDiary.activities.add(firstActivity);
+    final secondDiary = DiaryEntity(
+      id: 103,
+      recordId: 'duplicate-diary-b',
+      date: now,
+      title: '',
+      content: '',
+      lastModified: now,
+    );
+    final secondActivity = ActivityEntity(
+      id: 104,
+      recordId: 'duplicate-activity-b',
+      type: 'Feeding',
+      time: now,
+      details: '180mL',
+      createdByDeviceProfileId: 'device-b',
+      lastModified: now,
+    );
+    secondDiary.activities.add(secondActivity);
+    final edge = DuplicateReviewEdgeEntity(
+      pairKey: 'duplicate-activity-a|duplicate-activity-b',
+      recordAId: 'duplicate-activity-a',
+      recordBId: 'duplicate-activity-b',
+      signatureA: 'a',
+      signatureB: 'b',
+      revisionA: 1,
+      revisionB: 1,
+      detectionReasonsJson: '[]',
+      detectedAt: now,
+      detectorVersion: 'test',
+    );
+    final item = DuplicateReviewItem(
+      edge: edge,
+      firstDiary: firstDiary,
+      firstActivity: firstActivity,
+      secondDiary: secondDiary,
+      secondActivity: secondActivity,
+    );
+
+    await tester.pumpWidget(
+      _buildApp(diaries: [firstDiary, secondDiary], duplicateItems: [item]),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('duplicate-review-banner')), findsOneWidget);
+    expect(find.text('확인할 기록 1개'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('duplicate-review-banner')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('비슷한 기록 2개'), findsOneWidget);
+    expect(find.textContaining('180mL'), findsNWidgets(2));
+    await tester.tap(
+      find.byKey(const Key('duplicate-source:duplicate-activity-a')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('읽기 전용'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const Key('duplicate-open-original:duplicate-activity-a')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(DiaryFormPage), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('duplicate-use-source:duplicate-activity-a')),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(
+      find.byKey(const Key('duplicate-use-source:duplicate-activity-a')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('같은 사건으로 확인됨'), findsOneWidget);
+    expect(firstDiary.activities, hasLength(1));
+    expect(secondDiary.activities, hasLength(1));
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('duplicate-review-banner')), findsNothing);
   });
 
   testWidgets('날짜별 탭은 선택한 날짜의 기록만 표시한다', (tester) async {

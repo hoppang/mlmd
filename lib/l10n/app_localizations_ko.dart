@@ -815,4 +815,62 @@ class AppLocalizationsKo extends AppLocalizations {
   String recordSourceDevice(String deviceId) {
     return '입력 기기 $deviceId';
   }
+
+  @override
+  String get duplicateReviewTitle => '확인할 기록';
+
+  @override
+  String get duplicateReviewDescription =>
+      '서로 다른 기기에서 같은 시각과 내용으로 저장된 원본을 비교합니다. 확인하기 전에는 어떤 기록도 합치거나 삭제하지 않아요.';
+
+  @override
+  String duplicateReviewBanner(int count) {
+    return '확인할 기록 $count개';
+  }
+
+  @override
+  String get duplicateReviewBannerHint => '비슷한 기록인지 확인해 주세요.';
+
+  @override
+  String duplicatePendingCount(int count) {
+    return '확인 필요 $count개';
+  }
+
+  @override
+  String get duplicateResolvedTitle => '확인한 기록';
+
+  @override
+  String get duplicateNeedsReview => '비슷한 기록 2개';
+
+  @override
+  String get duplicateExactReason => '종류, 발생 시각과 내용이 같고 입력 기기가 달라요.';
+
+  @override
+  String duplicateUseSource(int number) {
+    return '$number번을 기준으로 한 건으로 표시';
+  }
+
+  @override
+  String get duplicateMarkDistinct => '1번과 2번은 각각 다른 일';
+
+  @override
+  String get duplicateReviewLater => '나중에 확인';
+
+  @override
+  String get duplicateSameEvent => '같은 사건으로 확인됨';
+
+  @override
+  String get duplicateDistinctEvents => '각각 다른 일로 확인됨';
+
+  @override
+  String get duplicateDecisionSaved => '중복 판단을 저장했어요. 원본 기록은 그대로 유지됩니다.';
+
+  @override
+  String get duplicateChangeDecision => '중복 판단 변경';
+
+  @override
+  String get duplicateReviewEmpty => '확인할 기록이 없어요';
+
+  @override
+  String get duplicateReviewEmptyHint => '새 후보가 생기면 오늘 화면에 표시됩니다.';
 }

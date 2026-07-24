@@ -9,11 +9,15 @@ import '../utils/logger.dart';
 
 /// LLM이 추출한 이벤트 한 건의 요약 (집계 형태).
 class ActivitySummary {
+  final String? recordId;
+  final int revision;
   final String type; // 수유, 수면, 병원 등
   final String detail; // "[7, 9, 11]시", "2회", "저녁 소아과" 등
   final DateTime? occurredAt;
 
   const ActivitySummary({
+    this.recordId,
+    this.revision = 1,
     required this.type,
     required this.detail,
     this.occurredAt,

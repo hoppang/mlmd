@@ -35,11 +35,15 @@ enum _AiAnalysisState { idle, unavailable, failed, applied }
 // 이벤트 항목 (UI용 가변 모델)
 // ---------------------------------------------------------------------------
 class _EditableActivity {
+  final String? recordId;
+  final int revision;
   final TextEditingController typeController;
   final TextEditingController detailController;
   DateTime? occurredAt;
 
   _EditableActivity({
+    this.recordId,
+    this.revision = 1,
     required String type,
     required String detail,
     this.occurredAt,
@@ -95,6 +99,8 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
           d?.activities
               .map(
                 (activity) => DiaryDraftActivity(
+                  recordId: activity.recordId,
+                  revision: activity.revision,
                   type: activity.type,
                   detail: activity.details,
                   occurredAt: activity.hasExactTime ? activity.time : null,
@@ -133,9 +139,9 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
             );
           }
         } else {
-          initialPayload = decodedPayload.withFallbackRecordTime(
-            _baselinePayload.occurredAt,
-          );
+          initialPayload = decodedPayload
+              .withFallbackRecordTime(_baselinePayload.occurredAt)
+              .withFallbackActivityIdentity(_baselinePayload);
         }
       } on FormatException {
         initialPayload = _baselinePayload;
@@ -155,6 +161,8 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     for (final activity in initialPayload.activities) {
       _activities.add(
         _EditableActivity(
+          recordId: activity.recordId,
+          revision: activity.revision,
           type: activity.type,
           detail: activity.detail,
           occurredAt: activity.occurredAt,
@@ -225,6 +233,8 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
     activities: _activities
         .map(
           (activity) => DiaryDraftActivity(
+            recordId: activity.recordId,
+            revision: activity.revision,
             type: activity.typeController.text,
             detail: activity.detailController.text,
             occurredAt: activity.occurredAt,
@@ -284,6 +294,8 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
           ..addAll(
             result.activities.map(
               (a) => _EditableActivity(
+                recordId: a.recordId,
+                revision: a.revision,
                 type: a.type,
                 detail: a.detail,
                 occurredAt: a.occurredAt,
@@ -332,6 +344,8 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         .where((a) => a.type.isNotEmpty)
         .map(
           (a) => ActivitySummary(
+            recordId: a.recordId,
+            revision: a.revision,
             type: a.type,
             detail: a.detail,
             occurredAt: a.occurredAt,

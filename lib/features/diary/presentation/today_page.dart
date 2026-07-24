@@ -15,14 +15,21 @@ import '../../../models/record_draft_entity.dart';
 import '../../../repositories/record_draft_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../drafts/presentation/draft_resume_card.dart';
+import '../../duplicate_review/application/duplicate_review_notifier.dart';
+import '../../../models/duplicate_review_edge_entity.dart';
 import '../../profiles/presentation/record_author_tag.dart';
 import '../application/diary_draft_payload.dart';
 import '../application/diary_list_notifier.dart';
 
 class TodayPage extends ConsumerStatefulWidget {
-  const TodayPage({required this.onNavigateToForm, super.key});
+  const TodayPage({
+    required this.onNavigateToForm,
+    required this.onOpenDuplicateReviews,
+    super.key,
+  });
 
   final void Function(DiaryEntity?, String?) onNavigateToForm;
+  final VoidCallback onOpenDuplicateReviews;
 
   @override
   ConsumerState<TodayPage> createState() => _TodayPageState();
@@ -142,6 +149,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   Widget build(BuildContext context) {
     final diaries = ref.watch(diaryListProvider);
     final drafts = ref.watch(recordDraftListProvider);
+    final pendingDuplicateCount = ref
+        .watch(duplicateReviewListProvider)
+        .where(
+          (item) => item.edge.status == DuplicateReviewEdgeEntity.statusPending,
+        )
+        .length;
     final loc = AppLocalizations.of(context)!;
     final todayDiaries = diaries
         .where((diary) => _isToday(diary.date))
@@ -181,6 +194,30 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                 description: _draftDescription(context, drafts.first),
                 onContinue: () => _openDraft(drafts.first, diaries),
                 onStartNew: () => widget.onNavigateToForm(null, null),
+              ),
+            ),
+          if (pendingDuplicateCount > 0)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
+                child: Card(
+                  key: const Key('duplicate-review-banner'),
+                  color: Theme.of(context).colorScheme.tertiaryContainer,
+                  child: ListTile(
+                    leading: const Icon(Icons.fact_check_outlined),
+                    title: Text(
+                      loc.duplicateReviewBanner(pendingDuplicateCount),
+                    ),
+                    subtitle: Text(loc.duplicateReviewBannerHint),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: widget.onOpenDuplicateReviews,
+                  ),
+                ),
               ),
             ),
           if (counts.isNotEmpty) ...[

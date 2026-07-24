@@ -810,4 +810,62 @@ class AppLocalizationsJa extends AppLocalizations {
   String recordSourceDevice(String deviceId) {
     return '入力端末 $deviceId';
   }
+
+  @override
+  String get duplicateReviewTitle => '確認する記録';
+
+  @override
+  String get duplicateReviewDescription =>
+      '別の端末で同じ時刻・内容として保存された元記録を比較します。確認前に結合や削除は行いません。';
+
+  @override
+  String duplicateReviewBanner(int count) {
+    return '確認する記録 $count件';
+  }
+
+  @override
+  String get duplicateReviewBannerHint => '同じ出来事か確認してください。';
+
+  @override
+  String duplicatePendingCount(int count) {
+    return '要確認 $count件';
+  }
+
+  @override
+  String get duplicateResolvedTitle => '確認済みの記録';
+
+  @override
+  String get duplicateNeedsReview => '似た記録2件';
+
+  @override
+  String get duplicateExactReason => '種類、発生時刻、内容が同じで、入力端末が異なります。';
+
+  @override
+  String duplicateUseSource(int number) {
+    return '$number番を基準に1件として表示';
+  }
+
+  @override
+  String get duplicateMarkDistinct => '1番と2番は別の出来事';
+
+  @override
+  String get duplicateReviewLater => '後で確認';
+
+  @override
+  String get duplicateSameEvent => '同じ出来事として確認済み';
+
+  @override
+  String get duplicateDistinctEvents => '別の出来事として確認済み';
+
+  @override
+  String get duplicateDecisionSaved => '判断を保存しました。元の記録は変更されません。';
+
+  @override
+  String get duplicateChangeDecision => '重複判断を変更';
+
+  @override
+  String get duplicateReviewEmpty => '確認する記録はありません';
+
+  @override
+  String get duplicateReviewEmptyHint => '新しい候補は「今日」に表示されます。';
 }
