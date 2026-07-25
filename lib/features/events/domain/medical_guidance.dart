@@ -1,5 +1,6 @@
 import '../../../models/activity_entity.dart';
 import 'event_catalog.dart';
+import 'medication_record.dart';
 import 'symptom_record.dart';
 import 'temperature_record.dart';
 
@@ -141,6 +142,17 @@ MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
         links: List.unmodifiable(links),
       );
     }
+  }
+
+  final medicationRecord = MedicationRecord.decode(
+    activity.structuredDataJson ?? '',
+  );
+  if (medicationRecord != null && medicationRecord.requiresIngredientCheck) {
+    return const MedicalGuidanceEvaluation(
+      requiresAttention: true,
+      reason: '성분 확인 필요',
+      links: [],
+    );
   }
 
   return MedicalGuidanceEvaluation.none;

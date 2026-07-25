@@ -1285,4 +1285,90 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get officialGuidanceDisclaimer =>
       '開発者が確認して登録した外部資料です。アプリは診断や治療方法を判断しません。';
+
+  @override
+  String get ingredientCheckRequired => '成分確認が必要';
+
+  @override
+  String get medicationTypeTitle => '薬の種類';
+
+  @override
+  String get medicationCategoryAntipyretic => '解熱剤';
+
+  @override
+  String get medicationCategoryCoughCold => '咳止め・風邪薬';
+
+  @override
+  String get medicationCategoryAntibiotic => '抗生剤';
+
+  @override
+  String get medicationCategoryOintment => '軟膏・クリーム';
+
+  @override
+  String get medicationCategoryEyeEarNose => '目薬・耳鼻科用剤';
+
+  @override
+  String get medicationCategoryOther => 'その他';
+
+  @override
+  String get antipyreticIngredientTitle => '解熱剤の成分';
+
+  @override
+  String get ingredientAcetaminophen => 'アセトアミノフェン';
+
+  @override
+  String get ingredientIbuprofen => 'イブプロフェン';
+
+  @override
+  String get ingredientOther => 'その他';
+
+  @override
+  String get ingredientUnknown => '不明';
+
+  @override
+  String get medicationRouteTitle => '投与方法';
+
+  @override
+  String get medicationRouteOral => '飲む薬';
+
+  @override
+  String get medicationRouteSuppository => '坐薬';
+
+  @override
+  String get medicationRouteTopical => '塗る薬';
+
+  @override
+  String get medicationRouteInhaled => '吸入薬';
+
+  @override
+  String get medicationRouteOther => 'その他';
+
+  @override
+  String get medicationAmountLabel => '用量・単位（任意）';
+
+  @override
+  String get medicationSiteLabel => '使用部位（任意）';
+
+  @override
+  String get antipyreticDupSameIngredientPrompt =>
+      '同じ投薬が重複して記録されていないか確認してください。';
+
+  @override
+  String get antipyreticDupDiffIngredientPrompt => '近い時間に異なる成分の解熱剤の記録があります。';
+
+  @override
+  String get antipyreticDupUnknownIngredientPrompt =>
+      '前の記録と確認するために成分を確認してください。';
+
+  @override
+  String get antipyreticDupSameEventAction => '同じ投薬記録';
+
+  @override
+  String get antipyreticDupDistinctEventAction => '別々に投薬';
+
+  @override
+  String get antipyreticDupDeferAction => '今はわからない';
+
+  @override
+  String get antipyreticDuplicateReviewTitle => '解熱剤重複・交互確認';
 }

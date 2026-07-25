@@ -1323,4 +1323,92 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get officialGuidanceDisclaimer =>
       'This external resource was reviewed and registered by the developer. The app does not make a diagnosis or treatment decision.';
+
+  @override
+  String get ingredientCheckRequired => 'Ingredient check required';
+
+  @override
+  String get medicationTypeTitle => 'Medication type';
+
+  @override
+  String get medicationCategoryAntipyretic => 'Antipyretic';
+
+  @override
+  String get medicationCategoryCoughCold => 'Cough & Cold';
+
+  @override
+  String get medicationCategoryAntibiotic => 'Antibiotic';
+
+  @override
+  String get medicationCategoryOintment => 'Ointment / Cream';
+
+  @override
+  String get medicationCategoryEyeEarNose => 'Eye / Ear / Nose Drops';
+
+  @override
+  String get medicationCategoryOther => 'Other';
+
+  @override
+  String get antipyreticIngredientTitle => 'Active ingredient';
+
+  @override
+  String get ingredientAcetaminophen => 'Acetaminophen';
+
+  @override
+  String get ingredientIbuprofen => 'Ibuprofen';
+
+  @override
+  String get ingredientOther => 'Other';
+
+  @override
+  String get ingredientUnknown => 'Unknown';
+
+  @override
+  String get medicationRouteTitle => 'Administration route';
+
+  @override
+  String get medicationRouteOral => 'Oral';
+
+  @override
+  String get medicationRouteSuppository => 'Suppository';
+
+  @override
+  String get medicationRouteTopical => 'Topical';
+
+  @override
+  String get medicationRouteInhaled => 'Inhaled';
+
+  @override
+  String get medicationRouteOther => 'Other';
+
+  @override
+  String get medicationAmountLabel => 'Dose and unit (optional)';
+
+  @override
+  String get medicationSiteLabel => 'Application site (optional)';
+
+  @override
+  String get antipyreticDupSameIngredientPrompt =>
+      'Please check if this is a duplicate entry of the same medication.';
+
+  @override
+  String get antipyreticDupDiffIngredientPrompt =>
+      'There is another antipyretic record with a different active ingredient nearby.';
+
+  @override
+  String get antipyreticDupUnknownIngredientPrompt =>
+      'Please check the ingredient to compare with previous records.';
+
+  @override
+  String get antipyreticDupSameEventAction => 'Same medication record';
+
+  @override
+  String get antipyreticDupDistinctEventAction => 'Given separately';
+
+  @override
+  String get antipyreticDupDeferAction => 'Not sure right now';
+
+  @override
+  String get antipyreticDuplicateReviewTitle =>
+      'Antipyretic duplicate / cross-dosing review';
 }

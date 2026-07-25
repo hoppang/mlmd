@@ -1290,4 +1290,89 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get officialGuidanceDisclaimer =>
       '개발자가 확인해 등록한 외부 자료입니다. 앱은 진단이나 치료 방법을 판단하지 않습니다.';
+
+  @override
+  String get ingredientCheckRequired => '성분 확인 필요';
+
+  @override
+  String get medicationTypeTitle => '약 종류';
+
+  @override
+  String get medicationCategoryAntipyretic => '해열제';
+
+  @override
+  String get medicationCategoryCoughCold => '기침약·감기약';
+
+  @override
+  String get medicationCategoryAntibiotic => '항생제';
+
+  @override
+  String get medicationCategoryOintment => '연고·크림';
+
+  @override
+  String get medicationCategoryEyeEarNose => '안약·이비인후과 용제';
+
+  @override
+  String get medicationCategoryOther => '기타';
+
+  @override
+  String get antipyreticIngredientTitle => '해열제 성분';
+
+  @override
+  String get ingredientAcetaminophen => '아세트아미노펜';
+
+  @override
+  String get ingredientIbuprofen => '이부프로펜';
+
+  @override
+  String get ingredientOther => '기타';
+
+  @override
+  String get ingredientUnknown => '모름';
+
+  @override
+  String get medicationRouteTitle => '투여 방식';
+
+  @override
+  String get medicationRouteOral => '먹는 약';
+
+  @override
+  String get medicationRouteSuppository => '좌약';
+
+  @override
+  String get medicationRouteTopical => '바르는 약';
+
+  @override
+  String get medicationRouteInhaled => '흡입약';
+
+  @override
+  String get medicationRouteOther => '기타';
+
+  @override
+  String get medicationAmountLabel => '용량 및 단위 (선택)';
+
+  @override
+  String get medicationSiteLabel => '사용 부위 (선택)';
+
+  @override
+  String get antipyreticDupSameIngredientPrompt => '같은 투약을 중복 기록한 것인지 확인해 주세요';
+
+  @override
+  String get antipyreticDupDiffIngredientPrompt => '가까운 시간에 다른 성분의 해열제 기록이 있어요';
+
+  @override
+  String get antipyreticDupUnknownIngredientPrompt =>
+      '이전 기록과의 확인을 위해 성분을 확인해 주세요';
+
+  @override
+  String get antipyreticDupSameEventAction => '같은 투약 기록';
+
+  @override
+  String get antipyreticDupDistinctEventAction => '별도로 투약';
+
+  @override
+  String get antipyreticDupDeferAction => '지금은 모르겠어요';
+
+  @override
+  String get antipyreticDuplicateReviewTitle => '해열제 중복·교차 확인';
 }

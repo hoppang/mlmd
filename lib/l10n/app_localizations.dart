@@ -2511,6 +2511,174 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'개발자가 확인해 등록한 외부 자료입니다. 앱은 진단이나 치료 방법을 판단하지 않습니다.'**
   String get officialGuidanceDisclaimer;
+
+  /// No description provided for @ingredientCheckRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'성분 확인 필요'**
+  String get ingredientCheckRequired;
+
+  /// No description provided for @medicationTypeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'약 종류'**
+  String get medicationTypeTitle;
+
+  /// No description provided for @medicationCategoryAntipyretic.
+  ///
+  /// In ko, this message translates to:
+  /// **'해열제'**
+  String get medicationCategoryAntipyretic;
+
+  /// No description provided for @medicationCategoryCoughCold.
+  ///
+  /// In ko, this message translates to:
+  /// **'기침약·감기약'**
+  String get medicationCategoryCoughCold;
+
+  /// No description provided for @medicationCategoryAntibiotic.
+  ///
+  /// In ko, this message translates to:
+  /// **'항생제'**
+  String get medicationCategoryAntibiotic;
+
+  /// No description provided for @medicationCategoryOintment.
+  ///
+  /// In ko, this message translates to:
+  /// **'연고·크림'**
+  String get medicationCategoryOintment;
+
+  /// No description provided for @medicationCategoryEyeEarNose.
+  ///
+  /// In ko, this message translates to:
+  /// **'안약·이비인후과 용제'**
+  String get medicationCategoryEyeEarNose;
+
+  /// No description provided for @medicationCategoryOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get medicationCategoryOther;
+
+  /// No description provided for @antipyreticIngredientTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'해열제 성분'**
+  String get antipyreticIngredientTitle;
+
+  /// No description provided for @ingredientAcetaminophen.
+  ///
+  /// In ko, this message translates to:
+  /// **'아세트아미노펜'**
+  String get ingredientAcetaminophen;
+
+  /// No description provided for @ingredientIbuprofen.
+  ///
+  /// In ko, this message translates to:
+  /// **'이부프로펜'**
+  String get ingredientIbuprofen;
+
+  /// No description provided for @ingredientOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get ingredientOther;
+
+  /// No description provided for @ingredientUnknown.
+  ///
+  /// In ko, this message translates to:
+  /// **'모름'**
+  String get ingredientUnknown;
+
+  /// No description provided for @medicationRouteTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'투여 방식'**
+  String get medicationRouteTitle;
+
+  /// No description provided for @medicationRouteOral.
+  ///
+  /// In ko, this message translates to:
+  /// **'먹는 약'**
+  String get medicationRouteOral;
+
+  /// No description provided for @medicationRouteSuppository.
+  ///
+  /// In ko, this message translates to:
+  /// **'좌약'**
+  String get medicationRouteSuppository;
+
+  /// No description provided for @medicationRouteTopical.
+  ///
+  /// In ko, this message translates to:
+  /// **'바르는 약'**
+  String get medicationRouteTopical;
+
+  /// No description provided for @medicationRouteInhaled.
+  ///
+  /// In ko, this message translates to:
+  /// **'흡입약'**
+  String get medicationRouteInhaled;
+
+  /// No description provided for @medicationRouteOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get medicationRouteOther;
+
+  /// No description provided for @medicationAmountLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'용량 및 단위 (선택)'**
+  String get medicationAmountLabel;
+
+  /// No description provided for @medicationSiteLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용 부위 (선택)'**
+  String get medicationSiteLabel;
+
+  /// No description provided for @antipyreticDupSameIngredientPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'같은 투약을 중복 기록한 것인지 확인해 주세요'**
+  String get antipyreticDupSameIngredientPrompt;
+
+  /// No description provided for @antipyreticDupDiffIngredientPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'가까운 시간에 다른 성분의 해열제 기록이 있어요'**
+  String get antipyreticDupDiffIngredientPrompt;
+
+  /// No description provided for @antipyreticDupUnknownIngredientPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'이전 기록과의 확인을 위해 성분을 확인해 주세요'**
+  String get antipyreticDupUnknownIngredientPrompt;
+
+  /// No description provided for @antipyreticDupSameEventAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'같은 투약 기록'**
+  String get antipyreticDupSameEventAction;
+
+  /// No description provided for @antipyreticDupDistinctEventAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'별도로 투약'**
+  String get antipyreticDupDistinctEventAction;
+
+  /// No description provided for @antipyreticDupDeferAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금은 모르겠어요'**
+  String get antipyreticDupDeferAction;
+
+  /// No description provided for @antipyreticDuplicateReviewTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'해열제 중복·교차 확인'**
+  String get antipyreticDuplicateReviewTitle;
 }
 
 class _AppLocalizationsDelegate

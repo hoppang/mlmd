@@ -5,12 +5,18 @@ import '../../../core/presentation/app_section_header.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/shared_custom_event_definition_entity.dart';
+import '../../diary/application/diary_list_notifier.dart';
+import '../../duplicate_review/application/duplicate_review_notifier.dart';
 import '../application/custom_event_notifier.dart';
+import '../domain/antipyretic_duplicate_check.dart';
 import '../domain/elimination_record.dart';
 import '../domain/event_catalog.dart';
+import '../domain/medication_record.dart';
 import '../domain/symptom_record.dart';
+import 'antipyretic_duplicate_sheet.dart';
 import 'elimination_event_form.dart';
 import 'intake_event_form.dart';
+import 'medication_event_form.dart';
 import 'sleep_event_form.dart';
 import 'symptom_event_form.dart';
 import 'temperature_event_form.dart';
@@ -266,6 +272,77 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
         result.record.occurredAt,
         result.record.encode(),
       );
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _saveMedication(MedicationFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = result.medicationName;
+      final recordId = await widget.onSave(
+        savedName,
+        result.details,
+        result.record.administeredAt,
+        result.record.encode(),
+      );
+      if (!mounted) return;
+
+      if (result.record.isAntipyretic) {
+        final diaries = ref.read(diaryListProvider);
+        final existingActivities = [
+          for (final d in diaries) ...d.activities,
+        ];
+        final candidate = findAntipyreticDuplicateCandidate(
+          newRecord: result.record,
+          newRecordId: recordId,
+          existingActivities: existingActivities,
+        );
+
+        if (candidate != null && mounted) {
+          final decision = await showModalBottomSheet<AntipyreticDuplicateDecision>(
+            context: context,
+            isScrollControlled: true,
+            builder: (ctx) => AntipyreticDuplicateSheet(
+              candidate: candidate,
+              onDecision: (d) => Navigator.pop(ctx, d),
+            ),
+          );
+
+          if (decision == AntipyreticDuplicateDecision.distinctEvent && mounted) {
+            final pairKey = '${candidate.existingActivity.recordId}|$recordId';
+            ref.read(duplicateReviewListProvider.notifier).markDistinct(pairKey);
+          } else if (decision == AntipyreticDuplicateDecision.sameEvent && mounted) {
+            final pairKey = '${candidate.existingActivity.recordId}|$recordId';
+            if (candidate.existingActivity.recordId != null) {
+              ref
+                  .read(duplicateReviewListProvider.notifier)
+                  .useRepresentative(pairKey, recordId);
+            }
+          }
+        }
+      }
+
       if (mounted) {
         Navigator.pop(
           context,
@@ -607,6 +684,19 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                   }),
                   onChangeTime: _changeTime,
                   onSave: _saveSymptom,
+                )
+              : custom == null && selected!.id == EventTypeId.medication
+              ? MedicationEventForm(
+                  key: const ValueKey('medication'),
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _saveMedication,
                 )
               : custom == null && _isIntakeEvent(selected!.id)
               ? IntakeEventForm(
