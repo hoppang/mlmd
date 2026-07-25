@@ -694,6 +694,138 @@ abstract class AppLocalizations {
   /// **'사고·다침'**
   String get accidentInjuryEvent;
 
+  /// No description provided for @accidentCategoryLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고 유형'**
+  String get accidentCategoryLabel;
+
+  /// No description provided for @accidentCategoryTraumatic.
+  ///
+  /// In ko, this message translates to:
+  /// **'외상 (다침/상처)'**
+  String get accidentCategoryTraumatic;
+
+  /// No description provided for @accidentCategoryNonTraumatic.
+  ///
+  /// In ko, this message translates to:
+  /// **'비외상 (삼킴/이물/사레)'**
+  String get accidentCategoryNonTraumatic;
+
+  /// No description provided for @accidentInjuryTypeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'세부 유형'**
+  String get accidentInjuryTypeLabel;
+
+  /// No description provided for @injuryTypeBumpBruise.
+  ///
+  /// In ko, this message translates to:
+  /// **'콕 찍힘·멍'**
+  String get injuryTypeBumpBruise;
+
+  /// No description provided for @injuryTypeScratchWound.
+  ///
+  /// In ko, this message translates to:
+  /// **'긁힘·상처'**
+  String get injuryTypeScratchWound;
+
+  /// No description provided for @injuryTypeFallTrip.
+  ///
+  /// In ko, this message translates to:
+  /// **'넘어짐·낙상'**
+  String get injuryTypeFallTrip;
+
+  /// No description provided for @injuryTypeBurn.
+  ///
+  /// In ko, this message translates to:
+  /// **'화상'**
+  String get injuryTypeBurn;
+
+  /// No description provided for @injuryTypeBiteSting.
+  ///
+  /// In ko, this message translates to:
+  /// **'물림'**
+  String get injuryTypeBiteSting;
+
+  /// No description provided for @injuryTypeOtherTrauma.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타 외상'**
+  String get injuryTypeOtherTrauma;
+
+  /// No description provided for @injuryTypeForeignIngestion.
+  ///
+  /// In ko, this message translates to:
+  /// **'이물질 삼킴'**
+  String get injuryTypeForeignIngestion;
+
+  /// No description provided for @injuryTypeChokingAspiration.
+  ///
+  /// In ko, this message translates to:
+  /// **'사레·기도 이물'**
+  String get injuryTypeChokingAspiration;
+
+  /// No description provided for @injuryTypeEyeEarForeignObject.
+  ///
+  /// In ko, this message translates to:
+  /// **'눈·귀 이물'**
+  String get injuryTypeEyeEarForeignObject;
+
+  /// No description provided for @injuryTypePoisoningChemical.
+  ///
+  /// In ko, this message translates to:
+  /// **'중독·약물'**
+  String get injuryTypePoisoningChemical;
+
+  /// No description provided for @injuryTypeHeatColdInjury.
+  ///
+  /// In ko, this message translates to:
+  /// **'열사병·저체온'**
+  String get injuryTypeHeatColdInjury;
+
+  /// No description provided for @injuryTypeOtherNonTrauma.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타 비외상'**
+  String get injuryTypeOtherNonTrauma;
+
+  /// No description provided for @accidentTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고 발생 시각'**
+  String get accidentTime;
+
+  /// No description provided for @accidentNotesLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고 상황 및 조치 메모 (선택)'**
+  String get accidentNotesLabel;
+
+  /// No description provided for @accidentNotesHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고 경위나 관찰 상태, 응급 조치 내용을 기록하세요.'**
+  String get accidentNotesHint;
+
+  /// No description provided for @accidentPhotoAttachmentButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'상처/현장 사진 첨부'**
+  String get accidentPhotoAttachmentButton;
+
+  /// No description provided for @accidentGuidanceAttentionTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'주의 필요 사고'**
+  String get accidentGuidanceAttentionTitle;
+
+  /// No description provided for @accidentGuidanceFirstAidInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'낙상, 화상, 이물질 삼킴, 기도 이물, 중독의 경우 아이의 상태를 면밀히 관찰하고 필요시 즉시 응급실이나 전문 의료기관을 방문하세요.'**
+  String get accidentGuidanceFirstAidInfo;
+
   /// No description provided for @tummyTimeEvent.
   ///
   /// In ko, this message translates to:

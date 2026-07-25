@@ -314,6 +314,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accidentInjuryEvent => 'Accident · injury';
 
   @override
+  String get accidentCategoryLabel => 'Accident Category';
+
+  @override
+  String get accidentCategoryTraumatic => 'Traumatic (Wound/Injury)';
+
+  @override
+  String get accidentCategoryNonTraumatic =>
+      'Non-Traumatic (Ingestion/Choking)';
+
+  @override
+  String get accidentInjuryTypeLabel => 'Detail Type';
+
+  @override
+  String get injuryTypeBumpBruise => 'Bump / Bruise';
+
+  @override
+  String get injuryTypeScratchWound => 'Cut / Scratch';
+
+  @override
+  String get injuryTypeFallTrip => 'Fall / Trip';
+
+  @override
+  String get injuryTypeBurn => 'Burn';
+
+  @override
+  String get injuryTypeBiteSting => 'Bite / Sting';
+
+  @override
+  String get injuryTypeOtherTrauma => 'Other Trauma';
+
+  @override
+  String get injuryTypeForeignIngestion => 'Foreign Object Ingestion';
+
+  @override
+  String get injuryTypeChokingAspiration => 'Choking / Aspiration';
+
+  @override
+  String get injuryTypeEyeEarForeignObject => 'Eye / Ear Foreign Object';
+
+  @override
+  String get injuryTypePoisoningChemical => 'Poisoning / Chemical';
+
+  @override
+  String get injuryTypeHeatColdInjury => 'Heat Stroke / Hypothermia';
+
+  @override
+  String get injuryTypeOtherNonTrauma => 'Other Non-Trauma';
+
+  @override
+  String get accidentTime => 'Accident Time';
+
+  @override
+  String get accidentNotesLabel => 'Situation & Action Note (Optional)';
+
+  @override
+  String get accidentNotesHint =>
+      'Record accident context, observations, or first aid actions.';
+
+  @override
+  String get accidentPhotoAttachmentButton => 'Attach Injury/Situation Photo';
+
+  @override
+  String get accidentGuidanceAttentionTitle => 'Attention Required Accident';
+
+  @override
+  String get accidentGuidanceFirstAidInfo =>
+      'For falls, burns, foreign body ingestion, choking, or poisoning, closely monitor the child and visit an emergency department or doctor if needed.';
+
+  @override
   String get tummyTimeEvent => 'Tummy time';
 
   @override

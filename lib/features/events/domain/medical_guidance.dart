@@ -1,10 +1,11 @@
 import '../../../models/activity_entity.dart';
+import 'accident_injury_record.dart';
 import 'event_catalog.dart';
 import 'medication_record.dart';
 import 'symptom_record.dart';
 import 'temperature_record.dart';
 
-enum GuidanceTopic { temperature, symptom }
+enum GuidanceTopic { temperature, symptom, accident }
 
 class GuidanceLinkRule {
   const GuidanceLinkRule({
@@ -70,6 +71,20 @@ final guidanceLinkRules = <GuidanceLinkRule>[
         'https://www.healthychildren.org/English/health-issues/conditions/abdominal/Pages/Vomiting.aspx',
     sourceUpdatedAt: DateTime.utc(2024, 4, 17),
     lastVerifiedAt: DateTime.utc(2026, 7, 24),
+    priority: 1,
+    enabled: true,
+  ),
+  GuidanceLinkRule(
+    ruleId: 'aap-accident-first-aid',
+    country: 'US',
+    topic: GuidanceTopic.accident,
+    minimumValueInclusive: 0,
+    sourceOrganization: 'American Academy of Pediatrics (US)',
+    sourceTitle: 'First Aid & Safety Guides',
+    sourceUrl:
+        'https://www.healthychildren.org/English/safety-prevention/at-play/Pages/default.aspx',
+    sourceUpdatedAt: DateTime.utc(2024, 4, 17),
+    lastVerifiedAt: DateTime.utc(2026, 7, 25),
     priority: 1,
     enabled: true,
   ),
@@ -152,6 +167,23 @@ MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
       requiresAttention: true,
       reason: '성분 확인 필요',
       links: [],
+    );
+  }
+
+  final accidentRecord = AccidentInjuryRecord.decode(
+    activity.structuredDataJson ?? '',
+  );
+  if (accidentRecord != null && accidentRecord.injuryType.requiresAttention) {
+    final links = guidanceLinkRules
+        .where(
+          (rule) => rule.ruleId == 'aap-accident-first-aid' && rule.enabled,
+        )
+        .toList()
+      ..sort((a, b) => a.priority.compareTo(b.priority));
+    return MedicalGuidanceEvaluation(
+      requiresAttention: true,
+      reason: '사고·다침 주의 필요',
+      links: List.unmodifiable(links),
     );
   }
 

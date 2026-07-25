@@ -309,6 +309,73 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accidentInjuryEvent => '사고·다침';
 
   @override
+  String get accidentCategoryLabel => '사고 유형';
+
+  @override
+  String get accidentCategoryTraumatic => '외상 (다침/상처)';
+
+  @override
+  String get accidentCategoryNonTraumatic => '비외상 (삼킴/이물/사레)';
+
+  @override
+  String get accidentInjuryTypeLabel => '세부 유형';
+
+  @override
+  String get injuryTypeBumpBruise => '콕 찍힘·멍';
+
+  @override
+  String get injuryTypeScratchWound => '긁힘·상처';
+
+  @override
+  String get injuryTypeFallTrip => '넘어짐·낙상';
+
+  @override
+  String get injuryTypeBurn => '화상';
+
+  @override
+  String get injuryTypeBiteSting => '물림';
+
+  @override
+  String get injuryTypeOtherTrauma => '기타 외상';
+
+  @override
+  String get injuryTypeForeignIngestion => '이물질 삼킴';
+
+  @override
+  String get injuryTypeChokingAspiration => '사레·기도 이물';
+
+  @override
+  String get injuryTypeEyeEarForeignObject => '눈·귀 이물';
+
+  @override
+  String get injuryTypePoisoningChemical => '중독·약물';
+
+  @override
+  String get injuryTypeHeatColdInjury => '열사병·저체온';
+
+  @override
+  String get injuryTypeOtherNonTrauma => '기타 비외상';
+
+  @override
+  String get accidentTime => '사고 발생 시각';
+
+  @override
+  String get accidentNotesLabel => '사고 상황 및 조치 메모 (선택)';
+
+  @override
+  String get accidentNotesHint => '사고 경위나 관찰 상태, 응급 조치 내용을 기록하세요.';
+
+  @override
+  String get accidentPhotoAttachmentButton => '상처/현장 사진 첨부';
+
+  @override
+  String get accidentGuidanceAttentionTitle => '주의 필요 사고';
+
+  @override
+  String get accidentGuidanceFirstAidInfo =>
+      '낙상, 화상, 이물질 삼킴, 기도 이물, 중독의 경우 아이의 상태를 면밀히 관찰하고 필요시 즉시 응급실이나 전문 의료기관을 방문하세요.';
+
+  @override
   String get tummyTimeEvent => '터미타임';
 
   @override

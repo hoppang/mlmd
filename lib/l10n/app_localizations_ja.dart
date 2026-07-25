@@ -308,6 +308,73 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accidentInjuryEvent => '事故・けが';
 
   @override
+  String get accidentCategoryLabel => '事故の種類';
+
+  @override
+  String get accidentCategoryTraumatic => '外傷（けが・傷）';
+
+  @override
+  String get accidentCategoryNonTraumatic => '非外傷（誤飲・異物・むせ）';
+
+  @override
+  String get accidentInjuryTypeLabel => '詳細タイプ';
+
+  @override
+  String get injuryTypeBumpBruise => '打撲・あざ';
+
+  @override
+  String get injuryTypeScratchWound => '擦り傷・切り傷';
+
+  @override
+  String get injuryTypeFallTrip => '転倒・転落';
+
+  @override
+  String get injuryTypeBurn => 'やけど';
+
+  @override
+  String get injuryTypeBiteSting => '虫刺され・噛まれ';
+
+  @override
+  String get injuryTypeOtherTrauma => 'その他の外傷';
+
+  @override
+  String get injuryTypeForeignIngestion => '誤飲・異物摂取';
+
+  @override
+  String get injuryTypeChokingAspiration => '気道異物・むせ';
+
+  @override
+  String get injuryTypeEyeEarForeignObject => '目・耳の異物';
+
+  @override
+  String get injuryTypePoisoningChemical => '中毒・薬品';
+
+  @override
+  String get injuryTypeHeatColdInjury => '熱中症・低体温';
+
+  @override
+  String get injuryTypeOtherNonTrauma => 'その他の非外傷';
+
+  @override
+  String get accidentTime => '事故発生時刻';
+
+  @override
+  String get accidentNotesLabel => '状況・処置メモ（任意）';
+
+  @override
+  String get accidentNotesHint => '事故の経緯や経過、応急処置の内容を記録してください。';
+
+  @override
+  String get accidentPhotoAttachmentButton => '傷・状況の写真を追加';
+
+  @override
+  String get accidentGuidanceAttentionTitle => '要注意の事故';
+
+  @override
+  String get accidentGuidanceFirstAidInfo =>
+      '転落、やけど、誤飲、気道異物、中毒の場合はお子様の状態を慎重に観察し、必要に応じて直ちに医療機関を受診してください。';
+
+  @override
   String get tummyTimeEvent => 'タミータイム';
 
   @override

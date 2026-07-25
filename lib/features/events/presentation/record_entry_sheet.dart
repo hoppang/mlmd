@@ -15,6 +15,7 @@ import 'antipyretic_duplicate_sheet.dart';
 import 'elimination_event_form.dart';
 import 'hospital_event_form.dart';
 import 'vaccination_event_form.dart';
+import 'accident_event_form.dart';
 import 'intake_event_form.dart';
 import 'medication_event_form.dart';
 import 'sleep_event_form.dart';
@@ -442,6 +443,45 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     }
   }
 
+  Future<void> _saveAccident(AccidentFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = selected.label(AppLocalizations.of(context)!);
+      final recordId = await widget.onSave(
+        savedName,
+        result.details,
+        result.record.occurredAt,
+        result.record.encode(),
+      );
+      if (result.attachments.isNotEmpty) {
+        await ref
+            .read(attachmentNotifierProvider.notifier)
+            .saveAttachmentsForRecord(recordId, result.attachments);
+      }
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
   Future<void> _startSleep(EventCatalogItem item) async {
     if (_saving) return;
     setState(() {
@@ -803,6 +843,19 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                   }),
                   onChangeTime: _changeTime,
                   onSave: _saveVaccination,
+                )
+              : custom == null && selected!.id == EventTypeId.accidentInjury
+              ? AccidentEventForm(
+                  key: const ValueKey('accidentInjury'),
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _saveAccident,
                 )
               : custom == null && _isIntakeEvent(selected!.id)
               ? IntakeEventForm(
