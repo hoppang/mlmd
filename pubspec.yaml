@@ -40,6 +40,7 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
   shared_preferences: ^2.3.2
+  speech_to_text: ^7.3.0
 
   # 데이터베이스
   objectbox: ^5.3.2

@@ -263,6 +263,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hospitalEvent => 'Hospital · consultation';
 
   @override
+  String get doctorNotesLabel => 'Doctor\'s notes (optional)';
+
+  @override
+  String get doctorNotesHint =>
+      'Add notes about diagnosis, prescription, or home care.';
+
+  @override
+  String get prescriptionBagButton => 'Prescription Bag Photo';
+
+  @override
+  String get attachFileButton => 'Attach File';
+
+  @override
+  String get hospitalVisitTime => 'Visit Time';
+
+  @override
+  String get attachmentPrescriptionBag => 'Prescription Bag';
+
+  @override
+  String get attachmentGeneral => 'Attachment';
+
+  @override
   String get vaccinationEvent => 'Vaccination';
 
   @override

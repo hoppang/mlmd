@@ -260,6 +260,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get hospitalEvent => '병원·상담';
 
   @override
+  String get doctorNotesLabel => '의사에게 들은 내용 (선택)';
+
+  @override
+  String get doctorNotesHint => '진단명, 처방 또는 집에서 주의할 내용을 메모로 남기세요.';
+
+  @override
+  String get prescriptionBagButton => '약봉투 촬영';
+
+  @override
+  String get attachFileButton => '파일 첨부';
+
+  @override
+  String get hospitalVisitTime => '방문 시각';
+
+  @override
+  String get attachmentPrescriptionBag => '약봉투';
+
+  @override
+  String get attachmentGeneral => '첨부파일';
+
+  @override
   String get vaccinationEvent => '예방접종';
 
   @override

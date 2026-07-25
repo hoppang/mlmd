@@ -259,6 +259,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get hospitalEvent => '通院・相談';
 
   @override
+  String get doctorNotesLabel => '医師からの注意事項 (任意)';
+
+  @override
+  String get doctorNotesHint => '診断名、処方、ホームケアのメモを残せます。';
+
+  @override
+  String get prescriptionBagButton => '薬袋の撮影';
+
+  @override
+  String get attachFileButton => 'ファイルを添付';
+
+  @override
+  String get hospitalVisitTime => '受診時刻';
+
+  @override
+  String get attachmentPrescriptionBag => '薬袋';
+
+  @override
+  String get attachmentGeneral => '添付ファイル';
+
+  @override
   String get vaccinationEvent => '予防接種';
 
   @override

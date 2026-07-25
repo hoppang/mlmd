@@ -598,6 +598,48 @@ abstract class AppLocalizations {
   /// **'병원·상담'**
   String get hospitalEvent;
 
+  /// No description provided for @doctorNotesLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'의사에게 들은 내용 (선택)'**
+  String get doctorNotesLabel;
+
+  /// No description provided for @doctorNotesHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'진단명, 처방 또는 집에서 주의할 내용을 메모로 남기세요.'**
+  String get doctorNotesHint;
+
+  /// No description provided for @prescriptionBagButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'약봉투 촬영'**
+  String get prescriptionBagButton;
+
+  /// No description provided for @attachFileButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일 첨부'**
+  String get attachFileButton;
+
+  /// No description provided for @hospitalVisitTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'방문 시각'**
+  String get hospitalVisitTime;
+
+  /// No description provided for @attachmentPrescriptionBag.
+  ///
+  /// In ko, this message translates to:
+  /// **'약봉투'**
+  String get attachmentPrescriptionBag;
+
+  /// No description provided for @attachmentGeneral.
+  ///
+  /// In ko, this message translates to:
+  /// **'첨부파일'**
+  String get attachmentGeneral;
+
   /// No description provided for @vaccinationEvent.
   ///
   /// In ko, this message translates to:
