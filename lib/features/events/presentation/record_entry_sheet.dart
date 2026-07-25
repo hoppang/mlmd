@@ -8,9 +8,11 @@ import '../../../models/shared_custom_event_definition_entity.dart';
 import '../application/custom_event_notifier.dart';
 import '../domain/elimination_record.dart';
 import '../domain/event_catalog.dart';
+import '../domain/symptom_record.dart';
 import 'elimination_event_form.dart';
 import 'intake_event_form.dart';
 import 'sleep_event_form.dart';
+import 'symptom_event_form.dart';
 import 'temperature_event_form.dart';
 
 typedef SaveEventRecord =
@@ -224,6 +226,40 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
+      final recordId = await widget.onSave(
+        savedName,
+        result.details,
+        result.record.occurredAt,
+        result.record.encode(),
+      );
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _saveSymptom(SymptomFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = result.symptomName;
       final recordId = await widget.onSave(
         savedName,
         result.details,
@@ -558,6 +594,19 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                   }),
                   onChangeTime: _changeTime,
                   onSave: _saveTemperature,
+                )
+              : custom == null && selected!.id == EventTypeId.symptom
+              ? SymptomEventForm(
+                  key: const ValueKey('symptom'),
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _saveSymptom,
                 )
               : custom == null && _isIntakeEvent(selected!.id)
               ? IntakeEventForm(

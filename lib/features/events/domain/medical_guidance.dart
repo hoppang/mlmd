@@ -1,8 +1,9 @@
 import '../../../models/activity_entity.dart';
 import 'event_catalog.dart';
+import 'symptom_record.dart';
 import 'temperature_record.dart';
 
-enum GuidanceTopic { temperature }
+enum GuidanceTopic { temperature, symptom }
 
 class GuidanceLinkRule {
   const GuidanceLinkRule({
@@ -35,6 +36,7 @@ class GuidanceLinkRule {
 
   bool matches(TemperatureRecord record) =>
       enabled &&
+      topic == GuidanceTopic.temperature &&
       record.celsius >= minimumValueInclusive &&
       (measurementSites == null ||
           (record.measurementSite != null &&
@@ -51,6 +53,20 @@ final guidanceLinkRules = <GuidanceLinkRule>[
     sourceTitle: 'How to Take Your Child’s Temperature',
     sourceUrl:
         'https://www.healthychildren.org/English/health-issues/conditions/fever/Pages/How-to-Take-a-Childs-Temperature.aspx',
+    sourceUpdatedAt: DateTime.utc(2024, 4, 17),
+    lastVerifiedAt: DateTime.utc(2026, 7, 24),
+    priority: 1,
+    enabled: true,
+  ),
+  GuidanceLinkRule(
+    ruleId: 'aap-symptom-severe-vomiting-lethargy',
+    country: 'US',
+    topic: GuidanceTopic.symptom,
+    minimumValueInclusive: 0,
+    sourceOrganization: 'American Academy of Pediatrics (US)',
+    sourceTitle: 'Symptom Checker: Severe Vomiting & Lethargy',
+    sourceUrl:
+        'https://www.healthychildren.org/English/health-issues/conditions/abdominal/Pages/Vomiting.aspx',
     sourceUpdatedAt: DateTime.utc(2024, 4, 17),
     lastVerifiedAt: DateTime.utc(2026, 7, 24),
     priority: 1,
@@ -77,22 +93,57 @@ class MedicalGuidanceEvaluation {
 }
 
 MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
-  if (activity == null || !_isTemperatureEvent(activity.type)) {
+  if (activity == null) {
     return MedicalGuidanceEvaluation.none;
   }
-  final record =
-      TemperatureRecord.decode(activity.structuredDataJson ?? '') ??
-      _legacyTemperatureRecord(activity);
-  if (record == null || record.celsius < 38) {
-    return MedicalGuidanceEvaluation.none;
+
+  if (_isTemperatureEvent(activity.type)) {
+    final record =
+        TemperatureRecord.decode(activity.structuredDataJson ?? '') ??
+        _legacyTemperatureRecord(activity);
+    if (record != null && record.celsius >= 38) {
+      final links = guidanceLinkRules
+          .where((rule) => rule.matches(record))
+          .toList()
+        ..sort((a, b) => a.priority.compareTo(b.priority));
+      return MedicalGuidanceEvaluation(
+        requiresAttention: true,
+        reason: '${record.celsius.toStringAsFixed(1)}°C ≥ 38.0°C',
+        links: List.unmodifiable(links),
+      );
+    }
   }
-  final links = guidanceLinkRules.where((rule) => rule.matches(record)).toList()
-    ..sort((a, b) => a.priority.compareTo(b.priority));
-  return MedicalGuidanceEvaluation(
-    requiresAttention: true,
-    reason: '${record.celsius.toStringAsFixed(1)}°C ≥ 38.0°C',
-    links: List.unmodifiable(links),
+
+  final symptomRecord = SymptomRecord.decode(
+    activity.structuredDataJson ?? '',
   );
+  if (symptomRecord != null) {
+    final isSevereVomiting =
+        (symptomRecord.symptomId == 'vomiting' ||
+            symptomRecord.symptomName == '구토') &&
+        (symptomRecord.amount == SymptomAmount.severe ||
+            symptomRecord.severity == SymptomSeverity.severe);
+    final isLethargy =
+        symptomRecord.symptomId == 'lethargy' ||
+        symptomRecord.symptomName == '처짐';
+    if (isSevereVomiting || isLethargy) {
+      final links = guidanceLinkRules
+          .where(
+            (rule) =>
+                rule.ruleId == 'aap-symptom-severe-vomiting-lethargy' &&
+                rule.enabled,
+          )
+          .toList()
+        ..sort((a, b) => a.priority.compareTo(b.priority));
+      return MedicalGuidanceEvaluation(
+        requiresAttention: true,
+        reason: isSevereVomiting ? '심각한 구토' : '처짐 증상',
+        links: List.unmodifiable(links),
+      );
+    }
+  }
+
+  return MedicalGuidanceEvaluation.none;
 }
 
 bool isApprovedGuidanceUri(Uri uri) =>
