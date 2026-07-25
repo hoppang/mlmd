@@ -283,6 +283,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vaccinationEvent => '予防接種';
 
   @override
+  String get vaccinationTime => '接種時刻';
+
+  @override
+  String get vaccinationNotesLabel => '接種メモ (任意)';
+
+  @override
+  String get vaccinationNotesHint => 'ワクチン名、クリニック、メモを入力します。';
+
+  @override
+  String get vaccinationBookButton => '予防接種手帳の撮影';
+
+  @override
+  String get attachmentVaccinationRecord => '予防接種手帳';
+
+  @override
+  String get checkKdcaVaccinationHistory => 'KDCAで接種履歴を確認';
+
+  @override
+  String get kdcaVaccinationNotice =>
+      '国の予防接種システムとは自動同期されず、入力された記録と手帳の写真のみ保存されます。';
+
+  @override
   String get accidentInjuryEvent => '事故・けが';
 
   @override

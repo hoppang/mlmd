@@ -646,6 +646,48 @@ abstract class AppLocalizations {
   /// **'예방접종'**
   String get vaccinationEvent;
 
+  /// No description provided for @vaccinationTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'접종 시각'**
+  String get vaccinationTime;
+
+  /// No description provided for @vaccinationNotesLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'접종 메모 (선택)'**
+  String get vaccinationNotesLabel;
+
+  /// No description provided for @vaccinationNotesHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'백신 종류, 접종 기관 또는 참고할 사항을 남기세요.'**
+  String get vaccinationNotesHint;
+
+  /// No description provided for @vaccinationBookButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'예방접종 수첩 촬영'**
+  String get vaccinationBookButton;
+
+  /// No description provided for @attachmentVaccinationRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'예방접종 수첩'**
+  String get attachmentVaccinationRecord;
+
+  /// No description provided for @checkKdcaVaccinationHistory.
+  ///
+  /// In ko, this message translates to:
+  /// **'질병관리청에서 접종 내역 확인'**
+  String get checkKdcaVaccinationHistory;
+
+  /// No description provided for @kdcaVaccinationNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'국가 예방접종 체계와 자동으로 동기화되지 않으며, 기록된 접종 사실과 첨부된 수첩 사진만 보존됩니다.'**
+  String get kdcaVaccinationNotice;
+
   /// No description provided for @accidentInjuryEvent.
   ///
   /// In ko, this message translates to:

@@ -284,6 +284,28 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vaccinationEvent => '예방접종';
 
   @override
+  String get vaccinationTime => '접종 시각';
+
+  @override
+  String get vaccinationNotesLabel => '접종 메모 (선택)';
+
+  @override
+  String get vaccinationNotesHint => '백신 종류, 접종 기관 또는 참고할 사항을 남기세요.';
+
+  @override
+  String get vaccinationBookButton => '예방접종 수첩 촬영';
+
+  @override
+  String get attachmentVaccinationRecord => '예방접종 수첩';
+
+  @override
+  String get checkKdcaVaccinationHistory => '질병관리청에서 접종 내역 확인';
+
+  @override
+  String get kdcaVaccinationNotice =>
+      '국가 예방접종 체계와 자동으로 동기화되지 않으며, 기록된 접종 사실과 첨부된 수첩 사진만 보존됩니다.';
+
+  @override
   String get accidentInjuryEvent => '사고·다침';
 
   @override

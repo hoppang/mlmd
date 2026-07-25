@@ -288,6 +288,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vaccinationEvent => 'Vaccination';
 
   @override
+  String get vaccinationTime => 'Vaccination Time';
+
+  @override
+  String get vaccinationNotesLabel => 'Vaccination Notes (Optional)';
+
+  @override
+  String get vaccinationNotesHint =>
+      'Note vaccine name, clinic, or other details.';
+
+  @override
+  String get vaccinationBookButton => 'Vaccination Record Photo';
+
+  @override
+  String get attachmentVaccinationRecord => 'Vaccination Record';
+
+  @override
+  String get checkKdcaVaccinationHistory => 'Check Vaccination History on KDCA';
+
+  @override
+  String get kdcaVaccinationNotice =>
+      'Does not automatically sync with national databases; stores entered facts and photos locally.';
+
+  @override
   String get accidentInjuryEvent => 'Accident · injury';
 
   @override

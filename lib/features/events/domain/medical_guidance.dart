@@ -158,10 +158,13 @@ MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
   return MedicalGuidanceEvaluation.none;
 }
 
-bool isApprovedGuidanceUri(Uri uri) =>
-    uri.scheme == 'https' &&
-    uri.userInfo.isEmpty &&
-    uri.host.toLowerCase() == 'www.healthychildren.org';
+bool isApprovedGuidanceUri(Uri uri) {
+  if (uri.scheme != 'https' || uri.userInfo.isNotEmpty) return false;
+  final host = uri.host.toLowerCase();
+  return host == 'www.healthychildren.org' ||
+      host == 'nip.kdca.go.kr' ||
+      host.endsWith('.kdca.go.kr');
+}
 
 bool _isTemperatureEvent(String storedType) =>
     eventCatalogItem(EventTypeId.temperature).matches(storedType);
