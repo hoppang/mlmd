@@ -8,6 +8,7 @@ import '../../../providers/locale_provider.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../profiles/presentation/author_profile_page.dart';
 import '../../summaries/application/ai_summary_notifier.dart';
+import 'past_notices_page.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({
@@ -265,6 +266,16 @@ class HelpPage extends ConsumerWidget {
             _HelpCard(
               question: loc.duplicateHelpQuestion,
               answer: loc.duplicateHelpAnswer,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.history_edu_outlined),
+                title: Text(loc.pastNoticesTitle),
+                subtitle: const Text('Android 음성 입력 개인정보 고지 등 이전에 본 안내'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(PastNoticesPage.route()),
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(

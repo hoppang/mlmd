@@ -11,8 +11,6 @@ import '../application/custom_event_notifier.dart';
 import '../domain/antipyretic_duplicate_check.dart';
 import '../domain/elimination_record.dart';
 import '../domain/event_catalog.dart';
-import '../domain/medication_record.dart';
-import '../domain/symptom_record.dart';
 import 'antipyretic_duplicate_sheet.dart';
 import 'elimination_event_form.dart';
 import 'intake_event_form.dart';
@@ -20,6 +18,7 @@ import 'medication_event_form.dart';
 import 'sleep_event_form.dart';
 import 'symptom_event_form.dart';
 import 'temperature_event_form.dart';
+import '../../../widgets/stt_memo_text_field.dart';
 
 typedef SaveEventRecord =
     Future<String> Function(
@@ -1081,20 +1080,17 @@ class _EventForm extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          TextField(
+          SttMemoTextField(
             key: const Key('quick-record-details'),
             controller: detailsController,
-            enabled: !saving,
             minLines: 2,
             maxLines: 4,
-            decoration: InputDecoration(
-              labelText: custom
-                  ? loc.customEventMemoOptionalLabel
-                  : loc.eventDetailOptionalLabel,
-              hintText: custom
-                  ? loc.customEventMemoOptionalHint
-                  : loc.eventDetailOptionalHint,
-            ),
+            labelText: custom
+                ? loc.customEventMemoOptionalLabel
+                : loc.eventDetailOptionalLabel,
+            hintText: custom
+                ? loc.customEventMemoOptionalHint
+                : loc.eventDetailOptionalHint,
           ),
           const SizedBox(height: AppSpacing.md),
           OutlinedButton.icon(

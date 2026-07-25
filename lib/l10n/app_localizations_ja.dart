@@ -1371,4 +1371,46 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get antipyreticDuplicateReviewTitle => '解熱剤重複・交互確認';
+
+  @override
+  String get sttNoticeTitle => '音声入力前の確認';
+
+  @override
+  String get sttNoticeBody =>
+      '話した内容にはお子様の健康や投薬情報が含まれる場合があります。\n\n端末に設定された音声認識サービスによって、音声が外部サーバーに送信される場合があり、当アプリでは実際の処理場所を保証できません。\n\n音声認識サービスの設定とプライバシーポリシーをご確認の上、サーバー送信を許可できるか、または端末内のみで処理されることを確認した場合のみご使用ください。\n\n確信が持てない場合はキーボードで入力してください。';
+
+  @override
+  String get sttNoticeAcceptAction => '確認して使用';
+
+  @override
+  String get sttNoticeKeyboardAction => 'キーボードで入力';
+
+  @override
+  String get sttListeningStatus => '音声聞き取り中...';
+
+  @override
+  String get sttStopAction => '音声入力を停止';
+
+  @override
+  String get sttMicButtonTooltip => '音声メモ入力';
+
+  @override
+  String get sttNotSupportedTooltip => '現在の環境では音声入力をサポートしていません';
+
+  @override
+  String get pastNoticesTitle => '以前確認した案内';
+
+  @override
+  String get pastNoticeSttTitle => 'Android音声入力およびプライバシー案内';
+
+  @override
+  String pastNoticeStatusAccepted(String date) {
+    return '確認済み · $date';
+  }
+
+  @override
+  String get pastNoticeStatusNotAccepted => '未確認';
+
+  @override
+  String get recheckNoticeAction => '案内を再確認';
 }

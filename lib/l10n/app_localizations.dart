@@ -2679,6 +2679,84 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'해열제 중복·교차 확인'**
   String get antipyreticDuplicateReviewTitle;
+
+  /// No description provided for @sttNoticeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'음성 입력 전 확인'**
+  String get sttNoticeTitle;
+
+  /// No description provided for @sttNoticeBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'말한 내용에는 아이의 건강이나 투약 정보가 포함될 수 있습니다.\n\n기기에 설정된 음성 인식 서비스에 따라 음성이 외부 서버로 전송될 수 있으며, 이 앱에서는 실제 처리 위치를 보장할 수 없습니다.\n\n음성 인식 서비스의 설정과 개인정보 처리 방식을 확인한 뒤, 서버 전송을 허용할 수 있거나 기기 안에서만 처리된다는 것을 확인한 경우에만 사용해 주세요.\n\n확신하기 어렵다면 키보드로 입력해 주세요.'**
+  String get sttNoticeBody;
+
+  /// No description provided for @sttNoticeAcceptAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인했고 사용'**
+  String get sttNoticeAcceptAction;
+
+  /// No description provided for @sttNoticeKeyboardAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'키보드로 입력'**
+  String get sttNoticeKeyboardAction;
+
+  /// No description provided for @sttListeningStatus.
+  ///
+  /// In ko, this message translates to:
+  /// **'음성 듣는 중...'**
+  String get sttListeningStatus;
+
+  /// No description provided for @sttStopAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'음성 입력 중지'**
+  String get sttStopAction;
+
+  /// No description provided for @sttMicButtonTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'음성 메모 입력'**
+  String get sttMicButtonTooltip;
+
+  /// No description provided for @sttNotSupportedTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 환경에서는 음성 입력을 지원하지 않습니다'**
+  String get sttNotSupportedTooltip;
+
+  /// No description provided for @pastNoticesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이전에 본 안내'**
+  String get pastNoticesTitle;
+
+  /// No description provided for @pastNoticeSttTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'Android 음성 입력 및 개인정보 처리 고지'**
+  String get pastNoticeSttTitle;
+
+  /// No description provided for @pastNoticeStatusAccepted.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인함 · {date}'**
+  String pastNoticeStatusAccepted(String date);
+
+  /// No description provided for @pastNoticeStatusNotAccepted.
+  ///
+  /// In ko, this message translates to:
+  /// **'미확인'**
+  String get pastNoticeStatusNotAccepted;
+
+  /// No description provided for @recheckNoticeAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'고지문 다시 보기'**
+  String get recheckNoticeAction;
 }
 
 class _AppLocalizationsDelegate

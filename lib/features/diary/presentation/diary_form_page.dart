@@ -13,6 +13,7 @@ import '../../drafts/application/draft_autosave_controller.dart';
 import '../../drafts/application/active_draft_registry.dart';
 import '../application/diary_draft_payload.dart';
 import '../application/diary_list_notifier.dart';
+import '../../../widgets/stt_memo_text_field.dart';
 
 class DiaryFormPage extends ConsumerStatefulWidget {
   final DiaryEntity? diary;
@@ -845,16 +846,12 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
         ),
         const SizedBox(height: AppSpacing.sm),
         // 간단 입력 필드
-        TextField(
+        SttMemoTextField(
           controller: _rawController,
           maxLines: 10,
-          autofocus: widget.diary == null,
-          textAlignVertical: TextAlignVertical.top,
-          decoration: InputDecoration(
-            labelText: loc.simpleModeLabel,
-            hintText: loc.contentHint,
-            alignLabelWithHint: true,
-          ),
+          minLines: 4,
+          labelText: loc.simpleModeLabel,
+          hintText: loc.contentHint,
         ),
         const SizedBox(height: AppSpacing.sm),
         OutlinedButton.icon(

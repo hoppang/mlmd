@@ -1410,5 +1410,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get antipyreticDuplicateReviewTitle =>
-      'Antipyretic duplicate / cross-dosing review';
+      'Check Duplicate or Alternating Antipyretics';
+
+  @override
+  String get sttNoticeTitle => 'Check Before Voice Input';
+
+  @override
+  String get sttNoticeBody =>
+      'What you say may include your child\'s health or medication details.\n\nDepending on your device speech recognition service, audio might be sent to an external server. This app cannot guarantee where processing occurs.\n\nPlease check your speech recognition service settings and privacy policy. Use voice input only if you accept external server transmission or confirm local processing.\n\nIf unsure, please type with the keyboard.';
+
+  @override
+  String get sttNoticeAcceptAction => 'Understood and Use';
+
+  @override
+  String get sttNoticeKeyboardAction => 'Type with Keyboard';
+
+  @override
+  String get sttListeningStatus => 'Listening to voice...';
+
+  @override
+  String get sttStopAction => 'Stop voice input';
+
+  @override
+  String get sttMicButtonTooltip => 'Voice note input';
+
+  @override
+  String get sttNotSupportedTooltip =>
+      'Voice input is not supported in the current environment';
+
+  @override
+  String get pastNoticesTitle => 'Previously Viewed Notices';
+
+  @override
+  String get pastNoticeSttTitle => 'Android Voice Input & Privacy Notice';
+
+  @override
+  String pastNoticeStatusAccepted(String date) {
+    return 'Confirmed · $date';
+  }
+
+  @override
+  String get pastNoticeStatusNotAccepted => 'Not confirmed';
+
+  @override
+  String get recheckNoticeAction => 'View Notice Again';
 }

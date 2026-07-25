@@ -463,5 +463,25 @@
   "antipyreticDupSameEventAction": "Same medication record",
   "antipyreticDupDistinctEventAction": "Given separately",
   "antipyreticDupDeferAction": "Not sure right now",
-  "antipyreticDuplicateReviewTitle": "Antipyretic duplicate / cross-dosing review"
+  "antipyreticDuplicateReviewTitle": "Check Duplicate or Alternating Antipyretics",
+  "sttNoticeTitle": "Check Before Voice Input",
+  "sttNoticeBody": "What you say may include your child's health or medication details.\n\nDepending on your device speech recognition service, audio might be sent to an external server. This app cannot guarantee where processing occurs.\n\nPlease check your speech recognition service settings and privacy policy. Use voice input only if you accept external server transmission or confirm local processing.\n\nIf unsure, please type with the keyboard.",
+  "sttNoticeAcceptAction": "Understood and Use",
+  "sttNoticeKeyboardAction": "Type with Keyboard",
+  "sttListeningStatus": "Listening to voice...",
+  "sttStopAction": "Stop voice input",
+  "sttMicButtonTooltip": "Voice note input",
+  "sttNotSupportedTooltip": "Voice input is not supported in the current environment",
+  "pastNoticesTitle": "Previously Viewed Notices",
+  "pastNoticeSttTitle": "Android Voice Input & Privacy Notice",
+  "pastNoticeStatusAccepted": "Confirmed · {date}",
+  "@pastNoticeStatusAccepted": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "pastNoticeStatusNotAccepted": "Not confirmed",
+  "recheckNoticeAction": "View Notice Again"
 }
