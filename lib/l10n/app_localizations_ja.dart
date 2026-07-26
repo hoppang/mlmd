@@ -150,6 +150,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get savePumping => '搾乳記録を保存';
 
   @override
+  String get saveBathRecord => '入浴記録を保存';
+
+  @override
+  String get bathOneTouchHint =>
+      'ワンタッチ入浴記録・詳細状態やタイマーなしで現在時刻で即座に保存します。';
+
+  @override
+  String get bathFormTitle => '入浴記録';
+
+  @override
   String get bottleContentsLabel => '哺乳瓶の内容';
 
   @override

@@ -154,6 +154,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savePumping => 'Save Pumping Record';
 
   @override
+  String get saveBathRecord => 'Save Bath Record';
+
+  @override
+  String get bathOneTouchHint =>
+      'One-touch bath record · Save instantly with current time without detailed status or duration timers.';
+
+  @override
+  String get bathFormTitle => 'Bath Record';
+
+  @override
   String get bottleContentsLabel => 'Bottle contents';
 
   @override

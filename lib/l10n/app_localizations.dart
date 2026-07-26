@@ -382,6 +382,24 @@ abstract class AppLocalizations {
   /// **'유축 기록 저장'**
   String get savePumping;
 
+  /// No description provided for @saveBathRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'목욕 기록 저장'**
+  String get saveBathRecord;
+
+  /// No description provided for @bathOneTouchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'원터치 목욕 기록 · 세부 상태와 소요 시간 없이 현재 시각으로 저장합니다.'**
+  String get bathOneTouchHint;
+
+  /// No description provided for @bathFormTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'목욕 기록'**
+  String get bathFormTitle;
+
   /// No description provided for @bottleContentsLabel.
   ///
   /// In ko, this message translates to:

@@ -151,6 +151,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get savePumping => '유축 기록 저장';
 
   @override
+  String get saveBathRecord => '목욕 기록 저장';
+
+  @override
+  String get bathOneTouchHint => '원터치 목욕 기록 · 세부 상태와 소요 시간 없이 현재 시각으로 저장합니다.';
+
+  @override
+  String get bathFormTitle => '목욕 기록';
+
+  @override
   String get bottleContentsLabel => '젖병 내용';
 
   @override
