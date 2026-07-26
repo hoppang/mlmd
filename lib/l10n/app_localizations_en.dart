@@ -139,6 +139,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rightSideOption => 'Right';
 
   @override
+  String get bothSidesOption => 'Both';
+
+  @override
+  String get pumpingSideLabel => 'Pumping side';
+
+  @override
+  String get pumpingAmountLabel => 'Pumping amount (optional)';
+
+  @override
+  String get pumpingAmountHint => 'Enter mL';
+
+  @override
+  String get savePumping => 'Save Pumping Record';
+
+  @override
   String get bottleContentsLabel => 'Bottle contents';
 
   @override

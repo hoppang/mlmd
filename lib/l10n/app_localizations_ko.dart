@@ -136,6 +136,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rightSideOption => '오른쪽';
 
   @override
+  String get bothSidesOption => '양쪽';
+
+  @override
+  String get pumpingSideLabel => '유축 부위';
+
+  @override
+  String get pumpingAmountLabel => '유축량 (선택)';
+
+  @override
+  String get pumpingAmountHint => 'mL 수치 입력';
+
+  @override
+  String get savePumping => '유축 기록 저장';
+
+  @override
   String get bottleContentsLabel => '젖병 내용';
 
   @override

@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
 import 'elimination_record.dart';
+import 'pumping_record.dart';
 
 enum EventCategoryId { basicCare, healthMedical, activityPlay, growthMemory }
 
@@ -224,6 +225,15 @@ class RecentEventPreset {
         return separator < 0
             ? presetLabel
             : '$presetLabel${normalizedDetails.substring(separator)}';
+      }
+    }
+    if (item.id == EventTypeId.pumping) {
+      final record = PumpingRecord.decode(structuredDataJson ?? '');
+      if (record != null) {
+        final formattedDetails = record.buildDetails(loc);
+        return formattedDetails.isEmpty
+            ? typeLabel
+            : '$typeLabel · $formattedDetails';
       }
     }
     return normalizedDetails.isEmpty

@@ -352,6 +352,36 @@ abstract class AppLocalizations {
   /// **'오른쪽'**
   String get rightSideOption;
 
+  /// No description provided for @bothSidesOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'양쪽'**
+  String get bothSidesOption;
+
+  /// No description provided for @pumpingSideLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'유축 부위'**
+  String get pumpingSideLabel;
+
+  /// No description provided for @pumpingAmountLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'유축량 (선택)'**
+  String get pumpingAmountLabel;
+
+  /// No description provided for @pumpingAmountHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'mL 수치 입력'**
+  String get pumpingAmountHint;
+
+  /// No description provided for @savePumping.
+  ///
+  /// In ko, this message translates to:
+  /// **'유축 기록 저장'**
+  String get savePumping;
+
   /// No description provided for @bottleContentsLabel.
   ///
   /// In ko, this message translates to:

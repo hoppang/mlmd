@@ -18,7 +18,9 @@ import 'vaccination_event_form.dart';
 import 'accident_event_form.dart';
 import 'intake_event_form.dart';
 import 'medication_event_form.dart';
+import 'pumping_event_form.dart';
 import 'sleep_event_form.dart';
+import '../domain/pumping_record.dart';
 import 'symptom_event_form.dart';
 import 'temperature_event_form.dart';
 import '../../attachments/application/attachment_service.dart';
@@ -482,6 +484,40 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     }
   }
 
+  Future<void> _savePumping(PumpingFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = selected.label(AppLocalizations.of(context)!);
+      final recordId = await widget.onSave(
+        savedName,
+        result.details,
+        result.record.occurredAt,
+        result.record.encode(),
+      );
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
   Future<void> _startSleep(EventCatalogItem item) async {
     if (_saving) return;
     setState(() {
@@ -856,6 +892,23 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                   }),
                   onChangeTime: _changeTime,
                   onSave: _saveAccident,
+                )
+              : custom == null && selected!.id == EventTypeId.pumping
+              ? PumpingEventForm(
+                  key: const ValueKey('pumping'),
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  initialRecord: _structuredDataJson != null
+                      ? PumpingRecord.decode(_structuredDataJson!)
+                      : null,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _structuredDataJson = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _savePumping,
                 )
               : custom == null && _isIntakeEvent(selected!.id)
               ? IntakeEventForm(

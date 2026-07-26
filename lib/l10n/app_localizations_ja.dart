@@ -135,6 +135,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rightSideOption => '右';
 
   @override
+  String get bothSidesOption => '両方';
+
+  @override
+  String get pumpingSideLabel => '搾乳部位';
+
+  @override
+  String get pumpingAmountLabel => '搾乳量 (任意)';
+
+  @override
+  String get pumpingAmountHint => 'mL入力';
+
+  @override
+  String get savePumping => '搾乳記録を保存';
+
+  @override
   String get bottleContentsLabel => '哺乳瓶の内容';
 
   @override
