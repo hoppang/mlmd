@@ -22,11 +22,13 @@ import 'pumping_event_form.dart';
 import 'bath_event_form.dart';
 import 'tummy_time_event_form.dart';
 import 'growth_measurement_event_form.dart';
+import 'memo_event_form.dart';
 import 'sleep_event_form.dart';
 import '../domain/pumping_record.dart';
 import '../domain/bath_record.dart';
 import '../domain/tummy_time_record.dart';
 import '../domain/growth_measurement_record.dart';
+import '../domain/memo_record.dart';
 import 'symptom_event_form.dart';
 import 'temperature_event_form.dart';
 import '../../attachments/application/attachment_service.dart';
@@ -633,6 +635,40 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     }
   }
 
+  Future<void> _saveMemo(MemoFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = selected.label(AppLocalizations.of(context)!);
+      final recordId = await widget.onSave(
+        savedName,
+        result.details,
+        result.record.occurredAt,
+        result.record.encode(),
+      );
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
   Future<void> _startSleep(EventCatalogItem item) async {
     if (_saving) return;
     setState(() {
@@ -1076,6 +1112,23 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                   }),
                   onChangeTime: _changeTime,
                   onSave: _saveGrowthMeasurement,
+                )
+              : custom == null && selected!.id == EventTypeId.memo
+              ? MemoEventForm(
+                  key: const ValueKey('memo'),
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  initialRecord: _structuredDataJson != null
+                      ? MemoRecord.decode(_structuredDataJson!)
+                      : null,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _structuredDataJson = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _saveMemo,
                 )
               : custom == null && _isIntakeEvent(selected!.id)
               ? IntakeEventForm(

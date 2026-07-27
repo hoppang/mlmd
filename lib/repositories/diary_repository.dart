@@ -8,6 +8,7 @@ import '../data/objectbox_helper.dart';
 import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
 import '../features/search/domain/hybrid_search_query.dart';
+import '../features/events/domain/memo_record.dart';
 import '../transfer/canonical_transfer_document.dart';
 import 'package:uuid/uuid.dart';
 import 'profile_repository.dart';
@@ -135,6 +136,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
     _backfillRecordIds();
     _backfillActivityIds();
     _backfillRecordSources();
+    _backfillLegacyDiaryMemos();
   }
 
   @override
@@ -269,6 +271,58 @@ class DiaryRepositoryImpl implements DiaryRepository {
       }
       if (changedActivities.isNotEmpty) {
         _obxHelper.activityBox.putMany(changedActivities);
+      }
+    });
+  }
+
+  /// UX-033: 기존 일기 데이터(DiaryEntity) 중 제목/본문이 있는 항목을
+  /// 삭제하지 않고 MemoRecord 형태의 ActivityEntity로 마이그레이션한다.
+  void _backfillLegacyDiaryMemos() {
+    _obxHelper.store.runInTransaction(TxMode.write, () {
+      final diaries = _obxHelper.diaryBox.getAll();
+      final newActivities = <ActivityEntity>[];
+
+      for (final diary in diaries) {
+        final title = diary.title.trim();
+        final content = diary.content.trim();
+        if (title.isEmpty && content.isEmpty) continue;
+
+        final existingMemo = diary.activities.any(
+          (act) => act.type == '메모' || act.type == 'Memo',
+        );
+        if (existingMemo) continue;
+
+        final memoRecord = MemoRecord(
+          recordId: _uuid.v4(),
+          occurredAt: diary.date,
+          content: content.isNotEmpty ? content : title,
+          legacyTitle: title.isNotEmpty ? title : null,
+          inputSource: 'typed',
+          createdByAuthorProfileId: diary.createdByAuthorProfileId,
+          createdByDeviceProfileId: diary.createdByDeviceProfileId,
+          createdAt: diary.createdAt ?? diary.lastModified,
+          lastModified: diary.lastModified,
+        );
+
+        final activity = ActivityEntity(
+          recordId: memoRecord.recordId,
+          type: '메모',
+          time: diary.date,
+          details: content.isNotEmpty ? content : title,
+          structuredDataJson: memoRecord.encode(),
+          createdAt: diary.createdAt ?? diary.lastModified,
+          lastModified: diary.lastModified,
+          createdByAuthorProfileId: diary.createdByAuthorProfileId,
+          createdByDeviceProfileId: diary.createdByDeviceProfileId,
+          lastModifiedByAuthorProfileId: diary.lastModifiedByAuthorProfileId,
+          lastModifiedByDeviceProfileId: diary.lastModifiedByDeviceProfileId,
+        );
+        activity.diary.target = diary;
+        newActivities.add(activity);
+      }
+
+      if (newActivities.isNotEmpty) {
+        _obxHelper.activityBox.putMany(newActivities);
       }
     });
   }
