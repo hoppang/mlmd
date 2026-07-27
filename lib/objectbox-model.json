@@ -760,10 +760,146 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "12:2192607162278550961",
+      "lastPropertyId": "13:4269510507016121634",
+      "name": "CareTaskEntity",
+      "properties": [
+        {
+          "id": "1:453956505904398432",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3790197517765678924",
+          "name": "taskId",
+          "indexId": "20:8460190592805485985",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:6872246291193512850",
+          "name": "childId",
+          "type": 9
+        },
+        {
+          "id": "4:3485952264236520826",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "5:262290679566437310",
+          "name": "recurrenceRule",
+          "type": 9
+        },
+        {
+          "id": "6:268036193090676633",
+          "name": "assignedToAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "7:1649539199755183111",
+          "name": "notificationMode",
+          "type": 9
+        },
+        {
+          "id": "8:3992819378675872154",
+          "name": "linkedCategory",
+          "type": 9
+        },
+        {
+          "id": "9:5838187092397248910",
+          "name": "linkedEventTemplateJson",
+          "type": 9
+        },
+        {
+          "id": "10:4122337452201308758",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "11:5525814701174418129",
+          "name": "archivedAt",
+          "type": 10
+        },
+        {
+          "id": "12:3225170672832675582",
+          "name": "createdByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "13:4269510507016121634",
+          "name": "createdByDeviceProfileId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "13:8499038251039887284",
+      "lastPropertyId": "9:5243312100626530850",
+      "name": "CareTaskOccurrenceEntity",
+      "properties": [
+        {
+          "id": "1:91235719017411474",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5622657416981944416",
+          "name": "occurrenceId",
+          "indexId": "21:991161711759171227",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:2843431667137583676",
+          "name": "taskId",
+          "indexId": "22:6491662319369207368",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:1810689640958237249",
+          "name": "scheduledAt",
+          "type": 10
+        },
+        {
+          "id": "5:4349087714800315857",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "6:2767076640094160444",
+          "name": "completedAt",
+          "type": 10
+        },
+        {
+          "id": "7:5299476219290880625",
+          "name": "completedByAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "8:3596486410566505629",
+          "name": "completedOnDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "9:5243312100626530850",
+          "name": "linkedRecordId",
+          "indexId": "23:5236266599153876969",
+          "type": 9,
+          "flags": 2048
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "11:7971801215811693102",
-  "lastIndexId": "19:1001239504874804710",
+  "lastEntityId": "13:8499038251039887284",
+  "lastIndexId": "23:5236266599153876969",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

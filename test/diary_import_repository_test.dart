@@ -11,6 +11,8 @@ import 'package:mlmd/models/search_document_entity.dart';
 import 'package:mlmd/models/ai_summary_entity.dart';
 import 'package:mlmd/models/duplicate_review_edge_entity.dart';
 import 'package:mlmd/models/logical_event_group_entity.dart';
+import 'package:mlmd/models/care_task_entity.dart';
+import 'package:mlmd/models/care_task_occurrence_entity.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
@@ -38,6 +40,10 @@ class _TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<DuplicateReviewEdgeEntity> duplicateReviewEdgeBox;
   @override
   late final Box<LogicalEventGroupEntity> logicalEventGroupBox;
+  @override
+  late final Box<CareTaskEntity> careTaskBox;
+  @override
+  late final Box<CareTaskOccurrenceEntity> careTaskOccurrenceBox;
   final Directory directory;
 
   _TestObjectBoxHelper(this.store, this.directory) {
@@ -50,6 +56,8 @@ class _TestObjectBoxHelper implements ObjectBoxHelper {
     aiSummaryBox = Box<AiSummaryEntity>(store);
     duplicateReviewEdgeBox = Box<DuplicateReviewEdgeEntity>(store);
     logicalEventGroupBox = Box<LogicalEventGroupEntity>(store);
+    careTaskBox = Box<CareTaskEntity>(store);
+    careTaskOccurrenceBox = Box<CareTaskOccurrenceEntity>(store);
   }
 
   static Future<_TestObjectBoxHelper> create() async {

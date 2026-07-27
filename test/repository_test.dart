@@ -12,6 +12,8 @@ import 'package:mlmd/models/ai_summary_entity.dart';
 import 'package:mlmd/models/duplicate_review_edge_entity.dart';
 import 'package:mlmd/models/logical_event_group_entity.dart';
 import 'package:mlmd/models/shared_custom_event_definition_entity.dart';
+import 'package:mlmd/models/care_task_entity.dart';
+import 'package:mlmd/models/care_task_occurrence_entity.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
 import 'package:mlmd/features/events/application/custom_event_notifier.dart';
@@ -48,6 +50,10 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<DuplicateReviewEdgeEntity> duplicateReviewEdgeBox;
   @override
   late final Box<LogicalEventGroupEntity> logicalEventGroupBox;
+  @override
+  late final Box<CareTaskEntity> careTaskBox;
+  @override
+  late final Box<CareTaskOccurrenceEntity> careTaskOccurrenceBox;
 
   TestObjectBoxHelper(this.store) {
     diaryBox = Box<DiaryEntity>(store);
@@ -59,6 +65,8 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
     aiSummaryBox = Box<AiSummaryEntity>(store);
     duplicateReviewEdgeBox = Box<DuplicateReviewEdgeEntity>(store);
     logicalEventGroupBox = Box<LogicalEventGroupEntity>(store);
+    careTaskBox = Box<CareTaskEntity>(store);
+    careTaskOccurrenceBox = Box<CareTaskOccurrenceEntity>(store);
   }
 
   static Future<TestObjectBoxHelper> createTemp() async {

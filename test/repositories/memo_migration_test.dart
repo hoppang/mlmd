@@ -12,6 +12,8 @@ import 'package:mlmd/models/logical_event_group_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/models/search_document_entity.dart';
 import 'package:mlmd/models/shared_custom_event_definition_entity.dart';
+import 'package:mlmd/models/care_task_entity.dart';
+import 'package:mlmd/models/care_task_occurrence_entity.dart';
 import 'package:mlmd/objectbox.g.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
@@ -40,6 +42,10 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   @override
   late final Box<SharedCustomEventDefinitionEntity>
       sharedCustomEventDefinitionBox;
+  @override
+  late final Box<CareTaskEntity> careTaskBox;
+  @override
+  late final Box<CareTaskOccurrenceEntity> careTaskOccurrenceBox;
 
   TestObjectBoxHelper(this.store) {
     diaryBox = Box<DiaryEntity>(store);
@@ -53,6 +59,8 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
     logicalEventGroupBox = Box<LogicalEventGroupEntity>(store);
     sharedCustomEventDefinitionBox =
         Box<SharedCustomEventDefinitionEntity>(store);
+    careTaskBox = Box<CareTaskEntity>(store);
+    careTaskOccurrenceBox = Box<CareTaskOccurrenceEntity>(store);
   }
 }
 

@@ -12,6 +12,8 @@ import '../models/search_document_entity.dart';
 import '../models/ai_summary_entity.dart';
 import '../models/duplicate_review_edge_entity.dart';
 import '../models/logical_event_group_entity.dart';
+import '../models/care_task_entity.dart';
+import '../models/care_task_occurrence_entity.dart';
 
 class ObjectBoxHelper {
   late final Store store;
@@ -24,6 +26,8 @@ class ObjectBoxHelper {
   late final Box<AiSummaryEntity> aiSummaryBox;
   late final Box<DuplicateReviewEdgeEntity> duplicateReviewEdgeBox;
   late final Box<LogicalEventGroupEntity> logicalEventGroupBox;
+  late final Box<CareTaskEntity> careTaskBox;
+  late final Box<CareTaskOccurrenceEntity> careTaskOccurrenceBox;
 
   ObjectBoxHelper._create(this.store) {
     diaryBox = Box<DiaryEntity>(store);
@@ -35,6 +39,8 @@ class ObjectBoxHelper {
     aiSummaryBox = Box<AiSummaryEntity>(store);
     duplicateReviewEdgeBox = Box<DuplicateReviewEdgeEntity>(store);
     logicalEventGroupBox = Box<LogicalEventGroupEntity>(store);
+    careTaskBox = Box<CareTaskEntity>(store);
+    careTaskOccurrenceBox = Box<CareTaskOccurrenceEntity>(store);
   }
 
   /// 데이터베이스 저장 공간을 열고 초기화합니다.

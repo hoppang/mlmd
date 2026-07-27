@@ -17,6 +17,8 @@ import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 import 'models/activity_entity.dart';
 import 'models/ai_summary_entity.dart';
 import 'models/author_profile_entity.dart';
+import 'models/care_task_entity.dart';
+import 'models/care_task_occurrence_entity.dart';
 import 'models/device_profile_entity.dart';
 import 'models/diary_entity.dart';
 import 'models/duplicate_review_edge_entity.dart';
@@ -911,6 +913,162 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(12, 2192607162278550961),
+    name: 'CareTaskEntity',
+    lastPropertyId: const obx_int.IdUid(13, 4269510507016121634),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 453956505904398432),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 3790197517765678924),
+        name: 'taskId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(20, 8460190592805485985),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 6872246291193512850),
+        name: 'childId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 3485952264236520826),
+        name: 'title',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 262290679566437310),
+        name: 'recurrenceRule',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 268036193090676633),
+        name: 'assignedToAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 1649539199755183111),
+        name: 'notificationMode',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 3992819378675872154),
+        name: 'linkedCategory',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 5838187092397248910),
+        name: 'linkedEventTemplateJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 4122337452201308758),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 5525814701174418129),
+        name: 'archivedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 3225170672832675582),
+        name: 'createdByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 4269510507016121634),
+        name: 'createdByDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(13, 8499038251039887284),
+    name: 'CareTaskOccurrenceEntity',
+    lastPropertyId: const obx_int.IdUid(9, 5243312100626530850),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 91235719017411474),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 5622657416981944416),
+        name: 'occurrenceId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(21, 991161711759171227),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 2843431667137583676),
+        name: 'taskId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(22, 6491662319369207368),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 1810689640958237249),
+        name: 'scheduledAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 4349087714800315857),
+        name: 'status',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 2767076640094160444),
+        name: 'completedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 5299476219290880625),
+        name: 'completedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 3596486410566505629),
+        name: 'completedOnDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 5243312100626530850),
+        name: 'linkedRecordId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(23, 5236266599153876969),
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -956,8 +1114,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(11, 7971801215811693102),
-    lastIndexId: const obx_int.IdUid(19, 1001239504874804710),
+    lastEntityId: const obx_int.IdUid(13, 8499038251039887284),
+    lastIndexId: const obx_int.IdUid(23, 5236266599153876969),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -2129,6 +2287,215 @@ obx_int.ModelDefinition getObjectBoxModel() {
             return object;
           },
         ),
+    CareTaskEntity: obx_int.EntityDefinition<CareTaskEntity>(
+      model: _entities[11],
+      toOneRelations: (CareTaskEntity object) => [],
+      toManyRelations: (CareTaskEntity object) => {},
+      getId: (CareTaskEntity object) => object.id,
+      setId: (CareTaskEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (CareTaskEntity object, fb.Builder fbb) {
+        final taskIdOffset = fbb.writeString(object.taskId);
+        final childIdOffset = fbb.writeString(object.childId);
+        final titleOffset = fbb.writeString(object.title);
+        final recurrenceRuleOffset = object.recurrenceRule == null
+            ? null
+            : fbb.writeString(object.recurrenceRule!);
+        final assignedToAuthorProfileIdOffset =
+            object.assignedToAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.assignedToAuthorProfileId!);
+        final notificationModeOffset = fbb.writeString(object.notificationMode);
+        final linkedCategoryOffset = object.linkedCategory == null
+            ? null
+            : fbb.writeString(object.linkedCategory!);
+        final linkedEventTemplateJsonOffset =
+            object.linkedEventTemplateJson == null
+            ? null
+            : fbb.writeString(object.linkedEventTemplateJson!);
+        final createdByAuthorProfileIdOffset = fbb.writeString(
+          object.createdByAuthorProfileId,
+        );
+        final createdByDeviceProfileIdOffset = fbb.writeString(
+          object.createdByDeviceProfileId,
+        );
+        fbb.startTable(14);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, taskIdOffset);
+        fbb.addOffset(2, childIdOffset);
+        fbb.addOffset(3, titleOffset);
+        fbb.addOffset(4, recurrenceRuleOffset);
+        fbb.addOffset(5, assignedToAuthorProfileIdOffset);
+        fbb.addOffset(6, notificationModeOffset);
+        fbb.addOffset(7, linkedCategoryOffset);
+        fbb.addOffset(8, linkedEventTemplateJsonOffset);
+        fbb.addInt64(9, object.createdAt.millisecondsSinceEpoch);
+        fbb.addInt64(10, object.archivedAt?.millisecondsSinceEpoch);
+        fbb.addOffset(11, createdByAuthorProfileIdOffset);
+        fbb.addOffset(12, createdByDeviceProfileIdOffset);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final archivedAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          24,
+        );
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final taskIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final childIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final titleParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final recurrenceRuleParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 12);
+        final assignedToAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 14);
+        final notificationModeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final linkedCategoryParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 18);
+        final linkedEventTemplateJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 20);
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 22, 0),
+        );
+        final archivedAtParam = archivedAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(archivedAtValue);
+        final createdByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 26, '');
+        final createdByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 28, '');
+        final object = CareTaskEntity(
+          id: idParam,
+          taskId: taskIdParam,
+          childId: childIdParam,
+          title: titleParam,
+          recurrenceRule: recurrenceRuleParam,
+          assignedToAuthorProfileId: assignedToAuthorProfileIdParam,
+          notificationMode: notificationModeParam,
+          linkedCategory: linkedCategoryParam,
+          linkedEventTemplateJson: linkedEventTemplateJsonParam,
+          createdAt: createdAtParam,
+          archivedAt: archivedAtParam,
+          createdByAuthorProfileId: createdByAuthorProfileIdParam,
+          createdByDeviceProfileId: createdByDeviceProfileIdParam,
+        );
+
+        return object;
+      },
+    ),
+    CareTaskOccurrenceEntity:
+        obx_int.EntityDefinition<CareTaskOccurrenceEntity>(
+          model: _entities[12],
+          toOneRelations: (CareTaskOccurrenceEntity object) => [],
+          toManyRelations: (CareTaskOccurrenceEntity object) => {},
+          getId: (CareTaskOccurrenceEntity object) => object.id,
+          setId: (CareTaskOccurrenceEntity object, int id) {
+            object.id = id;
+          },
+          objectToFB: (CareTaskOccurrenceEntity object, fb.Builder fbb) {
+            final occurrenceIdOffset = fbb.writeString(object.occurrenceId);
+            final taskIdOffset = fbb.writeString(object.taskId);
+            final statusOffset = fbb.writeString(object.status);
+            final completedByAuthorProfileIdOffset =
+                object.completedByAuthorProfileId == null
+                ? null
+                : fbb.writeString(object.completedByAuthorProfileId!);
+            final completedOnDeviceProfileIdOffset =
+                object.completedOnDeviceProfileId == null
+                ? null
+                : fbb.writeString(object.completedOnDeviceProfileId!);
+            final linkedRecordIdOffset = object.linkedRecordId == null
+                ? null
+                : fbb.writeString(object.linkedRecordId!);
+            fbb.startTable(10);
+            fbb.addInt64(0, object.id);
+            fbb.addOffset(1, occurrenceIdOffset);
+            fbb.addOffset(2, taskIdOffset);
+            fbb.addInt64(3, object.scheduledAt.millisecondsSinceEpoch);
+            fbb.addOffset(4, statusOffset);
+            fbb.addInt64(5, object.completedAt?.millisecondsSinceEpoch);
+            fbb.addOffset(6, completedByAuthorProfileIdOffset);
+            fbb.addOffset(7, completedOnDeviceProfileIdOffset);
+            fbb.addOffset(8, linkedRecordIdOffset);
+            fbb.finish(fbb.endTable());
+            return object.id;
+          },
+          objectFromFB: (obx.Store store, ByteData fbData) {
+            final buffer = fb.BufferContext(fbData);
+            final rootOffset = buffer.derefObject(0);
+            final completedAtValue = const fb.Int64Reader().vTableGetNullable(
+              buffer,
+              rootOffset,
+              14,
+            );
+            final idParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              4,
+              0,
+            );
+            final occurrenceIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 6, '');
+            final taskIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 8, '');
+            final scheduledAtParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 10, 0),
+            );
+            final statusParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 12, '');
+            final completedAtParam = completedAtValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(completedAtValue);
+            final completedByAuthorProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 16);
+            final completedOnDeviceProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 18);
+            final linkedRecordIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 20);
+            final object = CareTaskOccurrenceEntity(
+              id: idParam,
+              occurrenceId: occurrenceIdParam,
+              taskId: taskIdParam,
+              scheduledAt: scheduledAtParam,
+              status: statusParam,
+              completedAt: completedAtParam,
+              completedByAuthorProfileId: completedByAuthorProfileIdParam,
+              completedOnDeviceProfileId: completedOnDeviceProfileIdParam,
+              linkedRecordId: linkedRecordIdParam,
+            );
+
+            return object;
+          },
+        ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -2801,5 +3168,120 @@ class SharedCustomEventDefinitionEntity_ {
   static final archivedAt =
       obx.QueryDateProperty<SharedCustomEventDefinitionEntity>(
         _entities[10].properties[11],
+      );
+}
+
+/// [CareTaskEntity] entity fields to define ObjectBox queries.
+class CareTaskEntity_ {
+  /// See [CareTaskEntity.id].
+  static final id = obx.QueryIntegerProperty<CareTaskEntity>(
+    _entities[11].properties[0],
+  );
+
+  /// See [CareTaskEntity.taskId].
+  static final taskId = obx.QueryStringProperty<CareTaskEntity>(
+    _entities[11].properties[1],
+  );
+
+  /// See [CareTaskEntity.childId].
+  static final childId = obx.QueryStringProperty<CareTaskEntity>(
+    _entities[11].properties[2],
+  );
+
+  /// See [CareTaskEntity.title].
+  static final title = obx.QueryStringProperty<CareTaskEntity>(
+    _entities[11].properties[3],
+  );
+
+  /// See [CareTaskEntity.recurrenceRule].
+  static final recurrenceRule = obx.QueryStringProperty<CareTaskEntity>(
+    _entities[11].properties[4],
+  );
+
+  /// See [CareTaskEntity.assignedToAuthorProfileId].
+  static final assignedToAuthorProfileId =
+      obx.QueryStringProperty<CareTaskEntity>(_entities[11].properties[5]);
+
+  /// See [CareTaskEntity.notificationMode].
+  static final notificationMode = obx.QueryStringProperty<CareTaskEntity>(
+    _entities[11].properties[6],
+  );
+
+  /// See [CareTaskEntity.linkedCategory].
+  static final linkedCategory = obx.QueryStringProperty<CareTaskEntity>(
+    _entities[11].properties[7],
+  );
+
+  /// See [CareTaskEntity.linkedEventTemplateJson].
+  static final linkedEventTemplateJson =
+      obx.QueryStringProperty<CareTaskEntity>(_entities[11].properties[8]);
+
+  /// See [CareTaskEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<CareTaskEntity>(
+    _entities[11].properties[9],
+  );
+
+  /// See [CareTaskEntity.archivedAt].
+  static final archivedAt = obx.QueryDateProperty<CareTaskEntity>(
+    _entities[11].properties[10],
+  );
+
+  /// See [CareTaskEntity.createdByAuthorProfileId].
+  static final createdByAuthorProfileId =
+      obx.QueryStringProperty<CareTaskEntity>(_entities[11].properties[11]);
+
+  /// See [CareTaskEntity.createdByDeviceProfileId].
+  static final createdByDeviceProfileId =
+      obx.QueryStringProperty<CareTaskEntity>(_entities[11].properties[12]);
+}
+
+/// [CareTaskOccurrenceEntity] entity fields to define ObjectBox queries.
+class CareTaskOccurrenceEntity_ {
+  /// See [CareTaskOccurrenceEntity.id].
+  static final id = obx.QueryIntegerProperty<CareTaskOccurrenceEntity>(
+    _entities[12].properties[0],
+  );
+
+  /// See [CareTaskOccurrenceEntity.occurrenceId].
+  static final occurrenceId = obx.QueryStringProperty<CareTaskOccurrenceEntity>(
+    _entities[12].properties[1],
+  );
+
+  /// See [CareTaskOccurrenceEntity.taskId].
+  static final taskId = obx.QueryStringProperty<CareTaskOccurrenceEntity>(
+    _entities[12].properties[2],
+  );
+
+  /// See [CareTaskOccurrenceEntity.scheduledAt].
+  static final scheduledAt = obx.QueryDateProperty<CareTaskOccurrenceEntity>(
+    _entities[12].properties[3],
+  );
+
+  /// See [CareTaskOccurrenceEntity.status].
+  static final status = obx.QueryStringProperty<CareTaskOccurrenceEntity>(
+    _entities[12].properties[4],
+  );
+
+  /// See [CareTaskOccurrenceEntity.completedAt].
+  static final completedAt = obx.QueryDateProperty<CareTaskOccurrenceEntity>(
+    _entities[12].properties[5],
+  );
+
+  /// See [CareTaskOccurrenceEntity.completedByAuthorProfileId].
+  static final completedByAuthorProfileId =
+      obx.QueryStringProperty<CareTaskOccurrenceEntity>(
+        _entities[12].properties[6],
+      );
+
+  /// See [CareTaskOccurrenceEntity.completedOnDeviceProfileId].
+  static final completedOnDeviceProfileId =
+      obx.QueryStringProperty<CareTaskOccurrenceEntity>(
+        _entities[12].properties[7],
+      );
+
+  /// See [CareTaskOccurrenceEntity.linkedRecordId].
+  static final linkedRecordId =
+      obx.QueryStringProperty<CareTaskOccurrenceEntity>(
+        _entities[12].properties[8],
       );
 }
