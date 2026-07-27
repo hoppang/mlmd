@@ -130,6 +130,21 @@
   "accidentGuidanceAttentionTitle": "주의 필요 사고",
   "accidentGuidanceFirstAidInfo": "낙상, 화상, 이물질 삼킴, 기도 이물, 중독의 경우 아이의 상태를 면밀히 관찰하고 필요시 즉시 응급실이나 전문 의료기관을 방문하세요.",
   "tummyTimeEvent": "터미타임",
+  "tummyTimeFormTitle": "터미타임 기록",
+  "tummyTimeDurationLabel": "시간 (선택)",
+  "tummyTimeDurationHint": "분 단위 입력 (예: 5)",
+  "tummyTimeDurationDisplay": "{minutes}분",
+  "@tummyTimeDurationDisplay": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tummyTimeDurationInvalidError": "1~999 사이의 숫자를 입력해 주세요.",
+  "tummyTimeInfantRecommendation": "터미타임은 목·어깨·등 근육을 키우는 데 도움이 됩니다. 어린 영아는 하루에 2~3회, 한 번에 3~5분 정도의 짧은 시간이 권장됩니다.",
+  "tummyTimeInfantRecommendationSource": "일반적인 영유아 발달 지침을 참고한 안내입니다. 아이의 상태에 맞는 구체적인 지도는 담당 소아과 의사에게 확인하세요.",
+  "saveTummyTimeRecord": "터미타임 기록 저장",
   "bathEvent": "목욕",
   "growthMeasurementEvent": "키·몸무게 측정",
   "memoEvent": "메모",

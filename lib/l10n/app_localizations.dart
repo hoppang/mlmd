@@ -880,6 +880,54 @@ abstract class AppLocalizations {
   /// **'터미타임'**
   String get tummyTimeEvent;
 
+  /// No description provided for @tummyTimeFormTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'터미타임 기록'**
+  String get tummyTimeFormTitle;
+
+  /// No description provided for @tummyTimeDurationLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'시간 (선택)'**
+  String get tummyTimeDurationLabel;
+
+  /// No description provided for @tummyTimeDurationHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'분 단위 입력 (예: 5)'**
+  String get tummyTimeDurationHint;
+
+  /// No description provided for @tummyTimeDurationDisplay.
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분'**
+  String tummyTimeDurationDisplay(int minutes);
+
+  /// No description provided for @tummyTimeDurationInvalidError.
+  ///
+  /// In ko, this message translates to:
+  /// **'1~999 사이의 숫자를 입력해 주세요.'**
+  String get tummyTimeDurationInvalidError;
+
+  /// No description provided for @tummyTimeInfantRecommendation.
+  ///
+  /// In ko, this message translates to:
+  /// **'터미타임은 목·어깨·등 근육을 키우는 데 도움이 됩니다. 어린 영아는 하루에 2~3회, 한 번에 3~5분 정도의 짧은 시간이 권장됩니다.'**
+  String get tummyTimeInfantRecommendation;
+
+  /// No description provided for @tummyTimeInfantRecommendationSource.
+  ///
+  /// In ko, this message translates to:
+  /// **'일반적인 영유아 발달 지침을 참고한 안내입니다. 아이의 상태에 맞는 구체적인 지도는 담당 소아과 의사에게 확인하세요.'**
+  String get tummyTimeInfantRecommendationSource;
+
+  /// No description provided for @saveTummyTimeRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'터미타임 기록 저장'**
+  String get saveTummyTimeRecord;
+
   /// No description provided for @bathEvent.
   ///
   /// In ko, this message translates to:

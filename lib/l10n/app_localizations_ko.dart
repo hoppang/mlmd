@@ -403,6 +403,34 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tummyTimeEvent => '터미타임';
 
   @override
+  String get tummyTimeFormTitle => '터미타임 기록';
+
+  @override
+  String get tummyTimeDurationLabel => '시간 (선택)';
+
+  @override
+  String get tummyTimeDurationHint => '분 단위 입력 (예: 5)';
+
+  @override
+  String tummyTimeDurationDisplay(int minutes) {
+    return '$minutes분';
+  }
+
+  @override
+  String get tummyTimeDurationInvalidError => '1~999 사이의 숫자를 입력해 주세요.';
+
+  @override
+  String get tummyTimeInfantRecommendation =>
+      '터미타임은 목·어깨·등 근육을 키우는 데 도움이 됩니다. 어린 영아는 하루에 2~3회, 한 번에 3~5분 정도의 짧은 시간이 권장됩니다.';
+
+  @override
+  String get tummyTimeInfantRecommendationSource =>
+      '일반적인 영유아 발달 지침을 참고한 안내입니다. 아이의 상태에 맞는 구체적인 지도는 담당 소아과 의사에게 확인하세요.';
+
+  @override
+  String get saveTummyTimeRecord => '터미타임 기록 저장';
+
+  @override
   String get bathEvent => '목욕';
 
   @override

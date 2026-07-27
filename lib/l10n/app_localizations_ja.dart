@@ -153,8 +153,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get saveBathRecord => '入浴記録を保存';
 
   @override
-  String get bathOneTouchHint =>
-      'ワンタッチ入浴記録・詳細状態やタイマーなしで現在時刻で即座に保存します。';
+  String get bathOneTouchHint => 'ワンタッチ入浴記録・詳細状態やタイマーなしで現在時刻で即座に保存します。';
 
   @override
   String get bathFormTitle => '入浴記録';
@@ -401,6 +400,34 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tummyTimeEvent => 'タミータイム';
+
+  @override
+  String get tummyTimeFormTitle => 'タミータイム記録';
+
+  @override
+  String get tummyTimeDurationLabel => '時間（任意）';
+
+  @override
+  String get tummyTimeDurationHint => '分を入力（例：5）';
+
+  @override
+  String tummyTimeDurationDisplay(int minutes) {
+    return '$minutes分';
+  }
+
+  @override
+  String get tummyTimeDurationInvalidError => '1〜999の数字を入力してください。';
+
+  @override
+  String get tummyTimeInfantRecommendation =>
+      'タミータイムは首・肩・背中の筋肉を鍛えるのに役立ちます。小さな赤ちゃんには1日2〜3回、1回3〜5分程度の短いセッションが推奨されています。';
+
+  @override
+  String get tummyTimeInfantRecommendationSource =>
+      '一般的な乳幼児発達ガイダンスに基づく案内です。お子様の状況に合った具体的な指導は担当の小児科医にご確認ください。';
+
+  @override
+  String get saveTummyTimeRecord => 'タミータイムを保存';
 
   @override
   String get bathEvent => '入浴';

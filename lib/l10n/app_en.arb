@@ -130,6 +130,21 @@
   "accidentGuidanceAttentionTitle": "Attention Required Accident",
   "accidentGuidanceFirstAidInfo": "For falls, burns, foreign body ingestion, choking, or poisoning, closely monitor the child and visit an emergency department or doctor if needed.",
   "tummyTimeEvent": "Tummy time",
+  "tummyTimeFormTitle": "Tummy Time",
+  "tummyTimeDurationLabel": "Duration (optional)",
+  "tummyTimeDurationHint": "Enter minutes (e.g. 5)",
+  "tummyTimeDurationDisplay": "{minutes} min",
+  "@tummyTimeDurationDisplay": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tummyTimeDurationInvalidError": "Enter a number between 1 and 999.",
+  "tummyTimeInfantRecommendation": "Tummy time helps strengthen neck, shoulder, and back muscles. Short sessions of 3–5 minutes, 2–3 times a day are recommended for young infants.",
+  "tummyTimeInfantRecommendationSource": "Based on general early-childhood guidance. Consult your pediatrician for your child's situation.",
+  "saveTummyTimeRecord": "Save Tummy Time",
   "bathEvent": "Bath",
   "growthMeasurementEvent": "Growth measurement",
   "memoEvent": "Memo",

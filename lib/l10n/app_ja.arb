@@ -130,6 +130,21 @@
   "accidentGuidanceAttentionTitle": "要注意の事故",
   "accidentGuidanceFirstAidInfo": "転落、やけど、誤飲、気道異物、中毒の場合はお子様の状態を慎重に観察し、必要に応じて直ちに医療機関を受診してください。",
   "tummyTimeEvent": "タミータイム",
+  "tummyTimeFormTitle": "タミータイム記録",
+  "tummyTimeDurationLabel": "時間（任意）",
+  "tummyTimeDurationHint": "分を入力（例：5）",
+  "tummyTimeDurationDisplay": "{minutes}分",
+  "@tummyTimeDurationDisplay": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tummyTimeDurationInvalidError": "1〜999の数字を入力してください。",
+  "tummyTimeInfantRecommendation": "タミータイムは首・肩・背中の筋肉を鍛えるのに役立ちます。小さな赤ちゃんには1日2〜3回、1回3〜5分程度の短いセッションが推奨されています。",
+  "tummyTimeInfantRecommendationSource": "一般的な乳幼児発達ガイダンスに基づく案内です。お子様の状況に合った具体的な指導は担当の小児科医にご確認ください。",
+  "saveTummyTimeRecord": "タミータイムを保存",
   "bathEvent": "入浴",
   "growthMeasurementEvent": "身長・体重測定",
   "memoEvent": "メモ",

@@ -411,6 +411,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tummyTimeEvent => 'Tummy time';
 
   @override
+  String get tummyTimeFormTitle => 'Tummy Time';
+
+  @override
+  String get tummyTimeDurationLabel => 'Duration (optional)';
+
+  @override
+  String get tummyTimeDurationHint => 'Enter minutes (e.g. 5)';
+
+  @override
+  String tummyTimeDurationDisplay(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get tummyTimeDurationInvalidError =>
+      'Enter a number between 1 and 999.';
+
+  @override
+  String get tummyTimeInfantRecommendation =>
+      'Tummy time helps strengthen neck, shoulder, and back muscles. Short sessions of 3–5 minutes, 2–3 times a day are recommended for young infants.';
+
+  @override
+  String get tummyTimeInfantRecommendationSource =>
+      'Based on general early-childhood guidance. Consult your pediatrician for your child\'s situation.';
+
+  @override
+  String get saveTummyTimeRecord => 'Save Tummy Time';
+
+  @override
   String get bathEvent => 'Bath';
 
   @override
