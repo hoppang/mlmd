@@ -430,6 +430,69 @@ class AppLocalizationsJa extends AppLocalizations {
   String get saveTummyTimeRecord => 'タミータイムを保存';
 
   @override
+  String get growthMeasurementFormTitle => '成長測定';
+
+  @override
+  String get growthMeasurementHeightLabel => '身長（任意）';
+
+  @override
+  String get growthMeasurementHeightHint => 'cm単位で入力（例：55.0）';
+
+  @override
+  String get growthMeasurementWeightLabel => '体重（任意）';
+
+  @override
+  String get growthMeasurementWeightHint => 'kg単位で入力（例：6.50）';
+
+  @override
+  String get growthMeasurementHeadLabel => '頭囲（任意）';
+
+  @override
+  String get growthMeasurementHeadHint => 'cm単位で入力（例：38.0）';
+
+  @override
+  String get growthMeasurementAtLeastOneError => '身長・体重・頭囲のうち少なくとも一つを入力してください。';
+
+  @override
+  String growthMeasurementHeightDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString cm';
+  }
+
+  @override
+  String growthMeasurementWeightDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 2,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString kg';
+  }
+
+  @override
+  String growthMeasurementHeadDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString cm';
+  }
+
+  @override
+  String get saveGrowthMeasurementRecord => '成長測定を保存';
+
+  @override
   String get bathEvent => '入浴';
 
   @override

@@ -7,6 +7,7 @@ import 'elimination_record.dart';
 import 'pumping_record.dart';
 import 'bath_record.dart';
 import 'tummy_time_record.dart';
+import 'growth_measurement_record.dart';
 
 enum EventCategoryId { basicCare, healthMedical, activityPlay, growthMemory }
 
@@ -249,6 +250,15 @@ class RecentEventPreset {
     }
     if (item.id == EventTypeId.tummyTime) {
       final record = TummyTimeRecord.decode(structuredDataJson ?? '');
+      if (record != null) {
+        final formattedDetails = record.buildDetails(loc);
+        return formattedDetails.isEmpty
+            ? typeLabel
+            : '$typeLabel · $formattedDetails';
+      }
+    }
+    if (item.id == EventTypeId.growthMeasurement) {
+      final record = GrowthMeasurementRecord.decode(structuredDataJson ?? '');
       if (record != null) {
         final formattedDetails = record.buildDetails(loc);
         return formattedDetails.isEmpty

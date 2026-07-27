@@ -145,6 +145,45 @@
   "tummyTimeInfantRecommendation": "Tummy time helps strengthen neck, shoulder, and back muscles. Short sessions of 3–5 minutes, 2–3 times a day are recommended for young infants.",
   "tummyTimeInfantRecommendationSource": "Based on general early-childhood guidance. Consult your pediatrician for your child's situation.",
   "saveTummyTimeRecord": "Save Tummy Time",
+  "growthMeasurementFormTitle": "Growth measurement",
+  "growthMeasurementHeightLabel": "Height (optional)",
+  "growthMeasurementHeightHint": "Enter cm (e.g. 55.0)",
+  "growthMeasurementWeightLabel": "Weight (optional)",
+  "growthMeasurementWeightHint": "Enter kg (e.g. 6.50)",
+  "growthMeasurementHeadLabel": "Head circumference (optional)",
+  "growthMeasurementHeadHint": "Enter cm (e.g. 38.0)",
+  "growthMeasurementAtLeastOneError": "Enter at least one of height, weight, or head circumference.",
+  "growthMeasurementHeightDisplay": "{value} cm",
+  "@growthMeasurementHeightDisplay": {
+    "placeholders": {
+      "value": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {"decimalDigits": 1}
+      }
+    }
+  },
+  "growthMeasurementWeightDisplay": "{value} kg",
+  "@growthMeasurementWeightDisplay": {
+    "placeholders": {
+      "value": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {"decimalDigits": 2}
+      }
+    }
+  },
+  "growthMeasurementHeadDisplay": "{value} cm",
+  "@growthMeasurementHeadDisplay": {
+    "placeholders": {
+      "value": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {"decimalDigits": 1}
+      }
+    }
+  },
+  "saveGrowthMeasurementRecord": "Save growth measurement",
   "bathEvent": "Bath",
   "growthMeasurementEvent": "Growth measurement",
   "memoEvent": "Memo",

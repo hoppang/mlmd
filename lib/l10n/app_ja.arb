@@ -145,6 +145,45 @@
   "tummyTimeInfantRecommendation": "タミータイムは首・肩・背中の筋肉を鍛えるのに役立ちます。小さな赤ちゃんには1日2〜3回、1回3〜5分程度の短いセッションが推奨されています。",
   "tummyTimeInfantRecommendationSource": "一般的な乳幼児発達ガイダンスに基づく案内です。お子様の状況に合った具体的な指導は担当の小児科医にご確認ください。",
   "saveTummyTimeRecord": "タミータイムを保存",
+  "growthMeasurementFormTitle": "成長測定",
+  "growthMeasurementHeightLabel": "身長（任意）",
+  "growthMeasurementHeightHint": "cm単位で入力（例：55.0）",
+  "growthMeasurementWeightLabel": "体重（任意）",
+  "growthMeasurementWeightHint": "kg単位で入力（例：6.50）",
+  "growthMeasurementHeadLabel": "頭囲（任意）",
+  "growthMeasurementHeadHint": "cm単位で入力（例：38.0）",
+  "growthMeasurementAtLeastOneError": "身長・体重・頭囲のうち少なくとも一つを入力してください。",
+  "growthMeasurementHeightDisplay": "{value} cm",
+  "@growthMeasurementHeightDisplay": {
+    "placeholders": {
+      "value": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {"decimalDigits": 1}
+      }
+    }
+  },
+  "growthMeasurementWeightDisplay": "{value} kg",
+  "@growthMeasurementWeightDisplay": {
+    "placeholders": {
+      "value": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {"decimalDigits": 2}
+      }
+    }
+  },
+  "growthMeasurementHeadDisplay": "{value} cm",
+  "@growthMeasurementHeadDisplay": {
+    "placeholders": {
+      "value": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {"decimalDigits": 1}
+      }
+    }
+  },
+  "saveGrowthMeasurementRecord": "成長測定を保存",
   "bathEvent": "入浴",
   "growthMeasurementEvent": "身長・体重測定",
   "memoEvent": "メモ",

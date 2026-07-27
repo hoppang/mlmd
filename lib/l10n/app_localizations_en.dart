@@ -440,6 +440,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveTummyTimeRecord => 'Save Tummy Time';
 
   @override
+  String get growthMeasurementFormTitle => 'Growth measurement';
+
+  @override
+  String get growthMeasurementHeightLabel => 'Height (optional)';
+
+  @override
+  String get growthMeasurementHeightHint => 'Enter cm (e.g. 55.0)';
+
+  @override
+  String get growthMeasurementWeightLabel => 'Weight (optional)';
+
+  @override
+  String get growthMeasurementWeightHint => 'Enter kg (e.g. 6.50)';
+
+  @override
+  String get growthMeasurementHeadLabel => 'Head circumference (optional)';
+
+  @override
+  String get growthMeasurementHeadHint => 'Enter cm (e.g. 38.0)';
+
+  @override
+  String get growthMeasurementAtLeastOneError =>
+      'Enter at least one of height, weight, or head circumference.';
+
+  @override
+  String growthMeasurementHeightDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString cm';
+  }
+
+  @override
+  String growthMeasurementWeightDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 2,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString kg';
+  }
+
+  @override
+  String growthMeasurementHeadDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString cm';
+  }
+
+  @override
+  String get saveGrowthMeasurementRecord => 'Save growth measurement';
+
+  @override
   String get bathEvent => 'Bath';
 
   @override

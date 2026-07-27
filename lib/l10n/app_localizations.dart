@@ -928,6 +928,78 @@ abstract class AppLocalizations {
   /// **'터미타임 기록 저장'**
   String get saveTummyTimeRecord;
 
+  /// No description provided for @growthMeasurementFormTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'성장 측정'**
+  String get growthMeasurementFormTitle;
+
+  /// No description provided for @growthMeasurementHeightLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'키 (선택)'**
+  String get growthMeasurementHeightLabel;
+
+  /// No description provided for @growthMeasurementHeightHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'cm 단위 입력 (예: 55.0)'**
+  String get growthMeasurementHeightHint;
+
+  /// No description provided for @growthMeasurementWeightLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'몸무게 (선택)'**
+  String get growthMeasurementWeightLabel;
+
+  /// No description provided for @growthMeasurementWeightHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'kg 단위 입력 (예: 6.50)'**
+  String get growthMeasurementWeightHint;
+
+  /// No description provided for @growthMeasurementHeadLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'머리둘레 (선택)'**
+  String get growthMeasurementHeadLabel;
+
+  /// No description provided for @growthMeasurementHeadHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'cm 단위 입력 (예: 38.0)'**
+  String get growthMeasurementHeadHint;
+
+  /// No description provided for @growthMeasurementAtLeastOneError.
+  ///
+  /// In ko, this message translates to:
+  /// **'키, 몸무게, 머리둘레 중 하나 이상 입력해 주세요.'**
+  String get growthMeasurementAtLeastOneError;
+
+  /// No description provided for @growthMeasurementHeightDisplay.
+  ///
+  /// In ko, this message translates to:
+  /// **'{value} cm'**
+  String growthMeasurementHeightDisplay(double value);
+
+  /// No description provided for @growthMeasurementWeightDisplay.
+  ///
+  /// In ko, this message translates to:
+  /// **'{value} kg'**
+  String growthMeasurementWeightDisplay(double value);
+
+  /// No description provided for @growthMeasurementHeadDisplay.
+  ///
+  /// In ko, this message translates to:
+  /// **'{value} cm'**
+  String growthMeasurementHeadDisplay(double value);
+
+  /// No description provided for @saveGrowthMeasurementRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'성장 측정 저장'**
+  String get saveGrowthMeasurementRecord;
+
   /// No description provided for @bathEvent.
   ///
   /// In ko, this message translates to:

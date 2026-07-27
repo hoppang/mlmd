@@ -431,6 +431,70 @@ class AppLocalizationsKo extends AppLocalizations {
   String get saveTummyTimeRecord => '터미타임 기록 저장';
 
   @override
+  String get growthMeasurementFormTitle => '성장 측정';
+
+  @override
+  String get growthMeasurementHeightLabel => '키 (선택)';
+
+  @override
+  String get growthMeasurementHeightHint => 'cm 단위 입력 (예: 55.0)';
+
+  @override
+  String get growthMeasurementWeightLabel => '몸무게 (선택)';
+
+  @override
+  String get growthMeasurementWeightHint => 'kg 단위 입력 (예: 6.50)';
+
+  @override
+  String get growthMeasurementHeadLabel => '머리둘레 (선택)';
+
+  @override
+  String get growthMeasurementHeadHint => 'cm 단위 입력 (예: 38.0)';
+
+  @override
+  String get growthMeasurementAtLeastOneError =>
+      '키, 몸무게, 머리둘레 중 하나 이상 입력해 주세요.';
+
+  @override
+  String growthMeasurementHeightDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString cm';
+  }
+
+  @override
+  String growthMeasurementWeightDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 2,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString kg';
+  }
+
+  @override
+  String growthMeasurementHeadDisplay(double value) {
+    final intl.NumberFormat valueNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String valueString = valueNumberFormat.format(value);
+
+    return '$valueString cm';
+  }
+
+  @override
+  String get saveGrowthMeasurementRecord => '성장 측정 저장';
+
+  @override
   String get bathEvent => '목욕';
 
   @override
