@@ -16,6 +16,7 @@ import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
 import 'models/activity_entity.dart';
 import 'models/ai_summary_entity.dart';
+import 'models/attachment_entity.dart';
 import 'models/author_profile_entity.dart';
 import 'models/care_task_entity.dart';
 import 'models/care_task_occurrence_entity.dart';
@@ -1174,6 +1175,54 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(16, 6227614629242879016),
+    name: 'AttachmentEntity',
+    lastPropertyId: const obx_int.IdUid(6, 2879213757248082200),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8735468034691949134),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 1491540797079667256),
+        name: 'attachmentId',
+        type: 9,
+        flags: 2080,
+        indexId: const obx_int.IdUid(29, 2898963507388369939),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 5157512834392514578),
+        name: 'recordId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(30, 7444440659414866890),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 2787149532796480748),
+        name: 'payload',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 2484549973060384445),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 2879213757248082200),
+        name: 'deletedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -1219,8 +1268,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(15, 4182319905588445212),
-    lastIndexId: const obx_int.IdUid(28, 5551459356385319644),
+    lastEntityId: const obx_int.IdUid(16, 6227614629242879016),
+    lastIndexId: const obx_int.IdUid(30, 7444440659414866890),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -2729,6 +2778,70 @@ obx_int.ModelDefinition getObjectBoxModel() {
             return object;
           },
         ),
+    AttachmentEntity: obx_int.EntityDefinition<AttachmentEntity>(
+      model: _entities[15],
+      toOneRelations: (AttachmentEntity object) => [],
+      toManyRelations: (AttachmentEntity object) => {},
+      getId: (AttachmentEntity object) => object.id,
+      setId: (AttachmentEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (AttachmentEntity object, fb.Builder fbb) {
+        final attachmentIdOffset = fbb.writeString(object.attachmentId);
+        final recordIdOffset = fbb.writeString(object.recordId);
+        final payloadOffset = fbb.writeString(object.payload);
+        fbb.startTable(7);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, attachmentIdOffset);
+        fbb.addOffset(2, recordIdOffset);
+        fbb.addOffset(3, payloadOffset);
+        fbb.addInt64(4, object.createdAt.millisecondsSinceEpoch);
+        fbb.addInt64(5, object.deletedAt?.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final deletedAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          14,
+        );
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final attachmentIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final recordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final payloadParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
+          isUtc: true,
+        );
+        final deletedAtParam = deletedAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(deletedAtValue, isUtc: true);
+        final object = AttachmentEntity(
+          id: idParam,
+          attachmentId: attachmentIdParam,
+          recordId: recordIdParam,
+          payload: payloadParam,
+          createdAt: createdAtParam,
+          deletedAt: deletedAtParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -3591,5 +3704,38 @@ class TrackingPreferenceEntity_ {
   /// See [TrackingPreferenceEntity.changedAt].
   static final changedAt = obx.QueryDateProperty<TrackingPreferenceEntity>(
     _entities[14].properties[4],
+  );
+}
+
+/// [AttachmentEntity] entity fields to define ObjectBox queries.
+class AttachmentEntity_ {
+  /// See [AttachmentEntity.id].
+  static final id = obx.QueryIntegerProperty<AttachmentEntity>(
+    _entities[15].properties[0],
+  );
+
+  /// See [AttachmentEntity.attachmentId].
+  static final attachmentId = obx.QueryStringProperty<AttachmentEntity>(
+    _entities[15].properties[1],
+  );
+
+  /// See [AttachmentEntity.recordId].
+  static final recordId = obx.QueryStringProperty<AttachmentEntity>(
+    _entities[15].properties[2],
+  );
+
+  /// See [AttachmentEntity.payload].
+  static final payload = obx.QueryStringProperty<AttachmentEntity>(
+    _entities[15].properties[3],
+  );
+
+  /// See [AttachmentEntity.createdAt].
+  static final createdAt = obx.QueryDateProperty<AttachmentEntity>(
+    _entities[15].properties[4],
+  );
+
+  /// See [AttachmentEntity.deletedAt].
+  static final deletedAt = obx.QueryDateProperty<AttachmentEntity>(
+    _entities[15].properties[5],
   );
 }
