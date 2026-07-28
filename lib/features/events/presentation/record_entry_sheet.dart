@@ -32,6 +32,7 @@ import '../domain/memo_record.dart';
 import 'symptom_event_form.dart';
 import 'temperature_event_form.dart';
 import '../../attachments/application/attachment_service.dart';
+import '../../tracking/domain/tracking_models.dart';
 import '../../../widgets/stt_memo_text_field.dart';
 
 typedef SaveEventRecord =
@@ -57,6 +58,12 @@ typedef SaveCustomEventRecord =
     );
 typedef StartSleepRecord =
     Future<bool> Function(String type, DateTime startedAt);
+typedef SaveDailyTrackingCheckIn =
+    Future<void> Function(
+      EventTypeId eventType,
+      TrackingRelativeState relativeState,
+      String? memo,
+    );
 
 enum RecordEntryResultKind { saved, sleepStarted, sleepAlreadyActive }
 
@@ -71,6 +78,9 @@ class RecordEntryResult {
 class RecordEntrySheet extends ConsumerStatefulWidget {
   const RecordEntrySheet({
     required this.recentPresets,
+    this.hiddenQuickEventIds = const {},
+    this.trackingModes = const {},
+    this.onSaveDailyCheckIn,
     required this.onSave,
     required this.onUpdate,
     required this.onDelete,
@@ -81,6 +91,9 @@ class RecordEntrySheet extends ConsumerStatefulWidget {
   });
 
   final List<RecentEventPreset> recentPresets;
+  final Set<EventTypeId> hiddenQuickEventIds;
+  final Map<EventTypeId, TrackingMode> trackingModes;
+  final SaveDailyTrackingCheckIn? onSaveDailyCheckIn;
   final SaveEventRecord onSave;
   final UpdateEventRecord onUpdate;
   final DeleteEventRecord onDelete;
@@ -103,6 +116,9 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   bool _saving = false;
   String? _error;
 
+  bool _usesDailyCheckIn(EventCatalogItem item) =>
+      widget.trackingModes[item.id] == TrackingMode.dailyCheckIn;
+
   @override
   void dispose() {
     _detailsController.dispose();
@@ -124,6 +140,40 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       _occurredAt = DateTime.now();
       _error = null;
     });
+  }
+
+  Future<void> _saveDailyCheckIn(
+    EventCatalogItem item,
+    TrackingRelativeState relativeState,
+    String memo,
+  ) async {
+    final save = widget.onSaveDailyCheckIn;
+    if (save == null) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await save(
+        item.id,
+        relativeState,
+        memo.trim().isEmpty ? null : memo.trim(),
+      );
+      if (!mounted) return;
+      Navigator.pop(
+        context,
+        RecordEntryResult(
+          RecordEntryResultKind.saved,
+          savedName: item.label(AppLocalizations.of(context)!),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
   }
 
   void _selectCustom(SharedCustomEventDefinitionEntity definition) {
@@ -323,9 +373,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
 
       if (result.record.isAntipyretic) {
         final diaries = ref.read(diaryListProvider);
-        final existingActivities = [
-          for (final d in diaries) ...d.activities,
-        ];
+        final existingActivities = [for (final d in diaries) ...d.activities];
         final candidate = findAntipyreticDuplicateCandidate(
           newRecord: result.record,
           newRecordId: recordId,
@@ -333,19 +381,24 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
         );
 
         if (candidate != null && mounted) {
-          final decision = await showModalBottomSheet<AntipyreticDuplicateDecision>(
-            context: context,
-            isScrollControlled: true,
-            builder: (ctx) => AntipyreticDuplicateSheet(
-              candidate: candidate,
-              onDecision: (d) => Navigator.pop(ctx, d),
-            ),
-          );
+          final decision =
+              await showModalBottomSheet<AntipyreticDuplicateDecision>(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => AntipyreticDuplicateSheet(
+                  candidate: candidate,
+                  onDecision: (d) => Navigator.pop(ctx, d),
+                ),
+              );
 
-          if (decision == AntipyreticDuplicateDecision.distinctEvent && mounted) {
+          if (decision == AntipyreticDuplicateDecision.distinctEvent &&
+              mounted) {
             final pairKey = '${candidate.existingActivity.recordId}|$recordId';
-            ref.read(duplicateReviewListProvider.notifier).markDistinct(pairKey);
-          } else if (decision == AntipyreticDuplicateDecision.sameEvent && mounted) {
+            ref
+                .read(duplicateReviewListProvider.notifier)
+                .markDistinct(pairKey);
+          } else if (decision == AntipyreticDuplicateDecision.sameEvent &&
+              mounted) {
             final pairKey = '${candidate.existingActivity.recordId}|$recordId';
             if (candidate.existingActivity.recordId != null) {
               ref
@@ -919,11 +972,17 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                   key: const ValueKey('event-picker'),
                   recentPresets: widget.recentPresets,
                   customState: customState,
+                  hiddenQuickEventIds: widget.hiddenQuickEventIds,
                   saving: _saving,
                   error: _error,
                   onSelect: _select,
-                  onStartSleep: _startSleep,
-                  onQuickElimination: _saveElimination,
+                  onStartSleep: (item) => _usesDailyCheckIn(item)
+                      ? _select(item)
+                      : _startSleep(item),
+                  onQuickElimination: (item, kind, {preset}) =>
+                      _usesDailyCheckIn(item)
+                      ? _select(item)
+                      : _saveElimination(item, kind, preset: preset),
                   onSelectCustom: _selectCustom,
                   onCreateCustom: _createCustomEvent,
                   onRenameCustom: _renameCustomEvent,
@@ -939,6 +998,19 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                         );
                   },
                   onOpenDetailedRecord: widget.onOpenDetailedRecord,
+                )
+              : custom == null && _usesDailyCheckIn(selected!)
+              ? _DailyCheckInForm(
+                  key: ValueKey('daily-check-in-${selected.id.name}'),
+                  item: selected,
+                  saving: _saving,
+                  error: _error,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _error = null;
+                  }),
+                  onSave: (relativeState, memo) =>
+                      _saveDailyCheckIn(selected, relativeState, memo),
                 )
               : custom == null && selected!.id == EventTypeId.diaper
               ? EliminationEventForm(
@@ -1095,8 +1167,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                   onChangeTime: _changeTime,
                   onSave: _saveBath,
                 )
-              : custom == null &&
-                    selected!.id == EventTypeId.growthMeasurement
+              : custom == null && selected!.id == EventTypeId.growthMeasurement
               ? GrowthMeasurementEventForm(
                   key: const ValueKey('growthMeasurement'),
                   occurredAt: _occurredAt,
@@ -1174,10 +1245,119 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   }
 }
 
+class _DailyCheckInForm extends StatefulWidget {
+  const _DailyCheckInForm({
+    required this.item,
+    required this.saving,
+    required this.error,
+    required this.onBack,
+    required this.onSave,
+    super.key,
+  });
+
+  final EventCatalogItem item;
+  final bool saving;
+  final String? error;
+  final VoidCallback onBack;
+  final void Function(TrackingRelativeState relativeState, String memo) onSave;
+
+  @override
+  State<_DailyCheckInForm> createState() => _DailyCheckInFormState();
+}
+
+class _DailyCheckInFormState extends State<_DailyCheckInForm> {
+  final _memoController = TextEditingController();
+  TrackingRelativeState _relativeState = TrackingRelativeState.usual;
+
+  @override
+  void dispose() {
+    _memoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return SingleChildScrollView(
+      key: const Key('daily-tracking-check-in'),
+      padding: AppInsets.page,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                onPressed: widget.saving ? null : widget.onBack,
+                icon: const Icon(Icons.arrow_back),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  loc.dailyTrackingCheckInTitle(widget.item.label(loc)),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SegmentedButton<TrackingRelativeState>(
+            segments: [
+              ButtonSegment(
+                value: TrackingRelativeState.less,
+                label: Text(loc.trackingRelativeLess),
+              ),
+              ButtonSegment(
+                value: TrackingRelativeState.usual,
+                label: Text(loc.trackingRelativeUsual),
+              ),
+              ButtonSegment(
+                value: TrackingRelativeState.more,
+                label: Text(loc.trackingRelativeMore),
+              ),
+            ],
+            selected: {_relativeState},
+            onSelectionChanged: widget.saving
+                ? null
+                : (values) => setState(() => _relativeState = values.first),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            key: const Key('daily-tracking-memo'),
+            controller: _memoController,
+            minLines: 2,
+            maxLines: 4,
+            decoration: InputDecoration(
+              labelText: loc.trackingOptionalMemo,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          if (widget.error != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              widget.error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          FilledButton(
+            key: const Key('save-daily-tracking-check-in'),
+            onPressed: widget.saving
+                ? null
+                : () => widget.onSave(_relativeState, _memoController.text),
+            child: Text(loc.saveRecord),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EventPicker extends StatelessWidget {
   const _EventPicker({
     required this.recentPresets,
     required this.customState,
+    required this.hiddenQuickEventIds,
     required this.saving,
     required this.error,
     required this.onSelect,
@@ -1194,6 +1374,7 @@ class _EventPicker extends StatelessWidget {
 
   final List<RecentEventPreset> recentPresets;
   final CustomEventCatalogState customState;
+  final Set<EventTypeId> hiddenQuickEventIds;
   final bool saving;
   final String? error;
   final void Function(
@@ -1219,7 +1400,7 @@ class _EventPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final quickItems = defaultQuickEventIds.map(eventCatalogItem).toList();
+    final quickItems = buildQuickEventItems(hiddenIds: hiddenQuickEventIds);
     return SingleChildScrollView(
       key: const Key('record-entry-picker'),
       padding: const EdgeInsets.fromLTRB(

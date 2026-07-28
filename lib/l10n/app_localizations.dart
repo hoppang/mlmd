@@ -3141,6 +3141,108 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'고지문 다시 보기'**
   String get recheckNoticeAction;
+
+  /// No description provided for @trackingPreferencesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 방식'**
+  String get trackingPreferencesTitle;
+
+  /// No description provided for @trackingPreferencesDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목마다 자세히·하루 한 번·특이할 때만·숨기기를 선택합니다'**
+  String get trackingPreferencesDescription;
+
+  /// No description provided for @trackingPreferencesIntro.
+  ///
+  /// In ko, this message translates to:
+  /// **'아이의 성장과 돌봄 방식에 맞게 항목별 기록 방식을 바꿀 수 있습니다. 변경 전후 기록은 같은 수치 기준으로 직접 비교하지 않습니다.'**
+  String get trackingPreferencesIntro;
+
+  /// No description provided for @trackingModeFor.
+  ///
+  /// In ko, this message translates to:
+  /// **'{eventName} 기록 방식'**
+  String trackingModeFor(String eventName);
+
+  /// No description provided for @trackingModeDetailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'매번 자세히 기록'**
+  String get trackingModeDetailed;
+
+  /// No description provided for @trackingModeDailyCheckIn.
+  ///
+  /// In ko, this message translates to:
+  /// **'하루 한 번 간단히 기록'**
+  String get trackingModeDailyCheckIn;
+
+  /// No description provided for @trackingModeNotableOnly.
+  ///
+  /// In ko, this message translates to:
+  /// **'특이할 때만 기록'**
+  String get trackingModeNotableOnly;
+
+  /// No description provided for @trackingModeHidden.
+  ///
+  /// In ko, this message translates to:
+  /// **'빠른 기록에서 숨기기'**
+  String get trackingModeHidden;
+
+  /// No description provided for @trackingModeDetailedDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'개별 기록을 남기고 충분한 날짜끼리 비교합니다.'**
+  String get trackingModeDetailedDescription;
+
+  /// No description provided for @trackingModeDailyCheckInDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'평소와 비슷·적게·많이와 메모를 하루 한 번 남깁니다.'**
+  String get trackingModeDailyCheckInDescription;
+
+  /// No description provided for @trackingModeNotableOnlyDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록이 없는 날을 정상이나 0회로 해석하지 않습니다.'**
+  String get trackingModeNotableOnlyDescription;
+
+  /// No description provided for @trackingModeHiddenDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'빠른 입력에서만 숨기며 과거 기록은 유지합니다.'**
+  String get trackingModeHiddenDescription;
+
+  /// No description provided for @dailyTrackingCheckInTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'{eventName} 오늘 기록'**
+  String dailyTrackingCheckInTitle(String eventName);
+
+  /// No description provided for @trackingRelativeLess.
+  ///
+  /// In ko, this message translates to:
+  /// **'적게'**
+  String get trackingRelativeLess;
+
+  /// No description provided for @trackingRelativeUsual.
+  ///
+  /// In ko, this message translates to:
+  /// **'평소와 비슷'**
+  String get trackingRelativeUsual;
+
+  /// No description provided for @trackingRelativeMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'많이'**
+  String get trackingRelativeMore;
+
+  /// No description provided for @trackingOptionalMemo.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모 (선택)'**
+  String get trackingOptionalMemo;
 }
 
 class _AppLocalizationsDelegate

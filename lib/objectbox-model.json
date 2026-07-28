@@ -896,10 +896,103 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "14:7361912548851199784",
+      "lastPropertyId": "8:8702369242437661162",
+      "name": "DailyTrackingCoverageEntity",
+      "properties": [
+        {
+          "id": "1:4975837547216716156",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8404971471119864148",
+          "name": "childId",
+          "indexId": "24:1254631542142260024",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:8175895559309146587",
+          "name": "localDate",
+          "indexId": "25:8703667137762670923",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:4200363819886335360",
+          "name": "eventCategory",
+          "indexId": "26:8847826837422964876",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "5:5121549960157726679",
+          "name": "coverage",
+          "type": 9
+        },
+        {
+          "id": "6:1623002684576185046",
+          "name": "relativeState",
+          "type": 9
+        },
+        {
+          "id": "7:241249111089821934",
+          "name": "memo",
+          "type": 9
+        },
+        {
+          "id": "8:8702369242437661162",
+          "name": "lastModified",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "15:4182319905588445212",
+      "lastPropertyId": "5:8535075506648771588",
+      "name": "TrackingPreferenceEntity",
+      "properties": [
+        {
+          "id": "1:8562640438421654589",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:940087224988990421",
+          "name": "childId",
+          "indexId": "27:2223428050383303235",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:253764678361562663",
+          "name": "eventCategory",
+          "indexId": "28:5551459356385319644",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:6490425966796819475",
+          "name": "mode",
+          "type": 9
+        },
+        {
+          "id": "5:8535075506648771588",
+          "name": "changedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "13:8499038251039887284",
-  "lastIndexId": "23:5236266599153876969",
+  "lastEntityId": "15:4182319905588445212",
+  "lastIndexId": "28:5551459356385319644",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

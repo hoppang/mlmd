@@ -4,6 +4,16 @@ import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 
 void main() {
+  test('hidden tracking items are removed only from quick choices', () {
+    final items = buildQuickEventItems(
+      hiddenIds: {EventTypeId.feeding, EventTypeId.diaper},
+    );
+
+    expect(items.map((item) => item.id), isNot(contains(EventTypeId.feeding)));
+    expect(items.map((item) => item.id), isNot(contains(EventTypeId.diaper)));
+    expect(eventCatalogItem(EventTypeId.feeding), isNotNull);
+  });
+
   test('recent presets keep latest type and exclude quick records', () {
     final diary = DiaryEntity(
       date: DateTime(2026, 7, 23),

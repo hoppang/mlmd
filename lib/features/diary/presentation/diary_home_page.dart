@@ -19,6 +19,9 @@ import '../../settings/presentation/settings_page.dart';
 import '../../events/domain/event_catalog.dart';
 import '../../events/presentation/record_entry_sheet.dart';
 import '../../medical_briefing/presentation/medical_briefing_page.dart';
+import '../../tracking/application/tracking_preferences_notifier.dart';
+import '../../tracking/domain/tracking_models.dart';
+import '../../../repositories/tracking_repository.dart';
 import '../../duplicate_review/presentation/duplicate_review_page.dart';
 import '../application/diary_list_notifier.dart';
 import 'diary_form_page.dart';
@@ -243,11 +246,45 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
 
   Future<void> _showRecordEntry() async {
     final diaries = ref.read(diaryListProvider);
+    // Lightweight widget hosts may intentionally omit ObjectBox. The
+    // production bootstrap always supplies it; default modes keep previews
+    // and isolated tests usable without weakening persisted app behavior.
+    Map<String, TrackingMode> trackingModes;
+    try {
+      trackingModes = ref.read(trackingPreferencesProvider);
+    } catch (_) {
+      trackingModes = const {};
+    }
+    final modesByEvent = {
+      for (final id in EventTypeId.values)
+        id: trackingModes[id.name] ?? TrackingMode.detailed,
+    };
+    final hiddenQuickIds = {
+      for (final entry in modesByEvent.entries)
+        if (entry.value == TrackingMode.hidden) entry.key,
+    };
     var openDetailedRecord = false;
     final result = await showAdaptiveDetail<RecordEntryResult>(
       context: context,
       builder: (sheetContext) => RecordEntrySheet(
-        recentPresets: buildRecentEventPresets(diaries),
+        recentPresets: buildRecentEventPresets(
+          diaries,
+          excludedIds: hiddenQuickIds,
+        ),
+        hiddenQuickEventIds: hiddenQuickIds,
+        trackingModes: modesByEvent,
+        onSaveDailyCheckIn: (eventType, relativeState, memo) async {
+          ref
+              .read(trackingRepositoryProvider)
+              .saveCoverage(
+                childId: defaultTrackingChildId,
+                localDate: DateTime.now(),
+                eventCategory: eventType.name,
+                coverage: TrackingCoverage.mostlyComplete,
+                relativeState: relativeState,
+                memo: memo,
+              );
+        },
         onSave: (type, details, occurredAt, structuredDataJson) => ref
             .read(diaryListProvider.notifier)
             .addActivityRecord(

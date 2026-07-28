@@ -1643,4 +1643,63 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get recheckNoticeAction => '고지문 다시 보기';
+
+  @override
+  String get trackingPreferencesTitle => '기록 방식';
+
+  @override
+  String get trackingPreferencesDescription =>
+      '항목마다 자세히·하루 한 번·특이할 때만·숨기기를 선택합니다';
+
+  @override
+  String get trackingPreferencesIntro =>
+      '아이의 성장과 돌봄 방식에 맞게 항목별 기록 방식을 바꿀 수 있습니다. 변경 전후 기록은 같은 수치 기준으로 직접 비교하지 않습니다.';
+
+  @override
+  String trackingModeFor(String eventName) {
+    return '$eventName 기록 방식';
+  }
+
+  @override
+  String get trackingModeDetailed => '매번 자세히 기록';
+
+  @override
+  String get trackingModeDailyCheckIn => '하루 한 번 간단히 기록';
+
+  @override
+  String get trackingModeNotableOnly => '특이할 때만 기록';
+
+  @override
+  String get trackingModeHidden => '빠른 기록에서 숨기기';
+
+  @override
+  String get trackingModeDetailedDescription => '개별 기록을 남기고 충분한 날짜끼리 비교합니다.';
+
+  @override
+  String get trackingModeDailyCheckInDescription =>
+      '평소와 비슷·적게·많이와 메모를 하루 한 번 남깁니다.';
+
+  @override
+  String get trackingModeNotableOnlyDescription =>
+      '기록이 없는 날을 정상이나 0회로 해석하지 않습니다.';
+
+  @override
+  String get trackingModeHiddenDescription => '빠른 입력에서만 숨기며 과거 기록은 유지합니다.';
+
+  @override
+  String dailyTrackingCheckInTitle(String eventName) {
+    return '$eventName 오늘 기록';
+  }
+
+  @override
+  String get trackingRelativeLess => '적게';
+
+  @override
+  String get trackingRelativeUsual => '평소와 비슷';
+
+  @override
+  String get trackingRelativeMore => '많이';
+
+  @override
+  String get trackingOptionalMemo => '메모 (선택)';
 }

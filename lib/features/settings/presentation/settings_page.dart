@@ -8,6 +8,9 @@ import '../../../providers/locale_provider.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../profiles/presentation/author_profile_page.dart';
 import '../../summaries/application/ai_summary_notifier.dart';
+import '../../events/domain/event_catalog.dart';
+import '../../tracking/application/tracking_preferences_notifier.dart';
+import '../../tracking/domain/tracking_models.dart';
 import 'past_notices_page.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -68,6 +71,16 @@ class SettingsPage extends ConsumerWidget {
               onTap: () => _showUnavailable(context, loc.familySharing),
             ),
             _SettingsTile(
+              icon: Icons.tune_outlined,
+              title: loc.trackingPreferencesTitle,
+              subtitle: loc.trackingPreferencesDescription,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TrackingPreferencesPage(),
+                ),
+              ),
+            ),
+            _SettingsTile(
               icon: Icons.inventory_2_outlined,
               title: loc.dataBackupTitle,
               subtitle: loc.dataBackupDescription,
@@ -123,6 +136,111 @@ class SettingsPage extends ConsumerWidget {
           ],
         ),
       );
+}
+
+class TrackingPreferencesPage extends ConsumerWidget {
+  const TrackingPreferencesPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
+    final modes = ref.watch(trackingPreferencesProvider);
+    return Scaffold(
+      appBar: AppBar(title: Text(loc.trackingPreferencesTitle)),
+      body: AdaptiveContentFrame(
+        child: ListView(
+          padding: AppInsets.page,
+          children: [
+            Text(
+              loc.trackingPreferencesIntro,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            for (final category in EventCategoryId.values) ...[
+              Text(
+                eventCategoryLabel(category, loc),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              for (final item in eventCatalog.where(
+                (item) => item.category == category,
+              ))
+                Card(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: ListTile(
+                    leading: Icon(item.icon),
+                    title: Text(item.label(loc)),
+                    subtitle: Text(
+                      _modeLabel(
+                        loc,
+                        modes[item.id.name] ?? TrackingMode.detailed,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _chooseMode(context, ref, item),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _chooseMode(
+    BuildContext context,
+    WidgetRef ref,
+    EventCatalogItem item,
+  ) async {
+    final loc = AppLocalizations.of(context)!;
+    final current =
+        ref.read(trackingPreferencesProvider)[item.id.name] ??
+        TrackingMode.detailed;
+    final selected = await showDialog<TrackingMode>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(loc.trackingModeFor(item.label(loc))),
+        children: [
+          RadioGroup<TrackingMode>(
+            groupValue: current,
+            onChanged: (value) => Navigator.pop(context, value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final mode in TrackingMode.values)
+                  RadioListTile<TrackingMode>(
+                    value: mode,
+                    title: Text(_modeLabel(loc, mode)),
+                    subtitle: Text(_modeDescription(loc, mode)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (selected != null) {
+      ref
+          .read(trackingPreferencesProvider.notifier)
+          .setMode(item.id.name, selected);
+    }
+  }
+
+  String _modeLabel(AppLocalizations loc, TrackingMode mode) => switch (mode) {
+    TrackingMode.detailed => loc.trackingModeDetailed,
+    TrackingMode.dailyCheckIn => loc.trackingModeDailyCheckIn,
+    TrackingMode.notableOnly => loc.trackingModeNotableOnly,
+    TrackingMode.hidden => loc.trackingModeHidden,
+  };
+
+  String _modeDescription(AppLocalizations loc, TrackingMode mode) =>
+      switch (mode) {
+        TrackingMode.detailed => loc.trackingModeDetailedDescription,
+        TrackingMode.dailyCheckIn => loc.trackingModeDailyCheckInDescription,
+        TrackingMode.notableOnly => loc.trackingModeNotableOnlyDescription,
+        TrackingMode.hidden => loc.trackingModeHiddenDescription,
+      };
 }
 
 class BackupOverview {
@@ -274,7 +392,8 @@ class HelpPage extends ConsumerWidget {
                 title: Text(loc.pastNoticesTitle),
                 subtitle: const Text('Android 음성 입력 개인정보 고지 등 이전에 본 안내'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(PastNoticesPage.route()),
+                onTap: () =>
+                    Navigator.of(context).push(PastNoticesPage.route()),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),

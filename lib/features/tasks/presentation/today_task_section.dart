@@ -26,7 +26,7 @@ class TodayTaskSection extends ConsumerWidget {
     final hasAnyTasks = taskState.items.isNotEmpty;
 
     return Column(
-      crossAxisAlignment: CrossAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

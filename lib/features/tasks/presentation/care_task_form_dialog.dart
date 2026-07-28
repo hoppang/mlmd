@@ -60,7 +60,7 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
                 controller: _titleController,

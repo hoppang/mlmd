@@ -1686,4 +1686,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recheckNoticeAction => 'View Notice Again';
+
+  @override
+  String get trackingPreferencesTitle => 'Tracking style';
+
+  @override
+  String get trackingPreferencesDescription =>
+      'Choose detailed, daily, notable-only, or hidden for each item';
+
+  @override
+  String get trackingPreferencesIntro =>
+      'Choose how each item should be tracked as your child grows. Records from different tracking styles are not compared directly.';
+
+  @override
+  String trackingModeFor(String eventName) {
+    return 'Tracking style for $eventName';
+  }
+
+  @override
+  String get trackingModeDetailed => 'Record every detail';
+
+  @override
+  String get trackingModeDailyCheckIn => 'One daily check-in';
+
+  @override
+  String get trackingModeNotableOnly => 'Only when notable';
+
+  @override
+  String get trackingModeHidden => 'Hide from quick records';
+
+  @override
+  String get trackingModeDetailedDescription =>
+      'Keep individual records and compare only sufficiently complete days.';
+
+  @override
+  String get trackingModeDailyCheckInDescription =>
+      'Record usual, less, or more with an optional note once a day.';
+
+  @override
+  String get trackingModeNotableOnlyDescription =>
+      'A day without a record is not treated as normal or zero.';
+
+  @override
+  String get trackingModeHiddenDescription =>
+      'Hide only from quick entry and keep all past records.';
+
+  @override
+  String dailyTrackingCheckInTitle(String eventName) {
+    return 'Today\'s $eventName check-in';
+  }
+
+  @override
+  String get trackingRelativeLess => 'Less';
+
+  @override
+  String get trackingRelativeUsual => 'About usual';
+
+  @override
+  String get trackingRelativeMore => 'More';
+
+  @override
+  String get trackingOptionalMemo => 'Note (optional)';
 }

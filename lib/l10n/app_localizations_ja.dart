@@ -1638,4 +1638,61 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get recheckNoticeAction => '案内を再確認';
+
+  @override
+  String get trackingPreferencesTitle => '記録方法';
+
+  @override
+  String get trackingPreferencesDescription => '項目ごとに詳細・1日1回・特記事項のみ・非表示を選びます';
+
+  @override
+  String get trackingPreferencesIntro =>
+      'お子さまの成長に合わせて項目ごとの記録方法を選べます。異なる記録方法の期間は同じ数値基準で直接比較しません。';
+
+  @override
+  String trackingModeFor(String eventName) {
+    return '$eventNameの記録方法';
+  }
+
+  @override
+  String get trackingModeDetailed => '毎回詳しく記録';
+
+  @override
+  String get trackingModeDailyCheckIn => '1日1回簡単に記録';
+
+  @override
+  String get trackingModeNotableOnly => '特記事項がある時だけ';
+
+  @override
+  String get trackingModeHidden => 'クイック記録から非表示';
+
+  @override
+  String get trackingModeDetailedDescription => '個別記録を残し、十分に記録された日だけを比較します。';
+
+  @override
+  String get trackingModeDailyCheckInDescription =>
+      '普段通り・少ない・多いと任意のメモを1日1回記録します。';
+
+  @override
+  String get trackingModeNotableOnlyDescription => '記録のない日を正常や0回とは解釈しません。';
+
+  @override
+  String get trackingModeHiddenDescription => 'クイック入力だけから隠し、過去の記録は維持します。';
+
+  @override
+  String dailyTrackingCheckInTitle(String eventName) {
+    return '今日の$eventName';
+  }
+
+  @override
+  String get trackingRelativeLess => '少ない';
+
+  @override
+  String get trackingRelativeUsual => '普段通り';
+
+  @override
+  String get trackingRelativeMore => '多い';
+
+  @override
+  String get trackingOptionalMemo => 'メモ（任意）';
 }

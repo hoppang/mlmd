@@ -192,6 +192,13 @@ const defaultQuickEventIds = <EventTypeId>[
 EventCatalogItem eventCatalogItem(EventTypeId id) =>
     eventCatalog.firstWhere((item) => item.id == id);
 
+List<EventCatalogItem> buildQuickEventItems({
+  Set<EventTypeId> hiddenIds = const {},
+}) => [
+  for (final id in defaultQuickEventIds)
+    if (!hiddenIds.contains(id)) eventCatalogItem(id),
+];
+
 String eventCategoryLabel(EventCategoryId id, AppLocalizations loc) =>
     switch (id) {
       EventCategoryId.basicCare => loc.basicCareCategory,

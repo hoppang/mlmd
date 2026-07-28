@@ -581,5 +581,25 @@
     }
   },
   "pastNoticeStatusNotAccepted": "Not confirmed",
-  "recheckNoticeAction": "View Notice Again"
+  "recheckNoticeAction": "View Notice Again",
+  "trackingPreferencesTitle": "Tracking style",
+  "trackingPreferencesDescription": "Choose detailed, daily, notable-only, or hidden for each item",
+  "trackingPreferencesIntro": "Choose how each item should be tracked as your child grows. Records from different tracking styles are not compared directly.",
+  "trackingModeFor": "Tracking style for {eventName}",
+  "@trackingModeFor": {"placeholders": {"eventName": {"type": "String"}}},
+  "trackingModeDetailed": "Record every detail",
+  "trackingModeDailyCheckIn": "One daily check-in",
+  "trackingModeNotableOnly": "Only when notable",
+  "trackingModeHidden": "Hide from quick records",
+  "trackingModeDetailedDescription": "Keep individual records and compare only sufficiently complete days.",
+  "trackingModeDailyCheckInDescription": "Record usual, less, or more with an optional note once a day.",
+  "trackingModeNotableOnlyDescription": "A day without a record is not treated as normal or zero.",
+  "trackingModeHiddenDescription": "Hide only from quick entry and keep all past records."
+  ,
+  "dailyTrackingCheckInTitle": "Today's {eventName} check-in",
+  "@dailyTrackingCheckInTitle": {"placeholders": {"eventName": {"type": "String"}}},
+  "trackingRelativeLess": "Less",
+  "trackingRelativeUsual": "About usual",
+  "trackingRelativeMore": "More",
+  "trackingOptionalMemo": "Note (optional)"
 }

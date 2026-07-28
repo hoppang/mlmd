@@ -581,5 +581,25 @@
     }
   },
   "pastNoticeStatusNotAccepted": "未確認",
-  "recheckNoticeAction": "案内を再確認"
+  "recheckNoticeAction": "案内を再確認",
+  "trackingPreferencesTitle": "記録方法",
+  "trackingPreferencesDescription": "項目ごとに詳細・1日1回・特記事項のみ・非表示を選びます",
+  "trackingPreferencesIntro": "お子さまの成長に合わせて項目ごとの記録方法を選べます。異なる記録方法の期間は同じ数値基準で直接比較しません。",
+  "trackingModeFor": "{eventName}の記録方法",
+  "@trackingModeFor": {"placeholders": {"eventName": {"type": "String"}}},
+  "trackingModeDetailed": "毎回詳しく記録",
+  "trackingModeDailyCheckIn": "1日1回簡単に記録",
+  "trackingModeNotableOnly": "特記事項がある時だけ",
+  "trackingModeHidden": "クイック記録から非表示",
+  "trackingModeDetailedDescription": "個別記録を残し、十分に記録された日だけを比較します。",
+  "trackingModeDailyCheckInDescription": "普段通り・少ない・多いと任意のメモを1日1回記録します。",
+  "trackingModeNotableOnlyDescription": "記録のない日を正常や0回とは解釈しません。",
+  "trackingModeHiddenDescription": "クイック入力だけから隠し、過去の記録は維持します。"
+  ,
+  "dailyTrackingCheckInTitle": "今日の{eventName}",
+  "@dailyTrackingCheckInTitle": {"placeholders": {"eventName": {"type": "String"}}},
+  "trackingRelativeLess": "少ない",
+  "trackingRelativeUsual": "普段通り",
+  "trackingRelativeMore": "多い",
+  "trackingOptionalMemo": "メモ（任意）"
 }

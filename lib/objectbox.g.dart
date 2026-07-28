@@ -19,6 +19,7 @@ import 'models/ai_summary_entity.dart';
 import 'models/author_profile_entity.dart';
 import 'models/care_task_entity.dart';
 import 'models/care_task_occurrence_entity.dart';
+import 'models/daily_tracking_coverage_entity.dart';
 import 'models/device_profile_entity.dart';
 import 'models/diary_entity.dart';
 import 'models/duplicate_review_edge_entity.dart';
@@ -26,6 +27,7 @@ import 'models/logical_event_group_entity.dart';
 import 'models/record_draft_entity.dart';
 import 'models/search_document_entity.dart';
 import 'models/shared_custom_event_definition_entity.dart';
+import 'models/tracking_preference_entity.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
@@ -1069,6 +1071,109 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(14, 7361912548851199784),
+    name: 'DailyTrackingCoverageEntity',
+    lastPropertyId: const obx_int.IdUid(8, 8702369242437661162),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 4975837547216716156),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 8404971471119864148),
+        name: 'childId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(24, 1254631542142260024),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 8175895559309146587),
+        name: 'localDate',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(25, 8703667137762670923),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 4200363819886335360),
+        name: 'eventCategory',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(26, 8847826837422964876),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 5121549960157726679),
+        name: 'coverage',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 1623002684576185046),
+        name: 'relativeState',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 241249111089821934),
+        name: 'memo',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 8702369242437661162),
+        name: 'lastModified',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(15, 4182319905588445212),
+    name: 'TrackingPreferenceEntity',
+    lastPropertyId: const obx_int.IdUid(5, 8535075506648771588),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8562640438421654589),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 940087224988990421),
+        name: 'childId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(27, 2223428050383303235),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 253764678361562663),
+        name: 'eventCategory',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(28, 5551459356385319644),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 6490425966796819475),
+        name: 'mode',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 8535075506648771588),
+        name: 'changedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -1114,8 +1219,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(13, 8499038251039887284),
-    lastIndexId: const obx_int.IdUid(23, 5236266599153876969),
+    lastEntityId: const obx_int.IdUid(15, 4182319905588445212),
+    lastIndexId: const obx_int.IdUid(28, 5551459356385319644),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -2496,6 +2601,134 @@ obx_int.ModelDefinition getObjectBoxModel() {
             return object;
           },
         ),
+    DailyTrackingCoverageEntity:
+        obx_int.EntityDefinition<DailyTrackingCoverageEntity>(
+          model: _entities[13],
+          toOneRelations: (DailyTrackingCoverageEntity object) => [],
+          toManyRelations: (DailyTrackingCoverageEntity object) => {},
+          getId: (DailyTrackingCoverageEntity object) => object.id,
+          setId: (DailyTrackingCoverageEntity object, int id) {
+            object.id = id;
+          },
+          objectToFB: (DailyTrackingCoverageEntity object, fb.Builder fbb) {
+            final childIdOffset = fbb.writeString(object.childId);
+            final localDateOffset = fbb.writeString(object.localDate);
+            final eventCategoryOffset = fbb.writeString(object.eventCategory);
+            final coverageOffset = fbb.writeString(object.coverage);
+            final relativeStateOffset = fbb.writeString(object.relativeState);
+            final memoOffset = object.memo == null
+                ? null
+                : fbb.writeString(object.memo!);
+            fbb.startTable(9);
+            fbb.addInt64(0, object.id);
+            fbb.addOffset(1, childIdOffset);
+            fbb.addOffset(2, localDateOffset);
+            fbb.addOffset(3, eventCategoryOffset);
+            fbb.addOffset(4, coverageOffset);
+            fbb.addOffset(5, relativeStateOffset);
+            fbb.addOffset(6, memoOffset);
+            fbb.addInt64(7, object.lastModified.millisecondsSinceEpoch);
+            fbb.finish(fbb.endTable());
+            return object.id;
+          },
+          objectFromFB: (obx.Store store, ByteData fbData) {
+            final buffer = fb.BufferContext(fbData);
+            final rootOffset = buffer.derefObject(0);
+            final idParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              4,
+              0,
+            );
+            final childIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 6, '');
+            final localDateParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 8, '');
+            final eventCategoryParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 10, '');
+            final coverageParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 12, '');
+            final relativeStateParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 14, '');
+            final memoParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGetNullable(buffer, rootOffset, 16);
+            final lastModifiedParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+            );
+            final object = DailyTrackingCoverageEntity(
+              id: idParam,
+              childId: childIdParam,
+              localDate: localDateParam,
+              eventCategory: eventCategoryParam,
+              coverage: coverageParam,
+              relativeState: relativeStateParam,
+              memo: memoParam,
+              lastModified: lastModifiedParam,
+            );
+
+            return object;
+          },
+        ),
+    TrackingPreferenceEntity:
+        obx_int.EntityDefinition<TrackingPreferenceEntity>(
+          model: _entities[14],
+          toOneRelations: (TrackingPreferenceEntity object) => [],
+          toManyRelations: (TrackingPreferenceEntity object) => {},
+          getId: (TrackingPreferenceEntity object) => object.id,
+          setId: (TrackingPreferenceEntity object, int id) {
+            object.id = id;
+          },
+          objectToFB: (TrackingPreferenceEntity object, fb.Builder fbb) {
+            final childIdOffset = fbb.writeString(object.childId);
+            final eventCategoryOffset = fbb.writeString(object.eventCategory);
+            final modeOffset = fbb.writeString(object.mode);
+            fbb.startTable(6);
+            fbb.addInt64(0, object.id);
+            fbb.addOffset(1, childIdOffset);
+            fbb.addOffset(2, eventCategoryOffset);
+            fbb.addOffset(3, modeOffset);
+            fbb.addInt64(4, object.changedAt.millisecondsSinceEpoch);
+            fbb.finish(fbb.endTable());
+            return object.id;
+          },
+          objectFromFB: (obx.Store store, ByteData fbData) {
+            final buffer = fb.BufferContext(fbData);
+            final rootOffset = buffer.derefObject(0);
+            final idParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              4,
+              0,
+            );
+            final childIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 6, '');
+            final eventCategoryParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 8, '');
+            final modeParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 10, '');
+            final changedAtParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
+            );
+            final object = TrackingPreferenceEntity(
+              id: idParam,
+              childId: childIdParam,
+              eventCategory: eventCategoryParam,
+              mode: modeParam,
+              changedAt: changedAtParam,
+            );
+
+            return object;
+          },
+        ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -3284,4 +3517,79 @@ class CareTaskOccurrenceEntity_ {
       obx.QueryStringProperty<CareTaskOccurrenceEntity>(
         _entities[12].properties[8],
       );
+}
+
+/// [DailyTrackingCoverageEntity] entity fields to define ObjectBox queries.
+class DailyTrackingCoverageEntity_ {
+  /// See [DailyTrackingCoverageEntity.id].
+  static final id = obx.QueryIntegerProperty<DailyTrackingCoverageEntity>(
+    _entities[13].properties[0],
+  );
+
+  /// See [DailyTrackingCoverageEntity.childId].
+  static final childId = obx.QueryStringProperty<DailyTrackingCoverageEntity>(
+    _entities[13].properties[1],
+  );
+
+  /// See [DailyTrackingCoverageEntity.localDate].
+  static final localDate = obx.QueryStringProperty<DailyTrackingCoverageEntity>(
+    _entities[13].properties[2],
+  );
+
+  /// See [DailyTrackingCoverageEntity.eventCategory].
+  static final eventCategory =
+      obx.QueryStringProperty<DailyTrackingCoverageEntity>(
+        _entities[13].properties[3],
+      );
+
+  /// See [DailyTrackingCoverageEntity.coverage].
+  static final coverage = obx.QueryStringProperty<DailyTrackingCoverageEntity>(
+    _entities[13].properties[4],
+  );
+
+  /// See [DailyTrackingCoverageEntity.relativeState].
+  static final relativeState =
+      obx.QueryStringProperty<DailyTrackingCoverageEntity>(
+        _entities[13].properties[5],
+      );
+
+  /// See [DailyTrackingCoverageEntity.memo].
+  static final memo = obx.QueryStringProperty<DailyTrackingCoverageEntity>(
+    _entities[13].properties[6],
+  );
+
+  /// See [DailyTrackingCoverageEntity.lastModified].
+  static final lastModified =
+      obx.QueryDateProperty<DailyTrackingCoverageEntity>(
+        _entities[13].properties[7],
+      );
+}
+
+/// [TrackingPreferenceEntity] entity fields to define ObjectBox queries.
+class TrackingPreferenceEntity_ {
+  /// See [TrackingPreferenceEntity.id].
+  static final id = obx.QueryIntegerProperty<TrackingPreferenceEntity>(
+    _entities[14].properties[0],
+  );
+
+  /// See [TrackingPreferenceEntity.childId].
+  static final childId = obx.QueryStringProperty<TrackingPreferenceEntity>(
+    _entities[14].properties[1],
+  );
+
+  /// See [TrackingPreferenceEntity.eventCategory].
+  static final eventCategory =
+      obx.QueryStringProperty<TrackingPreferenceEntity>(
+        _entities[14].properties[2],
+      );
+
+  /// See [TrackingPreferenceEntity.mode].
+  static final mode = obx.QueryStringProperty<TrackingPreferenceEntity>(
+    _entities[14].properties[3],
+  );
+
+  /// See [TrackingPreferenceEntity.changedAt].
+  static final changedAt = obx.QueryDateProperty<TrackingPreferenceEntity>(
+    _entities[14].properties[4],
+  );
 }

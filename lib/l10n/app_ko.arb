@@ -581,5 +581,25 @@
     }
   },
   "pastNoticeStatusNotAccepted": "미확인",
-  "recheckNoticeAction": "고지문 다시 보기"
+  "recheckNoticeAction": "고지문 다시 보기",
+  "trackingPreferencesTitle": "기록 방식",
+  "trackingPreferencesDescription": "항목마다 자세히·하루 한 번·특이할 때만·숨기기를 선택합니다",
+  "trackingPreferencesIntro": "아이의 성장과 돌봄 방식에 맞게 항목별 기록 방식을 바꿀 수 있습니다. 변경 전후 기록은 같은 수치 기준으로 직접 비교하지 않습니다.",
+  "trackingModeFor": "{eventName} 기록 방식",
+  "@trackingModeFor": {"placeholders": {"eventName": {"type": "String"}}},
+  "trackingModeDetailed": "매번 자세히 기록",
+  "trackingModeDailyCheckIn": "하루 한 번 간단히 기록",
+  "trackingModeNotableOnly": "특이할 때만 기록",
+  "trackingModeHidden": "빠른 기록에서 숨기기",
+  "trackingModeDetailedDescription": "개별 기록을 남기고 충분한 날짜끼리 비교합니다.",
+  "trackingModeDailyCheckInDescription": "평소와 비슷·적게·많이와 메모를 하루 한 번 남깁니다.",
+  "trackingModeNotableOnlyDescription": "기록이 없는 날을 정상이나 0회로 해석하지 않습니다.",
+  "trackingModeHiddenDescription": "빠른 입력에서만 숨기며 과거 기록은 유지합니다."
+  ,
+  "dailyTrackingCheckInTitle": "{eventName} 오늘 기록",
+  "@dailyTrackingCheckInTitle": {"placeholders": {"eventName": {"type": "String"}}},
+  "trackingRelativeLess": "적게",
+  "trackingRelativeUsual": "평소와 비슷",
+  "trackingRelativeMore": "많이",
+  "trackingOptionalMemo": "메모 (선택)"
 }
