@@ -131,11 +131,10 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
   Future<void> _openFilters() async {
     final profiles = ref.read(profileRepositoryProvider).getAuthorProfiles();
     final result =
-        await showModalBottomSheet<
+        await showAdaptiveDetail<
           ({HybridSearchQuery query, SearchDatePreset preset})
         >(
           context: context,
-          isScrollControlled: true,
           builder: (context) => _SearchFilterSheet(
             initialQuery: _criteria,
             initialPreset: _datePreset,

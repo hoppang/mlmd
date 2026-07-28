@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/presentation/app_section_header.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
@@ -382,9 +383,8 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
 
         if (candidate != null && mounted) {
           final decision =
-              await showModalBottomSheet<AntipyreticDuplicateDecision>(
+              await showAdaptiveDetail<AntipyreticDuplicateDecision>(
                 context: context,
-                isScrollControlled: true,
                 builder: (ctx) => AntipyreticDuplicateSheet(
                   candidate: candidate,
                   onDecision: (d) => Navigator.pop(ctx, d),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_tokens.dart';
+import '../../../core/presentation/adaptive_detail.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/stt_typo_corrector.dart';
 import '../../../widgets/stt_memo_text_field.dart';
@@ -84,12 +84,8 @@ class _MemoEventFormState extends ConsumerState<MemoEventForm> {
   }
 
   void _showCorrectionDialog(SttTypoCorrectionResult result) {
-    showModalBottomSheet(
+    showAdaptiveDetail<void>(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (context) {
         final theme = Theme.of(context);
         return Padding(

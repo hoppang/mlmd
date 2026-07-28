@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/presentation/app_empty_state.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
@@ -180,9 +181,8 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
         .read(aiSummaryListProvider.notifier)
         .evidenceFor(summary);
     final diaries = ref.read(diaryListProvider);
-    await showModalBottomSheet<void>(
+    await showAdaptiveDetail<void>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => SafeArea(
         child: ListView(
           shrinkWrap: true,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/presentation/app_empty_state.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
@@ -136,9 +137,8 @@ class _MedicalBriefingPageState extends ConsumerState<MedicalBriefingPage> {
   ) async {
     final matches = diaries.where((diary) => diary.id == fact.diaryId);
     final diary = matches.isEmpty ? null : matches.first;
-    final open = await showModalBottomSheet<bool>(
+    final open = await showAdaptiveDetail<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) {
         final loc = AppLocalizations.of(context)!;
         final materialLoc = MaterialLocalizations.of(context);
