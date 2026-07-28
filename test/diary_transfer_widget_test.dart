@@ -5,6 +5,7 @@ import 'package:mlmd/l10n/app_localizations.dart';
 import 'package:mlmd/transfer/canonical_transfer_document.dart';
 import 'package:mlmd/transfer/diary_transfer_service.dart';
 import 'package:mlmd/features/settings/presentation/settings_page.dart';
+import 'package:mlmd/features/attachments/domain/event_attachment.dart';
 import 'package:mlmd/widgets/import_preview_dialog.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/providers/locale_provider.dart';
@@ -67,7 +68,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: SettingsPage(
-            onExport: () async {},
+            onExport: (_) async {},
             onImport: () async {},
             backupOverview: () => const BackupOverview(
               diaryCount: 2,
@@ -84,6 +85,8 @@ void main() {
     expect(find.text('Use with family'), findsOneWidget);
     expect(find.text('Data storage and backup'), findsOneWidget);
     expect(find.text('Help'), findsOneWidget);
+    expect(find.text('Tracking style'), findsNothing);
+    expect(find.byType(SwitchListTile), findsNothing);
 
     await tester.tap(find.text('Data storage and backup'));
     await tester.pumpAndSettle();
@@ -92,5 +95,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Create backup file'), findsNWidgets(2));
+    expect(find.text('Records and original attachments'), findsOneWidget);
+    final group = tester.widget<RadioGroup<AttachmentExportMode>>(
+      find.byType(RadioGroup<AttachmentExportMode>),
+    );
+    expect(group.groupValue, AttachmentExportMode.originalAttachments);
   });
 }

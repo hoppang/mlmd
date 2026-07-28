@@ -6,6 +6,8 @@ import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
+import '../../attachments/application/attachment_service.dart';
+import '../../attachments/domain/event_attachment.dart';
 import '../../../repositories/diary_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../transfer/canonical_transfer_document.dart';
@@ -66,14 +68,44 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
   DiaryTransferService get _transferService =>
       DiaryTransferService(repository: ref.read(diaryRepositoryProvider));
 
-  Future<void> _exportDiaries() async {
+  Future<DiaryTransferService> _transferServiceWithAttachments() async {
+    final fileStore = await ref.read(attachmentFileStoreProvider.future);
+    return DiaryTransferService(
+      repository: ref.read(diaryRepositoryProvider),
+      attachmentManager: AttachmentManager(
+        repository: ref.read(attachmentRepositoryProvider),
+        fileStore: fileStore,
+      ),
+    );
+  }
+
+  Future<void> _exportDiaries(AttachmentExportMode mode) async {
     final loc = AppLocalizations.of(context)!;
-    final count = ref.read(diaryListProvider).length;
+    late final PreparedDiaryExport prepared;
+    try {
+      prepared = await (await _transferServiceWithAttachments()).prepareExport(
+        mode: mode,
+      );
+    } catch (error) {
+      _logTransferError('prepare export', error);
+      if (mounted) {
+        await _showTransferMessage(context, loc.exportDiary, loc.transferError);
+      }
+      return;
+    }
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(loc.exportWarningTitle),
-        content: Text(loc.exportWarning(count)),
+        content: Text(
+          loc.exportBackupPreview(
+            prepared.diaryCount,
+            prepared.attachmentCount,
+            _formatBytes(prepared.estimatedBytes),
+            prepared.missingAttachmentCount,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -96,10 +128,12 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     );
     try {
       await Future<void>.delayed(Duration.zero);
-      final result = await _transferService.exportToPlatform(
-        dialogTitle: loc.exportDiary,
-        shareSubject: loc.exportDiary,
-      );
+      final result = await (await _transferServiceWithAttachments())
+          .exportToPlatform(
+            prepared: prepared,
+            dialogTitle: loc.exportDiary,
+            shareSubject: loc.exportDiary,
+          );
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       progressShown = false;
@@ -128,7 +162,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     final loc = AppLocalizations.of(context)!;
     var progressShown = false;
     try {
-      final service = _transferService;
+      final service = await _transferServiceWithAttachments();
       final prepared = await service.pickAndPrepareImport(
         dialogTitle: loc.importDiary,
       );
@@ -200,6 +234,13 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
         ? error.code
         : error.runtimeType.toString();
     logger.e('[transfer] $stage failed ($code)');
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    final kibibytes = bytes / 1024;
+    if (kibibytes < 1024) return '${kibibytes.toStringAsFixed(1)} KB';
+    return '${(kibibytes / 1024).toStringAsFixed(1)} MB';
   }
 
   void _showSettingsPage(BuildContext context) {

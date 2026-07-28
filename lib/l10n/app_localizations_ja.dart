@@ -967,13 +967,31 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get backupPrivacyNotice =>
-      '現在のバックアップは記録と活動を暗号化されていないJSONファイルに保存します。添付ファイルにはまだ対応していません。';
+      'バックアップは暗号化されません。添付を含むファイルは安全な個人領域に保管してください。';
 
   @override
   String get createBackupFile => 'バックアップファイルを作成';
 
   @override
-  String get createBackupDescription => 'この端末の記録と活動を別の場所に保管できるファイルにします。';
+  String get createBackupDescription => '復元する添付の範囲を選びます。元の添付を含める設定が最も安全です。';
+
+  @override
+  String get backupModeOriginal => '記録と元の添付';
+
+  @override
+  String get backupModeOriginalDescription => '復元に最も安全ですが、容量を最も多く使います。';
+
+  @override
+  String get backupModeReduced => '記録と小さくした添付';
+
+  @override
+  String get backupModeReducedDescription => '可能なら最適化画像を使い、重要な書類は元の品質を保ちます。';
+
+  @override
+  String get backupModeRecordsOnly => '記録のみ';
+
+  @override
+  String get backupModeRecordsOnlyDescription => '最小のファイルです。写真やファイルは復元できません。';
 
   @override
   String get importBackupFile => 'バックアップファイルを読み込む';
@@ -1003,6 +1021,34 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get duplicateHelpAnswer =>
       '内容が異なる場合、どちらかを自動で消すのは安全ではありません。現在は新しい記録だけを追加し、同じIDの記録はスキップします。';
+
+  @override
+  String get photoSyncHelpQuestion => '写真が別の端末に表示されないのはなぜですか？';
+
+  @override
+  String get photoSyncHelpAnswer =>
+      '家族共有はまずテキスト記録に集中しているため、写真は添付した端末だけに保存されます。大切な写真は元の添付を含むバックアップにも保管してください。';
+
+  @override
+  String get missingDataHelpQuestion => '記録が少なくても「いつもより少ない」と判断しないのはなぜですか？';
+
+  @override
+  String get missingDataHelpAnswer =>
+      '記録がない日は、実際に少なかったのではなく入力できなかった可能性があります。不完全な記録を減少とは判断しません。';
+
+  @override
+  String get quietNotificationHelpQuestion => 'タスク通知が標準で静かなのはなぜですか？';
+
+  @override
+  String get quietNotificationHelpAnswer =>
+      '通知で子どもや家族を思いがけず起こさないためです。音が必要なタスクは作成時に選べます。';
+
+  @override
+  String get aiSummaryHelpQuestion => 'AIまとめは何を見て作成しますか？';
+
+  @override
+  String get aiSummaryHelpAnswer =>
+      '選択した期間の記録から作る派生情報で、医療判断ではありません。元の記録はそのまま残ります。';
 
   @override
   String get languageSetting => '言語設定';
@@ -1046,6 +1092,16 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String exportBackupPreview(
+    int records,
+    int attachments,
+    String size,
+    int missing,
+  ) {
+    return '日記 $records件 · 添付 $attachments件\n推定ファイルサイズ $size\nこの端末にない添付: $missing件\nバックアップは暗号化されません。';
+  }
+
+  @override
   String get exporting => 'バックアップファイルを作成しています…';
 
   @override
@@ -1080,6 +1136,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get conflictingRecords => '確認が必要な競合';
+
+  @override
+  String get attachmentsToImport => 'この端末に読み込む添付';
 
   @override
   String importDateRange(String from, String to) {

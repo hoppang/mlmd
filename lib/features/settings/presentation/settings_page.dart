@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../features/attachments/domain/event_attachment.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../repositories/profile_repository.dart';
@@ -21,7 +22,7 @@ class SettingsPage extends ConsumerWidget {
     required this.backupOverview,
   });
 
-  final Future<void> Function() onExport;
+  final Future<void> Function(AttachmentExportMode mode) onExport;
   final Future<void> Function() onImport;
   final BackupOverview Function() backupOverview;
 
@@ -71,16 +72,6 @@ class SettingsPage extends ConsumerWidget {
               onTap: () => _showUnavailable(context, loc.familySharing),
             ),
             _SettingsTile(
-              icon: Icons.tune_outlined,
-              title: loc.trackingPreferencesTitle,
-              subtitle: loc.trackingPreferencesDescription,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const TrackingPreferencesPage(),
-                ),
-              ),
-            ),
-            _SettingsTile(
               icon: Icons.inventory_2_outlined,
               title: loc.dataBackupTitle,
               subtitle: loc.dataBackupDescription,
@@ -101,18 +92,6 @@ class SettingsPage extends ConsumerWidget {
               onTap: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute<void>(builder: (_) => const HelpPage())),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Card(
-              child: SwitchListTile(
-                secondary: const Icon(Icons.auto_awesome_outlined),
-                title: Text(loc.weeklyAutoSummary),
-                subtitle: Text(loc.weeklyAutoSummaryDescription),
-                value: ref.watch(weeklyAiAutoSummaryProvider),
-                onChanged: (value) => ref
-                    .read(weeklyAiAutoSummaryProvider.notifier)
-                    .setEnabled(value),
-              ),
             ),
           ],
         ),
@@ -263,7 +242,7 @@ class DataBackupPage extends StatefulWidget {
     required this.backupOverview,
   });
 
-  final Future<void> Function() onExport;
+  final Future<void> Function(AttachmentExportMode mode) onExport;
   final Future<void> Function() onImport;
   final BackupOverview Function() backupOverview;
 
@@ -272,6 +251,8 @@ class DataBackupPage extends StatefulWidget {
 }
 
 class _DataBackupPageState extends State<DataBackupPage> {
+  AttachmentExportMode _exportMode = AttachmentExportMode.originalAttachments;
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -323,7 +304,30 @@ class _DataBackupPageState extends State<DataBackupPage> {
               description: loc.createBackupDescription,
               buttonLabel: loc.createBackupFile,
               filled: true,
-              onPressed: widget.onExport,
+              onPressed: () => widget.onExport(_exportMode),
+              child: RadioGroup<AttachmentExportMode>(
+                groupValue: _exportMode,
+                onChanged: _selectExportMode,
+                child: Column(
+                  children: [
+                    _BackupModeTile(
+                      value: AttachmentExportMode.originalAttachments,
+                      title: loc.backupModeOriginal,
+                      description: loc.backupModeOriginalDescription,
+                    ),
+                    _BackupModeTile(
+                      value: AttachmentExportMode.reducedAttachments,
+                      title: loc.backupModeReduced,
+                      description: loc.backupModeReducedDescription,
+                    ),
+                    _BackupModeTile(
+                      value: AttachmentExportMode.recordsOnly,
+                      title: loc.backupModeRecordsOnly,
+                      description: loc.backupModeRecordsOnlyDescription,
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             _ActionCard(
@@ -360,6 +364,10 @@ class _DataBackupPageState extends State<DataBackupPage> {
     await widget.onImport();
     if (mounted) setState(() {});
   }
+
+  void _selectExportMode(AttachmentExportMode? mode) {
+    if (mode != null) setState(() => _exportMode = mode);
+  }
 }
 
 class HelpPage extends ConsumerWidget {
@@ -385,6 +393,33 @@ class HelpPage extends ConsumerWidget {
               question: loc.duplicateHelpQuestion,
               answer: loc.duplicateHelpAnswer,
             ),
+            _HelpCard(
+              question: loc.photoSyncHelpQuestion,
+              answer: loc.photoSyncHelpAnswer,
+            ),
+            _HelpCard(
+              question: loc.missingDataHelpQuestion,
+              answer: loc.missingDataHelpAnswer,
+            ),
+            _HelpCard(
+              question: loc.quietNotificationHelpQuestion,
+              answer: loc.quietNotificationHelpAnswer,
+            ),
+            _HelpCard(
+              question: loc.aiSummaryHelpQuestion,
+              answer: loc.aiSummaryHelpAnswer,
+            ),
+            Card(
+              child: SwitchListTile(
+                secondary: const Icon(Icons.auto_awesome_outlined),
+                title: Text(loc.weeklyAutoSummary),
+                subtitle: Text(loc.weeklyAutoSummaryDescription),
+                value: ref.watch(weeklyAiAutoSummaryProvider),
+                onChanged: (value) => ref
+                    .read(weeklyAiAutoSummaryProvider.notifier)
+                    .setEnabled(value),
+              ),
+            ),
             const SizedBox(height: AppSpacing.md),
             Card(
               child: ListTile(
@@ -394,6 +429,19 @@ class HelpPage extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () =>
                     Navigator.of(context).push(PastNoticesPage.route()),
+              ),
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.tune_outlined),
+                title: Text(loc.trackingPreferencesTitle),
+                subtitle: Text(loc.trackingPreferencesDescription),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TrackingPreferencesPage(),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -470,6 +518,7 @@ class _ActionCard extends StatelessWidget {
     required this.buttonLabel,
     required this.filled,
     required this.onPressed,
+    this.child,
   });
 
   final IconData icon;
@@ -478,6 +527,7 @@ class _ActionCard extends StatelessWidget {
   final String buttonLabel;
   final bool filled;
   final Future<void> Function() onPressed;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -500,6 +550,7 @@ class _ActionCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(description),
+          if (child != null) ...[const SizedBox(height: AppSpacing.sm), child!],
           const SizedBox(height: AppSpacing.sm),
           if (filled)
             FilledButton(onPressed: onPressed, child: Text(buttonLabel))
@@ -508,6 +559,26 @@ class _ActionCard extends StatelessWidget {
         ],
       ),
     ),
+  );
+}
+
+class _BackupModeTile extends StatelessWidget {
+  const _BackupModeTile({
+    required this.value,
+    required this.title,
+    required this.description,
+  });
+
+  final AttachmentExportMode value;
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) => RadioListTile<AttachmentExportMode>(
+    contentPadding: EdgeInsets.zero,
+    value: value,
+    title: Text(title),
+    subtitle: Text(description),
   );
 }
 

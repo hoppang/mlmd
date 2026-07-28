@@ -75,6 +75,11 @@ class ImportPreviewDialog extends StatelessWidget {
                     label: loc.conflictingRecords,
                     count: preview.conflictCount,
                   ),
+                  if (prepared.attachments.isNotEmpty)
+                    _CountChip(
+                      label: loc.attachmentsToImport,
+                      count: prepared.attachments.length,
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),

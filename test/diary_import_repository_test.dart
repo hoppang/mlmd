@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
+import 'package:mlmd/features/attachments/application/attachment_service.dart';
+import 'package:mlmd/features/attachments/domain/event_attachment.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
@@ -18,6 +21,8 @@ import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
 import 'package:mlmd/transfer/canonical_transfer_document.dart';
 import 'package:mlmd/transfer/diary_transfer_service.dart';
+import 'package:mlmd/transfer/diary_transfer_exception.dart';
+import 'package:path/path.dart' as p;
 
 class _TestObjectBoxHelper implements ObjectBoxHelper {
   @override
@@ -266,5 +271,79 @@ void main() {
     expect(identical.conflictCount, 0);
     expect(conflict.identicalCount, 0);
     expect(conflict.conflictCount, 1);
+  });
+
+  test('attachment backup bundle round-trips metadata and bytes', () async {
+    final modified = DateTime.utc(2026, 7, 18, 12);
+    repository.importDocument(
+      document(modified: modified),
+      ImportConflictPolicy.skipExisting,
+    );
+    final attachmentRepository = ObjectBoxAttachmentRepository.fromStore(
+      helper.store,
+    );
+    final fileStore = LocalAttachmentFileStore(
+      Directory(p.join(helper.directory.path, 'managed')),
+    );
+    final manager = AttachmentManager(
+      repository: attachmentRepository,
+      fileStore: fileStore,
+    );
+    final source = File(p.join(helper.directory.path, 'photo.jpg'));
+    await source.writeAsBytes([1, 2, 3, 4, 5]);
+    await manager.importFile(
+      source: source,
+      recordId: '550e8400-e29b-41d4-a716-446655440000',
+      attachmentType: AttachmentType.general,
+      sourceKind: AttachmentSourceKind.filePicker,
+      mimeType: 'image/jpeg',
+      createdAt: DateTime.utc(2026, 7, 18, 13),
+    );
+    final service = DiaryTransferService(
+      repository: repository,
+      attachmentManager: manager,
+    );
+
+    final export = await service.prepareExport(
+      mode: AttachmentExportMode.originalAttachments,
+    );
+    final decoded = service.decodeImportBytes(
+      export.bytes,
+      sourceName: 'with-attachments.mlmd.json',
+    );
+
+    expect(export.attachmentCount, 1);
+    expect(decoded.attachments, hasLength(1));
+    expect(decoded.attachments.single.bytes, [1, 2, 3, 4, 5]);
+    expect(
+      decoded.attachments.single.attachment.recordId,
+      '550e8400-e29b-41d4-a716-446655440000',
+    );
+    expect(decoded.attachments.single.attachment.managedOriginalUri, isEmpty);
+
+    final automaticBackup = await service.createAutomaticBackup(
+      backupDirectory: Directory(
+        p.join(helper.directory.path, 'automatic-backups'),
+      ),
+      createdAt: DateTime.utc(2026, 7, 18, 14),
+    );
+    final automaticDecoded = service.decodeImportBytes(
+      await automaticBackup.readAsBytes(),
+    );
+    expect(automaticDecoded.attachments, hasLength(1));
+
+    final corrupted = jsonDecode(utf8.decode(export.bytes)) as Map;
+    final attachment = (corrupted['attachments'] as List).single as Map;
+    attachment['bytes'] = base64Encode([9, 9, 9]);
+    expect(
+      () => service.decodeImportBytes(utf8.encode(jsonEncode(corrupted))),
+      throwsA(
+        isA<DiaryTransferException>().having(
+          (error) => error.code,
+          'code',
+          'attachment_checksum_mismatch',
+        ),
+      ),
+    );
   });
 }

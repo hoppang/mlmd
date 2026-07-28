@@ -568,6 +568,44 @@ class AttachmentManager {
     return repository.saveAttachment(attachment);
   }
 
+  Future<EventAttachment> importBackupFile({
+    required File source,
+    required EventAttachment attachment,
+  }) async {
+    final existing = repository
+        .getAllAttachments(includeDeleted: true)
+        .where((candidate) => candidate.attachmentId == attachment.attachmentId)
+        .firstOrNull;
+    if (existing != null &&
+        existing.originalSha256 != null &&
+        existing.originalSha256 == attachment.originalSha256) {
+      return existing;
+    }
+
+    final attachmentId = existing == null
+        ? attachment.attachmentId
+        : _uuid.v4();
+    final managed = await fileStore.copyOriginal(
+      source: source,
+      recordId: attachment.recordId,
+      attachmentId: attachmentId,
+      fileName: attachment.fileName,
+    );
+    final restored = attachment.copyWith(
+      attachmentId: attachmentId,
+      managedOriginalUri: managed.uri.toString(),
+      managedOptimizedUri: null,
+      thumbnailUri: null,
+      deletedAt: null,
+      originalByteSize: managed.byteSize,
+      optimizedByteSize: null,
+      thumbnailByteSize: null,
+      originalSha256: managed.sha256,
+      missingReason: null,
+    );
+    return repository.saveAttachment(restored);
+  }
+
   Future<void> delete(String attachmentId, {DateTime? deletedAt}) {
     return repository.deleteAttachment(attachmentId, deletedAt: deletedAt);
   }

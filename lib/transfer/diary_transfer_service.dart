@@ -2,39 +2,77 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../features/attachments/application/attachment_service.dart';
+import '../features/attachments/domain/event_attachment.dart';
 import '../repositories/diary_repository.dart';
 import 'canonical_transfer_document.dart';
 import 'diary_transfer_codec_registry.dart';
 import 'diary_transfer_exception.dart';
 import 'diary_transfer_header.dart';
 
+class PreparedBackupAttachment {
+  const PreparedBackupAttachment({
+    required this.attachment,
+    required this.bytes,
+  });
+
+  final EventAttachment attachment;
+  final Uint8List bytes;
+}
+
 class PreparedDiaryImport {
   final CanonicalImportDocument document;
   final int schemaVersion;
   final String sourceName;
+  final List<PreparedBackupAttachment> attachments;
 
   const PreparedDiaryImport({
     required this.document,
     required this.schemaVersion,
     required this.sourceName,
+    this.attachments = const [],
   });
+}
+
+class PreparedDiaryExport {
+  const PreparedDiaryExport({
+    required this.bytes,
+    required this.mode,
+    required this.diaryCount,
+    required this.attachmentCount,
+    required this.missingAttachmentCount,
+    required this.schemaVersion,
+  });
+
+  final Uint8List bytes;
+  final AttachmentExportMode mode;
+  final int diaryCount;
+  final int attachmentCount;
+  final int missingAttachmentCount;
+  final int schemaVersion;
+
+  int get estimatedBytes => bytes.length;
+  bool get requiresMissingFileConfirmation => missingAttachmentCount > 0;
 }
 
 class DiaryExportOutcome {
   final bool cancelled;
   final String fileName;
   final int diaryCount;
+  final int attachmentCount;
   final int schemaVersion;
 
   const DiaryExportOutcome({
     required this.cancelled,
     required this.fileName,
     required this.diaryCount,
+    this.attachmentCount = 0,
     required this.schemaVersion,
   });
 }
@@ -44,24 +82,91 @@ class DiaryTransferService {
   static const maxFileBytes = maxFileSizeInMegabytes * 1024 * 1024;
   static const _fileTooLargeMessage =
       'Diary backup files may not exceed $maxFileSizeInMegabytes MB.';
+  static const _bundleMarker = 'mlmd.backup.bundle';
+  static const _bundleVersion = 1;
   static const appVersion = '1.0.0+1';
 
   final DiaryRepository repository;
   final DiaryTransferCodecRegistry registry;
+  final AttachmentManager? attachmentManager;
 
   DiaryTransferService({
     required this.repository,
     DiaryTransferCodecRegistry? registry,
+    this.attachmentManager,
   }) : registry = registry ?? DiaryTransferCodecRegistry.standard();
 
   Uint8List buildExportBytes({int? targetSchemaVersion}) {
-    final document = repository.createExportDocument(appVersion: appVersion);
-    final json = registry.encode(
-      document,
-      targetSchemaVersion: targetSchemaVersion,
-    );
+    final json = _buildRecordsJson(targetSchemaVersion: targetSchemaVersion);
     return Uint8List.fromList(
       utf8.encode(const JsonEncoder.withIndent('  ').convert(json)),
+    );
+  }
+
+  Future<PreparedDiaryExport> prepareExport({
+    AttachmentExportMode mode = AttachmentExportMode.recordsOnly,
+    int? targetSchemaVersion,
+  }) async {
+    final version = targetSchemaVersion ?? registry.latestSchemaVersion;
+    final records = _buildRecordsJson(targetSchemaVersion: version);
+    final manager = attachmentManager;
+    if (mode == AttachmentExportMode.recordsOnly || manager == null) {
+      final bytes = Uint8List.fromList(
+        utf8.encode(const JsonEncoder.withIndent('  ').convert(records)),
+      );
+      return PreparedDiaryExport(
+        bytes: bytes,
+        mode: AttachmentExportMode.recordsOnly,
+        diaryCount: repository.getDiaries().length,
+        attachmentCount: 0,
+        missingAttachmentCount: 0,
+        schemaVersion: version,
+      );
+    }
+
+    final plan = await manager.planExport(mode);
+    final attachments = <Map<String, Object?>>[];
+    for (final item in plan.items) {
+      final bytes = await item.file.readAsBytes();
+      final portable = item.attachment.copyWith(
+        managedOriginalUri: '',
+        managedOptimizedUri: null,
+        thumbnailUri: null,
+        originalByteSize: bytes.length,
+        optimizedByteSize: null,
+        thumbnailByteSize: null,
+        originalSha256: item.sha256,
+        missingReason: null,
+      );
+      attachments.add({
+        'metadata': jsonDecode(portable.encode()),
+        'sha256': item.sha256,
+        'bytes': base64Encode(bytes),
+      });
+    }
+    final envelope = <String, Object?>{
+      'bundle': _bundleMarker,
+      'bundleVersion': _bundleVersion,
+      'attachmentMode': mode.name,
+      'records': records,
+      'attachments': attachments,
+    };
+    final bytes = Uint8List.fromList(
+      utf8.encode(const JsonEncoder.withIndent('  ').convert(envelope)),
+    );
+    if (bytes.length > maxFileBytes) {
+      throw const DiaryTransferException(
+        'file_too_large',
+        _fileTooLargeMessage,
+      );
+    }
+    return PreparedDiaryExport(
+      bytes: bytes,
+      mode: mode,
+      diaryCount: repository.getDiaries().length,
+      attachmentCount: attachments.length,
+      missingAttachmentCount: plan.issues.length,
+      schemaVersion: version,
     );
   }
 
@@ -75,48 +180,21 @@ class DiaryTransferService {
         _fileTooLargeMessage,
       );
     }
-    late final String source;
-    try {
-      source = const Utf8Decoder(allowMalformed: false).convert(bytes);
-    } on FormatException catch (error) {
-      throw DiaryTransferException(
-        'invalid_utf8',
-        'The diary backup is not valid UTF-8.',
-        error,
-      );
-    }
-    late final Object? decoded;
-    try {
-      decoded = jsonDecode(source);
-    } on FormatException catch (error) {
-      throw DiaryTransferException(
-        'invalid_json',
-        'The diary backup is not valid JSON.',
-        error,
-      );
-    }
-    if (decoded is! Map) {
-      throw const DiaryTransferException(
-        'invalid_document',
-        'The top-level JSON value must be an object.',
-      );
-    }
-    final json = <String, Object?>{};
-    for (final entry in decoded.entries) {
-      if (entry.key is! String) {
-        throw const DiaryTransferException(
-          'invalid_document',
-          'The top-level JSON object contains a non-string key.',
-        );
-      }
-      json[entry.key as String] = entry.value;
-    }
-    final header = DiaryTransferHeader.decode(json);
-    final document = registry.decode(json);
+    final decoded = _decodeJson(bytes);
+    final isBundle = decoded['bundle'] == _bundleMarker;
+    final records = isBundle
+        ? _stringKeyedMap(decoded['records'], field: 'records')
+        : decoded;
+    final header = DiaryTransferHeader.decode(records);
+    final document = registry.decode(records);
+    final attachments = isBundle
+        ? _decodeAttachments(decoded['attachments'])
+        : const <PreparedBackupAttachment>[];
     return PreparedDiaryImport(
       document: document,
       schemaVersion: header.schemaVersion,
       sourceName: sourceName,
+      attachments: attachments,
     );
   }
 
@@ -151,8 +229,6 @@ class DiaryTransferService {
     ImportConflictPolicy policy,
   ) => repository.importDocument(prepared.document, policy);
 
-  /// 가져오기를 적용하기 직전에 현재 기록의 복구용 스냅샷을 앱 저장소에
-  /// 원자적으로 기록합니다. 실제 반영도 저장소의 단일 트랜잭션에서 수행됩니다.
   Future<ImportResult> applyWithAutomaticBackup(
     PreparedDiaryImport prepared,
     ImportConflictPolicy policy, {
@@ -163,7 +239,37 @@ class DiaryTransferService {
       backupDirectory: backupDirectory,
       createdAt: createdAt,
     );
-    return apply(prepared, policy);
+    final result = apply(prepared, policy);
+    final manager = attachmentManager;
+    if (manager == null || prepared.attachments.isEmpty) return result;
+
+    final importedRecordIds = result.affectedRecordIds.toSet();
+    final temporaryDirectory = await Directory.systemTemp.createTemp(
+      'mlmd-attachment-import-',
+    );
+    try {
+      for (var index = 0; index < prepared.attachments.length; index++) {
+        final preparedAttachment = prepared.attachments[index];
+        if (!importedRecordIds.contains(
+          preparedAttachment.attachment.recordId,
+        )) {
+          continue;
+        }
+        final source = File(
+          p.join(temporaryDirectory.path, 'attachment-$index.bin'),
+        );
+        await source.writeAsBytes(preparedAttachment.bytes, flush: true);
+        await manager.importBackupFile(
+          source: source,
+          attachment: preparedAttachment.attachment,
+        );
+      }
+    } finally {
+      if (await temporaryDirectory.exists()) {
+        await temporaryDirectory.delete(recursive: true);
+      }
+    }
+    return result;
   }
 
   Future<File> createAutomaticBackup({
@@ -184,7 +290,12 @@ class DiaryTransferService {
     final target = File(p.join(directory.path, fileName));
     final temporary = File('${target.path}.tmp');
     try {
-      await temporary.writeAsBytes(buildExportBytes(), flush: true);
+      final prepared = await prepareExport(
+        mode: attachmentManager == null
+            ? AttachmentExportMode.recordsOnly
+            : AttachmentExportMode.originalAttachments,
+      );
+      await temporary.writeAsBytes(prepared.bytes, flush: true);
       return await temporary.rename(target.path);
     } catch (_) {
       if (await temporary.exists()) await temporary.delete();
@@ -193,14 +304,15 @@ class DiaryTransferService {
   }
 
   Future<DiaryExportOutcome> exportToPlatform({
+    PreparedDiaryExport? prepared,
     int? targetSchemaVersion,
     String? dialogTitle,
     String? shareSubject,
   }) async {
-    final version = targetSchemaVersion ?? registry.latestSchemaVersion;
-    final bytes = buildExportBytes(targetSchemaVersion: version);
+    final export =
+        prepared ??
+        await prepareExport(targetSchemaVersion: targetSchemaVersion);
     final fileName = _fileName(DateTime.now());
-    final diaryCount = repository.getDiaries().length;
 
     if (Platform.isWindows) {
       final selectedPath = await FilePicker.saveFile(
@@ -208,20 +320,21 @@ class DiaryTransferService {
         fileName: fileName,
         type: FileType.custom,
         allowedExtensions: const ['json'],
-        bytes: bytes,
+        bytes: export.bytes,
       );
       if (selectedPath == null) {
         return DiaryExportOutcome(
           cancelled: true,
           fileName: fileName,
-          diaryCount: diaryCount,
-          schemaVersion: version,
+          diaryCount: export.diaryCount,
+          attachmentCount: export.attachmentCount,
+          schemaVersion: export.schemaVersion,
         );
       }
     } else {
       final tempDirectory = await getTemporaryDirectory();
       final tempFile = File(p.join(tempDirectory.path, fileName));
-      await tempFile.writeAsBytes(bytes, flush: true);
+      await tempFile.writeAsBytes(export.bytes, flush: true);
       try {
         final result = await SharePlus.instance.share(
           ShareParams(
@@ -233,8 +346,9 @@ class DiaryTransferService {
           return DiaryExportOutcome(
             cancelled: true,
             fileName: fileName,
-            diaryCount: diaryCount,
-            schemaVersion: version,
+            diaryCount: export.diaryCount,
+            attachmentCount: export.attachmentCount,
+            schemaVersion: export.schemaVersion,
           );
         }
       } finally {
@@ -244,9 +358,113 @@ class DiaryTransferService {
     return DiaryExportOutcome(
       cancelled: false,
       fileName: fileName,
-      diaryCount: diaryCount,
-      schemaVersion: version,
+      diaryCount: export.diaryCount,
+      attachmentCount: export.attachmentCount,
+      schemaVersion: export.schemaVersion,
     );
+  }
+
+  Map<String, Object?> _buildRecordsJson({int? targetSchemaVersion}) {
+    final document = repository.createExportDocument(appVersion: appVersion);
+    return registry.encode(document, targetSchemaVersion: targetSchemaVersion);
+  }
+
+  Map<String, Object?> _decodeJson(List<int> bytes) {
+    late final String source;
+    try {
+      source = const Utf8Decoder(allowMalformed: false).convert(bytes);
+    } on FormatException catch (error) {
+      throw DiaryTransferException(
+        'invalid_utf8',
+        'The diary backup is not valid UTF-8.',
+        error,
+      );
+    }
+    late final Object? decoded;
+    try {
+      decoded = jsonDecode(source);
+    } on FormatException catch (error) {
+      throw DiaryTransferException(
+        'invalid_json',
+        'The diary backup is not valid JSON.',
+        error,
+      );
+    }
+    return _stringKeyedMap(decoded, field: 'document');
+  }
+
+  Map<String, Object?> _stringKeyedMap(Object? value, {required String field}) {
+    if (value is! Map) {
+      throw DiaryTransferException(
+        'invalid_document',
+        '$field must be an object.',
+      );
+    }
+    final result = <String, Object?>{};
+    for (final entry in value.entries) {
+      if (entry.key is! String) {
+        throw DiaryTransferException(
+          'invalid_document',
+          '$field contains a non-string key.',
+        );
+      }
+      result[entry.key as String] = entry.value;
+    }
+    return result;
+  }
+
+  List<PreparedBackupAttachment> _decodeAttachments(Object? value) {
+    if (value is! List) {
+      throw const DiaryTransferException(
+        'invalid_attachments',
+        'The backup attachment list is invalid.',
+      );
+    }
+    final result = <PreparedBackupAttachment>[];
+    for (final raw in value) {
+      final item = _stringKeyedMap(raw, field: 'attachment');
+      final metadata = item['metadata'];
+      final encodedBytes = item['bytes'];
+      final expectedHash = item['sha256'];
+      if (metadata is! Map ||
+          encodedBytes is! String ||
+          expectedHash is! String) {
+        throw const DiaryTransferException(
+          'invalid_attachment',
+          'A backup attachment is incomplete.',
+        );
+      }
+      Uint8List bytes;
+      try {
+        bytes = base64Decode(encodedBytes);
+      } on FormatException catch (error) {
+        throw DiaryTransferException(
+          'invalid_attachment',
+          'A backup attachment is not valid base64.',
+          error,
+        );
+      }
+      final actualHash = crypto.sha256.convert(bytes).toString();
+      if (actualHash != expectedHash) {
+        throw const DiaryTransferException(
+          'attachment_checksum_mismatch',
+          'A backup attachment failed its integrity check.',
+        );
+      }
+      final attachment = EventAttachment.decode(jsonEncode(metadata));
+      if (attachment == null ||
+          attachment.attachmentId.isEmpty ||
+          attachment.recordId.isEmpty) {
+        throw const DiaryTransferException(
+          'invalid_attachment',
+          'A backup attachment has invalid metadata.',
+        );
+      }
+      result.add(
+        PreparedBackupAttachment(attachment: attachment, bytes: bytes),
+      );
+    }
+    return result;
   }
 
   String _fileName(DateTime value) {

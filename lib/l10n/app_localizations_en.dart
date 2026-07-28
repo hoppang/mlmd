@@ -995,14 +995,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupPrivacyNotice =>
-      'The current backup stores records and activities in an unencrypted JSON file. Attachments are not supported yet.';
+      'Backups are unencrypted. Keep files with attachments in a private, safe location.';
 
   @override
   String get createBackupFile => 'Create backup file';
 
   @override
   String get createBackupDescription =>
-      'Create a file containing this device\'s records and activities for safekeeping elsewhere.';
+      'Choose how much attachment data to preserve. Original attachments are the safest default for recovery.';
+
+  @override
+  String get backupModeOriginal => 'Records and original attachments';
+
+  @override
+  String get backupModeOriginalDescription =>
+      'Best for recovery. Uses the most storage.';
+
+  @override
+  String get backupModeReduced => 'Records and smaller attachments';
+
+  @override
+  String get backupModeReducedDescription =>
+      'Uses optimized images when available. Protected documents keep original quality.';
+
+  @override
+  String get backupModeRecordsOnly => 'Records only';
+
+  @override
+  String get backupModeRecordsOnlyDescription =>
+      'Smallest file. Photos and files cannot be restored from it.';
 
   @override
   String get importBackupFile => 'Import backup file';
@@ -1036,6 +1057,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get duplicateHelpAnswer =>
       'When two versions differ, silently deleting either one is unsafe. For now, only new records are added and matching IDs are skipped.';
+
+  @override
+  String get photoSyncHelpQuestion =>
+      'Why don\'t photos appear on another device?';
+
+  @override
+  String get photoSyncHelpAnswer =>
+      'Family sharing focuses on text records first, so photos stay on the device where they were attached. Include original attachments in a backup file to keep an independent copy.';
+
+  @override
+  String get missingDataHelpQuestion =>
+      'Why doesn\'t a sparse day mean “less than usual”?';
+
+  @override
+  String get missingDataHelpAnswer =>
+      'A missing record may mean it was not entered, not that less happened. MLMD avoids judging incomplete days as real decreases.';
+
+  @override
+  String get quietNotificationHelpQuestion =>
+      'Why are task reminders quiet by default?';
+
+  @override
+  String get quietNotificationHelpAnswer =>
+      'Care reminders should help without unexpectedly waking a child or family. You can choose an audible alert when creating a task that needs one.';
+
+  @override
+  String get aiSummaryHelpQuestion => 'What does an AI summary use?';
+
+  @override
+  String get aiSummaryHelpAnswer =>
+      'It uses the records selected for that period and remains a derived summary, not a medical judgment. Your original records stay available.';
 
   @override
   String get languageSetting => 'Language';
@@ -1080,6 +1132,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String exportBackupPreview(
+    int records,
+    int attachments,
+    String size,
+    int missing,
+  ) {
+    return '$records diaries · $attachments attachments\nEstimated file size $size\nUnavailable attachments: $missing\nThis backup is not encrypted.';
+  }
+
+  @override
   String get exporting => 'Creating the backup file…';
 
   @override
@@ -1114,6 +1176,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get conflictingRecords => 'Conflicts to review';
+
+  @override
+  String get attachmentsToImport => 'Attachments on this device';
 
   @override
   String importDateRange(String from, String to) {

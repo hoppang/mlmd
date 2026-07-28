@@ -971,14 +971,34 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get backupPrivacyNotice =>
-      '현재 백업은 기록과 활동을 암호화되지 않은 JSON 파일로 보관합니다. 첨부파일 기능은 아직 포함되지 않습니다.';
+      '백업 파일은 암호화되지 않습니다. 첨부가 든 파일은 안전한 개인 공간에 보관해 주세요.';
 
   @override
   String get createBackupFile => '백업 파일 만들기';
 
   @override
   String get createBackupDescription =>
-      '현재 기기의 기록과 활동을 다른 곳에 보관할 수 있는 파일로 만듭니다.';
+      '복원할 첨부 범위를 선택합니다. 가장 안전한 기본값은 원본 첨부를 함께 보관하는 것입니다.';
+
+  @override
+  String get backupModeOriginal => '기록과 원본 첨부';
+
+  @override
+  String get backupModeOriginalDescription => '복원에 가장 안전하며 저장 공간을 가장 많이 사용합니다.';
+
+  @override
+  String get backupModeReduced => '기록과 용량을 줄인 첨부';
+
+  @override
+  String get backupModeReducedDescription =>
+      '가능하면 최적화 사진을 사용하고, 약봉투·예방접종 수첩은 원본 품질을 지킵니다.';
+
+  @override
+  String get backupModeRecordsOnly => '기록만';
+
+  @override
+  String get backupModeRecordsOnlyDescription =>
+      '파일은 가장 작지만 사진과 파일은 이 백업으로 복원할 수 없습니다.';
 
   @override
   String get importBackupFile => '백업 파일 가져오기';
@@ -1008,6 +1028,34 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get duplicateHelpAnswer =>
       '같은 기록이 서로 다르면 어느 쪽도 조용히 지우지 않는 편이 안전합니다. 지금은 새 기록만 추가하고 같은 ID의 기록은 건너뜁니다.';
+
+  @override
+  String get photoSyncHelpQuestion => '사진은 왜 다른 기기에서 안 보여요?';
+
+  @override
+  String get photoSyncHelpAnswer =>
+      '가족 공유는 먼저 텍스트 기록에 집중하고 있어 사진은 첨부한 기기에만 저장됩니다. 중요한 사진은 원본 첨부를 포함한 백업 파일로 따로 보관해 주세요.';
+
+  @override
+  String get missingDataHelpQuestion => '기록이 적으면 왜 ‘평소보다 적음’으로 판단하지 않나요?';
+
+  @override
+  String get missingDataHelpAnswer =>
+      '기록이 없는 것은 실제로 적었던 것이 아니라 입력하지 못한 것일 수 있습니다. MLMD는 불완전한 하루를 실제 감소로 단정하지 않습니다.';
+
+  @override
+  String get quietNotificationHelpQuestion => '왜 할 일 알림은 기본적으로 조용한가요?';
+
+  @override
+  String get quietNotificationHelpAnswer =>
+      '돌봄 알림이 아이나 가족을 뜻밖에 깨우지 않도록 하기 위해서예요. 꼭 소리가 필요한 할 일은 만들 때 직접 선택할 수 있습니다.';
+
+  @override
+  String get aiSummaryHelpQuestion => 'AI 정리는 무엇을 보고 작성하나요?';
+
+  @override
+  String get aiSummaryHelpAnswer =>
+      '선택한 기간의 기록만 바탕으로 만든 파생 요약이며 의료 판단이 아닙니다. 원본 기록은 언제나 따로 남아 있습니다.';
 
   @override
   String get languageSetting => '언어 설정';
@@ -1051,6 +1099,16 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String exportBackupPreview(
+    int records,
+    int attachments,
+    String size,
+    int missing,
+  ) {
+    return '일기 $records건 · 첨부 $attachments개\n예상 파일 크기 $size\n현재 기기에 없는 첨부 $missing개\n이 백업은 암호화되지 않습니다.';
+  }
+
+  @override
   String get exporting => '백업 파일을 만드는 중입니다…';
 
   @override
@@ -1085,6 +1143,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get conflictingRecords => '확인이 필요한 충돌';
+
+  @override
+  String get attachmentsToImport => '이 기기에 가져올 첨부';
 
   @override
   String importDateRange(String from, String to) {
