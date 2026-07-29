@@ -399,6 +399,58 @@ class AppLocalizationsJa extends AppLocalizations {
       '転落、やけど、誤飲、気道異物、中毒の場合はお子様の状態を慎重に観察し、必要に応じて直ちに医療機関を受診してください。';
 
   @override
+  String get careProcedureEvent => '処置・ケア';
+
+  @override
+  String get careProcedureTime => '実施時刻';
+
+  @override
+  String get careProcedureScopeHelp =>
+      '家庭ですでに行った、薬を使わない処置だけを記録してください。軟膏・点眼薬・吸入薬など薬を使う場合は投薬として記録します。';
+
+  @override
+  String get careProcedureTypeLabel => '処置の種類';
+
+  @override
+  String get procedureTypeNasalCare => '鼻洗浄・吸引';
+
+  @override
+  String get procedureTypeWoundCare => '傷の洗浄・ドレッシング';
+
+  @override
+  String get procedureTypeHotColdPack => '冷・温罨法';
+
+  @override
+  String get procedureTypeRespiratoryCare => '呼吸ケア';
+
+  @override
+  String get procedureTypeOther => 'その他';
+
+  @override
+  String get careProcedureBodyAreaLabel => '部位（任意）';
+
+  @override
+  String get careProcedureBodyAreaHint => '例：左ひざ';
+
+  @override
+  String get careProcedureNoteLabel => 'メモ（任意）';
+
+  @override
+  String get careProcedureOtherNoteLabel => '何をしましたか？';
+
+  @override
+  String get careProcedureNoteHint => '行った処置について必要な説明を短く記録してください。';
+
+  @override
+  String get careProcedureTypeRequired => '処置の種類を選択してください。';
+
+  @override
+  String get careProcedureOtherRequired => 'その他の処置で何をしたか入力してください。';
+
+  @override
+  String get careProcedurePhotoButton => '写真を添付';
+
+  @override
   String get tummyTimeEvent => 'タミータイム';
 
   @override

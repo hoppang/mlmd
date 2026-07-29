@@ -25,6 +25,7 @@ import 'package:mlmd/features/summaries/application/ai_summary_notifier.dart';
 import 'package:mlmd/features/summaries/domain/summary_source_snapshot.dart';
 import 'package:mlmd/features/duplicate_review/application/duplicate_review_notifier.dart';
 import 'package:mlmd/features/events/application/custom_event_notifier.dart';
+import 'package:mlmd/features/events/domain/care_procedure_record.dart';
 import 'package:mlmd/features/events/domain/elimination_record.dart';
 import 'package:mlmd/features/events/domain/intake_record.dart';
 import 'package:mlmd/features/events/domain/sleep_record.dart';
@@ -579,6 +580,10 @@ void main() {
     await tester.tap(find.byKey(const Key('event-category-healthMedical')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('category-event-medication')), findsOneWidget);
+    expect(
+      find.byKey(const Key('category-event-careProcedure')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('quick-record-feeding')));
     await tester.pumpAndSettle();
@@ -598,6 +603,40 @@ void main() {
     expect(savedIntake?.method, FeedingMethod.bottle);
     expect(savedIntake?.amountExpression?.exactValue, 200);
     expect(find.text('수유 기록을 저장했어요.'), findsOneWidget);
+  });
+
+  testWidgets('처치·관리는 실제 종류가 보이는 구조화 건강 기록으로 저장한다', (tester) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('event-category-healthMedical')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('category-event-careProcedure')),
+    );
+    await tester.tap(find.byKey(const Key('category-event-careProcedure')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('care-procedure-event-form')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('care-procedure-type-nasalCare')));
+    await tester.pump();
+    await tester.ensureVisible(
+      find.byKey(const Key('save-care-procedure-event')),
+    );
+    await tester.tap(find.byKey(const Key('save-care-procedure-event')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.addedActivityType, '코 세척·흡인');
+    expect(notifier.addedActivityDetails, isEmpty);
+    final record = CareProcedureRecord.decode(
+      notifier.addedActivityStructuredDataJson!,
+    );
+    expect(record?.procedureType, CareProcedureType.nasalCare);
+    expect(record?.occurredAt, notifier.addedActivityOccurredAt);
+    expect(find.text('코 세척·흡인 기록을 저장했어요.'), findsOneWidget);
   });
 
   testWidgets('기저귀 빠른 프리셋은 즉시 저장하고 종류 정정·상세 추가·실행 취소를 지원한다', (tester) async {

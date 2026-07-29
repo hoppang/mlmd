@@ -179,6 +179,13 @@ void main() {
               lastModified: DateTime(2026, 7, 20, 11, 5),
               details: 'not medical',
             ),
+            _activity(
+              id: 4,
+              type: '処置・ケア',
+              time: DateTime(2026, 7, 20, 12),
+              lastModified: DateTime(2026, 7, 20, 12, 5),
+              details: '鼻洗浄・吸引',
+            ),
           ],
         ),
       ],
@@ -194,6 +201,7 @@ void main() {
     );
     expect(snapshot.countsByKind[MedicalFactKind.symptom], 1);
     expect(snapshot.countsByKind[MedicalFactKind.hospital], 1);
+    expect(snapshot.countsByKind[MedicalFactKind.careProcedure], 1);
     expect(snapshot.facts.any((fact) => fact.storedType == 'feeding'), isFalse);
   });
 

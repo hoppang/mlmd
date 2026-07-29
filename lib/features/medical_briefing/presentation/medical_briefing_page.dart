@@ -362,6 +362,7 @@ EventTypeId _eventTypeForKind(MedicalFactKind kind) => switch (kind) {
   MedicalFactKind.hospital => EventTypeId.hospital,
   MedicalFactKind.vaccination => EventTypeId.vaccination,
   MedicalFactKind.accidentInjury => EventTypeId.accidentInjury,
+  MedicalFactKind.careProcedure => EventTypeId.careProcedure,
 };
 
 String _kindLabel(MedicalFactKind kind, AppLocalizations loc) =>

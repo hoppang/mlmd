@@ -408,6 +408,60 @@ class AppLocalizationsEn extends AppLocalizations {
       'For falls, burns, foreign body ingestion, choking, or poisoning, closely monitor the child and visit an emergency department or doctor if needed.';
 
   @override
+  String get careProcedureEvent => 'Care procedure';
+
+  @override
+  String get careProcedureTime => 'Procedure time';
+
+  @override
+  String get careProcedureScopeHelp =>
+      'Record only non-medication care already performed at home. If it involves ointment, eye drops, inhaled medicine, or another medication, record it as medication.';
+
+  @override
+  String get careProcedureTypeLabel => 'Procedure type';
+
+  @override
+  String get procedureTypeNasalCare => 'Nasal rinse · suction';
+
+  @override
+  String get procedureTypeWoundCare => 'Wound cleaning · dressing';
+
+  @override
+  String get procedureTypeHotColdPack => 'Cold · warm pack';
+
+  @override
+  String get procedureTypeRespiratoryCare => 'Respiratory care';
+
+  @override
+  String get procedureTypeOther => 'Other';
+
+  @override
+  String get careProcedureBodyAreaLabel => 'Body area (optional)';
+
+  @override
+  String get careProcedureBodyAreaHint => 'For example, left knee';
+
+  @override
+  String get careProcedureNoteLabel => 'Note (optional)';
+
+  @override
+  String get careProcedureOtherNoteLabel => 'What did you do?';
+
+  @override
+  String get careProcedureNoteHint =>
+      'Briefly describe the care that was performed.';
+
+  @override
+  String get careProcedureTypeRequired => 'Select a procedure type.';
+
+  @override
+  String get careProcedureOtherRequired =>
+      'Describe what was done for the other procedure.';
+
+  @override
+  String get careProcedurePhotoButton => 'Attach photo';
+
+  @override
   String get tummyTimeEvent => 'Tummy time';
 
   @override

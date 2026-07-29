@@ -4,6 +4,15 @@ import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 
 void main() {
+  test('care procedure aliases keep concrete types in the health category', () {
+    final item = eventCatalogItem(EventTypeId.careProcedure);
+
+    expect(item.category, EventCategoryId.healthMedical);
+    expect(item.matches('코 세척·흡인'), isTrue);
+    expect(item.matches('Wound cleaning · dressing'), isTrue);
+    expect(item.matches('処置・ケア · その他'), isTrue);
+  });
+
   test('hidden tracking items are removed only from quick choices', () {
     final items = buildQuickEventItems(
       hiddenIds: {EventTypeId.feeding, EventTypeId.diaper},

@@ -874,6 +874,108 @@ abstract class AppLocalizations {
   /// **'낙상, 화상, 이물질 삼킴, 기도 이물, 중독의 경우 아이의 상태를 면밀히 관찰하고 필요시 즉시 응급실이나 전문 의료기관을 방문하세요.'**
   String get accidentGuidanceFirstAidInfo;
 
+  /// No description provided for @careProcedureEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'처치·관리'**
+  String get careProcedureEvent;
+
+  /// No description provided for @careProcedureTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'시행 시각'**
+  String get careProcedureTime;
+
+  /// No description provided for @careProcedureScopeHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'집에서 이미 시행한 비투약 처치만 기록하세요. 연고·안약·흡입약처럼 약물이 들어가면 투약으로 기록합니다.'**
+  String get careProcedureScopeHelp;
+
+  /// No description provided for @careProcedureTypeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'처치 종류'**
+  String get careProcedureTypeLabel;
+
+  /// No description provided for @procedureTypeNasalCare.
+  ///
+  /// In ko, this message translates to:
+  /// **'코 세척·흡인'**
+  String get procedureTypeNasalCare;
+
+  /// No description provided for @procedureTypeWoundCare.
+  ///
+  /// In ko, this message translates to:
+  /// **'상처 세척·드레싱'**
+  String get procedureTypeWoundCare;
+
+  /// No description provided for @procedureTypeHotColdPack.
+  ///
+  /// In ko, this message translates to:
+  /// **'냉·온찜질'**
+  String get procedureTypeHotColdPack;
+
+  /// No description provided for @procedureTypeRespiratoryCare.
+  ///
+  /// In ko, this message translates to:
+  /// **'호흡기 관리'**
+  String get procedureTypeRespiratoryCare;
+
+  /// No description provided for @procedureTypeOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get procedureTypeOther;
+
+  /// No description provided for @careProcedureBodyAreaLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'부위 (선택)'**
+  String get careProcedureBodyAreaLabel;
+
+  /// No description provided for @careProcedureBodyAreaHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: 왼쪽 무릎'**
+  String get careProcedureBodyAreaHint;
+
+  /// No description provided for @careProcedureNoteLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모 (선택)'**
+  String get careProcedureNoteLabel;
+
+  /// No description provided for @careProcedureOtherNoteLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'무엇을 했나요?'**
+  String get careProcedureOtherNoteLabel;
+
+  /// No description provided for @careProcedureNoteHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'시행한 처치에 필요한 설명을 짧게 남기세요.'**
+  String get careProcedureNoteHint;
+
+  /// No description provided for @careProcedureTypeRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'처치 종류를 선택해 주세요.'**
+  String get careProcedureTypeRequired;
+
+  /// No description provided for @careProcedureOtherRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타 처치로 무엇을 했는지 입력해 주세요.'**
+  String get careProcedureOtherRequired;
+
+  /// No description provided for @careProcedurePhotoButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진 첨부'**
+  String get careProcedurePhotoButton;
+
   /// No description provided for @tummyTimeEvent.
   ///
   /// In ko, this message translates to:

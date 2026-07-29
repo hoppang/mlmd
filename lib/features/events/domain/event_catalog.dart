@@ -6,6 +6,7 @@ import '../../../models/diary_entity.dart';
 import 'elimination_record.dart';
 import 'pumping_record.dart';
 import 'bath_record.dart';
+import 'care_procedure_record.dart';
 import 'tummy_time_record.dart';
 import 'growth_measurement_record.dart';
 
@@ -25,6 +26,7 @@ enum EventTypeId {
   hospital,
   vaccination,
   accidentInjury,
+  careProcedure,
   tummyTime,
   bath,
   growthMeasurement,
@@ -61,6 +63,7 @@ class EventCatalogItem {
     EventTypeId.hospital => loc.hospitalEvent,
     EventTypeId.vaccination => loc.vaccinationEvent,
     EventTypeId.accidentInjury => loc.accidentInjuryEvent,
+    EventTypeId.careProcedure => loc.careProcedureEvent,
     EventTypeId.tummyTime => loc.tummyTimeEvent,
     EventTypeId.bath => loc.bathEvent,
     EventTypeId.growthMeasurement => loc.growthMeasurementEvent,
@@ -151,6 +154,31 @@ const eventCatalog = <EventCatalogItem>[
     category: EventCategoryId.healthMedical,
     icon: Icons.healing_outlined,
     aliases: {'사고·다침', 'Accident · injury', '事故・けが'},
+  ),
+  EventCatalogItem(
+    id: EventTypeId.careProcedure,
+    category: EventCategoryId.healthMedical,
+    icon: Icons.home_repair_service_outlined,
+    aliases: {
+      '처치·관리',
+      '코 세척·흡인',
+      '상처 세척·드레싱',
+      '냉·온찜질',
+      '호흡기 관리',
+      '처치·관리 · 기타',
+      'Care procedure',
+      'Nasal rinse · suction',
+      'Wound cleaning · dressing',
+      'Cold · warm pack',
+      'Respiratory care',
+      'Care procedure · Other',
+      '処置・ケア',
+      '鼻洗浄・吸引',
+      '傷の洗浄・ドレッシング',
+      '冷・温罨法',
+      '呼吸ケア',
+      '処置・ケア · その他',
+    },
   ),
   EventCatalogItem(
     id: EventTypeId.tummyTime,
@@ -266,6 +294,15 @@ class RecentEventPreset {
     }
     if (item.id == EventTypeId.growthMeasurement) {
       final record = GrowthMeasurementRecord.decode(structuredDataJson ?? '');
+      if (record != null) {
+        final formattedDetails = record.buildDetails(loc);
+        return formattedDetails.isEmpty
+            ? typeLabel
+            : '$typeLabel · $formattedDetails';
+      }
+    }
+    if (item.id == EventTypeId.careProcedure) {
+      final record = CareProcedureRecord.decode(structuredDataJson ?? '');
       if (record != null) {
         final formattedDetails = record.buildDetails(loc);
         return formattedDetails.isEmpty

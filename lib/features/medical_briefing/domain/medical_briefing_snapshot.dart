@@ -8,6 +8,7 @@ enum MedicalFactKind {
   hospital,
   vaccination,
   accidentInjury,
+  careProcedure,
 }
 
 class MedicalBriefingFact {
@@ -154,6 +155,9 @@ class MedicalBriefingSnapshotBuilder {
     }
     if (eventCatalogItem(EventTypeId.accidentInjury).matches(storedType)) {
       return MedicalFactKind.accidentInjury;
+    }
+    if (eventCatalogItem(EventTypeId.careProcedure).matches(storedType)) {
+      return MedicalFactKind.careProcedure;
     }
     return null;
   }

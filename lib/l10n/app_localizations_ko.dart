@@ -400,6 +400,58 @@ class AppLocalizationsKo extends AppLocalizations {
       '낙상, 화상, 이물질 삼킴, 기도 이물, 중독의 경우 아이의 상태를 면밀히 관찰하고 필요시 즉시 응급실이나 전문 의료기관을 방문하세요.';
 
   @override
+  String get careProcedureEvent => '처치·관리';
+
+  @override
+  String get careProcedureTime => '시행 시각';
+
+  @override
+  String get careProcedureScopeHelp =>
+      '집에서 이미 시행한 비투약 처치만 기록하세요. 연고·안약·흡입약처럼 약물이 들어가면 투약으로 기록합니다.';
+
+  @override
+  String get careProcedureTypeLabel => '처치 종류';
+
+  @override
+  String get procedureTypeNasalCare => '코 세척·흡인';
+
+  @override
+  String get procedureTypeWoundCare => '상처 세척·드레싱';
+
+  @override
+  String get procedureTypeHotColdPack => '냉·온찜질';
+
+  @override
+  String get procedureTypeRespiratoryCare => '호흡기 관리';
+
+  @override
+  String get procedureTypeOther => '기타';
+
+  @override
+  String get careProcedureBodyAreaLabel => '부위 (선택)';
+
+  @override
+  String get careProcedureBodyAreaHint => '예: 왼쪽 무릎';
+
+  @override
+  String get careProcedureNoteLabel => '메모 (선택)';
+
+  @override
+  String get careProcedureOtherNoteLabel => '무엇을 했나요?';
+
+  @override
+  String get careProcedureNoteHint => '시행한 처치에 필요한 설명을 짧게 남기세요.';
+
+  @override
+  String get careProcedureTypeRequired => '처치 종류를 선택해 주세요.';
+
+  @override
+  String get careProcedureOtherRequired => '기타 처치로 무엇을 했는지 입력해 주세요.';
+
+  @override
+  String get careProcedurePhotoButton => '사진 첨부';
+
+  @override
   String get tummyTimeEvent => '터미타임';
 
   @override

@@ -21,12 +21,14 @@ import 'intake_event_form.dart';
 import 'medication_event_form.dart';
 import 'pumping_event_form.dart';
 import 'bath_event_form.dart';
+import 'care_procedure_event_form.dart';
 import 'tummy_time_event_form.dart';
 import 'growth_measurement_event_form.dart';
 import 'memo_event_form.dart';
 import 'sleep_event_form.dart';
 import '../domain/pumping_record.dart';
 import '../domain/bath_record.dart';
+import '../domain/care_procedure_record.dart';
 import '../domain/tummy_time_record.dart';
 import '../domain/growth_measurement_record.dart';
 import '../domain/memo_record.dart';
@@ -515,6 +517,45 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
+      final recordId = await widget.onSave(
+        savedName,
+        result.details,
+        result.record.occurredAt,
+        result.record.encode(),
+      );
+      if (result.attachments.isNotEmpty) {
+        await ref
+            .read(attachmentNotifierProvider.notifier)
+            .saveAttachmentsForRecord(recordId, result.attachments);
+      }
+      if (mounted) {
+        Navigator.pop(
+          context,
+          RecordEntryResult(
+            RecordEntryResultKind.saved,
+            savedName: savedName,
+            recordId: recordId,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = AppLocalizations.of(context)!.quickRecordSaveFailed;
+      });
+    }
+  }
+
+  Future<void> _saveCareProcedure(CareProcedureFormResult result) async {
+    final selected = _selectedItem;
+    if (selected == null || _saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final savedName = result.procedureName;
       final recordId = await widget.onSave(
         savedName,
         result.details,
@@ -1115,6 +1156,23 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                   }),
                   onChangeTime: _changeTime,
                   onSave: _saveAccident,
+                )
+              : custom == null && selected!.id == EventTypeId.careProcedure
+              ? CareProcedureEventForm(
+                  key: const ValueKey('careProcedure'),
+                  occurredAt: _occurredAt,
+                  saving: _saving,
+                  error: _error,
+                  initialRecord: _structuredDataJson != null
+                      ? CareProcedureRecord.decode(_structuredDataJson!)
+                      : null,
+                  onBack: () => setState(() {
+                    _selectedItem = null;
+                    _structuredDataJson = null;
+                    _error = null;
+                  }),
+                  onChangeTime: _changeTime,
+                  onSave: _saveCareProcedure,
                 )
               : custom == null && selected!.id == EventTypeId.pumping
               ? PumpingEventForm(
