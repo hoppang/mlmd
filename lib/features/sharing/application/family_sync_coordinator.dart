@@ -70,6 +70,42 @@ final familySyncRetryControllerProvider = Provider<FamilySyncRetryController>(
   ],
 );
 
+class FamilySyncConflictController {
+  FamilySyncConflictController(this._ref);
+
+  final Ref _ref;
+
+  Future<ConflictResolutionResult> resolve({
+    required String conflictId,
+    required SyncConflictResolution resolution,
+  }) async {
+    final applier = FamilySyncRemoteApplier(
+      _ref.read(objectBoxProvider),
+      _ref.read(customEventRepositoryProvider),
+    );
+    final result = await _ref
+        .read(familySyncRepositoryProvider)
+        .resolveConflict(
+          conflictId: conflictId,
+          resolution: resolution,
+          applyRemoteChange: applier.call,
+        );
+    _ref.read(familySyncStatusProvider.notifier).reload();
+    return result;
+  }
+}
+
+final familySyncConflictControllerProvider =
+    Provider<FamilySyncConflictController>(
+      FamilySyncConflictController.new,
+      dependencies: [
+        familySyncRepositoryProvider,
+        objectBoxProvider,
+        customEventRepositoryProvider,
+        familySyncStatusProvider,
+      ],
+    );
+
 /// Retries on startup, when a connectivity adapter reports availability, and
 /// whenever the application returns to the foreground.
 class FamilySyncLifecycle extends ConsumerStatefulWidget {

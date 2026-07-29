@@ -39,7 +39,6 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   late final Box<DuplicateReviewEdgeEntity> duplicateReviewEdgeBox;
   @override
   late final Box<LogicalEventGroupEntity> logicalEventGroupBox;
-  @override
   late final Box<SharedCustomEventDefinitionEntity>
       sharedCustomEventDefinitionBox;
   @override
@@ -94,7 +93,7 @@ void main() {
     );
     obxHelper.diaryBox.put(legacyDiary);
 
-    final diaryRepo = DiaryRepositoryImpl(obxHelper, profileRepo);
+    DiaryRepositoryImpl(obxHelper, profileRepo);
 
     final activities = obxHelper.activityBox.getAll();
     expect(activities.length, equals(1));

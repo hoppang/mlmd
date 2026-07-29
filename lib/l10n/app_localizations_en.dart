@@ -1046,19 +1046,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Family sharing includes text records and attachment type and count, but not the photo or file itself.';
 
   @override
-  String familySharingPending(int count) =>
-      '$count changes waiting to reach your family';
+  String familySharingPending(int count) {
+    return '$count changes waiting to reach your family';
+  }
 
   @override
-  String familySharingConflicts(int count) => '$count conflicts need review';
+  String familySharingConflicts(int count) {
+    return '$count conflicts need review';
+  }
 
   @override
   String get familySharingNeverReceived =>
       'No family records have been received yet';
 
   @override
-  String familySharingLastReceived(String date, String time) =>
-      'Last family records received: $date $time';
+  String familySharingLastReceived(String date, String time) {
+    return 'Last family records received: $date $time';
+  }
 
   @override
   String get familySharingOfflineNotice =>
@@ -1913,4 +1917,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackingOptionalMemo => 'Note (optional)';
+
+  @override
+  String get syncConflictsTitle => 'Review sync conflicts';
+
+  @override
+  String get syncConflictsReviewAction => 'Review conflicts';
+
+  @override
+  String get syncConflictUnresolved => 'Needs a decision';
+
+  @override
+  String get syncConflictResolved => 'Resolved';
+
+  @override
+  String get syncConflictLocalVersion => 'This device';
+
+  @override
+  String get syncConflictIncomingVersion => 'Other device';
+
+  @override
+  String get syncConflictKeepLocal => 'Keep this device';
+
+  @override
+  String get syncConflictUseIncoming => 'Use other device';
+
+  @override
+  String get syncConflictResolutionWarning =>
+      'Your choice will be saved as a new change and shared with connected devices.';
+
+  @override
+  String get syncConflictResolvedKeepLocal => 'Kept this device';
+
+  @override
+  String get syncConflictResolvedUseIncoming => 'Used other device';
+
+  @override
+  String get syncConflictEmpty => 'There are no sync conflicts to review.';
+
+  @override
+  String get syncConflictResolveFailed =>
+      'This conflict could not be resolved. Refresh and try again.';
+
+  @override
+  String get syncConflictConfirmTitle => 'Resolve this conflict?';
+
+  @override
+  String get syncConflictConfirmAction => 'Resolve';
+
+  @override
+  String get syncConflictHistoryTitle => 'Resolution history';
+
+  @override
+  String syncConflictRevision(int revision) {
+    return 'Revision $revision';
+  }
 }

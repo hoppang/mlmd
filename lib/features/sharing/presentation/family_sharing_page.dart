@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../domain/family_sync_models.dart';
 import '../../../repositories/family_sync_repository.dart';
+import 'family_sync_conflicts_page.dart';
 
 class FamilySharingPage extends ConsumerWidget {
   const FamilySharingPage({super.key});
@@ -98,6 +99,19 @@ class _ConnectedFamilyCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Text(loc.familySharingPending(snapshot.pendingChangeCount)),
             Text(loc.familySharingConflicts(snapshot.unresolvedConflictCount)),
+            if (snapshot.unresolvedConflictCount > 0) ...[
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                key: const Key('family-sharing-review-conflicts'),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const FamilySyncConflictsPage(),
+                  ),
+                ),
+                icon: const Icon(Icons.compare_arrows_outlined),
+                label: Text(loc.syncConflictsReviewAction),
+              ),
+            ],
             Text(lastSuccessfulLabel),
             if (snapshot.lastErrorCode != null) ...[
               const SizedBox(height: AppSpacing.sm),

@@ -144,6 +144,19 @@ class _FakeFamilySyncRepository implements FamilySyncRepository {
   FamilySyncSnapshot getSnapshot() => const FamilySyncSnapshot();
 
   @override
+  List<FamilySyncConflict> getConflicts({bool includeResolved = true}) =>
+      const [];
+
+  @override
+  Future<ConflictResolutionResult> resolveConflict({
+    required String conflictId,
+    required SyncConflictResolution resolution,
+    required RemoteChangeApplier applyRemoteChange,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<SyncRunResult> synchronize(
     FamilySyncTransport transport, {
     required RemoteChangeApplier applyRemoteChange,

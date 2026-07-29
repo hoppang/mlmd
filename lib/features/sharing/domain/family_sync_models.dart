@@ -110,6 +110,56 @@ class FamilySyncSnapshot {
   bool get isConnected => familySpaceId != null;
 }
 
+enum SyncConflictResolution { keepLocal, useIncoming }
+
+class FamilySyncConflict {
+  const FamilySyncConflict({
+    required this.conflictId,
+    required this.familySpaceId,
+    required this.entityType,
+    required this.entityId,
+    required this.localRevision,
+    required this.incomingRevision,
+    required this.localPayload,
+    required this.incomingPayload,
+    required this.incomingChangeId,
+    required this.incomingOperation,
+    required this.detectedAt,
+    this.resolution,
+    this.resolvedAt,
+    this.resolvedByAuthorProfileId,
+    this.resolvedByDeviceProfileId,
+  });
+
+  final String conflictId;
+  final String familySpaceId;
+  final String entityType;
+  final String entityId;
+  final int localRevision;
+  final int incomingRevision;
+  final Map<String, Object?> localPayload;
+  final Map<String, Object?> incomingPayload;
+  final String incomingChangeId;
+  final SyncOperation incomingOperation;
+  final DateTime detectedAt;
+  final SyncConflictResolution? resolution;
+  final DateTime? resolvedAt;
+  final String? resolvedByAuthorProfileId;
+  final String? resolvedByDeviceProfileId;
+
+  bool get isResolved => resolvedAt != null;
+}
+
+class ConflictResolutionResult {
+  const ConflictResolutionResult({
+    required this.conflict,
+    required this.queuedChangeId,
+  });
+
+  final FamilySyncConflict conflict;
+  final String queuedChangeId;
+}
+
 enum RemoteApplyDisposition { applied, ignored, conflict }
 
 class RemoteApplyResult {

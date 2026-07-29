@@ -133,12 +133,23 @@ class SyncConflictEntity {
   String localPayloadJson;
   String incomingPayloadJson;
   String incomingChangeId;
+  String? incomingOperation;
+  String? incomingSourceDeviceProfileId;
+  String? incomingSourceAuthorProfileId;
+
+  @Property(type: PropertyType.date)
+  DateTime? incomingOccurredAt;
 
   @Property(type: PropertyType.date)
   DateTime detectedAt;
 
   @Property(type: PropertyType.date)
   DateTime? resolvedAt;
+
+  String? resolution;
+  String? resolutionChangeId;
+  String? resolvedByAuthorProfileId;
+  String? resolvedByDeviceProfileId;
 
   SyncConflictEntity({
     this.id = 0,
@@ -151,7 +162,15 @@ class SyncConflictEntity {
     required this.localPayloadJson,
     required this.incomingPayloadJson,
     required this.incomingChangeId,
+    this.incomingOperation,
+    this.incomingSourceDeviceProfileId,
+    this.incomingSourceAuthorProfileId,
+    this.incomingOccurredAt,
     required this.detectedAt,
     this.resolvedAt,
+    this.resolution,
+    this.resolutionChangeId,
+    this.resolvedByAuthorProfileId,
+    this.resolvedByDeviceProfileId,
   });
 }

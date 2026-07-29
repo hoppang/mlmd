@@ -1954,28 +1954,76 @@ abstract class AppLocalizations {
   /// **'현재 기록은 이 기기에만 저장됩니다.'**
   String get familySharingDescription;
 
+  /// No description provided for @familySharingIntro.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 보호자와 함께 사용하면 서로 남긴 기록과 할 일을 자동으로 확인할 수 있어요.'**
   String get familySharingIntro;
 
+  /// No description provided for @familySharingNotConnectedTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 혼자 사용하고 있어요'**
   String get familySharingNotConnectedTitle;
 
+  /// No description provided for @familySharingNotConnectedDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정과 초대 방식을 안전하게 연결하기 전까지 현재 기기의 기록은 그대로 유지됩니다.'**
   String get familySharingNotConnectedDescription;
 
+  /// No description provided for @familySharingLocalFirstTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'인터넷이 없어도 기록할 수 있어요'**
   String get familySharingLocalFirstTitle;
 
+  /// No description provided for @familySharingLocalFirstDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'모든 변경은 먼저 이 기기에 저장되고, 연결이 끊겨도 나중에 보낼 내용이 사라지지 않습니다.'**
   String get familySharingLocalFirstDescription;
 
+  /// No description provided for @familySharingTextOnlyTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진 원본은 이 기기에 남아요'**
   String get familySharingTextOnlyTitle;
 
+  /// No description provided for @familySharingTextOnlyDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'가족 공유에는 텍스트 기록과 첨부 유형·개수만 포함하며 사진과 파일 자체는 보내지 않습니다.'**
   String get familySharingTextOnlyDescription;
 
+  /// No description provided for @familySharingPending.
+  ///
+  /// In ko, this message translates to:
+  /// **'가족에게 반영할 변경 {count}건'**
   String familySharingPending(int count);
 
+  /// No description provided for @familySharingConflicts.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인이 필요한 충돌 {count}건'**
   String familySharingConflicts(int count);
 
+  /// No description provided for @familySharingNeverReceived.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 가족 기록을 받은 적이 없어요'**
   String get familySharingNeverReceived;
 
+  /// No description provided for @familySharingLastReceived.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막으로 가족 기록을 받은 시각: {date} {time}'**
   String familySharingLastReceived(String date, String time);
 
+  /// No description provided for @familySharingOfflineNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'인터넷에 연결되면 자동으로 반영됩니다.'**
   String get familySharingOfflineNotice;
 
   /// No description provided for @dataBackupTitle.
@@ -3470,6 +3518,108 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'메모 (선택)'**
   String get trackingOptionalMemo;
+
+  /// No description provided for @syncConflictsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'동기화 충돌 확인'**
+  String get syncConflictsTitle;
+
+  /// No description provided for @syncConflictsReviewAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'충돌 확인하기'**
+  String get syncConflictsReviewAction;
+
+  /// No description provided for @syncConflictUnresolved.
+  ///
+  /// In ko, this message translates to:
+  /// **'결정 필요'**
+  String get syncConflictUnresolved;
+
+  /// No description provided for @syncConflictResolved.
+  ///
+  /// In ko, this message translates to:
+  /// **'해결됨'**
+  String get syncConflictResolved;
+
+  /// No description provided for @syncConflictLocalVersion.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기기'**
+  String get syncConflictLocalVersion;
+
+  /// No description provided for @syncConflictIncomingVersion.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 기기'**
+  String get syncConflictIncomingVersion;
+
+  /// No description provided for @syncConflictKeepLocal.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기기 내용 유지'**
+  String get syncConflictKeepLocal;
+
+  /// No description provided for @syncConflictUseIncoming.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 기기 내용 사용'**
+  String get syncConflictUseIncoming;
+
+  /// No description provided for @syncConflictResolutionWarning.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택한 내용은 새 변경으로 저장되어 연결된 기기에 공유됩니다.'**
+  String get syncConflictResolutionWarning;
+
+  /// No description provided for @syncConflictResolvedKeepLocal.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기기 내용을 유지함'**
+  String get syncConflictResolvedKeepLocal;
+
+  /// No description provided for @syncConflictResolvedUseIncoming.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 기기 내용을 사용함'**
+  String get syncConflictResolvedUseIncoming;
+
+  /// No description provided for @syncConflictEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인할 동기화 충돌이 없습니다.'**
+  String get syncConflictEmpty;
+
+  /// No description provided for @syncConflictResolveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'충돌을 해결하지 못했습니다. 새로 확인한 뒤 다시 시도해 주세요.'**
+  String get syncConflictResolveFailed;
+
+  /// No description provided for @syncConflictConfirmTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 충돌을 해결할까요?'**
+  String get syncConflictConfirmTitle;
+
+  /// No description provided for @syncConflictConfirmAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'해결'**
+  String get syncConflictConfirmAction;
+
+  /// No description provided for @syncConflictHistoryTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'해결 이력'**
+  String get syncConflictHistoryTitle;
+
+  /// No description provided for @syncConflictRevision.
+  ///
+  /// In ko, this message translates to:
+  /// **'리비전 {revision}'**
+  String syncConflictRevision(int revision);
 }
 
 class _AppLocalizationsDelegate

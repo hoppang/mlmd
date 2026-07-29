@@ -76,7 +76,7 @@ void main() {
   setUp(() async {
     objectBox = await _TestObjectBoxHelper.createTemp();
     profileRepo = ProfileRepositoryImpl(objectBox);
-    profileRepo.createAuthor(nickname: '엄마', colorValue: 0xFFFF5722);
+    profileRepo.createAuthor(nickname: 'Test Author', colorValue: 0xFFFF5722);
     taskRepo = TaskRepositoryImpl(objectBox, profileRepo);
   });
 
@@ -87,13 +87,13 @@ void main() {
   test('createTask - creates CareTask and initial occurrence', () {
     final now = DateTime.now();
     final task = taskRepo.createTask(
-      title: '오후 6:30 해열제 먹이기',
+      title: 'Take medicine at 6:30 PM',
       linkedCategory: 'medication',
       notificationMode: TaskNotificationMode.quietToAssignee,
       firstScheduledAt: now,
     );
 
-    expect(task.title, '오후 6:30 해열제 먹이기');
+    expect(task.title, 'Take medicine at 6:30 PM');
     expect(task.linkedCategory, 'medication');
     expect(task.notificationMode, TaskNotificationMode.quietToAssignee);
 
@@ -106,10 +106,12 @@ void main() {
   test('completeOccurrence - creates linked ActivityEntity when linkedCategory is present', () {
     final scheduledAt = DateTime.now();
     final task = taskRepo.createTask(
-      title: '체온 측정하기',
+      title: 'Measure temperature',
       linkedCategory: 'temperature',
       firstScheduledAt: scheduledAt,
     );
+
+    expect(task.title, 'Measure temperature');
 
     final initialOccurrences = taskRepo.getOccurrencesForDate(scheduledAt);
     final occurrenceId = initialOccurrences.first.occurrenceId;
@@ -121,24 +123,24 @@ void main() {
     expect(completedOccurrence.isCompleted, isTrue);
     expect(completedOccurrence.linkedRecordId, isNotNull);
 
-    // Verify ActivityEntity created in ObjectBox
     final activities = objectBox.activityBox.getAll();
     expect(activities.length, 1);
     expect(activities.first.recordId, completedOccurrence.linkedRecordId);
     expect(activities.first.type, 'temperature');
-    expect(activities.first.details, '체온 측정하기');
+    expect(activities.first.details, 'Measure temperature');
   });
 
   test('undoOccurrenceCompletion - removes linked ActivityEntity and resets status', () {
     final scheduledAt = DateTime.now();
     final task = taskRepo.createTask(
-      title: '해열제 투약',
+      title: 'Take medicine',
       linkedCategory: 'medication',
       firstScheduledAt: scheduledAt,
     );
+    expect(task.title, 'Take medicine');
 
     final occurrenceId = taskRepo.getOccurrencesForDate(scheduledAt).first.occurrenceId;
-    final completed = taskRepo.completeOccurrence(occurrenceId: occurrenceId);
+    taskRepo.completeOccurrence(occurrenceId: occurrenceId);
 
     expect(objectBox.activityBox.getAll().length, 1);
 
@@ -150,8 +152,8 @@ void main() {
 
   test('skipOccurrence - marks status as skipped and creates no event', () {
     final scheduledAt = DateTime.now();
-    final task = taskRepo.createTask(
-      title: '목욕하기',
+    taskRepo.createTask(
+      title: 'Bath time',
       linkedCategory: 'bath',
       firstScheduledAt: scheduledAt,
     );

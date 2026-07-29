@@ -1274,7 +1274,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(18, 1462374135511562219),
     name: 'SyncConflictEntity',
-    lastPropertyId: const obx_int.IdUid(12, 9054569224930740833),
+    lastPropertyId: const obx_int.IdUid(20, 5553906465798719874),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -1350,6 +1350,54 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(12, 9054569224930740833),
         name: 'resolvedAt',
         type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 8910187912613959609),
+        name: 'incomingOperation',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 1429911764617882307),
+        name: 'incomingSourceDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 684396459203397181),
+        name: 'incomingSourceAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 5111036433533266777),
+        name: 'incomingOccurredAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 6335611417480377076),
+        name: 'resolution',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(18, 7722301222209931130),
+        name: 'resolutionChangeId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(19, 8987741936468984089),
+        name: 'resolvedByAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(20, 5553906465798719874),
+        name: 'resolvedByDeviceProfileId',
+        type: 9,
         flags: 0,
       ),
     ],
@@ -3205,7 +3253,32 @@ obx_int.ModelDefinition getObjectBoxModel() {
           object.incomingPayloadJson,
         );
         final incomingChangeIdOffset = fbb.writeString(object.incomingChangeId);
-        fbb.startTable(13);
+        final incomingOperationOffset = object.incomingOperation == null
+            ? null
+            : fbb.writeString(object.incomingOperation!);
+        final incomingSourceDeviceProfileIdOffset =
+            object.incomingSourceDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.incomingSourceDeviceProfileId!);
+        final incomingSourceAuthorProfileIdOffset =
+            object.incomingSourceAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.incomingSourceAuthorProfileId!);
+        final resolutionOffset = object.resolution == null
+            ? null
+            : fbb.writeString(object.resolution!);
+        final resolutionChangeIdOffset = object.resolutionChangeId == null
+            ? null
+            : fbb.writeString(object.resolutionChangeId!);
+        final resolvedByAuthorProfileIdOffset =
+            object.resolvedByAuthorProfileId == null
+            ? null
+            : fbb.writeString(object.resolvedByAuthorProfileId!);
+        final resolvedByDeviceProfileIdOffset =
+            object.resolvedByDeviceProfileId == null
+            ? null
+            : fbb.writeString(object.resolvedByDeviceProfileId!);
+        fbb.startTable(21);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, conflictIdOffset);
         fbb.addOffset(2, familySpaceIdOffset);
@@ -3218,6 +3291,14 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(9, incomingChangeIdOffset);
         fbb.addInt64(10, object.detectedAt.millisecondsSinceEpoch);
         fbb.addInt64(11, object.resolvedAt?.millisecondsSinceEpoch);
+        fbb.addOffset(12, incomingOperationOffset);
+        fbb.addOffset(13, incomingSourceDeviceProfileIdOffset);
+        fbb.addOffset(14, incomingSourceAuthorProfileIdOffset);
+        fbb.addInt64(15, object.incomingOccurredAt?.millisecondsSinceEpoch);
+        fbb.addOffset(16, resolutionOffset);
+        fbb.addOffset(17, resolutionChangeIdOffset);
+        fbb.addOffset(18, resolvedByAuthorProfileIdOffset);
+        fbb.addOffset(19, resolvedByDeviceProfileIdOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -3229,6 +3310,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           26,
         );
+        final incomingOccurredAtValue = const fb.Int64Reader()
+            .vTableGetNullable(buffer, rootOffset, 34);
         final idParam = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -3268,12 +3351,36 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final incomingChangeIdParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 22, '');
+        final incomingOperationParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 28);
+        final incomingSourceDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 30);
+        final incomingSourceAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 32);
+        final incomingOccurredAtParam = incomingOccurredAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(incomingOccurredAtValue);
         final detectedAtParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0),
         );
         final resolvedAtParam = resolvedAtValue == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(resolvedAtValue);
+        final resolutionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 36);
+        final resolutionChangeIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 38);
+        final resolvedByAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 40);
+        final resolvedByDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 42);
         final object = SyncConflictEntity(
           id: idParam,
           conflictId: conflictIdParam,
@@ -3285,8 +3392,16 @@ obx_int.ModelDefinition getObjectBoxModel() {
           localPayloadJson: localPayloadJsonParam,
           incomingPayloadJson: incomingPayloadJsonParam,
           incomingChangeId: incomingChangeIdParam,
+          incomingOperation: incomingOperationParam,
+          incomingSourceDeviceProfileId: incomingSourceDeviceProfileIdParam,
+          incomingSourceAuthorProfileId: incomingSourceAuthorProfileIdParam,
+          incomingOccurredAt: incomingOccurredAtParam,
           detectedAt: detectedAtParam,
           resolvedAt: resolvedAtParam,
+          resolution: resolutionParam,
+          resolutionChangeId: resolutionChangeIdParam,
+          resolvedByAuthorProfileId: resolvedByAuthorProfileIdParam,
+          resolvedByDeviceProfileId: resolvedByDeviceProfileIdParam,
         );
 
         return object;
@@ -4478,6 +4593,42 @@ class SyncConflictEntity_ {
   static final resolvedAt = obx.QueryDateProperty<SyncConflictEntity>(
     _entities[17].properties[11],
   );
+
+  /// See [SyncConflictEntity.incomingOperation].
+  static final incomingOperation = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[12],
+  );
+
+  /// See [SyncConflictEntity.incomingSourceDeviceProfileId].
+  static final incomingSourceDeviceProfileId =
+      obx.QueryStringProperty<SyncConflictEntity>(_entities[17].properties[13]);
+
+  /// See [SyncConflictEntity.incomingSourceAuthorProfileId].
+  static final incomingSourceAuthorProfileId =
+      obx.QueryStringProperty<SyncConflictEntity>(_entities[17].properties[14]);
+
+  /// See [SyncConflictEntity.incomingOccurredAt].
+  static final incomingOccurredAt = obx.QueryDateProperty<SyncConflictEntity>(
+    _entities[17].properties[15],
+  );
+
+  /// See [SyncConflictEntity.resolution].
+  static final resolution = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[16],
+  );
+
+  /// See [SyncConflictEntity.resolutionChangeId].
+  static final resolutionChangeId = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[17],
+  );
+
+  /// See [SyncConflictEntity.resolvedByAuthorProfileId].
+  static final resolvedByAuthorProfileId =
+      obx.QueryStringProperty<SyncConflictEntity>(_entities[17].properties[18]);
+
+  /// See [SyncConflictEntity.resolvedByDeviceProfileId].
+  static final resolvedByDeviceProfileId =
+      obx.QueryStringProperty<SyncConflictEntity>(_entities[17].properties[19]);
 }
 
 /// [SyncCursorEntity] entity fields to define ObjectBox queries.

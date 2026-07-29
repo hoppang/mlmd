@@ -1019,17 +1019,22 @@ class AppLocalizationsKo extends AppLocalizations {
       '가족 공유에는 텍스트 기록과 첨부 유형·개수만 포함하며 사진과 파일 자체는 보내지 않습니다.';
 
   @override
-  String familySharingPending(int count) => '가족에게 반영할 변경 $count건';
+  String familySharingPending(int count) {
+    return '가족에게 반영할 변경 $count건';
+  }
 
   @override
-  String familySharingConflicts(int count) => '확인이 필요한 충돌 $count건';
+  String familySharingConflicts(int count) {
+    return '확인이 필요한 충돌 $count건';
+  }
 
   @override
   String get familySharingNeverReceived => '아직 가족 기록을 받은 적이 없어요';
 
   @override
-  String familySharingLastReceived(String date, String time) =>
-      '마지막으로 가족 기록을 받은 시각: $date $time';
+  String familySharingLastReceived(String date, String time) {
+    return '마지막으로 가족 기록을 받은 시각: $date $time';
+  }
 
   @override
   String get familySharingOfflineNotice => '인터넷에 연결되면 자동으로 반영됩니다.';
@@ -1856,4 +1861,59 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trackingOptionalMemo => '메모 (선택)';
+
+  @override
+  String get syncConflictsTitle => '동기화 충돌 확인';
+
+  @override
+  String get syncConflictsReviewAction => '충돌 확인하기';
+
+  @override
+  String get syncConflictUnresolved => '결정 필요';
+
+  @override
+  String get syncConflictResolved => '해결됨';
+
+  @override
+  String get syncConflictLocalVersion => '이 기기';
+
+  @override
+  String get syncConflictIncomingVersion => '다른 기기';
+
+  @override
+  String get syncConflictKeepLocal => '이 기기 내용 유지';
+
+  @override
+  String get syncConflictUseIncoming => '다른 기기 내용 사용';
+
+  @override
+  String get syncConflictResolutionWarning =>
+      '선택한 내용은 새 변경으로 저장되어 연결된 기기에 공유됩니다.';
+
+  @override
+  String get syncConflictResolvedKeepLocal => '이 기기 내용을 유지함';
+
+  @override
+  String get syncConflictResolvedUseIncoming => '다른 기기 내용을 사용함';
+
+  @override
+  String get syncConflictEmpty => '확인할 동기화 충돌이 없습니다.';
+
+  @override
+  String get syncConflictResolveFailed =>
+      '충돌을 해결하지 못했습니다. 새로 확인한 뒤 다시 시도해 주세요.';
+
+  @override
+  String get syncConflictConfirmTitle => '이 충돌을 해결할까요?';
+
+  @override
+  String get syncConflictConfirmAction => '해결';
+
+  @override
+  String get syncConflictHistoryTitle => '해결 이력';
+
+  @override
+  String syncConflictRevision(int revision) {
+    return '리비전 $revision';
+  }
 }

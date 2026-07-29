@@ -212,8 +212,80 @@ void main() {
       expect(result.conflictCount, 1);
       expect(repository.getSnapshot().unresolvedConflictCount, 1);
       expect(repository.getSnapshot().pendingChangeCount, 2);
+
+      final conflict = repository.getConflicts(includeResolved: false).single;
+      expect(conflict.localPayload['text'], '이 기기 수정');
+      expect(conflict.incomingPayload['text'], '다른 기기 수정');
+
+      final resolution = await repository.resolveConflict(
+        conflictId: conflict.conflictId,
+        resolution: SyncConflictResolution.keepLocal,
+        applyRemoteChange: (_) => const RemoteApplyResult.applied(),
+      );
+      expect(resolution.conflict.resolution, SyncConflictResolution.keepLocal);
+      expect(resolution.conflict.resolvedByAuthorProfileId, isNotEmpty);
+      expect(repository.getSnapshot().unresolvedConflictCount, 0);
+      expect(repository.getConflicts().single.isResolved, isTrue);
     },
   );
+
+  test('using the incoming version queues an authoritative new revision', () async {
+    repository.enqueue(
+      entityType: 'memo',
+      entityId: 'memo-2',
+      entityRevision: 4,
+      operation: SyncOperation.update,
+      payload: const {'text': '로컬 수정'},
+    );
+    final incoming = SyncChange(
+      changeId: 'remote-change-2',
+      familySpaceId: 'family-1',
+      sourceDeviceProfileId: 'other-device',
+      sourceAuthorProfileId: 'other-author',
+      entityType: 'memo',
+      entityId: 'memo-2',
+      entityRevision: 3,
+      operation: SyncOperation.update,
+      payload: const {'text': '선택할 다른 기기 수정'},
+      occurredAt: DateTime.utc(2026, 7, 29),
+    );
+    await repository.synchronize(
+      _FakeTransport(
+        SyncExchange(
+          acknowledgedChangeIds: const {},
+          incomingChanges: [incoming],
+        ),
+      ),
+      applyRemoteChange: (_) => const RemoteApplyResult.applied(),
+    );
+
+    SyncChange? applied;
+    final resolution = await repository.resolveConflict(
+      conflictId: 'remote-change-2',
+      resolution: SyncConflictResolution.useIncoming,
+      applyRemoteChange: (change) {
+        applied = change;
+        return const RemoteApplyResult.applied();
+      },
+    );
+
+    expect(applied?.entityRevision, 5);
+    expect(applied?.payload['text'], '선택할 다른 기기 수정');
+    expect(resolution.conflict.resolution, SyncConflictResolution.useIncoming);
+
+    final transport = _FakeTransport(
+      const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+    );
+    await repository.synchronize(
+      transport,
+      applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+    );
+    final authoritative = transport.receivedOutgoing.singleWhere(
+      (change) => change.entityType == 'memo' && change.entityId == 'memo-2',
+    );
+    expect(authoritative.entityRevision, 5);
+    expect(authoritative.payload['text'], '선택할 다른 기기 수정');
+  });
 
   test('record save paths enqueue shareable text changes', () async {
     final diaryRepository = DiaryRepositoryImpl(

@@ -1014,17 +1014,22 @@ class AppLocalizationsJa extends AppLocalizations {
       '家族共有にはテキスト記録と添付の種類・件数だけを含め、写真やファイル自体は送りません。';
 
   @override
-  String familySharingPending(int count) => '家族への反映待ち $count件';
+  String familySharingPending(int count) {
+    return '家族への反映待ち $count件';
+  }
 
   @override
-  String familySharingConflicts(int count) => '確認が必要な競合 $count件';
+  String familySharingConflicts(int count) {
+    return '確認が必要な競合 $count件';
+  }
 
   @override
   String get familySharingNeverReceived => '家族の記録はまだ受信していません';
 
   @override
-  String familySharingLastReceived(String date, String time) =>
-      '家族の記録を最後に受信した日時: $date $time';
+  String familySharingLastReceived(String date, String time) {
+    return '家族の記録を最後に受信した日時: $date $time';
+  }
 
   @override
   String get familySharingOfflineNotice => 'インターネットに接続すると自動で反映されます。';
@@ -1846,4 +1851,58 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trackingOptionalMemo => 'メモ（任意）';
+
+  @override
+  String get syncConflictsTitle => '同期の競合を確認';
+
+  @override
+  String get syncConflictsReviewAction => '競合を確認';
+
+  @override
+  String get syncConflictUnresolved => '確認が必要';
+
+  @override
+  String get syncConflictResolved => '解決済み';
+
+  @override
+  String get syncConflictLocalVersion => 'この端末';
+
+  @override
+  String get syncConflictIncomingVersion => '別の端末';
+
+  @override
+  String get syncConflictKeepLocal => 'この端末の内容を残す';
+
+  @override
+  String get syncConflictUseIncoming => '別の端末の内容を使う';
+
+  @override
+  String get syncConflictResolutionWarning =>
+      '選択した内容は新しい変更として保存され、接続中の端末に共有されます。';
+
+  @override
+  String get syncConflictResolvedKeepLocal => 'この端末の内容を残しました';
+
+  @override
+  String get syncConflictResolvedUseIncoming => '別の端末の内容を使いました';
+
+  @override
+  String get syncConflictEmpty => '確認する同期の競合はありません。';
+
+  @override
+  String get syncConflictResolveFailed => '競合を解決できませんでした。更新してからもう一度お試しください。';
+
+  @override
+  String get syncConflictConfirmTitle => 'この競合を解決しますか？';
+
+  @override
+  String get syncConflictConfirmAction => '解決';
+
+  @override
+  String get syncConflictHistoryTitle => '解決履歴';
+
+  @override
+  String syncConflictRevision(int revision) {
+    return 'リビジョン $revision';
+  }
 }

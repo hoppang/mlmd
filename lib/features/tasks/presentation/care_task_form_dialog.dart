@@ -54,7 +54,7 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
     final authorProfiles = ref.watch(authorProfileListProvider);
 
     return AlertDialog(
-      title: const Text('새 할 일 추가'),
+      title: const Text('Add Care Task'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -65,12 +65,12 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
-                  labelText: '할 일 제목',
-                  hintText: '예: 오후 6:30 해열제 먹이기',
+                  labelText: 'Title',
+                  hintText: 'Example: take medicine at 6:30 PM',
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return '제목을 입력해주세요.';
+                    return 'Please enter a title.';
                   }
                   return null;
                 },
@@ -78,7 +78,7 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
               const SizedBox(height: 16),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('예정 시각'),
+                title: const Text('Scheduled time'),
                 subtitle: Text(
                   '${_scheduledDate.year}-${_scheduledDate.month}-${_scheduledDate.day} '
                   '${_scheduledTime.format(context)}',
@@ -88,12 +88,12 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
-                value: _selectedAssigneeAuthorId,
-                decoration: const InputDecoration(labelText: '담당자'),
+                initialValue: _selectedAssigneeAuthorId,
+                decoration: const InputDecoration(labelText: 'Assignee'),
                 items: [
                   const DropdownMenuItem<String?>(
                     value: null,
-                    child: Text('누구나 (기본)'),
+                    child: Text('No assignee (default)'),
                   ),
                   ...authorProfiles.map((author) => DropdownMenuItem<String?>(
                         value: author.authorProfileId,
@@ -107,37 +107,39 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              const Text('알림 설정', style: TextStyle(fontWeight: FontWeight.bold)),
-              RadioListTile<TaskNotificationMode>(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('앱에서만 표시 (기본)'),
-                value: TaskNotificationMode.inAppOnly,
+              const Text('Notification', style: TextStyle(fontWeight: FontWeight.bold)),
+              RadioGroup<TaskNotificationMode>(
                 groupValue: _notificationMode,
                 onChanged: (val) {
                   if (val != null) setState(() => _notificationMode = val);
                 },
-              ),
-              RadioListTile<TaskNotificationMode>(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('담당자에게 조용한 알림'),
-                value: TaskNotificationMode.quietToAssignee,
-                groupValue: _notificationMode,
-                onChanged: (val) {
-                  if (val != null) setState(() => _notificationMode = val);
-                },
+                child: Column(
+                  children: [
+                    RadioListTile<TaskNotificationMode>(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('App only (default)'),
+                      value: TaskNotificationMode.inAppOnly,
+                    ),
+                    RadioListTile<TaskNotificationMode>(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Quiet to assignee'),
+                      value: TaskNotificationMode.quietToAssignee,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
-                value: _recurrenceRule,
-                decoration: const InputDecoration(labelText: '반복 일정'),
+                initialValue: _recurrenceRule,
+                decoration: const InputDecoration(labelText: 'Recurrence'),
                 items: const [
                   DropdownMenuItem<String?>(
                     value: null,
-                    child: Text('한 번만'),
+                    child: Text('One time'),
                   ),
                   DropdownMenuItem<String?>(
                     value: 'daily',
-                    child: Text('매일 반복'),
+                    child: Text('Daily'),
                   ),
                 ],
                 onChanged: (val) {
@@ -148,27 +150,27 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
-                value: _linkedCategory,
+                initialValue: _linkedCategory,
                 decoration: const InputDecoration(
-                  labelText: '실제 이벤트 연결',
-                  helperText: '완료 시 관련 이벤트를 자동으로 생성합니다.',
+                  labelText: 'Linked event',
+                  helperText: 'A matching event will be created automatically.',
                 ),
                 items: const [
                   DropdownMenuItem<String?>(
                     value: null,
-                    child: Text('연결 없음 (일반 할 일)'),
+                    child: Text('None'),
                   ),
                   DropdownMenuItem<String?>(
                     value: 'medication',
-                    child: Text('투약 (해열제 등)'),
+                    child: Text('Medication'),
                   ),
                   DropdownMenuItem<String?>(
                     value: 'temperature',
-                    child: Text('체온 측정'),
+                    child: Text('Temperature'),
                   ),
                   DropdownMenuItem<String?>(
                     value: 'bath',
-                    child: Text('목욕'),
+                    child: Text('Bath'),
                   ),
                 ],
                 onChanged: (val) {
@@ -184,11 +186,11 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('취소'),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _save,
-          child: const Text('저장'),
+          child: const Text('Save'),
         ),
       ],
     );

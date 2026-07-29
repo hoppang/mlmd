@@ -24,6 +24,8 @@ abstract interface class FamilySyncRepository {
 
   void disconnect();
 
+  List<FamilySyncConflict> getConflicts({bool includeResolved = true});
+
   SyncChange? enqueue({
     required String entityType,
     required String entityId,
@@ -35,6 +37,12 @@ abstract interface class FamilySyncRepository {
 
   Future<SyncRunResult> synchronize(
     FamilySyncTransport transport, {
+    required RemoteChangeApplier applyRemoteChange,
+  });
+
+  Future<ConflictResolutionResult> resolveConflict({
+    required String conflictId,
+    required SyncConflictResolution resolution,
     required RemoteChangeApplier applyRemoteChange,
   });
 }
@@ -166,6 +174,23 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
   }
 
   @override
+  List<FamilySyncConflict> getConflicts({bool includeResolved = true}) {
+    final familySpaceId = activeFamilySpaceId;
+    if (familySpaceId == null) return const [];
+    final conflicts = _conflictBox
+        .getAll()
+        .where(
+          (item) =>
+              item.familySpaceId == familySpaceId &&
+              (includeResolved || item.resolvedAt == null),
+        )
+        .map(_fromConflict)
+        .toList();
+    conflicts.sort((a, b) => b.detectedAt.compareTo(a.detectedAt));
+    return List.unmodifiable(conflicts);
+  }
+
+  @override
   SyncChange? enqueue({
     required String entityType,
     required String entityId,
@@ -282,6 +307,95 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     );
   }
 
+  @override
+  Future<ConflictResolutionResult> resolveConflict({
+    required String conflictId,
+    required SyncConflictResolution resolution,
+    required RemoteChangeApplier applyRemoteChange,
+  }) async {
+    final entity = _conflictById(conflictId);
+    if (entity == null || entity.familySpaceId != activeFamilySpaceId) {
+      throw StateError('The sync conflict is no longer available.');
+    }
+    if (entity.resolvedAt != null) {
+      throw StateError('The sync conflict has already been resolved.');
+    }
+
+    final selectedPayload = resolution == SyncConflictResolution.keepLocal
+        ? _decodePayload(entity.localPayloadJson)
+        : _decodePayload(entity.incomingPayloadJson);
+    final nextRevision =
+        (entity.localRevision > entity.incomingRevision
+            ? entity.localRevision
+            : entity.incomingRevision) +
+        1;
+    if (selectedPayload['revision'] is int) {
+      selectedPayload['revision'] = nextRevision;
+    }
+    final selectedOperation =
+        resolution == SyncConflictResolution.useIncoming
+        ? SyncOperation.parse(entity.incomingOperation ?? 'update')
+        : SyncOperation.update;
+
+    if (resolution == SyncConflictResolution.useIncoming) {
+      final incoming = SyncChange(
+        changeId: entity.incomingChangeId,
+        familySpaceId: entity.familySpaceId,
+        sourceDeviceProfileId:
+            entity.incomingSourceDeviceProfileId ?? 'unknown-device',
+        sourceAuthorProfileId:
+            entity.incomingSourceAuthorProfileId ?? 'unknown-author',
+        entityType: entity.entityType,
+        entityId: entity.entityId,
+        entityRevision: nextRevision,
+        operation: selectedOperation,
+        payload: selectedPayload,
+        occurredAt: entity.incomingOccurredAt ?? entity.detectedAt,
+      );
+      final applyResult = await applyRemoteChange(incoming);
+      if (applyResult.disposition == RemoteApplyDisposition.conflict) {
+        throw StateError(
+          'The local record changed after this conflict was detected.',
+        );
+      }
+    }
+
+    final oldPending = _pending(entity.familySpaceId)
+        .where(
+          (item) =>
+              item.entityType == entity.entityType &&
+              item.entityId == entity.entityId,
+        )
+        .toList();
+    if (oldPending.isNotEmpty) {
+      _outbox.removeMany(oldPending.map((item) => item.id).toList());
+    }
+    final queued = enqueue(
+      entityType: entity.entityType,
+      entityId: entity.entityId,
+      entityRevision: nextRevision,
+      operation: selectedOperation,
+      payload: selectedPayload,
+    );
+    if (queued == null) {
+      throw StateError('The family space was disconnected during resolution.');
+    }
+
+    final source = _profiles.requireCurrentSource();
+    entity
+      ..resolution = resolution.name
+      ..resolutionChangeId = queued.changeId
+      ..resolvedByAuthorProfileId = source.authorProfileId
+      ..resolvedByDeviceProfileId = source.deviceProfileId
+      ..resolvedAt = DateTime.now();
+    _conflictBox.put(entity);
+    _notifyChanged();
+    return ConflictResolutionResult(
+      conflict: _fromConflict(entity),
+      queuedChangeId: queued.changeId,
+    );
+  }
+
   void _recordFailure(
     SyncCursorEntity cursor,
     List<SyncOutboxEntity> pending,
@@ -318,6 +432,10 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
         localPayloadJson: localPayloadJson,
         incomingPayloadJson: incoming.payloadJson,
         incomingChangeId: incoming.changeId,
+        incomingOperation: incoming.operation.name,
+        incomingSourceDeviceProfileId: incoming.sourceDeviceProfileId,
+        incomingSourceAuthorProfileId: incoming.sourceAuthorProfileId,
+        incomingOccurredAt: incoming.occurredAt,
         detectedAt: DateTime.now(),
       ),
     );
@@ -422,6 +540,36 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     occurredAt: entity.occurredAt,
   );
 
+  Map<String, Object?> _decodePayload(String payloadJson) =>
+      (jsonDecode(payloadJson) as Map).cast<String, Object?>();
+
+  FamilySyncConflict _fromConflict(SyncConflictEntity entity) =>
+      FamilySyncConflict(
+        conflictId: entity.conflictId,
+        familySpaceId: entity.familySpaceId,
+        entityType: entity.entityType,
+        entityId: entity.entityId,
+        localRevision: entity.localRevision,
+        incomingRevision: entity.incomingRevision,
+        localPayload: Map.unmodifiable(_decodePayload(entity.localPayloadJson)),
+        incomingPayload: Map.unmodifiable(
+          _decodePayload(entity.incomingPayloadJson),
+        ),
+        incomingChangeId: entity.incomingChangeId,
+        incomingOperation: SyncOperation.parse(
+          entity.incomingOperation ?? 'update',
+        ),
+        detectedAt: entity.detectedAt,
+        resolution: entity.resolution == null
+            ? null
+            : SyncConflictResolution.values.firstWhere(
+                (item) => item.name == entity.resolution,
+              ),
+        resolvedAt: entity.resolvedAt,
+        resolvedByAuthorProfileId: entity.resolvedByAuthorProfileId,
+        resolvedByDeviceProfileId: entity.resolvedByDeviceProfileId,
+      );
+
   void _notifyChanged() {
     if (!_changes.isClosed) _changes.add(null);
   }
@@ -481,3 +629,8 @@ final familySyncStatusProvider =
       FamilySyncStatusNotifier.new,
       dependencies: [familySyncRepositoryProvider],
     );
+
+final familySyncConflictsProvider = Provider<List<FamilySyncConflict>>((ref) {
+  ref.watch(familySyncStatusProvider);
+  return ref.watch(familySyncRepositoryProvider).getConflicts();
+}, dependencies: [familySyncRepositoryProvider, familySyncStatusProvider]);
