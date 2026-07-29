@@ -1916,4 +1916,42 @@ class AppLocalizationsKo extends AppLocalizations {
   String syncConflictRevision(int revision) {
     return '리비전 $revision';
   }
+
+  @override
+  String get growthChartTitle => '성장';
+
+  @override
+  String get growthChartPersonalTrendDescription =>
+      '아이의 원본 측정값이 시간에 따라 어떻게 변했는지 봅니다. 측정하지 않은 기간은 추정하지 않습니다.';
+
+  @override
+  String get growthChartHeight => '키';
+
+  @override
+  String get growthChartWeight => '몸무게';
+
+  @override
+  String get growthChartHead => '머리둘레';
+
+  @override
+  String get growthChartEmpty => '아직 이 그래프에 표시할 측정값이 없습니다.';
+
+  @override
+  String growthChartPointCount(int count) {
+    return '원본 측정값 $count개';
+  }
+
+  @override
+  String get growthChartShowReference => '성장도표 함께 보기';
+
+  @override
+  String get growthChartProfileRequired => '백분위 계산에는 정확한 생년월일과 성별이 필요합니다.';
+
+  @override
+  String get growthChartReferenceUnavailable =>
+      '현재는 개인 추세만 표시합니다. 아이 프로필과 버전이 확인된 공식 기준 데이터가 준비될 때까지 백분위는 숨깁니다.';
+
+  @override
+  String get growthChartPercentileExplanation =>
+      '백분위는 같은 성별·나이의 참고 분포에서 어느 위치인지 나타냅니다. 높거나 낮은 것이 곧 좋고 나쁨을 뜻하지는 않습니다.';
 }

@@ -1972,4 +1972,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String syncConflictRevision(int revision) {
     return 'Revision $revision';
   }
+
+  @override
+  String get growthChartTitle => 'Growth';
+
+  @override
+  String get growthChartPersonalTrendDescription =>
+      'See your child\'s original measurements over time. Missing periods are not estimated.';
+
+  @override
+  String get growthChartHeight => 'Height';
+
+  @override
+  String get growthChartWeight => 'Weight';
+
+  @override
+  String get growthChartHead => 'Head';
+
+  @override
+  String get growthChartEmpty => 'No measurements for this chart yet.';
+
+  @override
+  String growthChartPointCount(int count) {
+    return '$count original measurements';
+  }
+
+  @override
+  String get growthChartShowReference => 'Show growth reference';
+
+  @override
+  String get growthChartProfileRequired =>
+      'Exact birth date and sex are required for percentiles.';
+
+  @override
+  String get growthChartReferenceUnavailable =>
+      'Only the personal trend is shown for now. Percentiles stay hidden until a child profile and versioned official reference data are available.';
+
+  @override
+  String get growthChartPercentileExplanation =>
+      'A percentile describes a position in a reference distribution for children of the same age and sex. Higher or lower does not by itself mean better or worse.';
 }

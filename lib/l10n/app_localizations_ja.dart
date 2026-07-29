@@ -1905,4 +1905,42 @@ class AppLocalizationsJa extends AppLocalizations {
   String syncConflictRevision(int revision) {
     return 'リビジョン $revision';
   }
+
+  @override
+  String get growthChartTitle => '成長';
+
+  @override
+  String get growthChartPersonalTrendDescription =>
+      'お子さまの元の測定値の変化を表示します。測定していない期間は推定しません。';
+
+  @override
+  String get growthChartHeight => '身長';
+
+  @override
+  String get growthChartWeight => '体重';
+
+  @override
+  String get growthChartHead => '頭囲';
+
+  @override
+  String get growthChartEmpty => 'このグラフに表示する測定値はまだありません。';
+
+  @override
+  String growthChartPointCount(int count) {
+    return '元の測定値 $count件';
+  }
+
+  @override
+  String get growthChartShowReference => '成長曲線を重ねて表示';
+
+  @override
+  String get growthChartProfileRequired => 'パーセンタイルには正確な生年月日と性別が必要です。';
+
+  @override
+  String get growthChartReferenceUnavailable =>
+      '現在は個人の推移のみ表示します。子どものプロフィールと版が確認できる公式基準データが整うまで、パーセンタイルは表示しません。';
+
+  @override
+  String get growthChartPercentileExplanation =>
+      'パーセンタイルは同じ年齢・性別の参照分布における位置を示します。高い・低いこと自体が良い・悪いという意味ではありません。';
 }

@@ -21,6 +21,7 @@ import '../../settings/presentation/settings_page.dart';
 import '../../events/domain/event_catalog.dart';
 import '../../events/presentation/record_entry_sheet.dart';
 import '../../medical_briefing/presentation/medical_briefing_page.dart';
+import '../../growth/presentation/growth_chart_page.dart';
 import '../../tracking/application/tracking_preferences_notifier.dart';
 import '../../tracking/domain/tracking_models.dart';
 import '../../../repositories/tracking_repository.dart';
@@ -275,6 +276,14 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     );
   }
 
+  void _showGrowthChartPage(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GrowthChartPage(diaries: ref.read(diaryListProvider)),
+      ),
+    );
+  }
+
   void _showDuplicateReviewPage(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -433,6 +442,12 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
               ),
               actions: [
                 if (_selectedTab == 0) ...[
+                  IconButton(
+                    key: const Key('growth-chart-button'),
+                    icon: const Icon(Icons.show_chart),
+                    tooltip: loc.growthChartTitle,
+                    onPressed: () => _showGrowthChartPage(context),
+                  ),
                   IconButton(
                     key: const Key('medical-briefing-button'),
                     icon: const Icon(Icons.medical_information_outlined),

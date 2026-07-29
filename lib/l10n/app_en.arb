@@ -668,5 +668,17 @@
   "syncConflictConfirmAction": "Resolve",
   "syncConflictHistoryTitle": "Resolution history",
   "syncConflictRevision": "Revision {revision}",
-  "@syncConflictRevision": {"placeholders": {"revision": {"type": "int"}}}
+  "@syncConflictRevision": {"placeholders": {"revision": {"type": "int"}}},
+  "growthChartTitle": "Growth",
+  "growthChartPersonalTrendDescription": "See your child's original measurements over time. Missing periods are not estimated.",
+  "growthChartHeight": "Height",
+  "growthChartWeight": "Weight",
+  "growthChartHead": "Head",
+  "growthChartEmpty": "No measurements for this chart yet.",
+  "growthChartPointCount": "{count} original measurements",
+  "@growthChartPointCount": {"placeholders": {"count": {"type": "int"}}},
+  "growthChartShowReference": "Show growth reference",
+  "growthChartProfileRequired": "Exact birth date and sex are required for percentiles.",
+  "growthChartReferenceUnavailable": "Only the personal trend is shown for now. Percentiles stay hidden until a child profile and versioned official reference data are available.",
+  "growthChartPercentileExplanation": "A percentile describes a position in a reference distribution for children of the same age and sex. Higher or lower does not by itself mean better or worse."
 }
