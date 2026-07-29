@@ -9,6 +9,7 @@ import '../../../providers/locale_provider.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../profiles/presentation/author_profile_page.dart';
 import '../../summaries/application/ai_summary_notifier.dart';
+import '../../sharing/presentation/family_sharing_page.dart';
 import '../../events/domain/event_catalog.dart';
 import '../../tracking/application/tracking_preferences_notifier.dart';
 import '../../tracking/domain/tracking_models.dart';
@@ -69,7 +70,11 @@ class SettingsPage extends ConsumerWidget {
               icon: Icons.family_restroom_outlined,
               title: loc.familySharing,
               subtitle: loc.familySharingDescription,
-              onTap: () => _showUnavailable(context, loc.familySharing),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const FamilySharingPage(),
+                ),
+              ),
             ),
             _SettingsTile(
               icon: Icons.inventory_2_outlined,

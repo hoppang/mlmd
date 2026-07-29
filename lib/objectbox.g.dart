@@ -24,6 +24,7 @@ import 'models/daily_tracking_coverage_entity.dart';
 import 'models/device_profile_entity.dart';
 import 'models/diary_entity.dart';
 import 'models/duplicate_review_edge_entity.dart';
+import 'models/family_sync_entity.dart';
 import 'models/logical_event_group_entity.dart';
 import 'models/record_draft_entity.dart';
 import 'models/search_document_entity.dart';
@@ -1223,6 +1224,289 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(17, 5283359893795432749),
+    name: 'FamilySpaceEntity',
+    lastPropertyId: const obx_int.IdUid(6, 3758233620247832592),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 6072505788521241103),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 4843508240399474137),
+        name: 'familySpaceId',
+        type: 9,
+        flags: 2080,
+        indexId: const obx_int.IdUid(31, 7463077145737863479),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 8722997627164338673),
+        name: 'displayName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 6296180248475891563),
+        name: 'deviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 6162979612373937338),
+        name: 'isActive',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 3758233620247832592),
+        name: 'joinedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(18, 1462374135511562219),
+    name: 'SyncConflictEntity',
+    lastPropertyId: const obx_int.IdUid(12, 9054569224930740833),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 4233568847226955517),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 6574271324634684435),
+        name: 'conflictId',
+        type: 9,
+        flags: 2080,
+        indexId: const obx_int.IdUid(32, 2666696471556742007),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 3778614456322118471),
+        name: 'familySpaceId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(33, 1337524801753504334),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 5089728240543138791),
+        name: 'entityType',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 1385727196676636131),
+        name: 'entityId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(34, 6353583220177366868),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 116154977070750312),
+        name: 'localRevision',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 2687702041294937442),
+        name: 'incomingRevision',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 2539676420498381150),
+        name: 'localPayloadJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 7029914442768120216),
+        name: 'incomingPayloadJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 2310058953695364766),
+        name: 'incomingChangeId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 915606456682704494),
+        name: 'detectedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 9054569224930740833),
+        name: 'resolvedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(19, 1895975585166344645),
+    name: 'SyncCursorEntity',
+    lastPropertyId: const obx_int.IdUid(7, 9060830135889035403),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 7235258606016354363),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 5386107257877916238),
+        name: 'cursorKey',
+        type: 9,
+        flags: 2080,
+        indexId: const obx_int.IdUid(35, 7084104720748562120),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 6791938119342968820),
+        name: 'familySpaceId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(36, 8762074802530980083),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 4546921640320597539),
+        name: 'deviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 7543590923969807381),
+        name: 'lastAppliedChangeId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 8928992789154689287),
+        name: 'lastSuccessfulAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 9060830135889035403),
+        name: 'lastErrorCode',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(20, 462491011859536736),
+    name: 'SyncOutboxEntity',
+    lastPropertyId: const obx_int.IdUid(14, 8979574227803027226),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 4308664292034136452),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 1987107074464668165),
+        name: 'changeId',
+        type: 9,
+        flags: 2080,
+        indexId: const obx_int.IdUid(37, 3704176562539792896),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 522140809998064411),
+        name: 'familySpaceId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(38, 8172268355492353691),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 4253322307151822697),
+        name: 'sourceDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 4617124675971354744),
+        name: 'sourceAuthorProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 4408561052383360361),
+        name: 'entityType',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 5645649409373715691),
+        name: 'entityId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(39, 5118464589099621665),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 2427860889051658153),
+        name: 'entityRevision',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 6617728775733989364),
+        name: 'operation',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 8953532084394320996),
+        name: 'payloadJson',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 1264738105679134091),
+        name: 'occurredAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 8860164375384552702),
+        name: 'attemptCount',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 3366396629852482792),
+        name: 'lastAttemptAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 8979574227803027226),
+        name: 'lastErrorCode',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -1268,8 +1552,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(16, 6227614629242879016),
-    lastIndexId: const obx_int.IdUid(30, 7444440659414866890),
+    lastEntityId: const obx_int.IdUid(20, 462491011859536736),
+    lastIndexId: const obx_int.IdUid(39, 5118464589099621665),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -2842,6 +3126,367 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    FamilySpaceEntity: obx_int.EntityDefinition<FamilySpaceEntity>(
+      model: _entities[16],
+      toOneRelations: (FamilySpaceEntity object) => [],
+      toManyRelations: (FamilySpaceEntity object) => {},
+      getId: (FamilySpaceEntity object) => object.id,
+      setId: (FamilySpaceEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (FamilySpaceEntity object, fb.Builder fbb) {
+        final familySpaceIdOffset = fbb.writeString(object.familySpaceId);
+        final displayNameOffset = fbb.writeString(object.displayName);
+        final deviceProfileIdOffset = fbb.writeString(object.deviceProfileId);
+        fbb.startTable(7);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, familySpaceIdOffset);
+        fbb.addOffset(2, displayNameOffset);
+        fbb.addOffset(3, deviceProfileIdOffset);
+        fbb.addBool(4, object.isActive);
+        fbb.addInt64(5, object.joinedAt.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final familySpaceIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final displayNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final deviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final isActiveParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          12,
+          false,
+        );
+        final joinedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 14, 0),
+        );
+        final object = FamilySpaceEntity(
+          id: idParam,
+          familySpaceId: familySpaceIdParam,
+          displayName: displayNameParam,
+          deviceProfileId: deviceProfileIdParam,
+          isActive: isActiveParam,
+          joinedAt: joinedAtParam,
+        );
+
+        return object;
+      },
+    ),
+    SyncConflictEntity: obx_int.EntityDefinition<SyncConflictEntity>(
+      model: _entities[17],
+      toOneRelations: (SyncConflictEntity object) => [],
+      toManyRelations: (SyncConflictEntity object) => {},
+      getId: (SyncConflictEntity object) => object.id,
+      setId: (SyncConflictEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (SyncConflictEntity object, fb.Builder fbb) {
+        final conflictIdOffset = fbb.writeString(object.conflictId);
+        final familySpaceIdOffset = fbb.writeString(object.familySpaceId);
+        final entityTypeOffset = fbb.writeString(object.entityType);
+        final entityIdOffset = fbb.writeString(object.entityId);
+        final localPayloadJsonOffset = fbb.writeString(object.localPayloadJson);
+        final incomingPayloadJsonOffset = fbb.writeString(
+          object.incomingPayloadJson,
+        );
+        final incomingChangeIdOffset = fbb.writeString(object.incomingChangeId);
+        fbb.startTable(13);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, conflictIdOffset);
+        fbb.addOffset(2, familySpaceIdOffset);
+        fbb.addOffset(3, entityTypeOffset);
+        fbb.addOffset(4, entityIdOffset);
+        fbb.addInt64(5, object.localRevision);
+        fbb.addInt64(6, object.incomingRevision);
+        fbb.addOffset(7, localPayloadJsonOffset);
+        fbb.addOffset(8, incomingPayloadJsonOffset);
+        fbb.addOffset(9, incomingChangeIdOffset);
+        fbb.addInt64(10, object.detectedAt.millisecondsSinceEpoch);
+        fbb.addInt64(11, object.resolvedAt?.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final resolvedAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          26,
+        );
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final conflictIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final familySpaceIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final entityTypeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final entityIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 12, '');
+        final localRevisionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          0,
+        );
+        final incomingRevisionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          16,
+          0,
+        );
+        final localPayloadJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 18, '');
+        final incomingPayloadJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 20, '');
+        final incomingChangeIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 22, '');
+        final detectedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0),
+        );
+        final resolvedAtParam = resolvedAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(resolvedAtValue);
+        final object = SyncConflictEntity(
+          id: idParam,
+          conflictId: conflictIdParam,
+          familySpaceId: familySpaceIdParam,
+          entityType: entityTypeParam,
+          entityId: entityIdParam,
+          localRevision: localRevisionParam,
+          incomingRevision: incomingRevisionParam,
+          localPayloadJson: localPayloadJsonParam,
+          incomingPayloadJson: incomingPayloadJsonParam,
+          incomingChangeId: incomingChangeIdParam,
+          detectedAt: detectedAtParam,
+          resolvedAt: resolvedAtParam,
+        );
+
+        return object;
+      },
+    ),
+    SyncCursorEntity: obx_int.EntityDefinition<SyncCursorEntity>(
+      model: _entities[18],
+      toOneRelations: (SyncCursorEntity object) => [],
+      toManyRelations: (SyncCursorEntity object) => {},
+      getId: (SyncCursorEntity object) => object.id,
+      setId: (SyncCursorEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (SyncCursorEntity object, fb.Builder fbb) {
+        final cursorKeyOffset = fbb.writeString(object.cursorKey);
+        final familySpaceIdOffset = fbb.writeString(object.familySpaceId);
+        final deviceProfileIdOffset = fbb.writeString(object.deviceProfileId);
+        final lastAppliedChangeIdOffset = object.lastAppliedChangeId == null
+            ? null
+            : fbb.writeString(object.lastAppliedChangeId!);
+        final lastErrorCodeOffset = object.lastErrorCode == null
+            ? null
+            : fbb.writeString(object.lastErrorCode!);
+        fbb.startTable(8);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, cursorKeyOffset);
+        fbb.addOffset(2, familySpaceIdOffset);
+        fbb.addOffset(3, deviceProfileIdOffset);
+        fbb.addOffset(4, lastAppliedChangeIdOffset);
+        fbb.addInt64(5, object.lastSuccessfulAt?.millisecondsSinceEpoch);
+        fbb.addOffset(6, lastErrorCodeOffset);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final lastSuccessfulAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          14,
+        );
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final cursorKeyParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final familySpaceIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final deviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final lastAppliedChangeIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 12);
+        final lastSuccessfulAtParam = lastSuccessfulAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(lastSuccessfulAtValue);
+        final lastErrorCodeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 16);
+        final object = SyncCursorEntity(
+          id: idParam,
+          cursorKey: cursorKeyParam,
+          familySpaceId: familySpaceIdParam,
+          deviceProfileId: deviceProfileIdParam,
+          lastAppliedChangeId: lastAppliedChangeIdParam,
+          lastSuccessfulAt: lastSuccessfulAtParam,
+          lastErrorCode: lastErrorCodeParam,
+        );
+
+        return object;
+      },
+    ),
+    SyncOutboxEntity: obx_int.EntityDefinition<SyncOutboxEntity>(
+      model: _entities[19],
+      toOneRelations: (SyncOutboxEntity object) => [],
+      toManyRelations: (SyncOutboxEntity object) => {},
+      getId: (SyncOutboxEntity object) => object.id,
+      setId: (SyncOutboxEntity object, int id) {
+        object.id = id;
+      },
+      objectToFB: (SyncOutboxEntity object, fb.Builder fbb) {
+        final changeIdOffset = fbb.writeString(object.changeId);
+        final familySpaceIdOffset = fbb.writeString(object.familySpaceId);
+        final sourceDeviceProfileIdOffset = fbb.writeString(
+          object.sourceDeviceProfileId,
+        );
+        final sourceAuthorProfileIdOffset = fbb.writeString(
+          object.sourceAuthorProfileId,
+        );
+        final entityTypeOffset = fbb.writeString(object.entityType);
+        final entityIdOffset = fbb.writeString(object.entityId);
+        final operationOffset = fbb.writeString(object.operation);
+        final payloadJsonOffset = fbb.writeString(object.payloadJson);
+        final lastErrorCodeOffset = object.lastErrorCode == null
+            ? null
+            : fbb.writeString(object.lastErrorCode!);
+        fbb.startTable(15);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, changeIdOffset);
+        fbb.addOffset(2, familySpaceIdOffset);
+        fbb.addOffset(3, sourceDeviceProfileIdOffset);
+        fbb.addOffset(4, sourceAuthorProfileIdOffset);
+        fbb.addOffset(5, entityTypeOffset);
+        fbb.addOffset(6, entityIdOffset);
+        fbb.addInt64(7, object.entityRevision);
+        fbb.addOffset(8, operationOffset);
+        fbb.addOffset(9, payloadJsonOffset);
+        fbb.addInt64(10, object.occurredAt.millisecondsSinceEpoch);
+        fbb.addInt64(11, object.attemptCount);
+        fbb.addInt64(12, object.lastAttemptAt?.millisecondsSinceEpoch);
+        fbb.addOffset(13, lastErrorCodeOffset);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final lastAttemptAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          28,
+        );
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final changeIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final familySpaceIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final sourceDeviceProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final sourceAuthorProfileIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 12, '');
+        final entityTypeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 14, '');
+        final entityIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final entityRevisionParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          18,
+          0,
+        );
+        final operationParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 20, '');
+        final payloadJsonParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 22, '');
+        final occurredAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0),
+        );
+        final attemptCountParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          26,
+          0,
+        );
+        final lastAttemptAtParam = lastAttemptAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(lastAttemptAtValue);
+        final lastErrorCodeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 30);
+        final object = SyncOutboxEntity(
+          id: idParam,
+          changeId: changeIdParam,
+          familySpaceId: familySpaceIdParam,
+          sourceDeviceProfileId: sourceDeviceProfileIdParam,
+          sourceAuthorProfileId: sourceAuthorProfileIdParam,
+          entityType: entityTypeParam,
+          entityId: entityIdParam,
+          entityRevision: entityRevisionParam,
+          operation: operationParam,
+          payloadJson: payloadJsonParam,
+          occurredAt: occurredAtParam,
+          attemptCount: attemptCountParam,
+          lastAttemptAt: lastAttemptAtParam,
+          lastErrorCode: lastErrorCodeParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -3737,5 +4382,209 @@ class AttachmentEntity_ {
   /// See [AttachmentEntity.deletedAt].
   static final deletedAt = obx.QueryDateProperty<AttachmentEntity>(
     _entities[15].properties[5],
+  );
+}
+
+/// [FamilySpaceEntity] entity fields to define ObjectBox queries.
+class FamilySpaceEntity_ {
+  /// See [FamilySpaceEntity.id].
+  static final id = obx.QueryIntegerProperty<FamilySpaceEntity>(
+    _entities[16].properties[0],
+  );
+
+  /// See [FamilySpaceEntity.familySpaceId].
+  static final familySpaceId = obx.QueryStringProperty<FamilySpaceEntity>(
+    _entities[16].properties[1],
+  );
+
+  /// See [FamilySpaceEntity.displayName].
+  static final displayName = obx.QueryStringProperty<FamilySpaceEntity>(
+    _entities[16].properties[2],
+  );
+
+  /// See [FamilySpaceEntity.deviceProfileId].
+  static final deviceProfileId = obx.QueryStringProperty<FamilySpaceEntity>(
+    _entities[16].properties[3],
+  );
+
+  /// See [FamilySpaceEntity.isActive].
+  static final isActive = obx.QueryBooleanProperty<FamilySpaceEntity>(
+    _entities[16].properties[4],
+  );
+
+  /// See [FamilySpaceEntity.joinedAt].
+  static final joinedAt = obx.QueryDateProperty<FamilySpaceEntity>(
+    _entities[16].properties[5],
+  );
+}
+
+/// [SyncConflictEntity] entity fields to define ObjectBox queries.
+class SyncConflictEntity_ {
+  /// See [SyncConflictEntity.id].
+  static final id = obx.QueryIntegerProperty<SyncConflictEntity>(
+    _entities[17].properties[0],
+  );
+
+  /// See [SyncConflictEntity.conflictId].
+  static final conflictId = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[1],
+  );
+
+  /// See [SyncConflictEntity.familySpaceId].
+  static final familySpaceId = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[2],
+  );
+
+  /// See [SyncConflictEntity.entityType].
+  static final entityType = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[3],
+  );
+
+  /// See [SyncConflictEntity.entityId].
+  static final entityId = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[4],
+  );
+
+  /// See [SyncConflictEntity.localRevision].
+  static final localRevision = obx.QueryIntegerProperty<SyncConflictEntity>(
+    _entities[17].properties[5],
+  );
+
+  /// See [SyncConflictEntity.incomingRevision].
+  static final incomingRevision = obx.QueryIntegerProperty<SyncConflictEntity>(
+    _entities[17].properties[6],
+  );
+
+  /// See [SyncConflictEntity.localPayloadJson].
+  static final localPayloadJson = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[7],
+  );
+
+  /// See [SyncConflictEntity.incomingPayloadJson].
+  static final incomingPayloadJson =
+      obx.QueryStringProperty<SyncConflictEntity>(_entities[17].properties[8]);
+
+  /// See [SyncConflictEntity.incomingChangeId].
+  static final incomingChangeId = obx.QueryStringProperty<SyncConflictEntity>(
+    _entities[17].properties[9],
+  );
+
+  /// See [SyncConflictEntity.detectedAt].
+  static final detectedAt = obx.QueryDateProperty<SyncConflictEntity>(
+    _entities[17].properties[10],
+  );
+
+  /// See [SyncConflictEntity.resolvedAt].
+  static final resolvedAt = obx.QueryDateProperty<SyncConflictEntity>(
+    _entities[17].properties[11],
+  );
+}
+
+/// [SyncCursorEntity] entity fields to define ObjectBox queries.
+class SyncCursorEntity_ {
+  /// See [SyncCursorEntity.id].
+  static final id = obx.QueryIntegerProperty<SyncCursorEntity>(
+    _entities[18].properties[0],
+  );
+
+  /// See [SyncCursorEntity.cursorKey].
+  static final cursorKey = obx.QueryStringProperty<SyncCursorEntity>(
+    _entities[18].properties[1],
+  );
+
+  /// See [SyncCursorEntity.familySpaceId].
+  static final familySpaceId = obx.QueryStringProperty<SyncCursorEntity>(
+    _entities[18].properties[2],
+  );
+
+  /// See [SyncCursorEntity.deviceProfileId].
+  static final deviceProfileId = obx.QueryStringProperty<SyncCursorEntity>(
+    _entities[18].properties[3],
+  );
+
+  /// See [SyncCursorEntity.lastAppliedChangeId].
+  static final lastAppliedChangeId = obx.QueryStringProperty<SyncCursorEntity>(
+    _entities[18].properties[4],
+  );
+
+  /// See [SyncCursorEntity.lastSuccessfulAt].
+  static final lastSuccessfulAt = obx.QueryDateProperty<SyncCursorEntity>(
+    _entities[18].properties[5],
+  );
+
+  /// See [SyncCursorEntity.lastErrorCode].
+  static final lastErrorCode = obx.QueryStringProperty<SyncCursorEntity>(
+    _entities[18].properties[6],
+  );
+}
+
+/// [SyncOutboxEntity] entity fields to define ObjectBox queries.
+class SyncOutboxEntity_ {
+  /// See [SyncOutboxEntity.id].
+  static final id = obx.QueryIntegerProperty<SyncOutboxEntity>(
+    _entities[19].properties[0],
+  );
+
+  /// See [SyncOutboxEntity.changeId].
+  static final changeId = obx.QueryStringProperty<SyncOutboxEntity>(
+    _entities[19].properties[1],
+  );
+
+  /// See [SyncOutboxEntity.familySpaceId].
+  static final familySpaceId = obx.QueryStringProperty<SyncOutboxEntity>(
+    _entities[19].properties[2],
+  );
+
+  /// See [SyncOutboxEntity.sourceDeviceProfileId].
+  static final sourceDeviceProfileId =
+      obx.QueryStringProperty<SyncOutboxEntity>(_entities[19].properties[3]);
+
+  /// See [SyncOutboxEntity.sourceAuthorProfileId].
+  static final sourceAuthorProfileId =
+      obx.QueryStringProperty<SyncOutboxEntity>(_entities[19].properties[4]);
+
+  /// See [SyncOutboxEntity.entityType].
+  static final entityType = obx.QueryStringProperty<SyncOutboxEntity>(
+    _entities[19].properties[5],
+  );
+
+  /// See [SyncOutboxEntity.entityId].
+  static final entityId = obx.QueryStringProperty<SyncOutboxEntity>(
+    _entities[19].properties[6],
+  );
+
+  /// See [SyncOutboxEntity.entityRevision].
+  static final entityRevision = obx.QueryIntegerProperty<SyncOutboxEntity>(
+    _entities[19].properties[7],
+  );
+
+  /// See [SyncOutboxEntity.operation].
+  static final operation = obx.QueryStringProperty<SyncOutboxEntity>(
+    _entities[19].properties[8],
+  );
+
+  /// See [SyncOutboxEntity.payloadJson].
+  static final payloadJson = obx.QueryStringProperty<SyncOutboxEntity>(
+    _entities[19].properties[9],
+  );
+
+  /// See [SyncOutboxEntity.occurredAt].
+  static final occurredAt = obx.QueryDateProperty<SyncOutboxEntity>(
+    _entities[19].properties[10],
+  );
+
+  /// See [SyncOutboxEntity.attemptCount].
+  static final attemptCount = obx.QueryIntegerProperty<SyncOutboxEntity>(
+    _entities[19].properties[11],
+  );
+
+  /// See [SyncOutboxEntity.lastAttemptAt].
+  static final lastAttemptAt = obx.QueryDateProperty<SyncOutboxEntity>(
+    _entities[19].properties[12],
+  );
+
+  /// See [SyncOutboxEntity.lastErrorCode].
+  static final lastErrorCode = obx.QueryStringProperty<SyncOutboxEntity>(
+    _entities[19].properties[13],
   );
 }

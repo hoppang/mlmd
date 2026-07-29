@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import '../data/objectbox_helper.dart';
 import '../models/shared_custom_event_definition_entity.dart';
 import '../objectbox.g.dart';
+import '../features/sharing/domain/family_sync_models.dart';
+import 'family_sync_repository.dart';
 import 'profile_repository.dart';
 
 abstract interface class CustomEventRepository {
@@ -43,21 +45,29 @@ class CustomEventRepositoryImpl implements CustomEventRepository {
     ObjectBoxHelper objectBox,
     this._profiles, {
     String? familySpaceId,
+    FamilySyncRepository? familySyncRepository,
   }) : _store = objectBox.store,
        _definitionBox = Box<SharedCustomEventDefinitionEntity>(objectBox.store),
        _pinBox = Box<CustomEventPinEntity>(objectBox.store),
-       _familySpaceId =
-           familySpaceId ?? 'local:${_profiles.currentDevice.deviceProfileId}';
+       // Public named parameters keep existing construction sites readable.
+       // ignore: prefer_initializing_formals
+       _familySpaceId = familySpaceId,
+       // ignore: prefer_initializing_formals
+       _familySyncRepository = familySyncRepository;
 
   static const _uuid = Uuid();
   final Store _store;
   final ProfileRepository _profiles;
   final Box<SharedCustomEventDefinitionEntity> _definitionBox;
   final Box<CustomEventPinEntity> _pinBox;
-  final String _familySpaceId;
+  final String? _familySpaceId;
+  final FamilySyncRepository? _familySyncRepository;
 
   @override
-  String get familySpaceId => _familySpaceId;
+  String get familySpaceId =>
+      _familySpaceId ??
+      _familySyncRepository?.activeFamilySpaceId ??
+      'local:${_profiles.currentDevice.deviceProfileId}';
 
   @override
   List<SharedCustomEventDefinitionEntity> getDefinitions({
@@ -117,6 +127,7 @@ class CustomEventRepositoryImpl implements CustomEventRepository {
       updatedAt: now,
     );
     _definitionBox.put(definition);
+    _queueDefinition(definition, SyncOperation.create);
     return definition;
   }
 
@@ -136,6 +147,7 @@ class CustomEventRepositoryImpl implements CustomEventRepository {
       ..lastModifiedByDeviceProfileId = source.deviceProfileId
       ..updatedAt = DateTime.now();
     _definitionBox.put(definition);
+    _queueDefinition(definition, SyncOperation.update);
     return definition;
   }
 
@@ -156,6 +168,10 @@ class CustomEventRepositoryImpl implements CustomEventRepository {
       ..updatedAt = now;
     _definitionBox.put(definition);
     if (archived) setPinned(customEventTypeId, pinned: false);
+    _queueDefinition(
+      definition,
+      archived ? SyncOperation.delete : SyncOperation.update,
+    );
     return definition;
   }
 
@@ -273,11 +289,52 @@ class CustomEventRepositoryImpl implements CustomEventRepository {
     }
     return normalized;
   }
+
+  void _queueDefinition(
+    SharedCustomEventDefinitionEntity definition,
+    SyncOperation operation,
+  ) {
+    final sync = _familySyncRepository;
+    if (sync == null || sync.activeFamilySpaceId != definition.familySpaceId) {
+      return;
+    }
+    sync.enqueue(
+      entityType: 'customEventDefinition',
+      entityId: definition.customEventTypeId,
+      entityRevision: definition.revision,
+      operation: operation,
+      payload: {
+        'customEventTypeId': definition.customEventTypeId,
+        'familySpaceId': definition.familySpaceId,
+        'name': definition.name,
+        'revision': definition.revision,
+        'createdByAuthorProfileId': definition.createdByAuthorProfileId,
+        'createdByDeviceProfileId': definition.createdByDeviceProfileId,
+        'lastModifiedByAuthorProfileId':
+            definition.lastModifiedByAuthorProfileId,
+        'lastModifiedByDeviceProfileId':
+            definition.lastModifiedByDeviceProfileId,
+        'createdAt': definition.createdAt.toUtc().toIso8601String(),
+        'updatedAt': definition.updatedAt.toUtc().toIso8601String(),
+        if (definition.archivedAt != null)
+          'archivedAt': definition.archivedAt!.toUtc().toIso8601String(),
+      },
+      occurredAt: definition.updatedAt,
+    );
+  }
 }
 
-final customEventRepositoryProvider = Provider<CustomEventRepository>((ref) {
-  return CustomEventRepositoryImpl(
-    ref.watch(objectBoxProvider),
-    ref.watch(profileRepositoryProvider),
-  );
-}, dependencies: [objectBoxProvider, profileRepositoryProvider]);
+final customEventRepositoryProvider = Provider<CustomEventRepository>(
+  (ref) {
+    return CustomEventRepositoryImpl(
+      ref.watch(objectBoxProvider),
+      ref.watch(profileRepositoryProvider),
+      familySyncRepository: ref.watch(familySyncRepositoryProvider),
+    );
+  },
+  dependencies: [
+    objectBoxProvider,
+    profileRepositoryProvider,
+    familySyncRepositoryProvider,
+  ],
+);

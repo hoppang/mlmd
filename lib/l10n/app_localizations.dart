@@ -1954,6 +1954,30 @@ abstract class AppLocalizations {
   /// **'현재 기록은 이 기기에만 저장됩니다.'**
   String get familySharingDescription;
 
+  String get familySharingIntro;
+
+  String get familySharingNotConnectedTitle;
+
+  String get familySharingNotConnectedDescription;
+
+  String get familySharingLocalFirstTitle;
+
+  String get familySharingLocalFirstDescription;
+
+  String get familySharingTextOnlyTitle;
+
+  String get familySharingTextOnlyDescription;
+
+  String familySharingPending(int count);
+
+  String familySharingConflicts(int count);
+
+  String get familySharingNeverReceived;
+
+  String familySharingLastReceived(String date, String time);
+
+  String get familySharingOfflineNotice;
+
   /// No description provided for @dataBackupTitle.
   ///
   /// In ko, this message translates to:

@@ -8,6 +8,9 @@ import 'package:mlmd/features/settings/presentation/settings_page.dart';
 import 'package:mlmd/features/attachments/domain/event_attachment.dart';
 import 'package:mlmd/widgets/import_preview_dialog.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
+import 'package:mlmd/repositories/family_sync_repository.dart';
+import 'package:mlmd/features/sharing/domain/family_sync_models.dart';
+import 'package:mlmd/features/sharing/application/family_sync_transport.dart';
 import 'package:mlmd/providers/locale_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'support/test_profile_repository.dart';
@@ -61,6 +64,9 @@ void main() {
       ProviderScope(
         overrides: [
           profileRepositoryProvider.overrideWithValue(TestProfileRepository()),
+          familySyncRepositoryProvider.overrideWithValue(
+            _FakeFamilySyncRepository(),
+          ),
           sharedPreferencesProvider.overrideWithValue(preferences),
         ],
         child: MaterialApp(
@@ -88,6 +94,17 @@ void main() {
     expect(find.text('Tracking style'), findsNothing);
     expect(find.byType(SwitchListTile), findsNothing);
 
+    await tester.tap(find.text('Use with family'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('family-sharing-not-connected')),
+      findsOneWidget,
+    );
+    expect(find.text('Keep recording without the internet'), findsOneWidget);
+    expect(find.text('Original photos stay on this device'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Data storage and backup'));
     await tester.pumpAndSettle();
     expect(
@@ -101,4 +118,36 @@ void main() {
     );
     expect(group.groupValue, AttachmentExportMode.originalAttachments);
   });
+}
+
+class _FakeFamilySyncRepository implements FamilySyncRepository {
+  @override
+  String? get activeFamilySpaceId => null;
+
+  @override
+  void connect({required String familySpaceId, required String displayName}) {}
+
+  @override
+  void disconnect() {}
+
+  @override
+  SyncChange? enqueue({
+    required String entityType,
+    required String entityId,
+    required int entityRevision,
+    required SyncOperation operation,
+    required Map<String, Object?> payload,
+    DateTime? occurredAt,
+  }) => null;
+
+  @override
+  FamilySyncSnapshot getSnapshot() => const FamilySyncSnapshot();
+
+  @override
+  Future<SyncRunResult> synchronize(
+    FamilySyncTransport transport, {
+    required RemoteChangeApplier applyRemoteChange,
+  }) {
+    throw UnimplementedError();
+  }
 }

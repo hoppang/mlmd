@@ -994,6 +994,47 @@ class AppLocalizationsKo extends AppLocalizations {
   String get familySharingDescription => '현재 기록은 이 기기에만 저장됩니다.';
 
   @override
+  String get familySharingIntro =>
+      '다른 보호자와 함께 사용하면 서로 남긴 기록과 할 일을 자동으로 확인할 수 있어요.';
+
+  @override
+  String get familySharingNotConnectedTitle => '아직 혼자 사용하고 있어요';
+
+  @override
+  String get familySharingNotConnectedDescription =>
+      '계정과 초대 방식을 안전하게 연결하기 전까지 현재 기기의 기록은 그대로 유지됩니다.';
+
+  @override
+  String get familySharingLocalFirstTitle => '인터넷이 없어도 기록할 수 있어요';
+
+  @override
+  String get familySharingLocalFirstDescription =>
+      '모든 변경은 먼저 이 기기에 저장되고, 연결이 끊겨도 나중에 보낼 내용이 사라지지 않습니다.';
+
+  @override
+  String get familySharingTextOnlyTitle => '사진 원본은 이 기기에 남아요';
+
+  @override
+  String get familySharingTextOnlyDescription =>
+      '가족 공유에는 텍스트 기록과 첨부 유형·개수만 포함하며 사진과 파일 자체는 보내지 않습니다.';
+
+  @override
+  String familySharingPending(int count) => '가족에게 반영할 변경 $count건';
+
+  @override
+  String familySharingConflicts(int count) => '확인이 필요한 충돌 $count건';
+
+  @override
+  String get familySharingNeverReceived => '아직 가족 기록을 받은 적이 없어요';
+
+  @override
+  String familySharingLastReceived(String date, String time) =>
+      '마지막으로 가족 기록을 받은 시각: $date $time';
+
+  @override
+  String get familySharingOfflineNotice => '인터넷에 연결되면 자동으로 반영됩니다.';
+
+  @override
   String get dataBackupTitle => '데이터 보관 및 백업';
 
   @override

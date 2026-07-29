@@ -1018,6 +1018,53 @@ class AppLocalizationsEn extends AppLocalizations {
       'Records currently stay on this device.';
 
   @override
+  String get familySharingIntro =>
+      'When caregivers use MLMD together, everyone can see each other\'s records and care tasks automatically.';
+
+  @override
+  String get familySharingNotConnectedTitle =>
+      'You are currently using MLMD on your own';
+
+  @override
+  String get familySharingNotConnectedDescription =>
+      'Records on this device stay available while a secure account and invitation flow is being connected.';
+
+  @override
+  String get familySharingLocalFirstTitle =>
+      'Keep recording without the internet';
+
+  @override
+  String get familySharingLocalFirstDescription =>
+      'Every change is saved on this device first, so pending changes are not lost when the connection is unavailable.';
+
+  @override
+  String get familySharingTextOnlyTitle =>
+      'Original photos stay on this device';
+
+  @override
+  String get familySharingTextOnlyDescription =>
+      'Family sharing includes text records and attachment type and count, but not the photo or file itself.';
+
+  @override
+  String familySharingPending(int count) =>
+      '$count changes waiting to reach your family';
+
+  @override
+  String familySharingConflicts(int count) => '$count conflicts need review';
+
+  @override
+  String get familySharingNeverReceived =>
+      'No family records have been received yet';
+
+  @override
+  String familySharingLastReceived(String date, String time) =>
+      'Last family records received: $date $time';
+
+  @override
+  String get familySharingOfflineNotice =>
+      'Changes will be applied automatically when you are online.';
+
+  @override
   String get dataBackupTitle => 'Data storage and backup';
 
   @override

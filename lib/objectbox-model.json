@@ -1032,10 +1032,259 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "17:5283359893795432749",
+      "lastPropertyId": "6:3758233620247832592",
+      "name": "FamilySpaceEntity",
+      "properties": [
+        {
+          "id": "1:6072505788521241103",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4843508240399474137",
+          "name": "familySpaceId",
+          "indexId": "31:7463077145737863479",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:8722997627164338673",
+          "name": "displayName",
+          "type": 9
+        },
+        {
+          "id": "4:6296180248475891563",
+          "name": "deviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "5:6162979612373937338",
+          "name": "isActive",
+          "type": 1
+        },
+        {
+          "id": "6:3758233620247832592",
+          "name": "joinedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "18:1462374135511562219",
+      "lastPropertyId": "12:9054569224930740833",
+      "name": "SyncConflictEntity",
+      "properties": [
+        {
+          "id": "1:4233568847226955517",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6574271324634684435",
+          "name": "conflictId",
+          "indexId": "32:2666696471556742007",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:3778614456322118471",
+          "name": "familySpaceId",
+          "indexId": "33:1337524801753504334",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:5089728240543138791",
+          "name": "entityType",
+          "type": 9
+        },
+        {
+          "id": "5:1385727196676636131",
+          "name": "entityId",
+          "indexId": "34:6353583220177366868",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "6:116154977070750312",
+          "name": "localRevision",
+          "type": 6
+        },
+        {
+          "id": "7:2687702041294937442",
+          "name": "incomingRevision",
+          "type": 6
+        },
+        {
+          "id": "8:2539676420498381150",
+          "name": "localPayloadJson",
+          "type": 9
+        },
+        {
+          "id": "9:7029914442768120216",
+          "name": "incomingPayloadJson",
+          "type": 9
+        },
+        {
+          "id": "10:2310058953695364766",
+          "name": "incomingChangeId",
+          "type": 9
+        },
+        {
+          "id": "11:915606456682704494",
+          "name": "detectedAt",
+          "type": 10
+        },
+        {
+          "id": "12:9054569224930740833",
+          "name": "resolvedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "19:1895975585166344645",
+      "lastPropertyId": "7:9060830135889035403",
+      "name": "SyncCursorEntity",
+      "properties": [
+        {
+          "id": "1:7235258606016354363",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5386107257877916238",
+          "name": "cursorKey",
+          "indexId": "35:7084104720748562120",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:6791938119342968820",
+          "name": "familySpaceId",
+          "indexId": "36:8762074802530980083",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:4546921640320597539",
+          "name": "deviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "5:7543590923969807381",
+          "name": "lastAppliedChangeId",
+          "type": 9
+        },
+        {
+          "id": "6:8928992789154689287",
+          "name": "lastSuccessfulAt",
+          "type": 10
+        },
+        {
+          "id": "7:9060830135889035403",
+          "name": "lastErrorCode",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "20:462491011859536736",
+      "lastPropertyId": "14:8979574227803027226",
+      "name": "SyncOutboxEntity",
+      "properties": [
+        {
+          "id": "1:4308664292034136452",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1987107074464668165",
+          "name": "changeId",
+          "indexId": "37:3704176562539792896",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:522140809998064411",
+          "name": "familySpaceId",
+          "indexId": "38:8172268355492353691",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:4253322307151822697",
+          "name": "sourceDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "5:4617124675971354744",
+          "name": "sourceAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "6:4408561052383360361",
+          "name": "entityType",
+          "type": 9
+        },
+        {
+          "id": "7:5645649409373715691",
+          "name": "entityId",
+          "indexId": "39:5118464589099621665",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "8:2427860889051658153",
+          "name": "entityRevision",
+          "type": 6
+        },
+        {
+          "id": "9:6617728775733989364",
+          "name": "operation",
+          "type": 9
+        },
+        {
+          "id": "10:8953532084394320996",
+          "name": "payloadJson",
+          "type": 9
+        },
+        {
+          "id": "11:1264738105679134091",
+          "name": "occurredAt",
+          "type": 10
+        },
+        {
+          "id": "12:8860164375384552702",
+          "name": "attemptCount",
+          "type": 6
+        },
+        {
+          "id": "13:3366396629852482792",
+          "name": "lastAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "14:8979574227803027226",
+          "name": "lastErrorCode",
+          "type": 9
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "16:6227614629242879016",
-  "lastIndexId": "30:7444440659414866890",
+  "lastEntityId": "20:462491011859536736",
+  "lastIndexId": "39:5118464589099621665",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

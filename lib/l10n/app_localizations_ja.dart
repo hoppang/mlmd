@@ -990,6 +990,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String get familySharingDescription => '現在、記録はこの端末にのみ保存されます。';
 
   @override
+  String get familySharingIntro => 'ほかの保護者と一緒に使うと、お互いの記録やケアの予定を自動で確認できます。';
+
+  @override
+  String get familySharingNotConnectedTitle => '現在は一人で使用しています';
+
+  @override
+  String get familySharingNotConnectedDescription =>
+      '安全なアカウントと招待方法を接続するまでは、この端末の記録をそのまま利用できます。';
+
+  @override
+  String get familySharingLocalFirstTitle => 'インターネットがなくても記録できます';
+
+  @override
+  String get familySharingLocalFirstDescription =>
+      'すべての変更は先にこの端末へ保存され、接続できない間も保留中の変更は失われません。';
+
+  @override
+  String get familySharingTextOnlyTitle => '写真の原本はこの端末に残ります';
+
+  @override
+  String get familySharingTextOnlyDescription =>
+      '家族共有にはテキスト記録と添付の種類・件数だけを含め、写真やファイル自体は送りません。';
+
+  @override
+  String familySharingPending(int count) => '家族への反映待ち $count件';
+
+  @override
+  String familySharingConflicts(int count) => '確認が必要な競合 $count件';
+
+  @override
+  String get familySharingNeverReceived => '家族の記録はまだ受信していません';
+
+  @override
+  String familySharingLastReceived(String date, String time) =>
+      '家族の記録を最後に受信した日時: $date $time';
+
+  @override
+  String get familySharingOfflineNotice => 'インターネットに接続すると自動で反映されます。';
+
+  @override
   String get dataBackupTitle => 'データ保管とバックアップ';
 
   @override
