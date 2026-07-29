@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_entity.dart';
 import '../data/objectbox_helper.dart';
+import '../features/sharing/application/family_sync_payloads.dart';
+import '../features/sharing/domain/family_sync_models.dart';
 import '../objectbox.g.dart';
+import 'family_sync_repository.dart';
 import 'profile_repository.dart';
 import 'package:uuid/uuid.dart';
 
@@ -30,8 +33,16 @@ class ActivityRepositoryImpl implements ActivityRepository {
   static const _uuid = Uuid();
   final ObjectBoxHelper _obxHelper;
   final ProfileRepository _profileRepository;
+  final FamilySyncRepository? _familySyncRepository;
 
-  ActivityRepositoryImpl(this._obxHelper, this._profileRepository);
+  ActivityRepositoryImpl(
+    this._obxHelper,
+    this._profileRepository, {
+    FamilySyncRepository? familySyncRepository,
+  }) :
+       // Public name keeps construction sites independent of the field name.
+       // ignore: prefer_initializing_formals
+       _familySyncRepository = familySyncRepository;
 
   @override
   List<ActivityEntity> getActivities() {
@@ -105,6 +116,12 @@ class ActivityRepositoryImpl implements ActivityRepository {
     // 3. ObjectBox 저장 수행
     final activityId = _obxHelper.activityBox.put(activity);
     _obxHelper.diaryBox.put(diary);
+    if (previous == null || !_sameCore(activity, previous)) {
+      _queue(
+        activity,
+        previous == null ? SyncOperation.create : SyncOperation.update,
+      );
+    }
 
     return activityId;
   }
@@ -132,15 +149,43 @@ class ActivityRepositoryImpl implements ActivityRepository {
           ..lastModifiedByDeviceProfileId = source.deviceProfileId;
         _obxHelper.diaryBox.put(diary);
       }
-      return _obxHelper.activityBox.remove(id);
+      final removed = _obxHelper.activityBox.remove(id);
+      if (removed) _queue(activity, SyncOperation.delete);
+      return removed;
     }
     return false;
+  }
+
+  void _queue(ActivityEntity activity, SyncOperation operation) {
+    final recordId = activity.recordId;
+    if (recordId == null) return;
+    _familySyncRepository?.enqueue(
+      entityType: FamilySyncPayloads.activity,
+      entityId: recordId,
+      entityRevision: operation == SyncOperation.delete
+          ? (activity.revision < 1 ? 2 : activity.revision + 1)
+          : (activity.revision < 1 ? 1 : activity.revision),
+      operation: operation,
+      payload: FamilySyncPayloads.forActivity(activity),
+      occurredAt: activity.lastModified,
+    );
   }
 }
 
 /// Riverpod에서 제공할 ActivityRepository 프로바이더
-final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
-  final obxHelper = ref.watch(objectBoxProvider);
-  final profiles = ref.watch(profileRepositoryProvider);
-  return ActivityRepositoryImpl(obxHelper, profiles);
-}, dependencies: [objectBoxProvider, profileRepositoryProvider]);
+final activityRepositoryProvider = Provider<ActivityRepository>(
+  (ref) {
+    final obxHelper = ref.watch(objectBoxProvider);
+    final profiles = ref.watch(profileRepositoryProvider);
+    return ActivityRepositoryImpl(
+      obxHelper,
+      profiles,
+      familySyncRepository: ref.watch(familySyncRepositoryProvider),
+    );
+  },
+  dependencies: [
+    objectBoxProvider,
+    profileRepositoryProvider,
+    familySyncRepositoryProvider,
+  ],
+);

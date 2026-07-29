@@ -9,8 +9,11 @@ import '../objectbox.g.dart';
 import '../services/embedding_service.dart';
 import '../features/search/domain/hybrid_search_query.dart';
 import '../features/events/domain/memo_record.dart';
+import '../features/sharing/application/family_sync_payloads.dart';
+import '../features/sharing/domain/family_sync_models.dart';
 import '../transfer/canonical_transfer_document.dart';
 import 'package:uuid/uuid.dart';
+import 'family_sync_repository.dart';
 import 'profile_repository.dart';
 
 enum DiarySearchSource { memo, activity }
@@ -128,11 +131,19 @@ abstract class DiaryRepository {
 class DiaryRepositoryImpl implements DiaryRepository {
   final ObjectBoxHelper _obxHelper;
   final ProfileRepository _profileRepository;
+  final FamilySyncRepository? _familySyncRepository;
   static const _uuid = Uuid();
   static final _uuidV4Pattern = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
   );
-  DiaryRepositoryImpl(this._obxHelper, this._profileRepository) {
+  DiaryRepositoryImpl(
+    this._obxHelper,
+    this._profileRepository, {
+    FamilySyncRepository? familySyncRepository,
+  }) :
+       // Public name keeps construction sites independent of the field name.
+       // ignore: prefer_initializing_formals
+       _familySyncRepository = familySyncRepository {
     _backfillRecordIds();
     _backfillActivityIds();
     _backfillRecordSources();
@@ -342,7 +353,9 @@ class DiaryRepositoryImpl implements DiaryRepository {
     String? consumedDraftId,
   }) {
     _prepareRecordId(diary);
-    return _obxHelper.store.runInTransaction(TxMode.write, () {
+    final previousByRecordId = <String, ActivityEntity>{};
+    final removedActivities = <ActivityEntity>[];
+    final diaryId = _obxHelper.store.runInTransaction(TxMode.write, () {
       final now = DateTime.now();
       _prepareDiarySource(diary, now);
       final diaryId = _obxHelper.diaryBox.put(diary);
@@ -351,6 +364,10 @@ class DiaryRepositoryImpl implements DiaryRepository {
           .query(ActivityEntity_.diary.equals(diaryId))
           .build();
       final oldActivities = oldQuery.find();
+      for (final activity in oldActivities) {
+        final recordId = activity.recordId;
+        if (recordId != null) previousByRecordId[recordId] = activity;
+      }
       final unmatchedOldActivities = [...oldActivities];
       final oldIds = oldQuery.findIds();
       oldQuery.close();
@@ -387,6 +404,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
       if (activities.isNotEmpty) {
         _obxHelper.activityBox.putMany(activities);
       }
+      removedActivities.addAll(unmatchedOldActivities);
       if (consumedDraftId != null) {
         final draftQuery = _obxHelper.draftBox
             .query(RecordDraftEntity_.draftId.equals(consumedDraftId))
@@ -397,6 +415,19 @@ class DiaryRepositoryImpl implements DiaryRepository {
       }
       return diaryId;
     });
+    for (final activity in activities) {
+      final previous = previousByRecordId[activity.recordId];
+      if (previous == null || !_sameActivityCore(activity, previous)) {
+        _queueActivity(
+          activity,
+          previous == null ? SyncOperation.create : SyncOperation.update,
+        );
+      }
+    }
+    for (final activity in removedActivities) {
+      _queueActivity(activity, SyncOperation.delete);
+    }
+    return diaryId;
   }
 
   @override
@@ -422,7 +453,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
         : sameDayDiaries.first;
     _prepareRecordId(diary);
 
-    return _obxHelper.store.runInTransaction(TxMode.write, () {
+    final activityId = _obxHelper.store.runInTransaction(TxMode.write, () {
       final now = DateTime.now();
       _prepareDiarySource(diary, now);
       _obxHelper.diaryBox.put(diary);
@@ -438,6 +469,8 @@ class DiaryRepositoryImpl implements DiaryRepository {
       _prepareActivitySource(activity, now);
       return _obxHelper.activityBox.put(activity);
     });
+    _queueActivity(activity, SyncOperation.create);
+    return activityId;
   }
 
   @override
@@ -470,7 +503,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
         : sameDayDiaries.first;
     _prepareRecordId(diary);
 
-    return _obxHelper.store.runInTransaction(TxMode.write, () {
+    final activityId = _obxHelper.store.runInTransaction(TxMode.write, () {
       final now = DateTime.now();
       _prepareDiarySource(diary, now);
       _obxHelper.diaryBox.put(diary);
@@ -488,10 +521,35 @@ class DiaryRepositoryImpl implements DiaryRepository {
       _prepareActivitySource(activity, now, previous: previous);
       return _obxHelper.activityBox.put(activity);
     });
+    if (!_sameActivityCore(activity, previous)) {
+      _queueActivity(activity, SyncOperation.update);
+    }
+    return activityId;
   }
 
   @override
-  bool deleteActivityRecord(int id) => _obxHelper.activityBox.remove(id);
+  bool deleteActivityRecord(int id) {
+    final activity = _obxHelper.activityBox.get(id);
+    if (activity == null) return false;
+    final removed = _obxHelper.activityBox.remove(id);
+    if (removed) _queueActivity(activity, SyncOperation.delete);
+    return removed;
+  }
+
+  void _queueActivity(ActivityEntity activity, SyncOperation operation) {
+    final recordId = activity.recordId;
+    if (recordId == null) return;
+    _familySyncRepository?.enqueue(
+      entityType: FamilySyncPayloads.activity,
+      entityId: recordId,
+      entityRevision: operation == SyncOperation.delete
+          ? (activity.revision < 1 ? 2 : activity.revision + 1)
+          : (activity.revision < 1 ? 1 : activity.revision),
+      operation: operation,
+      payload: FamilySyncPayloads.forActivity(activity),
+      occurredAt: activity.lastModified,
+    );
+  }
 
   void _prepareDiarySource(DiaryEntity diary, DateTime now) {
     final source = _profileRepository.requireCurrentSource();
@@ -943,7 +1001,12 @@ class DiaryRepositoryImpl implements DiaryRepository {
 
   @override
   bool deleteDiary(int id) {
-    return _obxHelper.store.runInTransaction(TxMode.write, () {
+    final activityQuery = _obxHelper.activityBox
+        .query(ActivityEntity_.diary.equals(id))
+        .build();
+    final activities = activityQuery.find();
+    activityQuery.close();
+    final removed = _obxHelper.store.runInTransaction(TxMode.write, () {
       final searchQuery = _obxHelper.searchDocumentBox
           .query(SearchDocumentEntity_.sourceDiaryId.equals(id))
           .build();
@@ -952,16 +1015,22 @@ class DiaryRepositoryImpl implements DiaryRepository {
       if (searchIds.isNotEmpty) {
         _obxHelper.searchDocumentBox.removeMany(searchIds);
       }
-      final activityQuery = _obxHelper.activityBox
+      final storedActivityQuery = _obxHelper.activityBox
           .query(ActivityEntity_.diary.equals(id))
           .build();
-      final activityIds = activityQuery.findIds();
-      activityQuery.close();
+      final activityIds = storedActivityQuery.findIds();
+      storedActivityQuery.close();
       if (activityIds.isNotEmpty) {
         _obxHelper.activityBox.removeMany(activityIds);
       }
       return _obxHelper.diaryBox.remove(id);
     });
+    if (removed) {
+      for (final activity in activities) {
+        _queueActivity(activity, SyncOperation.delete);
+      }
+    }
+    return removed;
   }
 
   @override
@@ -1341,8 +1410,19 @@ class DiaryRepositoryImpl implements DiaryRepository {
 }
 
 /// Riverpod에서 제공할 DiaryRepository 프로바이더
-final diaryRepositoryProvider = Provider<DiaryRepository>((ref) {
-  final obxHelper = ref.watch(objectBoxProvider);
-  final profiles = ref.watch(profileRepositoryProvider);
-  return DiaryRepositoryImpl(obxHelper, profiles);
-}, dependencies: [objectBoxProvider, profileRepositoryProvider]);
+final diaryRepositoryProvider = Provider<DiaryRepository>(
+  (ref) {
+    final obxHelper = ref.watch(objectBoxProvider);
+    final profiles = ref.watch(profileRepositoryProvider);
+    return DiaryRepositoryImpl(
+      obxHelper,
+      profiles,
+      familySyncRepository: ref.watch(familySyncRepositoryProvider),
+    );
+  },
+  dependencies: [
+    objectBoxProvider,
+    profileRepositoryProvider,
+    familySyncRepositoryProvider,
+  ],
+);

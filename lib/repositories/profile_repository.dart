@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:uuid/uuid.dart';
@@ -14,6 +16,13 @@ class RecordSource {
 
   final String authorProfileId;
   final String deviceProfileId;
+}
+
+class AuthorProfileMutation {
+  const AuthorProfileMutation({required this.profile, required this.isCreate});
+
+  final AuthorProfileEntity profile;
+  final bool isCreate;
 }
 
 abstract interface class ProfileRepository {
@@ -45,6 +54,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   static const _uuid = Uuid();
   final ObjectBoxHelper _objectBox;
+  final StreamController<AuthorProfileMutation> _mutations =
+      StreamController<AuthorProfileMutation>.broadcast(sync: true);
+
+  Stream<AuthorProfileMutation> get mutations => _mutations.stream;
 
   @override
   List<AuthorProfileEntity> getAuthorProfiles() {
@@ -92,6 +105,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       _clearCurrentAuthors();
       _objectBox.authorProfileBox.put(profile);
     });
+    _mutations.add(AuthorProfileMutation(profile: profile, isCreate: true));
     return profile;
   }
 
@@ -109,6 +123,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       ..nickname = _normalizeNickname(nickname)
       ..colorValue = colorValue;
     _objectBox.authorProfileBox.put(profile);
+    _mutations.add(AuthorProfileMutation(profile: profile, isCreate: false));
     return profile;
   }
 
@@ -220,10 +235,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
     return normalized;
   }
+
+  void dispose() {
+    _mutations.close();
+  }
 }
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  return ProfileRepositoryImpl(ref.watch(objectBoxProvider));
+  final repository = ProfileRepositoryImpl(ref.watch(objectBoxProvider));
+  ref.onDispose(repository.dispose);
+  return repository;
 }, dependencies: [objectBoxProvider]);
 
 class AuthorProfileListNotifier extends Notifier<List<AuthorProfileEntity>> {

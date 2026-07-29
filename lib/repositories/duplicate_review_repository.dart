@@ -5,10 +5,13 @@ import 'package:objectbox/objectbox.dart';
 
 import '../data/objectbox_helper.dart';
 import '../features/duplicate_review/domain/duplicate_detector.dart';
+import '../features/sharing/application/family_sync_payloads.dart';
+import '../features/sharing/domain/family_sync_models.dart';
 import '../models/activity_entity.dart';
 import '../models/diary_entity.dart';
 import '../models/duplicate_review_edge_entity.dart';
 import '../models/logical_event_group_entity.dart';
+import 'family_sync_repository.dart';
 import 'profile_repository.dart';
 
 class DuplicateReviewItem {
@@ -40,10 +43,18 @@ abstract interface class DuplicateReviewRepository {
 }
 
 class DuplicateReviewRepositoryImpl implements DuplicateReviewRepository {
-  DuplicateReviewRepositoryImpl(this._objectBox, this._profiles);
+  DuplicateReviewRepositoryImpl(
+    this._objectBox,
+    this._profiles, {
+    FamilySyncRepository? familySyncRepository,
+  }) :
+       // Public name keeps construction sites independent of the field name.
+       // ignore: prefer_initializing_formals
+       _familySyncRepository = familySyncRepository;
 
   final ObjectBoxHelper _objectBox;
   final ProfileRepository _profiles;
+  final FamilySyncRepository? _familySyncRepository;
 
   @override
   List<DuplicateReviewItem> synchronize(
@@ -190,12 +201,14 @@ class DuplicateReviewRepositoryImpl implements DuplicateReviewRepository {
         ..resolvedAt = now;
       _objectBox.duplicateReviewEdgeBox.put(edge);
     });
+    _queueDecision(edge, now);
   }
 
   @override
   void markDistinct(String pairKey) {
     final edge = _requireEdge(pairKey);
     final source = _profiles.requireCurrentSource();
+    final now = DateTime.now();
     _objectBox.store.runInTransaction(TxMode.write, () {
       _removeGroup(edge.logicalGroupId);
       edge
@@ -205,22 +218,26 @@ class DuplicateReviewRepositoryImpl implements DuplicateReviewRepository {
         ..deferredAt = null
         ..resolvedByAuthorProfileId = source.authorProfileId
         ..resolvedByDeviceProfileId = source.deviceProfileId
-        ..resolvedAt = DateTime.now();
+        ..resolvedAt = now;
       _objectBox.duplicateReviewEdgeBox.put(edge);
     });
+    _queueDecision(edge, now);
   }
 
   @override
   void defer(String pairKey) {
+    final now = DateTime.now();
     final edge = _requireEdge(pairKey)
       ..status = DuplicateReviewEdgeEntity.statusPending
-      ..deferredAt = DateTime.now();
+      ..deferredAt = now;
     _objectBox.duplicateReviewEdgeBox.put(edge);
+    _queueDecision(edge, now);
   }
 
   @override
   void resetDecision(String pairKey) {
     final edge = _requireEdge(pairKey);
+    final now = DateTime.now();
     _objectBox.store.runInTransaction(TxMode.write, () {
       _removeGroup(edge.logicalGroupId);
       edge
@@ -233,6 +250,7 @@ class DuplicateReviewRepositoryImpl implements DuplicateReviewRepository {
         ..resolvedAt = null;
       _objectBox.duplicateReviewEdgeBox.put(edge);
     });
+    _queueDecision(edge, now);
   }
 
   DuplicateReviewEdgeEntity _requireEdge(String pairKey) {
@@ -261,12 +279,28 @@ class DuplicateReviewRepositoryImpl implements DuplicateReviewRepository {
     'timePrecision': activity.timePrecision,
     'details': normalizeDuplicateDetails(activity.details),
   });
+
+  void _queueDecision(DuplicateReviewEdgeEntity edge, DateTime occurredAt) {
+    _familySyncRepository?.enqueue(
+      entityType: FamilySyncPayloads.duplicateDecision,
+      entityId: edge.pairKey,
+      entityRevision: FamilySyncPayloads.revisionAt(occurredAt),
+      operation: SyncOperation.update,
+      payload: FamilySyncPayloads.forDuplicateDecision(edge),
+      occurredAt: occurredAt,
+    );
+  }
 }
 
 final duplicateReviewRepositoryProvider = Provider<DuplicateReviewRepository>(
   (ref) => DuplicateReviewRepositoryImpl(
     ref.watch(objectBoxProvider),
     ref.watch(profileRepositoryProvider),
+    familySyncRepository: ref.watch(familySyncRepositoryProvider),
   ),
-  dependencies: [objectBoxProvider, profileRepositoryProvider],
+  dependencies: [
+    objectBoxProvider,
+    profileRepositoryProvider,
+    familySyncRepositoryProvider,
+  ],
 );

@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:objectbox/objectbox.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/objectbox_helper.dart';
+import '../features/sharing/application/family_sync_payloads.dart';
+import '../features/sharing/domain/family_sync_models.dart';
 import '../features/tasks/domain/care_task_model.dart';
 import '../models/activity_entity.dart';
 import '../models/care_task_entity.dart';
 import '../models/care_task_occurrence_entity.dart';
 import '../objectbox.g.dart';
+import 'family_sync_repository.dart';
 import 'profile_repository.dart';
 
 abstract interface class TaskRepository {
@@ -53,11 +55,19 @@ abstract interface class TaskRepository {
 }
 
 class TaskRepositoryImpl implements TaskRepository {
-  TaskRepositoryImpl(this._objectBox, this._profileRepository);
+  TaskRepositoryImpl(
+    this._objectBox,
+    this._profileRepository, {
+    FamilySyncRepository? familySyncRepository,
+  }) :
+       // Public name keeps construction sites independent of the field name.
+       // ignore: prefer_initializing_formals
+       _familySyncRepository = familySyncRepository;
 
   static const _uuid = Uuid();
   final ObjectBoxHelper _objectBox;
   final ProfileRepository _profileRepository;
+  final FamilySyncRepository? _familySyncRepository;
 
   @override
   List<CareTask> getTasks({bool includeArchived = false}) {
@@ -70,7 +80,9 @@ class TaskRepositoryImpl implements TaskRepository {
 
   @override
   CareTask? getTaskById(String taskId) {
-    final query = _objectBox.careTaskBox.query(CareTaskEntity_.taskId.equals(taskId)).build();
+    final query = _objectBox.careTaskBox
+        .query(CareTaskEntity_.taskId.equals(taskId))
+        .build();
     final entity = query.findFirst();
     query.close();
     return entity != null ? _toDomainTask(entity) : null;
@@ -117,6 +129,8 @@ class TaskRepositoryImpl implements TaskRepository {
       _objectBox.careTaskBox.put(taskEntity);
       _objectBox.careTaskOccurrenceBox.put(occurrenceEntity);
     });
+    _queueTask(taskEntity, SyncOperation.create, now);
+    _queueOccurrence(occurrenceEntity, SyncOperation.create, firstScheduledAt);
 
     return _toDomainTask(taskEntity);
   }
@@ -131,7 +145,9 @@ class TaskRepositoryImpl implements TaskRepository {
     String? linkedCategory,
     String? linkedEventTemplateJson,
   }) {
-    final query = _objectBox.careTaskBox.query(CareTaskEntity_.taskId.equals(taskId)).build();
+    final query = _objectBox.careTaskBox
+        .query(CareTaskEntity_.taskId.equals(taskId))
+        .build();
     final entity = query.findFirst();
     query.close();
 
@@ -149,18 +165,22 @@ class TaskRepositoryImpl implements TaskRepository {
     entity.linkedEventTemplateJson = linkedEventTemplateJson;
 
     _objectBox.careTaskBox.put(entity);
+    _queueTask(entity, SyncOperation.update, DateTime.now());
     return _toDomainTask(entity);
   }
 
   @override
   void archiveTask(String taskId) {
-    final query = _objectBox.careTaskBox.query(CareTaskEntity_.taskId.equals(taskId)).build();
+    final query = _objectBox.careTaskBox
+        .query(CareTaskEntity_.taskId.equals(taskId))
+        .build();
     final entity = query.findFirst();
     query.close();
 
     if (entity != null) {
       entity.archivedAt = DateTime.now();
       _objectBox.careTaskBox.put(entity);
+      _queueTask(entity, SyncOperation.delete, entity.archivedAt!);
     }
   }
 
@@ -172,8 +192,12 @@ class TaskRepositoryImpl implements TaskRepository {
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
 
     final query = _objectBox.careTaskOccurrenceBox
-        .query(CareTaskOccurrenceEntity_.scheduledAt
-            .betweenDate(startOfDay, endOfDay))
+        .query(
+          CareTaskOccurrenceEntity_.scheduledAt.betweenDate(
+            startOfDay,
+            endOfDay,
+          ),
+        )
         .build();
     final entities = query.find();
     query.close();
@@ -211,9 +235,12 @@ class TaskRepositoryImpl implements TaskRepository {
     final finalDeviceId = deviceProfileId ?? source.deviceProfileId;
 
     String? linkedRecordId;
+    ActivityEntity? linkedActivity;
 
     _objectBox.store.runInTransaction(TxMode.write, () {
-      if (createLinkedEvent && task.linkedCategory != null && task.linkedCategory!.isNotEmpty) {
+      if (createLinkedEvent &&
+          task.linkedCategory != null &&
+          task.linkedCategory!.isNotEmpty) {
         final recordId = _uuid.v4();
         final details = task.title;
 
@@ -233,6 +260,7 @@ class TaskRepositoryImpl implements TaskRepository {
 
         _objectBox.activityBox.put(activity);
         linkedRecordId = recordId;
+        linkedActivity = activity;
       }
 
       occurrenceEntity
@@ -244,6 +272,10 @@ class TaskRepositoryImpl implements TaskRepository {
 
       _objectBox.careTaskOccurrenceBox.put(occurrenceEntity);
     });
+    if (linkedActivity != null) {
+      _queueActivity(linkedActivity!, SyncOperation.create);
+    }
+    _queueOccurrence(occurrenceEntity, SyncOperation.update, finalCompletedAt);
 
     return _toDomainOccurrence(occurrenceEntity);
   }
@@ -262,6 +294,7 @@ class TaskRepositoryImpl implements TaskRepository {
 
     occurrenceEntity.status = TaskStatus.skipped.toDbString();
     _objectBox.careTaskOccurrenceBox.put(occurrenceEntity);
+    _queueOccurrence(occurrenceEntity, SyncOperation.update, DateTime.now());
 
     return _toDomainOccurrence(occurrenceEntity);
   }
@@ -278,15 +311,19 @@ class TaskRepositoryImpl implements TaskRepository {
       throw StateError('Occurrence with id $occurrenceId does not exist.');
     }
 
+    ActivityEntity? removedActivity;
     _objectBox.store.runInTransaction(TxMode.write, () {
       if (occurrenceEntity.linkedRecordId != null) {
         final activityQuery = _objectBox.activityBox
-            .query(ActivityEntity_.recordId.equals(occurrenceEntity.linkedRecordId!))
+            .query(
+              ActivityEntity_.recordId.equals(occurrenceEntity.linkedRecordId!),
+            )
             .build();
         final activity = activityQuery.findFirst();
         activityQuery.close();
 
         if (activity != null) {
+          removedActivity = activity;
           _objectBox.activityBox.remove(activity.id);
         }
         occurrenceEntity.linkedRecordId = null;
@@ -302,6 +339,10 @@ class TaskRepositoryImpl implements TaskRepository {
 
       _objectBox.careTaskOccurrenceBox.put(occurrenceEntity);
     });
+    if (removedActivity != null) {
+      _queueActivity(removedActivity!, SyncOperation.delete);
+    }
+    _queueOccurrence(occurrenceEntity, SyncOperation.update, DateTime.now());
 
     return _toDomainOccurrence(occurrenceEntity);
   }
@@ -309,20 +350,41 @@ class TaskRepositoryImpl implements TaskRepository {
   void _ensureOccurrencesGeneratedForDate(DateTime date) {
     final activeTasks = _objectBox.careTaskBox
         .getAll()
-        .where((t) => t.archivedAt == null && t.recurrenceRule != null && t.recurrenceRule!.isNotEmpty)
+        .where(
+          (t) =>
+              t.archivedAt == null &&
+              t.recurrenceRule != null &&
+              t.recurrenceRule!.isNotEmpty,
+        )
         .toList();
 
     if (activeTasks.isEmpty) return;
 
     final targetDateStart = DateTime(date.year, date.month, date.day);
-    final targetDateEnd = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+    final targetDateEnd = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      23,
+      59,
+      59,
+      999,
+    );
 
+    final generated = <CareTaskOccurrenceEntity>[];
     _objectBox.store.runInTransaction(TxMode.write, () {
       for (final task in activeTasks) {
         final existingQuery = _objectBox.careTaskOccurrenceBox
-            .query(CareTaskOccurrenceEntity_.taskId
-                .equals(task.taskId)
-                .and(CareTaskOccurrenceEntity_.scheduledAt.betweenDate(targetDateStart, targetDateEnd)))
+            .query(
+              CareTaskOccurrenceEntity_.taskId
+                  .equals(task.taskId)
+                  .and(
+                    CareTaskOccurrenceEntity_.scheduledAt.betweenDate(
+                      targetDateStart,
+                      targetDateEnd,
+                    ),
+                  ),
+            )
             .build();
         final existing = existingQuery.find();
         existingQuery.close();
@@ -339,12 +401,23 @@ class TaskRepositoryImpl implements TaskRepository {
             status: TaskStatus.scheduled.toDbString(),
           );
           _objectBox.careTaskOccurrenceBox.put(occurrence);
+          generated.add(occurrence);
         }
       }
     });
+    for (final occurrence in generated) {
+      _queueOccurrence(
+        occurrence,
+        SyncOperation.create,
+        occurrence.scheduledAt,
+      );
+    }
   }
 
-  DateTime? _calculateScheduledTimeForDate(CareTaskEntity task, DateTime targetDate) {
+  DateTime? _calculateScheduledTimeForDate(
+    CareTaskEntity task,
+    DateTime targetDate,
+  ) {
     final rule = task.recurrenceRule ?? '';
     if (rule == 'daily') {
       final initialQuery = _objectBox.careTaskOccurrenceBox
@@ -397,11 +470,64 @@ class TaskRepositoryImpl implements TaskRepository {
       linkedRecordId: e.linkedRecordId,
     );
   }
+
+  void _queueTask(
+    CareTaskEntity task,
+    SyncOperation operation,
+    DateTime occurredAt,
+  ) {
+    _familySyncRepository?.enqueue(
+      entityType: FamilySyncPayloads.careTask,
+      entityId: task.taskId,
+      entityRevision: FamilySyncPayloads.revisionAt(occurredAt),
+      operation: operation,
+      payload: FamilySyncPayloads.forTask(task),
+      occurredAt: occurredAt,
+    );
+  }
+
+  void _queueOccurrence(
+    CareTaskOccurrenceEntity occurrence,
+    SyncOperation operation,
+    DateTime occurredAt,
+  ) {
+    _familySyncRepository?.enqueue(
+      entityType: FamilySyncPayloads.careTaskOccurrence,
+      entityId: occurrence.occurrenceId,
+      entityRevision: FamilySyncPayloads.revisionAt(occurredAt),
+      operation: operation,
+      payload: FamilySyncPayloads.forOccurrence(occurrence),
+      occurredAt: occurredAt,
+    );
+  }
+
+  void _queueActivity(ActivityEntity activity, SyncOperation operation) {
+    final recordId = activity.recordId;
+    if (recordId == null) return;
+    _familySyncRepository?.enqueue(
+      entityType: FamilySyncPayloads.activity,
+      entityId: recordId,
+      entityRevision: operation == SyncOperation.delete
+          ? activity.revision + 1
+          : activity.revision,
+      operation: operation,
+      payload: FamilySyncPayloads.forActivity(activity),
+      occurredAt: activity.lastModified,
+    );
+  }
 }
 
-final taskRepositoryProvider = Provider<TaskRepository>((ref) {
-  return TaskRepositoryImpl(
-    ref.watch(objectBoxProvider),
-    ref.watch(profileRepositoryProvider),
-  );
-}, dependencies: [objectBoxProvider, profileRepositoryProvider]);
+final taskRepositoryProvider = Provider<TaskRepository>(
+  (ref) {
+    return TaskRepositoryImpl(
+      ref.watch(objectBoxProvider),
+      ref.watch(profileRepositoryProvider),
+      familySyncRepository: ref.watch(familySyncRepositoryProvider),
+    );
+  },
+  dependencies: [
+    objectBoxProvider,
+    profileRepositoryProvider,
+    familySyncRepositoryProvider,
+  ],
+);

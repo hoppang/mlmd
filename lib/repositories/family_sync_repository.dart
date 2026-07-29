@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/objectbox_helper.dart';
+import '../features/sharing/application/family_sync_payloads.dart';
 import '../features/sharing/application/family_sync_transport.dart';
 import '../features/sharing/domain/family_sync_models.dart';
 import '../models/family_sync_entity.dart';
@@ -43,7 +44,13 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     : _spaceBox = Box<FamilySpaceEntity>(_objectBox.store),
       _outbox = Box<SyncOutboxEntity>(_objectBox.store),
       _cursorBox = Box<SyncCursorEntity>(_objectBox.store),
-      _conflictBox = Box<SyncConflictEntity>(_objectBox.store);
+      _conflictBox = Box<SyncConflictEntity>(_objectBox.store) {
+    if (_profiles case final ProfileRepositoryImpl profiles) {
+      _profileMutationSubscription = profiles.mutations.listen(
+        _queueProfileMutation,
+      );
+    }
+  }
 
   static const _uuid = Uuid();
   final ObjectBoxHelper _objectBox;
@@ -52,6 +59,10 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
   final Box<SyncOutboxEntity> _outbox;
   final Box<SyncCursorEntity> _cursorBox;
   final Box<SyncConflictEntity> _conflictBox;
+  final StreamController<void> _changes = StreamController<void>.broadcast();
+  StreamSubscription<AuthorProfileMutation>? _profileMutationSubscription;
+
+  Stream<void> get changes => _changes.stream;
 
   FamilySpaceEntity? get _activeSpace {
     final spaces = _spaceBox.getAll().where((item) => item.isActive).toList()
@@ -142,6 +153,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
         },
       );
     }
+    _notifyChanged();
   }
 
   @override
@@ -150,6 +162,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     if (active == null) return;
     active.isActive = false;
     _spaceBox.put(active);
+    _notifyChanged();
   }
 
   @override
@@ -182,6 +195,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       occurredAt: occurredAt ?? DateTime.now(),
     );
     _outbox.put(_toOutbox(change));
+    _notifyChanged();
     return change;
   }
 
@@ -260,6 +274,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       ..lastSuccessfulAt = DateTime.now()
       ..lastErrorCode = null;
     _cursorBox.put(cursor);
+    _notifyChanged();
     return SyncRunResult(
       uploadedCount: acknowledged.length,
       appliedCount: appliedCount,
@@ -282,6 +297,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     if (pending.isNotEmpty) _outbox.putMany(pending);
     cursor.lastErrorCode = code;
     _cursorBox.put(cursor);
+    _notifyChanged();
   }
 
   void _saveConflict(
@@ -305,6 +321,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
         detectedAt: DateTime.now(),
       ),
     );
+    _notifyChanged();
   }
 
   FamilySpaceEntity? _spaceById(String familySpaceId) {
@@ -404,19 +421,55 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     payload: (jsonDecode(entity.payloadJson) as Map).cast<String, Object?>(),
     occurredAt: entity.occurredAt,
   );
+
+  void _notifyChanged() {
+    if (!_changes.isClosed) _changes.add(null);
+  }
+
+  void _queueProfileMutation(AuthorProfileMutation mutation) {
+    final now = DateTime.now();
+    enqueue(
+      entityType: FamilySyncPayloads.authorProfile,
+      entityId: mutation.profile.authorProfileId,
+      entityRevision: FamilySyncPayloads.revisionAt(now),
+      operation: mutation.isCreate
+          ? SyncOperation.create
+          : SyncOperation.update,
+      payload: {
+        ...FamilySyncPayloads.forAuthor(mutation.profile),
+        'updatedAt': now.toUtc().toIso8601String(),
+      },
+      occurredAt: now,
+    );
+  }
+
+  void dispose() {
+    unawaited(_profileMutationSubscription?.cancel());
+    _changes.close();
+  }
 }
 
 final familySyncRepositoryProvider = Provider<FamilySyncRepository>((ref) {
-  return FamilySyncRepositoryImpl(
+  final repository = FamilySyncRepositoryImpl(
     ref.watch(objectBoxProvider),
     ref.watch(profileRepositoryProvider),
   );
+  ref.onDispose(repository.dispose);
+  return repository;
 }, dependencies: [objectBoxProvider, profileRepositoryProvider]);
 
 class FamilySyncStatusNotifier extends Notifier<FamilySyncSnapshot> {
   @override
-  FamilySyncSnapshot build() =>
-      ref.watch(familySyncRepositoryProvider).getSnapshot();
+  FamilySyncSnapshot build() {
+    final repository = ref.watch(familySyncRepositoryProvider);
+    if (repository is FamilySyncRepositoryImpl) {
+      final subscription = repository.changes.listen((_) {
+        state = repository.getSnapshot();
+      });
+      ref.onDispose(subscription.cancel);
+    }
+    return repository.getSnapshot();
+  }
 
   void reload() {
     state = ref.read(familySyncRepositoryProvider).getSnapshot();

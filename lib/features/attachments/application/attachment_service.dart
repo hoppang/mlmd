@@ -9,6 +9,9 @@ import 'package:uuid/uuid.dart';
 
 import '../../../data/objectbox_helper.dart';
 import '../../../models/attachment_entity.dart';
+import '../../../repositories/family_sync_repository.dart';
+import '../../sharing/application/family_sync_payloads.dart';
+import '../../sharing/domain/family_sync_models.dart';
 import '../domain/event_attachment.dart';
 
 abstract interface class AttachmentRepository {
@@ -107,10 +110,16 @@ class InMemoryAttachmentRepository implements AttachmentRepository {
 }
 
 class ObjectBoxAttachmentRepository implements AttachmentRepository {
-  ObjectBoxAttachmentRepository.fromStore(Store store)
-    : _box = Box<AttachmentEntity>(store);
+  ObjectBoxAttachmentRepository.fromStore(
+    Store store, {
+    FamilySyncRepository? familySyncRepository,
+  }) : _box = Box<AttachmentEntity>(store),
+       // Public name keeps construction sites independent of the field name.
+       // ignore: prefer_initializing_formals
+       _familySyncRepository = familySyncRepository;
 
   final Box<AttachmentEntity> _box;
+  final FamilySyncRepository? _familySyncRepository;
   static const _uuid = Uuid();
 
   @override
@@ -159,9 +168,15 @@ class ObjectBoxAttachmentRepository implements AttachmentRepository {
         ? _uuid.v4()
         : attachment.attachmentId;
     final saved = attachment.copyWith(attachmentId: attachmentId);
+    final previous = _find(attachmentId);
     final entity = AttachmentEntity.fromDomain(saved);
-    entity.id = _find(attachmentId)?.id ?? 0;
+    entity.id = previous?.id ?? 0;
     _box.put(entity);
+    _queue(
+      saved,
+      previous == null ? SyncOperation.create : SyncOperation.update,
+      DateTime.now(),
+    );
     return saved;
   }
 
@@ -176,6 +191,7 @@ class ObjectBoxAttachmentRepository implements AttachmentRepository {
     final updated = domain.copyWith(deletedAt: deletedAt ?? DateTime.now());
     final entity = AttachmentEntity.fromDomain(updated)..id = existing.id;
     _box.put(entity);
+    _queue(updated, SyncOperation.delete, updated.deletedAt!);
   }
 
   @override
@@ -183,15 +199,19 @@ class ObjectBoxAttachmentRepository implements AttachmentRepository {
     final existing = _find(attachmentId);
     final domain = existing?.toDomain();
     if (existing == null || domain == null) return;
-    final entity = AttachmentEntity.fromDomain(domain.copyWith(deletedAt: null))
-      ..id = existing.id;
+    final restored = domain.copyWith(deletedAt: null);
+    final entity = AttachmentEntity.fromDomain(restored)..id = existing.id;
     _box.put(entity);
+    _queue(restored, SyncOperation.update, DateTime.now());
   }
 
   @override
   Future<void> removeAttachmentMetadata(String attachmentId) async {
     final existing = _find(attachmentId);
-    if (existing != null) _box.remove(existing.id);
+    final domain = existing?.toDomain();
+    if (existing != null && domain != null && _box.remove(existing.id)) {
+      _queue(domain, SyncOperation.delete, DateTime.now());
+    }
   }
 
   @override
@@ -202,6 +222,21 @@ class ObjectBoxAttachmentRepository implements AttachmentRepository {
     for (final attachment in attachments) {
       await saveAttachment(attachment.copyWith(recordId: recordId));
     }
+  }
+
+  void _queue(
+    EventAttachment attachment,
+    SyncOperation operation,
+    DateTime occurredAt,
+  ) {
+    _familySyncRepository?.enqueue(
+      entityType: FamilySyncPayloads.attachmentMetadata,
+      entityId: attachment.attachmentId,
+      entityRevision: FamilySyncPayloads.revisionAt(occurredAt),
+      operation: operation,
+      payload: FamilySyncPayloads.forAttachment(attachment),
+      occurredAt: occurredAt,
+    );
   }
 }
 
@@ -766,8 +801,9 @@ class AttachmentManager {
 final attachmentRepositoryProvider = Provider<AttachmentRepository>((ref) {
   return ObjectBoxAttachmentRepository.fromStore(
     ref.watch(objectBoxProvider).store,
+    familySyncRepository: ref.watch(familySyncRepositoryProvider),
   );
-}, dependencies: [objectBoxProvider]);
+}, dependencies: [objectBoxProvider, familySyncRepositoryProvider]);
 
 final attachmentFileStoreProvider = FutureProvider<AttachmentFileStore>((
   ref,

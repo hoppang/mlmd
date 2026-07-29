@@ -3,7 +3,10 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/sharing/application/family_sync_transport.dart';
+import 'package:mlmd/features/sharing/application/family_sync_payloads.dart';
 import 'package:mlmd/features/sharing/domain/family_sync_models.dart';
+import 'package:mlmd/features/attachments/application/attachment_service.dart';
+import 'package:mlmd/features/attachments/domain/event_attachment.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/ai_summary_entity.dart';
 import 'package:mlmd/models/author_profile_entity.dart';
@@ -17,7 +20,10 @@ import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/models/search_document_entity.dart';
 import 'package:mlmd/objectbox.g.dart' hide SyncChange;
 import 'package:mlmd/repositories/family_sync_repository.dart';
+import 'package:mlmd/repositories/diary_repository.dart';
+import 'package:mlmd/repositories/duplicate_review_repository.dart';
 import 'package:mlmd/repositories/profile_repository.dart';
+import 'package:mlmd/repositories/task_repository.dart';
 
 class _TestObjectBoxHelper implements ObjectBoxHelper {
   _TestObjectBoxHelper(this.store) {
@@ -208,4 +214,107 @@ void main() {
       expect(repository.getSnapshot().pendingChangeCount, 2);
     },
   );
+
+  test('record save paths enqueue shareable text changes', () async {
+    final diaryRepository = DiaryRepositoryImpl(
+      objectBox,
+      profiles,
+      familySyncRepository: repository,
+    );
+    final taskRepository = TaskRepositoryImpl(
+      objectBox,
+      profiles,
+      familySyncRepository: repository,
+    );
+    final attachmentRepository = ObjectBoxAttachmentRepository.fromStore(
+      store,
+      familySyncRepository: repository,
+    );
+    final duplicateRepository = DuplicateReviewRepositoryImpl(
+      objectBox,
+      profiles,
+      familySyncRepository: repository,
+    );
+    final author = profiles.currentAuthor!;
+    profiles.updateAuthor(
+      authorProfileId: author.authorProfileId,
+      nickname: '엄마 수정',
+      colorValue: 0xFF00695C,
+    );
+
+    diaryRepository.addActivityRecord(
+      ActivityEntity(
+        type: '메모',
+        time: DateTime.utc(2026, 7, 29, 9),
+        details: '공유할 메모',
+        lastModified: DateTime.utc(2026, 7, 29, 9),
+      ),
+    );
+    taskRepository.createTask(
+      title: '비타민 챙기기',
+      firstScheduledAt: DateTime.utc(2026, 7, 29, 10),
+    );
+    await attachmentRepository.saveAttachment(
+      EventAttachment(
+        attachmentId: 'attachment-1',
+        recordId: 'record-1',
+        attachmentType: AttachmentType.general,
+        fileName: 'note.txt',
+        mimeType: 'text/plain',
+        sourceKind: AttachmentSourceKind.filePicker,
+        managedOriginalUri: 'file:///local-only/note.txt',
+        createdAt: DateTime.utc(2026, 7, 29, 11),
+      ),
+    );
+    objectBox.duplicateReviewEdgeBox.put(
+      DuplicateReviewEdgeEntity(
+        pairKey: 'a|b',
+        recordAId: 'a',
+        recordBId: 'b',
+        signatureA: 'a',
+        signatureB: 'b',
+        revisionA: 1,
+        revisionB: 1,
+        detectionReasonsJson: '[]',
+        detectedAt: DateTime.utc(2026, 7, 29, 12),
+        detectorVersion: 'test',
+      ),
+    );
+    duplicateRepository.markDistinct('a|b');
+
+    final transport = _FakeTransport(
+      const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+    );
+    await repository.synchronize(
+      transport,
+      applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+    );
+
+    final entityTypes = transport.receivedOutgoing
+        .map((change) => change.entityType)
+        .toSet();
+    expect(
+      entityTypes,
+      containsAll({
+        FamilySyncPayloads.authorProfile,
+        FamilySyncPayloads.activity,
+        FamilySyncPayloads.careTask,
+        FamilySyncPayloads.careTaskOccurrence,
+        FamilySyncPayloads.attachmentMetadata,
+        FamilySyncPayloads.duplicateDecision,
+      }),
+    );
+    final attachmentChange = transport.receivedOutgoing.singleWhere(
+      (change) => change.entityType == FamilySyncPayloads.attachmentMetadata,
+    );
+    expect(attachmentChange.payload, isNot(contains('managedOriginalUri')));
+    expect(
+      transport.receivedOutgoing
+          .where(
+            (change) => change.entityType == FamilySyncPayloads.authorProfile,
+          )
+          .map((change) => change.operation),
+      contains(SyncOperation.update),
+    );
+  });
 }
