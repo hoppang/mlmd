@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +19,7 @@ import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/search/domain/hybrid_search_query.dart';
 import 'package:mlmd/features/events/application/custom_event_notifier.dart';
 import 'package:mlmd/features/events/domain/sleep_record.dart';
+import 'package:mlmd/features/diary/application/diary_list_notifier.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
 import 'package:mlmd/repositories/activity_repository.dart';
 import 'package:mlmd/repositories/record_draft_repository.dart';
@@ -96,6 +98,22 @@ class _FakeEmbeddingEngine implements EmbeddingEngine {
   List<double> get _vector => [1, ...List<double>.filled(383, 0)];
 }
 
+class _BlockingEmbeddingEngine implements EmbeddingEngine {
+  final Completer<List<double>?> completion = Completer<List<double>?>();
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  String get modelVersion => 'blocking-test-v1';
+
+  @override
+  Future<List<double>?> getEmbedding(String text) => completion.future;
+
+  @override
+  Future<List<double>?> getQueryEmbedding(String query) => completion.future;
+}
+
 void main() {
   late TestObjectBoxHelper obxHelper;
   late DiaryRepository diaryRepo;
@@ -127,6 +145,56 @@ void main() {
   });
 
   group('Diary & Activity Repository CRUD + Trigger Tests', () {
+    test(
+      'sleep completion updates state before search embedding finishes',
+      () async {
+        final startedAt = DateTime.now().subtract(const Duration(hours: 1));
+        final activity = ActivityEntity(
+          type: '수면',
+          time: startedAt,
+          details: '',
+          structuredDataJson: SleepRecord(
+            status: SleepRecordStatus.active,
+            kind: SleepRecordKind.unspecified,
+            source: SleepRecordSource.suggested,
+            startedAt: startedAt,
+          ).encode(),
+          lastModified: startedAt,
+        );
+        diaryRepo.addActivityRecord(activity);
+        final embedding = _BlockingEmbeddingEngine();
+        final container = ProviderContainer(
+          overrides: [
+            diaryRepositoryProvider.overrideWithValue(diaryRepo),
+            profileRepositoryProvider.overrideWithValue(profileRepo),
+            embeddingServiceProvider.overrideWithValue(embedding),
+          ],
+        );
+        addTearDown(container.dispose);
+        container.read(diaryListProvider);
+
+        var completed = false;
+        final completion = container
+            .read(diaryListProvider.notifier)
+            .completeSleep(
+              activity,
+              endedAt: DateTime.now(),
+              details: '1시간 · 낮잠',
+            )
+            .whenComplete(() => completed = true);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(completed, isFalse);
+        expect(
+          activeSleepActivities(container.read(diaryListProvider)),
+          isEmpty,
+        );
+
+        embedding.completion.complete([1, ...List<double>.filled(383, 0)]);
+        await completion;
+      },
+    );
+
     test('activity UUID survives editing and core edits raise revision', () {
       final time = DateTime(2026, 7, 24, 10);
       final diary = DiaryEntity(

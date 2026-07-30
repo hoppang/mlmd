@@ -289,8 +289,12 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
       ..structuredDataJson = record.encode();
     final repo = ref.read(diaryRepositoryProvider);
     repo.updateActivityRecord(updated);
-    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
+    final sourceRecordId = updated.diary.target?.recordId;
     state = repo.getDiaries();
+    await repo.rebuildSearchIndex(
+      ref.read(embeddingServiceProvider),
+      recordIds: sourceRecordId == null ? null : {sourceRecordId},
+    );
   }
 
   ActivityEntity? _activityByRecordId(String? recordId) {
@@ -427,5 +431,9 @@ ActivityEntity _copyActivity(ActivityEntity activity) => ActivityEntity(
 final diaryListProvider =
     NotifierProvider<DiaryListNotifier, List<DiaryEntity>>(
       DiaryListNotifier.new,
-      dependencies: [diaryRepositoryProvider, embeddingServiceProvider],
+      dependencies: [
+        diaryRepositoryProvider,
+        embeddingServiceProvider,
+        profileRepositoryProvider,
+      ],
     );
