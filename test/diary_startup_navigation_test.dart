@@ -69,6 +69,7 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   int sleepStartCallCount = 0;
   bool sleepStartCreated = true;
   ActivityEntity? completedSleep;
+  String? reopenedSleepRecordId;
   List<SleepRecordMarker>? updatedSleepMarkers;
 
   @override
@@ -125,6 +126,7 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     required String recordId,
     required String details,
     required String structuredDataJson,
+    DateTime? occurredAt,
   }) async {
     if (activitySaveError != null) throw activitySaveError!;
     updatedActivityRecordId = recordId;
@@ -182,6 +184,11 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     required String details,
   }) async {
     completedSleep = activity;
+  }
+
+  @override
+  Future<void> reopenSleep(String recordId) async {
+    reopenedSleepRecordId = recordId;
   }
 
   @override
@@ -538,6 +545,30 @@ Widget _buildApp({
 }
 
 void main() {
+  testWidgets('퀵런치 기록은 상단 실행취소만 제공하고 플로팅 기록 버튼은 없다', (tester) async {
+    final notifier = _TestDiaryListNotifier([]);
+
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('record-entry-button')), findsNothing);
+    expect(find.byKey(const Key('top-undo-button')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('quick-launch-slot-0')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.addedActivityType, '수유');
+    expect(find.byKey(const Key('top-undo-button')), findsOneWidget);
+    expect(find.byKey(const Key('edit-saved-quick-launch')), findsNothing);
+    expect(find.byType(SnackBar), findsNothing);
+
+    await tester.tap(find.byKey(const Key('top-undo-button')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.deletedActivityRecordId, 'activity-record');
+    expect(find.byKey(const Key('top-undo-button')), findsNothing);
+  });
+
   testWidgets('기록 시트에서 빠른 기록과 최근 사용, 카테고리를 제공한다', (tester) async {
     final now = DateTime.now();
     final diary = DiaryEntity(
@@ -568,7 +599,7 @@ void main() {
       _buildApp(diaries: [diary], diaryNotifier: notifier),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
 
     expect(find.byType(BottomSheet), findsOneWidget);
@@ -610,7 +641,7 @@ void main() {
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('event-category-healthMedical')));
     await tester.pumpAndSettle();
@@ -644,7 +675,7 @@ void main() {
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('quick-record-diaper-urine')), findsOneWidget);
@@ -689,7 +720,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('기저귀·배변 기록을 저장했어요.'), findsOneWidget);
 
-    await tester.tap(find.text('실행 취소'));
+    await tester.tap(find.byKey(const Key('top-undo-button')));
     await tester.pumpAndSettle();
     expect(notifier.deletedActivityRecordId, 'activity-record');
   });
@@ -699,7 +730,7 @@ void main() {
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('event-category-basicCare')));
     await tester.pumpAndSettle();
@@ -741,7 +772,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
     final createButton = find.byKey(const Key('create-custom-event'));
     await tester.ensureVisible(createButton);
@@ -778,7 +809,7 @@ void main() {
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('quick-record-sleep')));
     await tester.pumpAndSettle();
@@ -788,7 +819,7 @@ void main() {
     expect(find.byKey(const Key('record-entry-picker')), findsNothing);
 
     notifier.sleepStartCreated = false;
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('quick-record-sleep')));
     await tester.pumpAndSettle();
@@ -802,7 +833,7 @@ void main() {
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('event-category-basicCare')));
     await tester.pumpAndSettle();
@@ -832,7 +863,7 @@ void main() {
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
     expect(find.text('최근 사용'), findsNothing);
     await tester.tap(find.byKey(const Key('quick-record-temperature')));
@@ -860,7 +891,7 @@ void main() {
     await tester.pumpWidget(_buildApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
 
     expect(find.byType(Dialog), findsOneWidget);
@@ -942,6 +973,14 @@ void main() {
 
     expect(notifier.completedSleep?.recordId, 'active-sleep-record');
     expect(find.text('수면 기록을 종료했어요.'), findsOneWidget);
+    expect(find.text('실행 취소'), findsNothing);
+    expect(find.byKey(const Key('top-undo-button')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('top-undo-button')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.reopenedSleepRecordId, 'active-sleep-record');
+    expect(find.byKey(const Key('top-undo-button')), findsNothing);
   });
 
   testWidgets('종료된 수면의 관찰 표지는 타임라인에서 나중에 추가한다', (tester) async {
@@ -976,6 +1015,11 @@ void main() {
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
+    await tester.drag(
+      find.byKey(const Key('today-scroll-view')),
+      const Offset(0, -240),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('add-sleep-markers-completed-sleep-record')),
     );
@@ -1209,7 +1253,7 @@ void main() {
 
     expect(find.text('기록 검색'), findsOneWidget);
     expect(find.text('지난 기록을 찾아보세요'), findsOneWidget);
-    expect(find.byType(FloatingActionButton), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
 
     await tester.enterText(find.byKey(const Key('search-query-field')), '투약');
     await tester.tap(find.byKey(const Key('search-submit-button')));
@@ -1335,6 +1379,11 @@ void main() {
     expect(find.text('오늘 현황'), findsOneWidget);
     expect(find.text('수유 · 1'), findsOneWidget);
     expect(find.text('투약 · 1'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('today-scroll-view')),
+      const Offset(0, -240),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('발생 시각 미상'), findsOneWidget);
     expect(
       tester.getTopLeft(find.byKey(const ValueKey('today-activity:51'))).dy,
@@ -1797,7 +1846,11 @@ void main() {
       _buildApp(diaries: [diary], textScaler: const TextScaler.linear(2)),
     );
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(const ValueKey('today-memo:92')));
+    await tester.drag(
+      find.byKey(const Key('today-scroll-view')),
+      const Offset(0, -560),
+    );
+    await tester.pumpAndSettle();
     await tester.drag(
       find.byKey(const Key('today-scroll-view')),
       const Offset(0, -120),
@@ -1815,7 +1868,7 @@ void main() {
   testWidgets('작성 화면의 Esc는 초안을 보존하는 뒤로 가기와 같은 결과다', (tester) async {
     await tester.pumpWidget(_buildApp());
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('record-entry-button')));
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('open-detailed-record')));
     await tester.tap(find.byKey(const Key('open-detailed-record')));

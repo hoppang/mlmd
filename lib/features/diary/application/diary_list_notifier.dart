@@ -90,8 +90,8 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
       lastModified: DateTime.now(),
     );
     repo.addActivityRecord(activity);
-    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
     state = repo.getDiaries();
+    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
     return activity.recordId!;
   }
 
@@ -255,14 +255,15 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     if (activity == null) return;
     final repo = ref.read(diaryRepositoryProvider);
     repo.deleteActivityRecord(activity.id);
-    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
     state = repo.getDiaries();
+    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
   }
 
   Future<void> updateActivityDetails({
     required String recordId,
     required String details,
     required String structuredDataJson,
+    DateTime? occurredAt,
   }) async {
     final activity = _activityByRecordId(recordId);
     if (activity == null) {
@@ -270,11 +271,12 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     }
     final updated = _copyActivity(activity)
       ..details = details
-      ..structuredDataJson = structuredDataJson;
+      ..structuredDataJson = structuredDataJson
+      ..time = occurredAt ?? activity.time;
     final repo = ref.read(diaryRepositoryProvider);
     repo.updateActivityRecord(updated);
-    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
     state = repo.getDiaries();
+    await repo.rebuildSearchIndex(ref.read(embeddingServiceProvider));
   }
 
   Future<void> _updateSleepActivity(

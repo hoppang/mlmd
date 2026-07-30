@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../diary/application/top_undo_notifier.dart';
 import '../application/task_notifier.dart';
 import 'care_task_card.dart';
 import 'care_task_form_dialog.dart';
 
 class TodayTaskSection extends ConsumerWidget {
-  const TodayTaskSection({
-    super.key,
-    required this.selectedDate,
-  });
+  const TodayTaskSection({super.key, required this.selectedDate});
 
   final DateTime selectedDate;
 
@@ -39,10 +37,7 @@ class TodayTaskSection extends ConsumerWidget {
                   SizedBox(width: 6),
                   Text(
                     '오늘 할 일',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -88,13 +83,18 @@ class TodayTaskSection extends ConsumerWidget {
               ),
             ),
           ),
-          ...dueItems.map((item) => CareTaskCard(
-                task: item.task,
-                occurrence: item.occurrence,
-                onComplete: () => _handleComplete(context, notifier, item),
-                onSkip: () => notifier.skipOccurrence(item.occurrence.occurrenceId),
-                onUndo: () => notifier.undoOccurrenceCompletion(item.occurrence.occurrenceId),
-              )),
+          ...dueItems.map(
+            (item) => CareTaskCard(
+              task: item.task,
+              occurrence: item.occurrence,
+              onComplete: () => _handleComplete(context, ref, notifier, item),
+              onSkip: () =>
+                  notifier.skipOccurrence(item.occurrence.occurrenceId),
+              onUndo: () => notifier.undoOccurrenceCompletion(
+                item.occurrence.occurrenceId,
+              ),
+            ),
+          ),
         ],
 
         // 2. 다음 할 일 (Scheduled tasks)
@@ -110,13 +110,18 @@ class TodayTaskSection extends ConsumerWidget {
               ),
             ),
           ),
-          ...scheduledItems.map((item) => CareTaskCard(
-                task: item.task,
-                occurrence: item.occurrence,
-                onComplete: () => _handleComplete(context, notifier, item),
-                onSkip: () => notifier.skipOccurrence(item.occurrence.occurrenceId),
-                onUndo: () => notifier.undoOccurrenceCompletion(item.occurrence.occurrenceId),
-              )),
+          ...scheduledItems.map(
+            (item) => CareTaskCard(
+              task: item.task,
+              occurrence: item.occurrence,
+              onComplete: () => _handleComplete(context, ref, notifier, item),
+              onSkip: () =>
+                  notifier.skipOccurrence(item.occurrence.occurrenceId),
+              onUndo: () => notifier.undoOccurrenceCompletion(
+                item.occurrence.occurrenceId,
+              ),
+            ),
+          ),
         ],
 
         // 3. 완료 / 건너뛴 할 일 (Completed / Skipped)
@@ -128,20 +133,28 @@ class TodayTaskSection extends ConsumerWidget {
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
             children: [
-              ...completedItems.map((item) => CareTaskCard(
-                    task: item.task,
-                    occurrence: item.occurrence,
-                    onComplete: () {},
-                    onSkip: () {},
-                    onUndo: () => notifier.undoOccurrenceCompletion(item.occurrence.occurrenceId),
-                  )),
-              ...skippedItems.map((item) => CareTaskCard(
-                    task: item.task,
-                    occurrence: item.occurrence,
-                    onComplete: () {},
-                    onSkip: () {},
-                    onUndo: () => notifier.undoOccurrenceCompletion(item.occurrence.occurrenceId),
-                  )),
+              ...completedItems.map(
+                (item) => CareTaskCard(
+                  task: item.task,
+                  occurrence: item.occurrence,
+                  onComplete: () {},
+                  onSkip: () {},
+                  onUndo: () => notifier.undoOccurrenceCompletion(
+                    item.occurrence.occurrenceId,
+                  ),
+                ),
+              ),
+              ...skippedItems.map(
+                (item) => CareTaskCard(
+                  task: item.task,
+                  occurrence: item.occurrence,
+                  onComplete: () {},
+                  onSkip: () {},
+                  onUndo: () => notifier.undoOccurrenceCompletion(
+                    item.occurrence.occurrenceId,
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -151,6 +164,7 @@ class TodayTaskSection extends ConsumerWidget {
 
   void _handleComplete(
     BuildContext context,
+    WidgetRef ref,
     TaskNotifier notifier,
     TaskItemPair item,
   ) {
@@ -163,16 +177,13 @@ class TodayTaskSection extends ConsumerWidget {
         ? '${item.task.title} 기록을 완료하고 이벤트를 생성했어요'
         : '${item.task.title} 할 일을 완료했어요';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        action: SnackBarAction(
-          label: '실행 취소',
-          onPressed: () {
-            notifier.undoOccurrenceCompletion(item.occurrence.occurrenceId);
-          },
-        ),
-      ),
-    );
+    ref
+        .read(topUndoProvider.notifier)
+        .arm(
+          () => notifier.undoOccurrenceCompletion(item.occurrence.occurrenceId),
+        );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

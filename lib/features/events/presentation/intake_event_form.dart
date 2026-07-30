@@ -189,37 +189,12 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
           ? widget.occurredAt
           : null,
     );
-    widget.onSave(IntakeFormResult(record: record, details: _details(record)));
-  }
-
-  String _details(IntakeRecord record) {
-    final loc = AppLocalizations.of(context)!;
-    final values = <String>[];
-    if (record.kind == IntakeRecordKind.feeding) {
-      values.add(_feedingMethodLabel(record.method!, loc));
-      if (record.side != null) {
-        values.add(
-          record.side == BreastSide.left
-              ? loc.leftSideOption
-              : loc.rightSideOption,
-        );
-      }
-      if (record.bottleContents != null) {
-        values.add(_bottleContentsLabel(record.bottleContents!, loc));
-      }
-    }
-    if (record.mealType != null) {
-      values.add(_mealTypeLabel(record.mealType!, loc));
-    }
-    if ((record.foodName ?? '').isNotEmpty) values.add(record.foodName!);
-    if (record.amountExpression != null) {
-      values.add(_amountLabel(record.amountExpression!, loc));
-    }
-    if (record.reaction != null) {
-      values.add(_reactionLabel(record.reaction!, loc));
-    }
-    if ((record.memo ?? '').isNotEmpty) values.add(record.memo!);
-    return values.join(' · ');
+    widget.onSave(
+      IntakeFormResult(
+        record: record,
+        details: intakeRecordDetails(record, AppLocalizations.of(context)!),
+      ),
+    );
   }
 
   @override
@@ -568,6 +543,35 @@ class _ChoiceWrap<T> extends StatelessWidget {
         ),
     ],
   );
+}
+
+String intakeRecordDetails(IntakeRecord record, AppLocalizations loc) {
+  final values = <String>[];
+  if (record.kind == IntakeRecordKind.feeding && record.method != null) {
+    values.add(_feedingMethodLabel(record.method!, loc));
+    if (record.side != null) {
+      values.add(
+        record.side == BreastSide.left
+            ? loc.leftSideOption
+            : loc.rightSideOption,
+      );
+    }
+    if (record.bottleContents != null) {
+      values.add(_bottleContentsLabel(record.bottleContents!, loc));
+    }
+  }
+  if (record.mealType != null) {
+    values.add(_mealTypeLabel(record.mealType!, loc));
+  }
+  if ((record.foodName ?? '').isNotEmpty) values.add(record.foodName!);
+  if (record.amountExpression != null) {
+    values.add(_amountLabel(record.amountExpression!, loc));
+  }
+  if (record.reaction != null) {
+    values.add(_reactionLabel(record.reaction!, loc));
+  }
+  if ((record.memo ?? '').isNotEmpty) values.add(record.memo!);
+  return values.join(' · ');
 }
 
 String _feedingMethodLabel(FeedingMethod method, AppLocalizations loc) =>

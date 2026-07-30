@@ -60,7 +60,7 @@ typedef SaveCustomEventRecord =
       DateTime occurredAt,
     );
 typedef StartSleepRecord =
-    Future<bool> Function(String type, DateTime startedAt);
+    Future<SleepStartResult> Function(String type, DateTime startedAt);
 typedef SaveDailyTrackingCheckIn =
     Future<void> Function(
       EventTypeId eventType,
@@ -90,6 +90,9 @@ class RecordEntrySheet extends ConsumerStatefulWidget {
     required this.onSaveCustom,
     required this.onStartSleep,
     required this.onOpenDetailedRecord,
+    this.initialItem,
+    this.initialStructuredDataJson,
+    this.onEditQuickLaunch,
     super.key,
   });
 
@@ -103,6 +106,9 @@ class RecordEntrySheet extends ConsumerStatefulWidget {
   final SaveCustomEventRecord onSaveCustom;
   final StartSleepRecord onStartSleep;
   final VoidCallback onOpenDetailedRecord;
+  final EventCatalogItem? initialItem;
+  final String? initialStructuredDataJson;
+  final VoidCallback? onEditQuickLaunch;
 
   @override
   ConsumerState<RecordEntrySheet> createState() => _RecordEntrySheetState();
@@ -118,6 +124,13 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   DateTime _occurredAt = DateTime.now();
   bool _saving = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedItem = widget.initialItem;
+    _structuredDataJson = widget.initialStructuredDataJson;
+  }
 
   bool _usesDailyCheckIn(EventCatalogItem item) =>
       widget.trackingModes[item.id] == TrackingMode.dailyCheckIn;
@@ -770,7 +783,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       _error = null;
     });
     try {
-      final created = await widget.onStartSleep(
+      final result = await widget.onStartSleep(
         item.label(AppLocalizations.of(context)!),
         DateTime.now(),
       );
@@ -778,9 +791,10 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
       Navigator.pop(
         context,
         RecordEntryResult(
-          created
+          result.created
               ? RecordEntryResultKind.sleepStarted
               : RecordEntryResultKind.sleepAlreadyActive,
+          recordId: result.activity.recordId,
         ),
       );
     } catch (_) {
@@ -1038,6 +1052,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           ),
                         );
                   },
+                  onEditQuickLaunch: widget.onEditQuickLaunch,
                   onOpenDetailedRecord: widget.onOpenDetailedRecord,
                 )
               : custom == null && _usesDailyCheckIn(selected!)
@@ -1426,6 +1441,7 @@ class _EventPicker extends StatelessWidget {
     required this.onRenameCustom,
     required this.onArchiveCustom,
     required this.onToggleCustomPin,
+    required this.onEditQuickLaunch,
     required this.onOpenDetailedRecord,
     super.key,
   });
@@ -1453,6 +1469,7 @@ class _EventPicker extends StatelessWidget {
   final ValueChanged<SharedCustomEventDefinitionEntity> onRenameCustom;
   final ValueChanged<SharedCustomEventDefinitionEntity> onArchiveCustom;
   final ValueChanged<SharedCustomEventDefinitionEntity> onToggleCustomPin;
+  final VoidCallback? onEditQuickLaunch;
   final VoidCallback onOpenDetailedRecord;
 
   @override
@@ -1474,6 +1491,18 @@ class _EventPicker extends StatelessWidget {
             loc.recordSheetTitle,
             style: Theme.of(context).textTheme.titleLarge,
           ),
+          if (onEditQuickLaunch != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('edit-quick-launch'),
+                onPressed: onEditQuickLaunch,
+                icon: const Icon(Icons.tune_outlined),
+                label: Text(loc.quickLaunchEditTitle),
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           AppSectionHeader(title: loc.quickRecordsTitle),
           Wrap(

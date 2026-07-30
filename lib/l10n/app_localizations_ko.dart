@@ -1954,4 +1954,139 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get growthChartPercentileExplanation =>
       '백분위는 같은 성별·나이의 참고 분포에서 어느 위치인지 나타냅니다. 높거나 낮은 것이 곧 좋고 나쁨을 뜻하지는 않습니다.';
+
+  @override
+  String get quickLaunchEditTitle => '퀵런치 편집';
+
+  @override
+  String get quickLaunchEditDescription => '네 자리에 자주 쓰는 기록과 세부값을 정해 둘 수 있어요.';
+
+  @override
+  String get quickLaunchAll => '전체';
+
+  @override
+  String get quickLaunchAdd => '추가';
+
+  @override
+  String get quickLaunchChooseEvent => '기록 항목 선택';
+
+  @override
+  String get quickLaunchChooseSlot => '바꿀 자리를 선택하세요';
+
+  @override
+  String get quickLaunchDisplayLabel => '표시 이름';
+
+  @override
+  String get quickLaunchSaveSlot => '이 자리에 저장';
+
+  @override
+  String get quickLaunchClearSlot => '자리 비우기';
+
+  @override
+  String get quickLaunchMoveLeft => '왼쪽으로 이동';
+
+  @override
+  String get quickLaunchMoveRight => '오른쪽으로 이동';
+
+  @override
+  String quickLaunchInstantSemantic(String label) {
+    return '$label, 누르면 즉시 기록';
+  }
+
+  @override
+  String quickLaunchFormSemantic(String label) {
+    return '$label, 누르면 세부 입력 열림';
+  }
+
+  @override
+  String quickLaunchSaved(String label) {
+    return '$label 기록을 저장했어요.';
+  }
+
+  @override
+  String get quickLaunchPresetAmount => '미리 기록할 양';
+
+  @override
+  String quickLaunchRecommendationTitle(String childName, String stage) {
+    return '$childName의 $stage 퀵런치를 바꿔볼까요?';
+  }
+
+  @override
+  String get quickLaunchRecommendationDescription =>
+      '현재 설정과 추천을 비교한 뒤 원하는 자리만 바꿀 수 있어요. 기록 방식이나 돌봄 시기를 판단하는 안내는 아닙니다.';
+
+  @override
+  String get quickLaunchViewChanges => '변경 내용 보기';
+
+  @override
+  String get quickLaunchLater => '나중에';
+
+  @override
+  String get quickLaunchSkipStage => '이번 단계 건너뛰기';
+
+  @override
+  String get quickLaunchApplyAll => '모두 적용';
+
+  @override
+  String get quickLaunchApplySelected => '선택 적용';
+
+  @override
+  String get quickLaunchCurrent => '현재';
+
+  @override
+  String get quickLaunchSuggested => '추천';
+
+  @override
+  String get quickLaunchKeep => '유지';
+
+  @override
+  String get quickLaunchRecommendationApplied => '추천 퀵런치를 적용했어요.';
+
+  @override
+  String get quickLaunchRecommendationUndone => '이전 퀵런치로 되돌렸어요.';
+
+  @override
+  String get growthStageNewborn => '신생아';
+
+  @override
+  String get growthStageMonth3 => '생후 3개월';
+
+  @override
+  String get growthStageMonth6 => '생후 6개월';
+
+  @override
+  String get growthStageYear1 => '첫돌';
+
+  @override
+  String get childProfilesTitle => '아이 정보';
+
+  @override
+  String get childProfilesDescription => '아이마다 이름과 생년월일, 퀵런치를 따로 관리합니다.';
+
+  @override
+  String get addChildProfile => '아이 추가';
+
+  @override
+  String get editChildProfile => '아이 정보 수정';
+
+  @override
+  String get childNameLabel => '아이 이름';
+
+  @override
+  String get childBirthDateLabel => '생년월일 (선택)';
+
+  @override
+  String get childBirthDateUnknown => '생년월일 입력 안 함';
+
+  @override
+  String get selectChildProfile => '현재 기록할 아이로 선택';
+
+  @override
+  String get selectedChildProfile => '현재 기록 중';
+
+  @override
+  String get deleteChildProfile => '아이 삭제';
+
+  @override
+  String get lastChildCannotDelete => '마지막 아이는 삭제할 수 없어요.';
 }

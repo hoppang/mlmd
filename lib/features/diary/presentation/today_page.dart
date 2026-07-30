@@ -22,18 +22,32 @@ import '../../events/presentation/medical_guidance_widgets.dart';
 import '../../events/presentation/sleep_event_form.dart';
 import '../../../models/duplicate_review_edge_entity.dart';
 import '../../profiles/presentation/record_author_tag.dart';
+import '../../quick_launch/application/quick_launch_notifier.dart';
+import '../../quick_launch/domain/quick_launch_models.dart';
+import '../../quick_launch/presentation/quick_launch_dock.dart';
 import '../application/diary_draft_payload.dart';
 import '../application/diary_list_notifier.dart';
+import '../application/top_undo_notifier.dart';
 
 class TodayPage extends ConsumerStatefulWidget {
   const TodayPage({
     required this.onNavigateToForm,
     required this.onOpenDuplicateReviews,
+    required this.onQuickLaunch,
+    required this.onEditQuickLaunch,
+    required this.onOpenAllRecords,
+    required this.onReviewQuickLaunchRecommendation,
+    this.busyQuickLaunchSlot,
     super.key,
   });
 
   final void Function(DiaryEntity?, String?) onNavigateToForm;
   final VoidCallback onOpenDuplicateReviews;
+  final ValueChanged<QuickLaunchSlot> onQuickLaunch;
+  final ValueChanged<int> onEditQuickLaunch;
+  final VoidCallback onOpenAllRecords;
+  final VoidCallback onReviewQuickLaunchRecommendation;
+  final int? busyQuickLaunchSlot;
 
   @override
   ConsumerState<TodayPage> createState() => _TodayPageState();
@@ -181,21 +195,16 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     if (!mounted) return;
     final recordId = activity.recordId;
     final loc = AppLocalizations.of(context)!;
+    if (recordId != null) {
+      ref
+          .read(topUndoProvider.notifier)
+          .arm(
+            () => ref.read(diaryListProvider.notifier).reopenSleep(recordId),
+          );
+    }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(loc.sleepEnded),
-          action: recordId == null
-              ? null
-              : SnackBarAction(
-                  label: loc.undo,
-                  onPressed: () => ref
-                      .read(diaryListProvider.notifier)
-                      .reopenSleep(recordId),
-                ),
-        ),
-      );
+      ..showSnackBar(SnackBar(content: Text(loc.sleepEnded)));
   }
 
   Future<void> _editActiveSleepStart(ActivityEntity activity) async {
@@ -329,6 +338,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         )
         .length;
     final loc = AppLocalizations.of(context)!;
+    final quickLaunch = ref.watch(quickLaunchProvider);
     final activeSleeps = activeSleepActivities(diaries);
     final todayDiaries = diaries
         .where((diary) => _isToday(diary.date))
@@ -361,6 +371,37 @@ class _TodayPageState extends ConsumerState<TodayPage> {
               ),
             ),
           ),
+          SliverToBoxAdapter(
+            child: QuickLaunchDock(
+              layout: quickLaunch.layout,
+              busySlotIndex: widget.busyQuickLaunchSlot,
+              onSlotPressed: widget.onQuickLaunch,
+              onEditSlot: widget.onEditQuickLaunch,
+              onOpenAll: widget.onOpenAllRecords,
+            ),
+          ),
+          if (quickLaunch.hasRecommendation)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
+                child: Card(
+                  key: const Key('quick-launch-recommendation-card'),
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  child: ListTile(
+                    leading: const Icon(Icons.auto_awesome_outlined),
+                    title: Text(loc.quickLaunchViewChanges),
+                    subtitle: Text(loc.quickLaunchRecommendationDescription),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: widget.onReviewQuickLaunchRecommendation,
+                  ),
+                ),
+              ),
+            ),
           if (drafts.isNotEmpty)
             SliverToBoxAdapter(
               child: DraftResumeCard(

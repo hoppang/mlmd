@@ -3686,6 +3686,258 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'백분위는 같은 성별·나이의 참고 분포에서 어느 위치인지 나타냅니다. 높거나 낮은 것이 곧 좋고 나쁨을 뜻하지는 않습니다.'**
   String get growthChartPercentileExplanation;
+
+  /// No description provided for @quickLaunchEditTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'퀵런치 편집'**
+  String get quickLaunchEditTitle;
+
+  /// No description provided for @quickLaunchEditDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'네 자리에 자주 쓰는 기록과 세부값을 정해 둘 수 있어요.'**
+  String get quickLaunchEditDescription;
+
+  /// No description provided for @quickLaunchAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get quickLaunchAll;
+
+  /// No description provided for @quickLaunchAdd.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가'**
+  String get quickLaunchAdd;
+
+  /// No description provided for @quickLaunchChooseEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'기록 항목 선택'**
+  String get quickLaunchChooseEvent;
+
+  /// No description provided for @quickLaunchChooseSlot.
+  ///
+  /// In ko, this message translates to:
+  /// **'바꿀 자리를 선택하세요'**
+  String get quickLaunchChooseSlot;
+
+  /// No description provided for @quickLaunchDisplayLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'표시 이름'**
+  String get quickLaunchDisplayLabel;
+
+  /// No description provided for @quickLaunchSaveSlot.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 자리에 저장'**
+  String get quickLaunchSaveSlot;
+
+  /// No description provided for @quickLaunchClearSlot.
+  ///
+  /// In ko, this message translates to:
+  /// **'자리 비우기'**
+  String get quickLaunchClearSlot;
+
+  /// No description provided for @quickLaunchMoveLeft.
+  ///
+  /// In ko, this message translates to:
+  /// **'왼쪽으로 이동'**
+  String get quickLaunchMoveLeft;
+
+  /// No description provided for @quickLaunchMoveRight.
+  ///
+  /// In ko, this message translates to:
+  /// **'오른쪽으로 이동'**
+  String get quickLaunchMoveRight;
+
+  /// No description provided for @quickLaunchInstantSemantic.
+  ///
+  /// In ko, this message translates to:
+  /// **'{label}, 누르면 즉시 기록'**
+  String quickLaunchInstantSemantic(String label);
+
+  /// No description provided for @quickLaunchFormSemantic.
+  ///
+  /// In ko, this message translates to:
+  /// **'{label}, 누르면 세부 입력 열림'**
+  String quickLaunchFormSemantic(String label);
+
+  /// No description provided for @quickLaunchSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'{label} 기록을 저장했어요.'**
+  String quickLaunchSaved(String label);
+
+  /// No description provided for @quickLaunchPresetAmount.
+  ///
+  /// In ko, this message translates to:
+  /// **'미리 기록할 양'**
+  String get quickLaunchPresetAmount;
+
+  /// No description provided for @quickLaunchRecommendationTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'{childName}의 {stage} 퀵런치를 바꿔볼까요?'**
+  String quickLaunchRecommendationTitle(String childName, String stage);
+
+  /// No description provided for @quickLaunchRecommendationDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 설정과 추천을 비교한 뒤 원하는 자리만 바꿀 수 있어요. 기록 방식이나 돌봄 시기를 판단하는 안내는 아닙니다.'**
+  String get quickLaunchRecommendationDescription;
+
+  /// No description provided for @quickLaunchViewChanges.
+  ///
+  /// In ko, this message translates to:
+  /// **'변경 내용 보기'**
+  String get quickLaunchViewChanges;
+
+  /// No description provided for @quickLaunchLater.
+  ///
+  /// In ko, this message translates to:
+  /// **'나중에'**
+  String get quickLaunchLater;
+
+  /// No description provided for @quickLaunchSkipStage.
+  ///
+  /// In ko, this message translates to:
+  /// **'이번 단계 건너뛰기'**
+  String get quickLaunchSkipStage;
+
+  /// No description provided for @quickLaunchApplyAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'모두 적용'**
+  String get quickLaunchApplyAll;
+
+  /// No description provided for @quickLaunchApplySelected.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택 적용'**
+  String get quickLaunchApplySelected;
+
+  /// No description provided for @quickLaunchCurrent.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재'**
+  String get quickLaunchCurrent;
+
+  /// No description provided for @quickLaunchSuggested.
+  ///
+  /// In ko, this message translates to:
+  /// **'추천'**
+  String get quickLaunchSuggested;
+
+  /// No description provided for @quickLaunchKeep.
+  ///
+  /// In ko, this message translates to:
+  /// **'유지'**
+  String get quickLaunchKeep;
+
+  /// No description provided for @quickLaunchRecommendationApplied.
+  ///
+  /// In ko, this message translates to:
+  /// **'추천 퀵런치를 적용했어요.'**
+  String get quickLaunchRecommendationApplied;
+
+  /// No description provided for @quickLaunchRecommendationUndone.
+  ///
+  /// In ko, this message translates to:
+  /// **'이전 퀵런치로 되돌렸어요.'**
+  String get quickLaunchRecommendationUndone;
+
+  /// No description provided for @growthStageNewborn.
+  ///
+  /// In ko, this message translates to:
+  /// **'신생아'**
+  String get growthStageNewborn;
+
+  /// No description provided for @growthStageMonth3.
+  ///
+  /// In ko, this message translates to:
+  /// **'생후 3개월'**
+  String get growthStageMonth3;
+
+  /// No description provided for @growthStageMonth6.
+  ///
+  /// In ko, this message translates to:
+  /// **'생후 6개월'**
+  String get growthStageMonth6;
+
+  /// No description provided for @growthStageYear1.
+  ///
+  /// In ko, this message translates to:
+  /// **'첫돌'**
+  String get growthStageYear1;
+
+  /// No description provided for @childProfilesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'아이 정보'**
+  String get childProfilesTitle;
+
+  /// No description provided for @childProfilesDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'아이마다 이름과 생년월일, 퀵런치를 따로 관리합니다.'**
+  String get childProfilesDescription;
+
+  /// No description provided for @addChildProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'아이 추가'**
+  String get addChildProfile;
+
+  /// No description provided for @editChildProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'아이 정보 수정'**
+  String get editChildProfile;
+
+  /// No description provided for @childNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'아이 이름'**
+  String get childNameLabel;
+
+  /// No description provided for @childBirthDateLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'생년월일 (선택)'**
+  String get childBirthDateLabel;
+
+  /// No description provided for @childBirthDateUnknown.
+  ///
+  /// In ko, this message translates to:
+  /// **'생년월일 입력 안 함'**
+  String get childBirthDateUnknown;
+
+  /// No description provided for @selectChildProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 기록할 아이로 선택'**
+  String get selectChildProfile;
+
+  /// No description provided for @selectedChildProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 기록 중'**
+  String get selectedChildProfile;
+
+  /// No description provided for @deleteChildProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'아이 삭제'**
+  String get deleteChildProfile;
+
+  /// No description provided for @lastChildCannotDelete.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 아이는 삭제할 수 없어요.'**
+  String get lastChildCannotDelete;
 }
 
 class _AppLocalizationsDelegate

@@ -1943,4 +1943,139 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get growthChartPercentileExplanation =>
       'パーセンタイルは同じ年齢・性別の参照分布における位置を示します。高い・低いこと自体が良い・悪いという意味ではありません。';
+
+  @override
+  String get quickLaunchEditTitle => 'クイック起動を編集';
+
+  @override
+  String get quickLaunchEditDescription => 'よく使う4つの記録と再利用する詳細を設定できます。';
+
+  @override
+  String get quickLaunchAll => 'すべて';
+
+  @override
+  String get quickLaunchAdd => '追加';
+
+  @override
+  String get quickLaunchChooseEvent => '記録項目を選択';
+
+  @override
+  String get quickLaunchChooseSlot => '変更する位置を選択';
+
+  @override
+  String get quickLaunchDisplayLabel => '表示名';
+
+  @override
+  String get quickLaunchSaveSlot => 'この位置に保存';
+
+  @override
+  String get quickLaunchClearSlot => '位置を空にする';
+
+  @override
+  String get quickLaunchMoveLeft => '左へ移動';
+
+  @override
+  String get quickLaunchMoveRight => '右へ移動';
+
+  @override
+  String quickLaunchInstantSemantic(String label) {
+    return '$label、タップですぐ記録';
+  }
+
+  @override
+  String quickLaunchFormSemantic(String label) {
+    return '$label、タップで詳細入力を開く';
+  }
+
+  @override
+  String quickLaunchSaved(String label) {
+    return '$labelを記録しました。';
+  }
+
+  @override
+  String get quickLaunchPresetAmount => 'あらかじめ記録する量';
+
+  @override
+  String quickLaunchRecommendationTitle(String childName, String stage) {
+    return '$childNameの$stage向けクイック起動に変更しますか？';
+  }
+
+  @override
+  String get quickLaunchRecommendationDescription =>
+      '現在とおすすめを比較し、必要な位置だけ変更できます。ケアの時期や記録方法を判断する案内ではありません。';
+
+  @override
+  String get quickLaunchViewChanges => '変更内容を見る';
+
+  @override
+  String get quickLaunchLater => 'あとで';
+
+  @override
+  String get quickLaunchSkipStage => 'この段階をスキップ';
+
+  @override
+  String get quickLaunchApplyAll => 'すべて適用';
+
+  @override
+  String get quickLaunchApplySelected => '選択を適用';
+
+  @override
+  String get quickLaunchCurrent => '現在';
+
+  @override
+  String get quickLaunchSuggested => 'おすすめ';
+
+  @override
+  String get quickLaunchKeep => '維持';
+
+  @override
+  String get quickLaunchRecommendationApplied => 'おすすめのクイック起動を適用しました。';
+
+  @override
+  String get quickLaunchRecommendationUndone => '以前のクイック起動に戻しました。';
+
+  @override
+  String get growthStageNewborn => '新生児期';
+
+  @override
+  String get growthStageMonth3 => '生後3か月';
+
+  @override
+  String get growthStageMonth6 => '生後6か月';
+
+  @override
+  String get growthStageYear1 => '1歳';
+
+  @override
+  String get childProfilesTitle => '子どもの情報';
+
+  @override
+  String get childProfilesDescription => '子どもごとに名前、生年月日、クイック起動を管理します。';
+
+  @override
+  String get addChildProfile => '子どもを追加';
+
+  @override
+  String get editChildProfile => '子どもの情報を編集';
+
+  @override
+  String get childNameLabel => '子どもの名前';
+
+  @override
+  String get childBirthDateLabel => '生年月日（任意）';
+
+  @override
+  String get childBirthDateUnknown => '生年月日なし';
+
+  @override
+  String get selectChildProfile => 'この子どもに記録';
+
+  @override
+  String get selectedChildProfile => '現在記録中';
+
+  @override
+  String get deleteChildProfile => '子どもを削除';
+
+  @override
+  String get lastChildCannotDelete => '最後の子どもは削除できません。';
 }

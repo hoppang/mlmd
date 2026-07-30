@@ -1,9 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/presentation/adaptive_detail.dart';
-import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../attachments/application/attachment_service.dart';
@@ -19,6 +20,11 @@ import '../../../widgets/transfer_progress_dialog.dart';
 import '../../search/presentation/diary_search_page.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../../events/domain/event_catalog.dart';
+import '../../events/domain/bath_record.dart';
+import '../../events/domain/elimination_record.dart';
+import '../../events/domain/intake_record.dart';
+import '../../events/presentation/elimination_event_form.dart';
+import '../../events/presentation/intake_event_form.dart';
 import '../../events/presentation/record_entry_sheet.dart';
 import '../../medical_briefing/presentation/medical_briefing_page.dart';
 import '../../growth/presentation/growth_chart_page.dart';
@@ -26,7 +32,14 @@ import '../../tracking/application/tracking_preferences_notifier.dart';
 import '../../tracking/domain/tracking_models.dart';
 import '../../../repositories/tracking_repository.dart';
 import '../../duplicate_review/presentation/duplicate_review_page.dart';
+import '../../quick_launch/application/quick_launch_notifier.dart';
+import '../../quick_launch/domain/quick_launch_models.dart';
+import '../../quick_launch/presentation/quick_launch_editor_sheet.dart';
+import '../../quick_launch/presentation/quick_launch_labels.dart'
+    show quickLaunchCatalogItem;
+import '../../quick_launch/presentation/quick_launch_recommendation_sheet.dart';
 import '../application/diary_list_notifier.dart';
+import '../application/top_undo_notifier.dart';
 import 'diary_form_page.dart';
 import 'diary_list_page.dart';
 import 'today_page.dart';
@@ -40,6 +53,7 @@ class DiaryDemoPage extends ConsumerStatefulWidget {
 
 class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
   int _selectedTab = 0;
+  int? _busyQuickLaunchSlot;
   final ValueNotifier<int> _searchFocusRequest = ValueNotifier(0);
 
   @override
@@ -294,7 +308,10 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     );
   }
 
-  Future<void> _showRecordEntry() async {
+  Future<void> _showRecordEntry({
+    EventCatalogItem? initialItem,
+    String? initialStructuredDataJson,
+  }) async {
     final diaries = ref.read(diaryListProvider);
     // Lightweight widget hosts may intentionally omit ObjectBox. The
     // production bootstrap always supplies it; default modes keep previews
@@ -314,6 +331,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
         if (entry.value == TrackingMode.hidden) entry.key,
     };
     var openDetailedRecord = false;
+    var editQuickLaunch = false;
     final result = await showAdaptiveDetail<RecordEntryResult>(
       context: context,
       builder: (sheetContext) => RecordEntrySheet(
@@ -323,6 +341,12 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
         ),
         hiddenQuickEventIds: hiddenQuickIds,
         trackingModes: modesByEvent,
+        initialItem: initialItem,
+        initialStructuredDataJson: initialStructuredDataJson,
+        onEditQuickLaunch: () {
+          editQuickLaunch = true;
+          Navigator.pop(sheetContext);
+        },
         onSaveDailyCheckIn: (eventType, relativeState, memo) async {
           ref
               .read(trackingRepositoryProvider)
@@ -335,14 +359,16 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                 memo: memo,
               );
         },
-        onSave: (type, details, occurredAt, structuredDataJson) => ref
-            .read(diaryListProvider.notifier)
-            .addActivityRecord(
-              type: type,
-              details: details,
-              occurredAt: occurredAt,
-              structuredDataJson: structuredDataJson,
-            ),
+        onSave: (type, details, occurredAt, structuredDataJson) async {
+          return ref
+              .read(diaryListProvider.notifier)
+              .addActivityRecord(
+                type: type,
+                details: details,
+                occurredAt: occurredAt,
+                structuredDataJson: structuredDataJson,
+              );
+        },
         onUpdate: (recordId, details, structuredDataJson) => ref
             .read(diaryListProvider.notifier)
             .updateActivityDetails(
@@ -364,7 +390,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
           final result = await ref
               .read(diaryListProvider.notifier)
               .startSleep(type: type, startedAt: startedAt);
-          return result.created;
+          return result;
         },
         onOpenDetailedRecord: () {
           openDetailedRecord = true;
@@ -373,6 +399,10 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       ),
     );
     if (!mounted) return;
+    if (editQuickLaunch) {
+      await _showQuickLaunchEditor();
+      return;
+    }
     if (openDetailedRecord) {
       _navigateToFormPage(context);
       return;
@@ -382,46 +412,177 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
     switch (result.kind) {
       case RecordEntryResultKind.saved:
+        final recordId = result.recordId;
+        if (recordId != null) {
+          ref
+              .read(topUndoProvider.notifier)
+              .arm(
+                () => ref
+                    .read(diaryListProvider.notifier)
+                    .deleteActivityRecord(recordId),
+              );
+        }
         messenger.showSnackBar(
-          SnackBar(
-            content: Text(loc.quickRecordSaved(result.savedName!)),
-            action: result.recordId == null
-                ? null
-                : SnackBarAction(
-                    label: loc.undo,
-                    onPressed: () => ref
-                        .read(diaryListProvider.notifier)
-                        .deleteActivityRecord(result.recordId!),
-                  ),
-          ),
+          SnackBar(content: Text(loc.quickRecordSaved(result.savedName!))),
         );
       case RecordEntryResultKind.sleepAlreadyActive:
         messenger.showSnackBar(SnackBar(content: Text(loc.sleepAlreadyActive)));
       case RecordEntryResultKind.sleepStarted:
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(loc.sleepStarted),
-            action: SnackBarAction(
-              label: loc.undo,
-              onPressed: () {
-                final active = activeSleepActivities(
-                  ref.read(diaryListProvider),
-                );
-                if (active.isNotEmpty && active.first.recordId != null) {
-                  ref
-                      .read(diaryListProvider.notifier)
-                      .deleteActivityRecord(active.first.recordId!);
-                }
-              },
-            ),
-          ),
-        );
+        final recordId = result.recordId;
+        if (recordId != null) {
+          ref
+              .read(topUndoProvider.notifier)
+              .arm(
+                () => ref
+                    .read(diaryListProvider.notifier)
+                    .deleteActivityRecord(recordId),
+              );
+        }
+        messenger.showSnackBar(SnackBar(content: Text(loc.sleepStarted)));
+    }
+  }
+
+  Future<void> _showQuickLaunchEditor([int initialSlotIndex = 0]) {
+    return showAdaptiveDetail<void>(
+      context: context,
+      builder: (_) =>
+          QuickLaunchEditorSheet(initialSlotIndex: initialSlotIndex),
+    );
+  }
+
+  Future<void> _reviewQuickLaunchRecommendation() async {
+    final milestone = await showAdaptiveDetail<GrowthMilestone>(
+      context: context,
+      builder: (_) => const QuickLaunchRecommendationSheet(),
+    );
+    if (milestone == null || !mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    ref.read(topUndoProvider.notifier).arm(() async {
+      final restored = await ref
+          .read(quickLaunchProvider.notifier)
+          .undoRecommendation(milestone);
+      if (!mounted || !restored) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.quickLaunchRecommendationUndone)),
+      );
+    });
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(loc.quickLaunchRecommendationApplied)),
+      );
+  }
+
+  Future<void> _runQuickLaunch(QuickLaunchSlot slot) async {
+    final target = slot.eventTypeId;
+    if (target == null || _busyQuickLaunchSlot != null) return;
+    if (slot.executionMode == QuickLaunchExecutionMode.prefilledForm) {
+      await _showRecordEntry(
+        initialItem: quickLaunchCatalogItem(target),
+        initialStructuredDataJson: slot.structuredPresetJson,
+      );
+      return;
+    }
+
+    setState(() => _busyQuickLaunchSlot = slot.slotIndex);
+    final loc = AppLocalizations.of(context)!;
+    final item = quickLaunchCatalogItem(target);
+    final now = DateTime.now();
+    String? recordId;
+    try {
+      switch (target) {
+        case QuickLaunchEventTarget.feeding:
+          final preset =
+              IntakeRecord.decode(slot.structuredPresetJson ?? '') ??
+              const IntakeRecord(
+                kind: IntakeRecordKind.feeding,
+                method: FeedingMethod.timeOnly,
+              );
+          final encoded = preset.encode();
+          recordId = await ref
+              .read(diaryListProvider.notifier)
+              .addActivityRecord(
+                type: item.label(loc),
+                details: intakeRecordDetails(preset, loc),
+                occurredAt: now,
+                structuredDataJson: encoded,
+              );
+        case QuickLaunchEventTarget.diaper:
+          final kind = _quickLaunchEliminationKind(slot.structuredPresetJson);
+          final record = EliminationRecord(kind: kind, occurredAt: now);
+          final encoded = record.encode();
+          recordId = await ref
+              .read(diaryListProvider.notifier)
+              .addActivityRecord(
+                type: item.label(loc),
+                details: eliminationRecordDetails(loc, record),
+                occurredAt: now,
+                structuredDataJson: encoded,
+              );
+        case QuickLaunchEventTarget.sleep:
+          final result = await ref
+              .read(diaryListProvider.notifier)
+              .startSleep(type: item.label(loc), startedAt: now);
+          if (!result.created) {
+            if (mounted) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(loc.sleepAlreadyActive)));
+            }
+            return;
+          }
+          recordId = result.activity.recordId;
+        case QuickLaunchEventTarget.bath:
+          final record = BathRecord(occurredAt: now);
+          final encoded = record.encode();
+          recordId = await ref
+              .read(diaryListProvider.notifier)
+              .addActivityRecord(
+                type: item.label(loc),
+                details: record.buildDetails(loc),
+                occurredAt: now,
+                structuredDataJson: encoded,
+              );
+        default:
+          await _showRecordEntry(
+            initialItem: item,
+            initialStructuredDataJson: slot.structuredPresetJson,
+          );
+          return;
+      }
+      if (mounted && recordId != null) {
+        final savedRecordId = recordId;
+        ref
+            .read(topUndoProvider.notifier)
+            .arm(
+              () => ref
+                  .read(diaryListProvider.notifier)
+                  .deleteActivityRecord(savedRecordId),
+            );
+      }
+    } finally {
+      if (mounted) setState(() => _busyQuickLaunchSlot = null);
+    }
+  }
+
+  EliminationKind _quickLaunchEliminationKind(String? source) {
+    try {
+      final value = jsonDecode(source ?? '');
+      final kind = value is Map ? value['kind'] : null;
+      return switch (kind) {
+        'stool' => EliminationKind.stool,
+        'both' => EliminationKind.both,
+        _ => EliminationKind.urine,
+      };
+    } on FormatException {
+      return EliminationKind.urine;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final topUndo = ref.watch(topUndoProvider);
 
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
@@ -435,12 +596,18 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
           policy: ReadingOrderTraversalPolicy(),
           child: Scaffold(
             appBar: AppBar(
-              title: Text(
-                _selectedTab == 0
-                    ? loc.appTitle
-                    : (_selectedTab == 1 ? loc.dateTab : loc.searchTitle),
-              ),
+              title: _selectedTab == 0
+                  ? null
+                  : Text(_selectedTab == 1 ? loc.dateTab : loc.searchTitle),
               actions: [
+                if (topUndo != null)
+                  IconButton(
+                    key: const Key('top-undo-button'),
+                    icon: const Icon(Icons.undo),
+                    tooltip: loc.undo,
+                    onPressed: () =>
+                        ref.read(topUndoProvider.notifier).execute(),
+                  ),
                 if (_selectedTab == 0) ...[
                   IconButton(
                     key: const Key('growth-chart-button'),
@@ -462,28 +629,29 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                 ],
               ],
             ),
-            body: Padding(
-              padding: const EdgeInsets.only(
-                bottom: AppSizes.recordEntryClearance,
-              ),
-              child: IndexedStack(
-                index: _selectedTab,
-                children: [
-                  TodayPage(
-                    onNavigateToForm: (diary, draftId) =>
-                        _navigateToFormPage(context, diary, draftId),
-                    onOpenDuplicateReviews: () =>
-                        _showDuplicateReviewPage(context),
-                  ),
-                  DiaryListPage(
-                    onEditDiary: (diary) => _navigateToFormPage(context, diary),
-                  ),
-                  DiarySearchPage(
-                    onEditDiary: (diary) => _navigateToFormPage(context, diary),
-                    focusRequest: _searchFocusRequest,
-                  ),
-                ],
-              ),
+            body: IndexedStack(
+              index: _selectedTab,
+              children: [
+                TodayPage(
+                  onNavigateToForm: (diary, draftId) =>
+                      _navigateToFormPage(context, diary, draftId),
+                  onOpenDuplicateReviews: () =>
+                      _showDuplicateReviewPage(context),
+                  onQuickLaunch: _runQuickLaunch,
+                  onEditQuickLaunch: _showQuickLaunchEditor,
+                  onOpenAllRecords: () => _showRecordEntry(),
+                  onReviewQuickLaunchRecommendation:
+                      _reviewQuickLaunchRecommendation,
+                  busyQuickLaunchSlot: _busyQuickLaunchSlot,
+                ),
+                DiaryListPage(
+                  onEditDiary: (diary) => _navigateToFormPage(context, diary),
+                ),
+                DiarySearchPage(
+                  onEditDiary: (diary) => _navigateToFormPage(context, diary),
+                  focusRequest: _searchFocusRequest,
+                ),
+              ],
             ),
             bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedTab,
@@ -507,18 +675,6 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                 ),
               ],
             ),
-            floatingActionButton: SizedBox(
-              width: 168,
-              height: 56,
-              child: FloatingActionButton.extended(
-                key: const Key('record-entry-button'),
-                onPressed: _showRecordEntry,
-                icon: const Icon(Icons.add),
-                label: Text(loc.recordAction),
-              ),
-            ),
-            floatingActionButtonLocation:
-                FloatingActionButtonLocation.centerFloat,
           ),
         ),
       ),

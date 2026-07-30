@@ -8,6 +8,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../profiles/presentation/author_profile_page.dart';
+import '../../children/application/child_profile_repository.dart';
+import '../../children/presentation/child_profiles_page.dart';
 import '../../summaries/application/ai_summary_notifier.dart';
 import '../../sharing/presentation/family_sharing_page.dart';
 import '../../events/domain/event_catalog.dart';
@@ -37,6 +39,12 @@ class SettingsPage extends ConsumerWidget {
     final currentAuthor = currentProfiles.isEmpty
         ? null
         : currentProfiles.first;
+    final children = ref.watch(childProfileListProvider);
+    final selectedChildId = ref.watch(selectedChildIdProvider);
+    final selectedChild = children.firstWhere(
+      (child) => child.childId == selectedChildId,
+      orElse: () => children.first,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(loc.settingsTitle)),
       body: AdaptiveContentFrame(
@@ -51,8 +59,13 @@ class SettingsPage extends ConsumerWidget {
             _SettingsTile(
               icon: Icons.child_care_outlined,
               title: loc.childInformation,
-              subtitle: loc.childInformationDescription,
-              onTap: () => _showUnavailable(context, loc.childInformation),
+              subtitle:
+                  '${selectedChild.name} · ${loc.childProfilesDescription}',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ChildProfilesPage(),
+                ),
+              ),
             ),
             _SettingsTile(
               icon: Icons.badge_outlined,
@@ -104,22 +117,6 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _showUnavailable(BuildContext context, String feature) =>
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(AppLocalizations.of(context)!.notAvailableYetTitle),
-          content: Text(
-            AppLocalizations.of(context)!.notAvailableYetDescription(feature),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppLocalizations.of(context)!.close),
-            ),
-          ],
-        ),
-      );
 }
 
 class TrackingPreferencesPage extends ConsumerWidget {

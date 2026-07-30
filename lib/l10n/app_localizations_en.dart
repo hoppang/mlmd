@@ -2011,4 +2011,143 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get growthChartPercentileExplanation =>
       'A percentile describes a position in a reference distribution for children of the same age and sex. Higher or lower does not by itself mean better or worse.';
+
+  @override
+  String get quickLaunchEditTitle => 'Edit Quick Launch';
+
+  @override
+  String get quickLaunchEditDescription =>
+      'Set four frequent records, including reusable details.';
+
+  @override
+  String get quickLaunchAll => 'All';
+
+  @override
+  String get quickLaunchAdd => 'Add';
+
+  @override
+  String get quickLaunchChooseEvent => 'Choose a record';
+
+  @override
+  String get quickLaunchChooseSlot => 'Choose a slot to change';
+
+  @override
+  String get quickLaunchDisplayLabel => 'Display name';
+
+  @override
+  String get quickLaunchSaveSlot => 'Save to this slot';
+
+  @override
+  String get quickLaunchClearSlot => 'Clear slot';
+
+  @override
+  String get quickLaunchMoveLeft => 'Move left';
+
+  @override
+  String get quickLaunchMoveRight => 'Move right';
+
+  @override
+  String quickLaunchInstantSemantic(String label) {
+    return '$label, tap to record immediately';
+  }
+
+  @override
+  String quickLaunchFormSemantic(String label) {
+    return '$label, tap to open details';
+  }
+
+  @override
+  String quickLaunchSaved(String label) {
+    return 'Recorded $label.';
+  }
+
+  @override
+  String get quickLaunchPresetAmount => 'Preset amount';
+
+  @override
+  String quickLaunchRecommendationTitle(String childName, String stage) {
+    return 'Update $childName\'s Quick Launch for $stage?';
+  }
+
+  @override
+  String get quickLaunchRecommendationDescription =>
+      'Compare the current and suggested slots, then change only what you want. This is not guidance about care timing or tracking methods.';
+
+  @override
+  String get quickLaunchViewChanges => 'Review changes';
+
+  @override
+  String get quickLaunchLater => 'Later';
+
+  @override
+  String get quickLaunchSkipStage => 'Skip this stage';
+
+  @override
+  String get quickLaunchApplyAll => 'Apply all';
+
+  @override
+  String get quickLaunchApplySelected => 'Apply selected';
+
+  @override
+  String get quickLaunchCurrent => 'Current';
+
+  @override
+  String get quickLaunchSuggested => 'Suggested';
+
+  @override
+  String get quickLaunchKeep => 'Keep';
+
+  @override
+  String get quickLaunchRecommendationApplied =>
+      'Applied the suggested Quick Launch.';
+
+  @override
+  String get quickLaunchRecommendationUndone =>
+      'Restored the previous Quick Launch.';
+
+  @override
+  String get growthStageNewborn => 'newborn stage';
+
+  @override
+  String get growthStageMonth3 => '3 months';
+
+  @override
+  String get growthStageMonth6 => '6 months';
+
+  @override
+  String get growthStageYear1 => 'first birthday';
+
+  @override
+  String get childProfilesTitle => 'Children';
+
+  @override
+  String get childProfilesDescription =>
+      'Manage each child\'s name, birth date, and Quick Launch separately.';
+
+  @override
+  String get addChildProfile => 'Add child';
+
+  @override
+  String get editChildProfile => 'Edit child';
+
+  @override
+  String get childNameLabel => 'Child\'s name';
+
+  @override
+  String get childBirthDateLabel => 'Birth date (optional)';
+
+  @override
+  String get childBirthDateUnknown => 'No birth date';
+
+  @override
+  String get selectChildProfile => 'Record for this child';
+
+  @override
+  String get selectedChildProfile => 'Currently recording';
+
+  @override
+  String get deleteChildProfile => 'Delete child';
+
+  @override
+  String get lastChildCannotDelete => 'The last child cannot be deleted.';
 }
