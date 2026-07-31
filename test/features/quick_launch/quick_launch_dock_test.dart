@@ -7,7 +7,7 @@ import 'package:mlmd/features/quick_launch/presentation/quick_launch_dock.dart';
 import 'package:mlmd/l10n/app_localizations.dart';
 
 void main() {
-  testWidgets('shows four fixed user slots and a fixed all button', (
+  testWidgets('shows five fixed user slots and a fixed all button', (
     tester,
   ) async {
     QuickLaunchSlot? pressed;
@@ -29,6 +29,7 @@ void main() {
           slotIndex: 3,
           eventTypeId: QuickLaunchEventTarget.sleep,
         ),
+        const QuickLaunchSlot(slotIndex: 4),
       ],
     );
 
@@ -87,6 +88,7 @@ void main() {
         ),
         const QuickLaunchSlot(slotIndex: 2),
         const QuickLaunchSlot(slotIndex: 3),
+        const QuickLaunchSlot(slotIndex: 4),
       ],
     );
 
@@ -111,11 +113,50 @@ void main() {
       ),
     );
 
-    expect(find.bySemanticsLabel('Feeding, tap to record immediately'), findsOne);
     expect(
-      find.bySemanticsLabel('Medication, tap to open details'),
+      find.bySemanticsLabel('Feeding, tap to record immediately'),
       findsOne,
     );
+    expect(find.bySemanticsLabel('Medication, tap to open details'), findsOne);
     semantics.dispose();
+  });
+
+  testWidgets('fits all six buttons at 320 logical pixels', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 640);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: QuickLaunchDock(
+            layout: QuickLaunchLayout.empty(),
+            onSlotPressed: (_) {},
+            onEditSlot: (_) {},
+            onOpenAll: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    for (var index = 0; index < quickLaunchSlotCount; index++) {
+      expect(
+        tester.getSize(find.byKey(Key('quick-launch-slot-$index'))).width,
+        greaterThanOrEqualTo(48),
+      );
+    }
+    expect(
+      tester.getSize(find.byKey(const Key('quick-launch-all'))).width,
+      greaterThanOrEqualTo(48),
+    );
   });
 }

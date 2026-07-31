@@ -38,7 +38,7 @@ class QuickLaunchDock extends StatelessWidget {
           for (final slot in layout.slots)
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
+                padding: EdgeInsets.zero,
                 child: _QuickLaunchTile(
                   slot: slot,
                   busy: busySlotIndex == slot.slotIndex,
@@ -50,7 +50,7 @@ class QuickLaunchDock extends StatelessWidget {
             ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
+              padding: EdgeInsets.zero,
               child: _SystemTile(
                 key: const Key('quick-launch-all'),
                 label: loc.quickLaunchAll,

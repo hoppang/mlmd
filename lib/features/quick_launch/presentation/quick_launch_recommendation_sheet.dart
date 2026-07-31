@@ -18,7 +18,9 @@ class QuickLaunchRecommendationSheet extends ConsumerStatefulWidget {
 
 class _QuickLaunchRecommendationSheetState
     extends ConsumerState<QuickLaunchRecommendationSheet> {
-  final Set<int> _selected = {0, 1, 2, 3};
+  final Set<int> _selected = Set<int>.from(
+    List.generate(quickLaunchSlotCount, (index) => index),
+  );
   bool _saving = false;
 
   Future<void> _apply({required bool all}) async {

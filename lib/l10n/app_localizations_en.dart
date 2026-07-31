@@ -2017,7 +2017,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quickLaunchEditDescription =>
-      'Set four frequent records, including reusable details.';
+      'Set five frequent records, including reusable details.';
 
   @override
   String get quickLaunchAll => 'All';

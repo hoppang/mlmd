@@ -1948,7 +1948,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get quickLaunchEditTitle => 'クイック起動を編集';
 
   @override
-  String get quickLaunchEditDescription => 'よく使う4つの記録と再利用する詳細を設定できます。';
+  String get quickLaunchEditDescription => 'よく使う5つの記録と再利用する詳細を設定できます。';
 
   @override
   String get quickLaunchAll => 'すべて';

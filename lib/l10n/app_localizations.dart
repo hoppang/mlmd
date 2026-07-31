@@ -3696,7 +3696,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickLaunchEditDescription.
   ///
   /// In ko, this message translates to:
-  /// **'네 자리에 자주 쓰는 기록과 세부값을 정해 둘 수 있어요.'**
+  /// **'다섯 자리에 자주 쓰는 기록과 세부값을 정해 둘 수 있어요.'**
   String get quickLaunchEditDescription;
 
   /// No description provided for @quickLaunchAll.

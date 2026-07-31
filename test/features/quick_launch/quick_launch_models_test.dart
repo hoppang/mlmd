@@ -41,13 +41,13 @@ void main() {
   });
 
   group('QuickLaunchLayout', () {
-    test('always keeps four slots', () {
+    test('always keeps five slots', () {
       final layout = QuickLaunchLayout.empty(
         childId: 'child-a',
         deviceProfileId: 'device-b',
       );
 
-      expect(layout.slots, hasLength(4));
+      expect(layout.slots, hasLength(5));
       expect(layout.slots.every((slot) => slot.childId == 'child-a'), isTrue);
       expect(
         layout.slots.every((slot) => slot.deviceProfileId == 'device-b'),
@@ -118,19 +118,20 @@ void main() {
   group('QuickLaunchRecommendationBuilder', () {
     const builder = QuickLaunchRecommendationBuilder();
 
-    test('builds four slot template for newborn milestone', () {
+    test('builds five slot template for newborn milestone', () {
       final layout = builder.buildForMilestone(
         milestone: GrowthMilestone.newborn,
         childId: 'child-a',
         deviceProfileId: 'device-b',
       );
 
-      expect(layout.slots, hasLength(4));
+      expect(layout.slots, hasLength(5));
       expect(layout.slotAt(0).eventTypeId, QuickLaunchEventTarget.feeding);
       expect(layout.slotAt(0).executionMode, QuickLaunchExecutionMode.instant);
       expect(layout.slotAt(0).childId, 'child-a');
       expect(layout.slotAt(1).eventTypeId, QuickLaunchEventTarget.diaper);
       expect(layout.slotAt(3).eventTypeId, QuickLaunchEventTarget.sleep);
+      expect(layout.slotAt(4).eventTypeId, isNull);
     });
 
     test('builds a month6 template', () {

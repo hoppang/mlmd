@@ -248,7 +248,7 @@ class QuickLaunchSlot {
   );
 }
 
-const quickLaunchSlotCount = 4;
+const quickLaunchSlotCount = 5;
 
 class QuickLaunchLayout {
   const QuickLaunchLayout({required this.slots})
@@ -588,6 +588,16 @@ class QuickLaunchRecommendationBuilder {
       slots: [
         for (final template in templates)
           template.toSlot().copyWith(
+            childId: childId,
+            deviceProfileId: deviceProfileId,
+          ),
+        for (
+          var index = templates.length;
+          index < quickLaunchSlotCount;
+          index++
+        )
+          QuickLaunchSlot(
+            slotIndex: index,
             childId: childId,
             deviceProfileId: deviceProfileId,
           ),

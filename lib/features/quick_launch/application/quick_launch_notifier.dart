@@ -121,7 +121,9 @@ class QuickLaunchNotifier extends Notifier<QuickLaunchState> {
     final milestone = state.recommendedMilestone;
     final recommendation = state.recommendedLayout;
     if (milestone == null || recommendation == null) return;
-    final indexes = selectedSlots ?? {0, 1, 2, 3};
+    final indexes =
+        selectedSlots ??
+        Set<int>.from(List.generate(quickLaunchSlotCount, (index) => index));
     var next = state.layout;
     for (final index in indexes) {
       next = next.copyWithSlot(index, recommendation.slotAt(index));

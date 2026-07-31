@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_tokens.dart';
@@ -9,17 +10,23 @@ class AdaptiveContentFrame extends StatelessWidget {
     required this.child,
     this.contentMaxWidth = AppSizes.contentMaxWidth,
     this.horizontalPadding = 0,
+    this.expandOnWindows = true,
   });
 
   final Widget child;
   final double contentMaxWidth;
   final double horizontalPadding;
+  final bool expandOnWindows;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxContentWidth = constraints.maxWidth < contentMaxWidth
+        final useFullWidth =
+            expandOnWindows && defaultTargetPlatform == TargetPlatform.windows;
+        final maxContentWidth = useFullWidth
+            ? constraints.maxWidth
+            : constraints.maxWidth < contentMaxWidth
             ? constraints.maxWidth
             : contentMaxWidth;
         return Align(

@@ -682,7 +682,7 @@
   "growthChartReferenceUnavailable": "現在は個人の推移のみ表示します。子どものプロフィールと版が確認できる公式基準データが整うまで、パーセンタイルは表示しません。",
   "growthChartPercentileExplanation": "パーセンタイルは同じ年齢・性別の参照分布における位置を示します。高い・低いこと自体が良い・悪いという意味ではありません。",
   "quickLaunchEditTitle": "クイック起動を編集",
-  "quickLaunchEditDescription": "よく使う4つの記録と再利用する詳細を設定できます。",
+  "quickLaunchEditDescription": "よく使う5つの記録と再利用する詳細を設定できます。",
   "quickLaunchAll": "すべて",
   "quickLaunchAdd": "追加",
   "quickLaunchChooseEvent": "記録項目を選択",
