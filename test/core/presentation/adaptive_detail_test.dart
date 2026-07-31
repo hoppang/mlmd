@@ -7,6 +7,7 @@ void main() {
   Future<void> pumpLauncher(
     WidgetTester tester, {
     required ValueChanged<String?> onResult,
+    bool expandedDialog = false,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -16,6 +17,7 @@ void main() {
               onPressed: () async {
                 final result = await showAdaptiveDetail<String>(
                   context: context,
+                  expandedDialog: expandedDialog,
                   builder: (detailContext) => Material(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -76,6 +78,24 @@ void main() {
     await tester.tap(find.byKey(const Key('complete-detail')));
     await tester.pumpAndSettle();
     expect(result, 'completed');
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Windows expanded detail fills the window with a safe inset', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await pumpLauncher(tester, onResult: (_) {}, expandedDialog: true);
+
+    await tester.tap(find.byType(FilledButton).first);
+    await tester.pumpAndSettle();
+
+    final dialog = find.byKey(const Key('expanded-adaptive-detail-dialog'));
+    expect(dialog, findsOneWidget);
+    final surface = find.byKey(const Key('expanded-adaptive-detail-surface'));
+    expect(surface, findsOneWidget);
+    expect(tester.getSize(surface), const Size(752, 552));
     debugDefaultTargetPlatformOverride = null;
   });
 }

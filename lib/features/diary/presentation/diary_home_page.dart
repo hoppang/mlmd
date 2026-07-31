@@ -337,6 +337,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     var editQuickLaunch = false;
     final result = await showAdaptiveDetail<RecordEntryResult>(
       context: context,
+      expandedDialog: editActivity != null,
       builder: (sheetContext) => RecordEntrySheet(
         recentPresets: buildRecentEventPresets(
           diaries,

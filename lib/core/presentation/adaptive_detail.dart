@@ -7,6 +7,8 @@ Future<T?> showAdaptiveDetail<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   double maxDialogWidth = 560,
+  bool expandedDialog = false,
+  double maxExpandedContentWidth = 960,
 }) {
   if (defaultTargetPlatform != TargetPlatform.windows) {
     return showModalBottomSheet<T>(
@@ -19,15 +21,34 @@ Future<T?> showAdaptiveDetail<T>({
 
   return showDialog<T>(
     context: context,
-    builder: (dialogContext) => Dialog(
-      clipBehavior: Clip.antiAlias,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: maxDialogWidth,
-          maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.85,
+    builder: (dialogContext) {
+      if (expandedDialog) {
+        return Dialog(
+          key: const Key('expanded-adaptive-detail-dialog'),
+          insetPadding: const EdgeInsets.all(24),
+          clipBehavior: Clip.antiAlias,
+          child: SizedBox.expand(
+            key: const Key('expanded-adaptive-detail-surface'),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxExpandedContentWidth),
+                child: builder(dialogContext),
+              ),
+            ),
+          ),
+        );
+      }
+
+      return Dialog(
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: maxDialogWidth,
+            maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.85,
+          ),
+          child: builder(dialogContext),
         ),
-        child: builder(dialogContext),
-      ),
-    ),
+      );
+    },
   );
 }

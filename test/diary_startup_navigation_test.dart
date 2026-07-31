@@ -1892,6 +1892,10 @@ void main() {
 
     expect(find.byType(Dialog), findsOneWidget);
     expect(find.byType(BottomSheet), findsNothing);
+    expect(
+      find.byKey(const Key('expanded-adaptive-detail-dialog')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('temperature-event-form')), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
