@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
-import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/presentation/app_empty_state.dart';
 import '../../../core/presentation/app_section_header.dart';
 import '../../../core/theme/app_tokens.dart';
@@ -32,6 +31,7 @@ import '../application/top_undo_notifier.dart';
 class TodayPage extends ConsumerStatefulWidget {
   const TodayPage({
     required this.onNavigateToForm,
+    required this.onEditActivity,
     required this.onOpenDuplicateReviews,
     required this.onQuickLaunch,
     required this.onEditQuickLaunch,
@@ -42,6 +42,12 @@ class TodayPage extends ConsumerStatefulWidget {
   });
 
   final void Function(DiaryEntity?, String?) onNavigateToForm;
+  final void Function(
+    DiaryEntity diary,
+    ActivityEntity activity,
+    Widget? editContext,
+  )
+  onEditActivity;
   final VoidCallback onOpenDuplicateReviews;
   final ValueChanged<QuickLaunchSlot> onQuickLaunch;
   final ValueChanged<int> onEditQuickLaunch;
@@ -157,19 +163,37 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     );
   }
 
-  Future<void> _openEntry(_TodayTimelineEntry entry) async {
-    final showAuthorTags = shouldShowAuthorTags(
-      ref.read(diaryListProvider),
-      ref.read(profileRepositoryProvider),
-    );
-    final shouldEdit = await showAdaptiveDetail<bool>(
-      context: context,
-      builder: (context) =>
-          _TodayRecordDetail(entry: entry, showAuthorTag: showAuthorTags),
-    );
-    if (shouldEdit == true && mounted) {
+  void _openEntry(_TodayTimelineEntry entry) {
+    final activity = entry.activity;
+    if (activity == null) {
       widget.onNavigateToForm(entry.diary, null);
+      return;
     }
+    final guidance = evaluateMedicalGuidance(activity);
+    final editContext = guidance.requiresAttention
+        ? Card(
+            child: ExpansionTile(
+              key: const Key('record-edit-medical-guidance'),
+              leading: const Icon(Icons.health_and_safety_outlined),
+              title: Text(
+                AppLocalizations.of(context)!.medicalAttentionRequired,
+              ),
+              initiallyExpanded: false,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                  ),
+                  child: MedicalGuidanceSection(activity: activity),
+                ),
+              ],
+            ),
+          )
+        : null;
+    widget.onEditActivity(entry.diary, activity, editContext);
   }
 
   Future<void> _completeSleep(ActivityEntity activity) async {
@@ -667,7 +691,7 @@ class _TimelineItem extends StatelessWidget {
       button: true,
       excludeSemantics: true,
       label:
-          '${entry.title}, $timeLabel, ${loc.searchReadOnly}, '
+          '${entry.title}, $timeLabel, ${loc.edit}, '
           '${entry.requiresMedicalAttention ? '${loc.medicalAttentionRequired}, ' : ''}'
           '${loc.searchResultDetail}',
       child: InkWell(
@@ -745,102 +769,6 @@ class _TimelineItem extends StatelessWidget {
               const Icon(Icons.chevron_right, size: 20),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TodayRecordDetail extends StatelessWidget {
-  const _TodayRecordDetail({required this.entry, required this.showAuthorTag});
-
-  final _TodayTimelineEntry entry;
-  final bool showAuthorTag;
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final activity = entry.activity;
-    final timeLabel = entry.hasExactTime
-        ? MaterialLocalizations.of(
-            context,
-          ).formatTimeOfDay(TimeOfDay.fromDateTime(entry.occurredAt))
-        : loc.eventTimeUnknown;
-
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: AppInsets.dialog,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    entry.title,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                Chip(
-                  avatar: const Icon(Icons.visibility_outlined, size: 16),
-                  label: Text(loc.searchReadOnly),
-                ),
-              ],
-            ),
-            Text(
-              timeLabel,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (showAuthorTag) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: RecordAuthorTag(
-                  authorProfileId: entry.authorProfileId,
-                  visible: true,
-                ),
-              ),
-            ],
-            if (entry.content.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text(entry.content),
-            ],
-            if (activity != null && entry.requiresMedicalAttention) ...[
-              const SizedBox(height: AppSpacing.sm),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: MedicalAttentionLabel(),
-              ),
-              MedicalGuidanceSection(activity: activity),
-            ],
-            if (activity != null && entry.diary.title.trim().isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                entry.diary.title.trim(),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-            if (activity == null && entry.diary.summary.trim().isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                loc.summaryLabel,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(entry.diary.summary.trim()),
-            ],
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton.icon(
-              key: const Key('today-record-edit-button'),
-              onPressed: () => Navigator.pop(context, true),
-              icon: const Icon(Icons.edit_outlined),
-              label: Text(loc.edit),
-            ),
-          ],
         ),
       ),
     );

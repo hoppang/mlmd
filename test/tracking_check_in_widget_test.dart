@@ -45,7 +45,7 @@ void main() {
                   EventTypeId.feeding: TrackingMode.dailyCheckIn,
                 },
                 onSave: (_, _, _, _) async => 'unexpected',
-                onUpdate: (_, _, _) async {},
+                onUpdate: (_, _, _, {occurredAt, type}) async {},
                 onDelete: (_) async {},
                 onSaveCustom: (_, _, _, _) async {},
                 onStartSleep: (type, startedAt) async => SleepStartResult(

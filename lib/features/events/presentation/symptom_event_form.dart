@@ -122,6 +122,7 @@ class SymptomEventForm extends StatefulWidget {
     required this.onChangeTime,
     required this.onSave,
     this.activeEpisodes = const [],
+    this.initialRecord,
     super.key,
   });
 
@@ -132,6 +133,7 @@ class SymptomEventForm extends StatefulWidget {
   final VoidCallback onChangeTime;
   final ValueChanged<SymptomFormResult> onSave;
   final List<SymptomRecord> activeEpisodes;
+  final SymptomRecord? initialRecord;
 
   @override
   State<SymptomEventForm> createState() => _SymptomEventFormState();
@@ -139,8 +141,8 @@ class SymptomEventForm extends StatefulWidget {
 
 class _SymptomEventFormState extends State<SymptomEventForm> {
   PredefinedSymptom? _selectedPreset;
-  final _customNameController = TextEditingController();
-  final _noteController = TextEditingController();
+  late final TextEditingController _customNameController;
+  late final TextEditingController _noteController;
 
   bool _isCustom = false;
   SymptomKind _customKind = SymptomKind.episodic;
@@ -157,6 +159,26 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
   @override
   void initState() {
     super.initState();
+    final initial = widget.initialRecord;
+    _customNameController = TextEditingController(
+      text: _initialSymptomName(initial),
+    );
+    _noteController = TextEditingController(text: initial?.note ?? '');
+    if (initial != null) {
+      _selectedPreset = predefinedSymptoms
+          .where((preset) => preset.id == initial.symptomId)
+          .firstOrNull;
+      _isCustom = _selectedPreset == null;
+      _customKind = initial.kind;
+      _onset = initial.onsetPrecision == SymptomOnsetPrecision.dateOnly
+          ? SymptomOnsetOption.custom
+          : SymptomOnsetOption.today;
+      _severity = initial.severity;
+      _selectedTrend = initial.trend;
+      _isResolving = initial.status == SymptomEpisodeStatus.resolved;
+      _amount = initial.amount;
+      _context = initial.context;
+    }
     _customNameController.addListener(_onCustomNameChanged);
   }
 
@@ -196,14 +218,12 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
   }
 
   SymptomRecord? _findActiveEpisode() {
-    final symptomId =
-        _isCustom
-            ? 'custom:${_customNameController.text.trim()}'
-            : _selectedPreset?.id;
-    final symptomName =
-        _isCustom
-            ? _customNameController.text.trim()
-            : _selectedPreset?.name;
+    final symptomId = _isCustom
+        ? 'custom:${_customNameController.text.trim()}'
+        : _selectedPreset?.id;
+    final symptomName = _isCustom
+        ? _customNameController.text.trim()
+        : _selectedPreset?.name;
     if (symptomId == null || symptomName == null) return null;
 
     for (final ep in widget.activeEpisodes) {
@@ -217,20 +237,25 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
 
   void _submit() {
     final loc = AppLocalizations.of(context)!;
-    final symptomName =
-        _isCustom
-            ? _customNameController.text.trim()
-            : _selectedPreset?.name ?? '';
-    final symptomId =
-        _isCustom ? 'custom:$symptomName' : _selectedPreset?.id ?? 'custom';
+    final symptomName = _isCustom
+        ? _customNameController.text.trim()
+        : _selectedPreset?.name ?? '';
+    final symptomId = _isCustom
+        ? 'custom:$symptomName'
+        : _selectedPreset?.id ?? 'custom';
 
     if (symptomName.isEmpty) return;
 
-    final kind =
-        _isCustom
-            ? _customKind
-            : (_selectedPreset?.defaultKind ?? SymptomKind.continuous);
-    final activeEp = kind == SymptomKind.continuous ? _findActiveEpisode() : null;
+    final kind = _isCustom
+        ? _customKind
+        : (_selectedPreset?.defaultKind ?? SymptomKind.continuous);
+    final activeEp = kind == SymptomKind.continuous
+        ? _findActiveEpisode()
+        : null;
+    final initial = widget.initialRecord;
+    final resolvedOnsetPrecision = _onset == SymptomOnsetOption.custom
+        ? SymptomOnsetPrecision.dateOnly
+        : (initial?.onsetPrecision ?? SymptomOnsetPrecision.exactTime);
 
     SymptomRecord record;
     if (kind == SymptomKind.continuous) {
@@ -240,17 +265,17 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
           symptomName: symptomName,
           kind: SymptomKind.continuous,
           occurredAt: widget.occurredAt,
-          episodeId: activeEp.episodeId,
-          status:
-              _isResolving
-                  ? SymptomEpisodeStatus.resolved
-                  : SymptomEpisodeStatus.active,
+          episodeId: initial?.episodeId ?? activeEp.episodeId,
+          status: _isResolving
+              ? SymptomEpisodeStatus.resolved
+              : SymptomEpisodeStatus.active,
           trend: _isResolving ? null : _selectedTrend,
-          resolvedAt: _isResolving ? widget.occurredAt : null,
-          note:
-              _noteController.text.trim().isEmpty
-                  ? null
-                  : _noteController.text.trim(),
+          resolvedAt: _isResolving
+              ? initial?.resolvedAt ?? widget.occurredAt
+              : null,
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
         );
       } else {
         record = SymptomRecord(
@@ -258,17 +283,20 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
           symptomName: symptomName,
           kind: SymptomKind.continuous,
           occurredAt: widget.occurredAt,
-          episodeId: 'ep-${widget.occurredAt.millisecondsSinceEpoch}',
-          status: SymptomEpisodeStatus.active,
-          onsetPrecision:
-              _onset == SymptomOnsetOption.custom
-                  ? SymptomOnsetPrecision.dateOnly
-                  : SymptomOnsetPrecision.exactTime,
+          episodeId:
+              initial?.episodeId ??
+              'ep-${(widget.initialRecord?.occurredAt ?? widget.occurredAt).millisecondsSinceEpoch}',
+          status: _isResolving
+              ? SymptomEpisodeStatus.resolved
+              : SymptomEpisodeStatus.active,
+          onsetPrecision: resolvedOnsetPrecision,
           severity: _severity,
-          note:
-              _noteController.text.trim().isEmpty
-                  ? null
-                  : _noteController.text.trim(),
+          resolvedAt: _isResolving
+              ? initial?.resolvedAt ?? widget.occurredAt
+              : null,
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
         );
       }
     } else {
@@ -279,10 +307,9 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
         occurredAt: widget.occurredAt,
         amount: _amount,
         context: _context,
-        note:
-            _noteController.text.trim().isEmpty
-                ? null
-                : _noteController.text.trim(),
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
       );
     }
 
@@ -296,19 +323,26 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
     );
   }
 
+  String _initialSymptomName(SymptomRecord? record) {
+    if (record == null) return '';
+    final preset = predefinedSymptoms
+        .where((item) => item.id == record.symptomId)
+        .firstOrNull;
+    return preset?.name ?? record.symptomName;
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final currentKind =
-        _isCustom
-            ? _customKind
-            : (_selectedPreset?.defaultKind ?? SymptomKind.continuous);
-    final activeEp =
-        currentKind == SymptomKind.continuous ? _findActiveEpisode() : null;
-    final canSave =
-        _isCustom
-            ? _customNameController.text.trim().isNotEmpty
-            : _selectedPreset != null;
+    final currentKind = _isCustom
+        ? _customKind
+        : (_selectedPreset?.defaultKind ?? SymptomKind.continuous);
+    final activeEp = currentKind == SymptomKind.continuous
+        ? _findActiveEpisode()
+        : null;
+    final canSave = _isCustom
+        ? _customNameController.text.trim().isNotEmpty
+        : _selectedPreset != null;
 
     return SingleChildScrollView(
       child: Column(
@@ -381,8 +415,8 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                   label: const Text('발생형 (1회)'),
                   visualDensity: VisualDensity.compact,
                   selected: _customKind == SymptomKind.episodic,
-                  onSelected:
-                      (_) => setState(() => _customKind = SymptomKind.episodic),
+                  onSelected: (_) =>
+                      setState(() => _customKind = SymptomKind.episodic),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 ChoiceChip(
@@ -390,9 +424,8 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                   label: const Text('지속형 (계속됨)'),
                   visualDensity: VisualDensity.compact,
                   selected: _customKind == SymptomKind.continuous,
-                  onSelected:
-                      (_) =>
-                          setState(() => _customKind = SymptomKind.continuous),
+                  onSelected: (_) =>
+                      setState(() => _customKind = SymptomKind.continuous),
                 ),
               ],
             ),
@@ -422,11 +455,10 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                     selected:
                         !_isResolving &&
                         _selectedTrend == SymptomTrend.improved,
-                    onSelected:
-                        (_) => setState(() {
-                          _selectedTrend = SymptomTrend.improved;
-                          _isResolving = false;
-                        }),
+                    onSelected: (_) => setState(() {
+                      _selectedTrend = SymptomTrend.improved;
+                      _isResolving = false;
+                    }),
                   ),
                   ChoiceChip(
                     key: const Key('trend-same-chip'),
@@ -434,11 +466,10 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                     visualDensity: VisualDensity.compact,
                     selected:
                         !_isResolving && _selectedTrend == SymptomTrend.same,
-                    onSelected:
-                        (_) => setState(() {
-                          _selectedTrend = SymptomTrend.same;
-                          _isResolving = false;
-                        }),
+                    onSelected: (_) => setState(() {
+                      _selectedTrend = SymptomTrend.same;
+                      _isResolving = false;
+                    }),
                   ),
                   ChoiceChip(
                     key: const Key('trend-worsened-chip'),
@@ -447,22 +478,20 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                     selected:
                         !_isResolving &&
                         _selectedTrend == SymptomTrend.worsened,
-                    onSelected:
-                        (_) => setState(() {
-                          _selectedTrend = SymptomTrend.worsened;
-                          _isResolving = false;
-                        }),
+                    onSelected: (_) => setState(() {
+                      _selectedTrend = SymptomTrend.worsened;
+                      _isResolving = false;
+                    }),
                   ),
                   ChoiceChip(
                     key: const Key('trend-resolved-chip'),
                     label: const Text('끝났어요'),
                     visualDensity: VisualDensity.compact,
                     selected: _isResolving,
-                    onSelected:
-                        (_) => setState(() {
-                          _isResolving = true;
-                          _selectedTrend = null;
-                        }),
+                    onSelected: (_) => setState(() {
+                      _isResolving = true;
+                      _selectedTrend = null;
+                    }),
                   ),
                 ],
               ),
@@ -475,12 +504,11 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                       children: [
                         Text(
                           '발견 시점',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.outline,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                         const SizedBox(height: AppSpacing.xxs),
                         Wrap(
@@ -491,41 +519,36 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                               label: const Text('지금 발견'),
                               visualDensity: VisualDensity.compact,
                               selected: _onset == SymptomOnsetOption.now,
-                              onSelected:
-                                  (_) => setState(
-                                    () => _onset = SymptomOnsetOption.now,
-                                  ),
+                              onSelected: (_) => setState(
+                                () => _onset = SymptomOnsetOption.now,
+                              ),
                             ),
                             ChoiceChip(
                               key: const Key('onset-today-chip'),
                               label: const Text('오늘부터'),
                               visualDensity: VisualDensity.compact,
                               selected: _onset == SymptomOnsetOption.today,
-                              onSelected:
-                                  (_) => setState(
-                                    () => _onset = SymptomOnsetOption.today,
-                                  ),
+                              onSelected: (_) => setState(
+                                () => _onset = SymptomOnsetOption.today,
+                              ),
                             ),
                             ChoiceChip(
                               key: const Key('onset-yesterday-chip'),
                               label: const Text('어제부터'),
                               visualDensity: VisualDensity.compact,
                               selected: _onset == SymptomOnsetOption.yesterday,
-                              onSelected:
-                                  (_) => setState(
-                                    () =>
-                                        _onset = SymptomOnsetOption.yesterday,
-                                  ),
+                              onSelected: (_) => setState(
+                                () => _onset = SymptomOnsetOption.yesterday,
+                              ),
                             ),
                             ChoiceChip(
                               key: const Key('onset-custom-chip'),
                               label: const Text('날짜 선택'),
                               visualDensity: VisualDensity.compact,
                               selected: _onset == SymptomOnsetOption.custom,
-                              onSelected:
-                                  (_) => setState(
-                                    () => _onset = SymptomOnsetOption.custom,
-                                  ),
+                              onSelected: (_) => setState(
+                                () => _onset = SymptomOnsetOption.custom,
+                              ),
                             ),
                           ],
                         ),
@@ -551,27 +574,24 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                     label: const Text('약함'),
                     visualDensity: VisualDensity.compact,
                     selected: _severity == SymptomSeverity.mild,
-                    onSelected:
-                        (_) => setState(() => _severity = SymptomSeverity.mild),
+                    onSelected: (_) =>
+                        setState(() => _severity = SymptomSeverity.mild),
                   ),
                   ChoiceChip(
                     key: const Key('severity-moderate-chip'),
                     label: const Text('보통'),
                     visualDensity: VisualDensity.compact,
                     selected: _severity == SymptomSeverity.moderate,
-                    onSelected:
-                        (_) => setState(
-                          () => _severity = SymptomSeverity.moderate,
-                        ),
+                    onSelected: (_) =>
+                        setState(() => _severity = SymptomSeverity.moderate),
                   ),
                   ChoiceChip(
                     key: const Key('severity-severe-chip'),
                     label: const Text('심함'),
                     visualDensity: VisualDensity.compact,
                     selected: _severity == SymptomSeverity.severe,
-                    onSelected:
-                        (_) =>
-                            setState(() => _severity = SymptomSeverity.severe),
+                    onSelected: (_) =>
+                        setState(() => _severity = SymptomSeverity.severe),
                   ),
                 ],
               ),
@@ -597,24 +617,24 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                   label: const Text('조금'),
                   visualDensity: VisualDensity.compact,
                   selected: _amount == SymptomAmount.mild,
-                  onSelected:
-                      (_) => setState(() => _amount = SymptomAmount.mild),
+                  onSelected: (_) =>
+                      setState(() => _amount = SymptomAmount.mild),
                 ),
                 ChoiceChip(
                   key: const Key('amount-moderate-chip'),
                   label: const Text('보통'),
                   visualDensity: VisualDensity.compact,
                   selected: _amount == SymptomAmount.moderate,
-                  onSelected:
-                      (_) => setState(() => _amount = SymptomAmount.moderate),
+                  onSelected: (_) =>
+                      setState(() => _amount = SymptomAmount.moderate),
                 ),
                 ChoiceChip(
                   key: const Key('amount-severe-chip'),
                   label: const Text('많이'),
                   visualDensity: VisualDensity.compact,
                   selected: _amount == SymptomAmount.severe,
-                  onSelected:
-                      (_) => setState(() => _amount = SymptomAmount.severe),
+                  onSelected: (_) =>
+                      setState(() => _amount = SymptomAmount.severe),
                 ),
               ],
             ),
@@ -635,36 +655,32 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
                   label: const Text('수유 후'),
                   visualDensity: VisualDensity.compact,
                   selected: _context == SymptomContext.afterFeeding,
-                  onSelected:
-                      (_) => setState(
-                        () => _context = SymptomContext.afterFeeding,
-                      ),
+                  onSelected: (_) =>
+                      setState(() => _context = SymptomContext.afterFeeding),
                 ),
                 ChoiceChip(
                   key: const Key('context-after-meal-chip'),
                   label: const Text('식사 후'),
                   visualDensity: VisualDensity.compact,
                   selected: _context == SymptomContext.afterMeal,
-                  onSelected:
-                      (_) =>
-                          setState(() => _context = SymptomContext.afterMeal),
+                  onSelected: (_) =>
+                      setState(() => _context = SymptomContext.afterMeal),
                 ),
                 ChoiceChip(
                   key: const Key('context-after-cough-chip'),
                   label: const Text('기침 후'),
                   visualDensity: VisualDensity.compact,
                   selected: _context == SymptomContext.afterCough,
-                  onSelected:
-                      (_) =>
-                          setState(() => _context = SymptomContext.afterCough),
+                  onSelected: (_) =>
+                      setState(() => _context = SymptomContext.afterCough),
                 ),
                 ChoiceChip(
                   key: const Key('context-unknown-chip'),
                   label: const Text('모름'),
                   visualDensity: VisualDensity.compact,
                   selected: _context == SymptomContext.unknown,
-                  onSelected:
-                      (_) => setState(() => _context = SymptomContext.unknown),
+                  onSelected: (_) =>
+                      setState(() => _context = SymptomContext.unknown),
                 ),
               ],
             ),
@@ -693,14 +709,13 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
           ElevatedButton(
             key: const Key('save-symptom-btn'),
             onPressed: canSave && !widget.saving ? _submit : null,
-            child:
-                widget.saving
-                    ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : Text(loc.saveRecord),
+            child: widget.saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(loc.saveRecord),
           ),
         ],
       ),

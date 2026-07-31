@@ -28,6 +28,7 @@ import 'package:mlmd/features/events/application/custom_event_notifier.dart';
 import 'package:mlmd/features/events/domain/care_procedure_record.dart';
 import 'package:mlmd/features/events/domain/elimination_record.dart';
 import 'package:mlmd/features/events/domain/intake_record.dart';
+import 'package:mlmd/features/events/domain/medication_record.dart';
 import 'package:mlmd/features/events/domain/sleep_record.dart';
 import 'package:mlmd/features/events/domain/temperature_record.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
@@ -60,8 +61,10 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   DateTime? addedActivityOccurredAt;
   String? addedActivityStructuredDataJson;
   String? updatedActivityRecordId;
+  String? updatedActivityType;
   String? updatedActivityDetails;
   String? updatedActivityStructuredDataJson;
+  DateTime? updatedActivityOccurredAt;
   String? deletedActivityRecordId;
   String? addedCustomEventTypeId;
   String? addedCustomEventName;
@@ -127,11 +130,14 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
     required String details,
     required String structuredDataJson,
     DateTime? occurredAt,
+    String? type,
   }) async {
     if (activitySaveError != null) throw activitySaveError!;
     updatedActivityRecordId = recordId;
+    updatedActivityType = type;
     updatedActivityDetails = details;
     updatedActivityStructuredDataJson = structuredDataJson;
+    updatedActivityOccurredAt = occurredAt;
   }
 
   @override
@@ -912,7 +918,10 @@ void main() {
       lastModified: DateTime(1999, 1, 1),
     );
 
-    await tester.pumpWidget(_buildApp(diaries: [diary]));
+    final notifier = _TestDiaryListNotifier([diary]);
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], diaryNotifier: notifier),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(DiaryDemoPage), findsOneWidget);
@@ -925,8 +934,6 @@ void main() {
     expect(find.text(displayedDate), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('today-memo:1')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('today-record-edit-button')));
     await tester.pumpAndSettle();
 
     expect(find.byType(DiaryFormPage), findsOneWidget);
@@ -1200,7 +1207,7 @@ void main() {
     expect(service.callCount, 2);
   });
 
-  testWidgets('검색 탭은 메모와 이벤트 결과를 이유와 함께 표시하고 읽기 전용으로 연다', (tester) async {
+  testWidgets('검색 탭은 메모와 이벤트 결과를 이유와 함께 표시하고 바로 수정한다', (tester) async {
     final older = DiaryEntity(
       id: 21,
       recordId: 'older-search-record',
@@ -1214,9 +1221,26 @@ void main() {
       type: '투약',
       time: DateTime(2026, 7, 18, 9, 30),
       details: '해열제 복용',
+      structuredDataJson: MedicationRecord(
+        medicationId: 'search-medication',
+        category: MedicationCategory.antipyretic,
+        medicationName: '해열제',
+        route: MedicationRoute.oral,
+        administeredAt: DateTime(2026, 7, 18, 9, 30),
+        ingredient: AntipyreticIngredient.acetaminophen,
+      ).encode(),
       lastModified: DateTime(2026, 7, 18, 9, 31),
     );
-    older.activities.add(medication);
+    older.activities.addAll([
+      medication,
+      ActivityEntity(
+        id: 32,
+        type: '수유',
+        time: DateTime(2026, 7, 18, 8, 45),
+        details: '120mL',
+        lastModified: DateTime(2026, 7, 18, 8, 46),
+      ),
+    ]);
     final newer = DiaryEntity(
       id: 22,
       recordId: 'newer-search-record',
@@ -1293,15 +1317,16 @@ void main() {
     await tester.tap(activityTitle);
     await tester.pumpAndSettle();
 
-    expect(find.text('검색 결과 상세'), findsOneWidget);
-    expect(find.text('읽기 전용'), findsOneWidget);
-    expect(find.byType(DiaryFormPage), findsNothing);
+    expect(find.text('검색 결과 상세'), findsNothing);
+    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(find.byKey(const ValueKey('medication')), findsOneWidget);
+    expect(find.byKey(const Key('medication-time-btn')), findsOneWidget);
+    expect(find.text('09:30'), findsOneWidget);
     expect(find.text('해열제 복용'), findsAtLeastNWidgets(1));
-
-    await tester.tap(find.byKey(const Key('search-result-edit-button')));
+    await tester.tap(find.byKey(const Key('record-edit-search-context')));
     await tester.pumpAndSettle();
-
-    expect(find.byType(DiaryFormPage), findsOneWidget);
+    expect(find.text('같은 날의 다른 기록'), findsOneWidget);
+    expect(find.textContaining('120mL'), findsOneWidget);
   });
 
   testWidgets('검색 결과가 없으면 검색어를 유지하고 다시 찾는 방법을 안내한다', (tester) async {
@@ -1344,7 +1369,7 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, '다시 검색'), findsOneWidget);
   });
 
-  testWidgets('오늘 화면은 현황과 원본 기록을 시간순으로 표시하고 상세에서만 수정한다', (tester) async {
+  testWidgets('오늘 화면은 원본 기록을 시간순으로 표시하고 누르면 바로 수정한다', (tester) async {
     final now = DateTime.now();
     final diary = DiaryEntity(
       id: 41,
@@ -1373,7 +1398,10 @@ void main() {
       ),
     ]);
 
-    await tester.pumpWidget(_buildApp(diaries: [diary]));
+    final notifier = _TestDiaryListNotifier([diary]);
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], diaryNotifier: notifier),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('오늘 현황'), findsOneWidget);
@@ -1392,21 +1420,26 @@ void main() {
       ),
     );
 
+    await tester.tap(find.byKey(const ValueKey('today-memo:41')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.byType(DiaryFormPage), findsOneWidget);
+    expect(find.text('오늘 메모'), findsAtLeastNWidgets(1));
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('today-activity:51')));
     await tester.pumpAndSettle();
-
-    expect(find.byType(BottomSheet), findsOneWidget);
-    expect(find.text('읽기 전용'), findsOneWidget);
-    expect(find.text('해열제'), findsAtLeastNWidgets(1));
-    expect(find.byType(DiaryFormPage), findsNothing);
-
-    await tester.tap(find.byKey(const Key('today-record-edit-button')));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(DiaryFormPage), findsOneWidget);
+    expect(find.byKey(const Key('record-entry-form')), findsOneWidget);
+    expect(find.byKey(const Key('quick-record-details')), findsOneWidget);
+    final detailsField = find.descendant(
+      of: find.byKey(const Key('quick-record-details')),
+      matching: find.byType(TextField),
+    );
+    expect(tester.widget<TextField>(detailsField).controller!.text, '해열제');
   });
 
-  testWidgets('38도 이상 체온은 목록에 주의 문구를, 상세에만 공식 자료를 표시한다', (tester) async {
+  testWidgets('38도 이상 체온은 목록에 주의 문구를, 수정 화면에 공식 자료를 표시한다', (tester) async {
     final now = DateTime.now();
     final diary = DiaryEntity(
       id: 61,
@@ -1432,7 +1465,10 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(_buildApp(diaries: [diary]));
+    final notifier = _TestDiaryListNotifier([diary]);
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], diaryNotifier: notifier),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('주의 필요'), findsOneWidget);
@@ -1442,9 +1478,40 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('today-activity:62')));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('temperature-event-form')), findsOneWidget);
+    expect(find.byKey(const Key('temperature-value')), findsOneWidget);
+    expect(find.text('38.2'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('record-edit-medical-guidance')));
+    await tester.pumpAndSettle();
     expect(find.text('관련 공식 자료'), findsOneWidget);
     expect(find.text('American Academy of Pediatrics (US)'), findsOneWidget);
     expect(find.text('시스템 브라우저에서 확인'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('temperature-value')))
+          .controller!
+          .text,
+      '38.2',
+    );
+
+    await tester.tap(find.byKey(const Key('record-edit-medical-guidance')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('temperature-value')), '38.3');
+    final saveButton = tester.widget<FilledButton>(
+      find.byKey(const Key('save-quick-record')),
+    );
+    expect(saveButton.onPressed, isNotNull);
+    saveButton.onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(notifier.updatedActivityRecordId, 'local:62');
+    expect(notifier.updatedActivityType, '체온');
+    expect(
+      TemperatureRecord.decode(
+        notifier.updatedActivityStructuredDataJson!,
+      )?.celsius,
+      38.3,
+    );
   });
 
   testWidgets('병원 방문 브리핑은 의료 사실만 모으고 원본으로 이동한다', (tester) async {
@@ -1752,9 +1819,7 @@ void main() {
       _buildApp(diaries: [diary], diaryNotifier: notifier),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('시각 보존 기록'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('today-record-edit-button')));
+    await tester.tap(find.byKey(const ValueKey('today-memo:2')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FloatingActionButton, '수정'));
     await tester.pumpAndSettle();
@@ -1794,7 +1859,7 @@ void main() {
     expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
   });
 
-  testWidgets('Windows에서는 기록 상세를 중앙 대화상자로 연다', (tester) async {
+  testWidgets('Windows에서는 이벤트 수정 화면을 중앙 대화상자로 연다', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     final now = DateTime.now();
@@ -1802,20 +1867,32 @@ void main() {
       id: 91,
       recordId: 'windows-detail',
       date: now,
-      title: 'Windows 상세',
-      content: '같은 상세 내용',
+      title: '',
+      content: '',
       lastModified: now,
+    );
+    diary.activities.add(
+      ActivityEntity(
+        id: 911,
+        type: '체온',
+        time: now,
+        details: '37.2°C',
+        structuredDataJson: TemperatureRecord(
+          celsius: 37.2,
+          occurredAt: now,
+        ).encode(),
+        lastModified: now,
+      ),
     );
 
     await tester.pumpWidget(_buildApp(diaries: [diary]));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('today-memo:91')));
+    await tester.tap(find.byKey(const ValueKey('today-activity:911')));
     await tester.pumpAndSettle();
 
     expect(find.byType(Dialog), findsOneWidget);
     expect(find.byType(BottomSheet), findsNothing);
-    expect(find.text('같은 상세 내용'), findsAtLeastNWidgets(1));
-    expect(find.byKey(const Key('today-record-edit-button')), findsOneWidget);
+    expect(find.byKey(const Key('temperature-event-form')), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -1858,8 +1935,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('today-memo:92')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('today-record-edit-button')));
-    await tester.pumpAndSettle();
 
     expect(find.byType(DiaryFormPage), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -1882,7 +1957,7 @@ void main() {
     expect(find.byType(DiaryFormPage), findsNothing);
   });
 
-  testWidgets('기록 카드는 읽기 전용 상세 동작을 의미 정보로 제공한다', (tester) async {
+  testWidgets('기록 카드는 직접 수정 동작을 의미 정보로 제공한다', (tester) async {
     final semantics = tester.ensureSemantics();
     final now = DateTime.now();
     final diary = DiaryEntity(
@@ -1901,7 +1976,8 @@ void main() {
       find.byKey(const ValueKey('today-memo:94')),
     );
     expect(node.label, contains('의미 있는 기록'));
-    expect(node.label, contains('읽기 전용'));
+    expect(node.label, contains('수정'));
+    expect(node.label, isNot(contains('읽기 전용')));
     expect(node.flagsCollection.isButton, isTrue);
     semantics.dispose();
   });

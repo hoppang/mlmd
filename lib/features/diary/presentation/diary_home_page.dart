@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/presentation/adaptive_detail.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
 import '../../attachments/application/attachment_service.dart';
 import '../../attachments/domain/event_attachment.dart';
@@ -311,6 +312,8 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
   Future<void> _showRecordEntry({
     EventCatalogItem? initialItem,
     String? initialStructuredDataJson,
+    ActivityEntity? editActivity,
+    Widget? editContext,
   }) async {
     final diaries = ref.read(diaryListProvider);
     // Lightweight widget hosts may intentionally omit ObjectBox. The
@@ -343,6 +346,8 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
         trackingModes: modesByEvent,
         initialItem: initialItem,
         initialStructuredDataJson: initialStructuredDataJson,
+        editActivity: editActivity,
+        editContext: editContext,
         onEditQuickLaunch: () {
           editQuickLaunch = true;
           Navigator.pop(sheetContext);
@@ -369,13 +374,22 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                 structuredDataJson: structuredDataJson,
               );
         },
-        onUpdate: (recordId, details, structuredDataJson) => ref
-            .read(diaryListProvider.notifier)
-            .updateActivityDetails(
-              recordId: recordId,
-              details: details,
-              structuredDataJson: structuredDataJson,
-            ),
+        onUpdate:
+            (
+              recordId,
+              details,
+              structuredDataJson, {
+              DateTime? occurredAt,
+              String? type,
+            }) => ref
+                .read(diaryListProvider.notifier)
+                .updateActivityDetails(
+                  recordId: recordId,
+                  details: details,
+                  structuredDataJson: structuredDataJson,
+                  occurredAt: occurredAt,
+                  type: type,
+                ),
         onDelete: (recordId) =>
             ref.read(diaryListProvider.notifier).deleteActivityRecord(recordId),
         onSaveCustom: (customEventTypeId, nameSnapshot, memo, occurredAt) => ref
@@ -412,6 +426,10 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
     switch (result.kind) {
       case RecordEntryResultKind.saved:
+        if (editActivity != null) {
+          messenger.showSnackBar(SnackBar(content: Text(loc.diaryUpdated)));
+          break;
+        }
         final recordId = result.recordId;
         if (recordId != null) {
           ref
@@ -440,6 +458,20 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
         }
         messenger.showSnackBar(SnackBar(content: Text(loc.sleepStarted)));
     }
+  }
+
+  void _editActivity(
+    DiaryEntity _,
+    ActivityEntity activity,
+    Widget? editContext,
+  ) {
+    final item = eventCatalogItemForActivity(activity);
+    _showRecordEntry(
+      initialItem: item,
+      initialStructuredDataJson: activity.structuredDataJson,
+      editActivity: activity,
+      editContext: editContext,
+    );
   }
 
   Future<void> _showQuickLaunchEditor([int initialSlotIndex = 0]) {
@@ -635,6 +667,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                 TodayPage(
                   onNavigateToForm: (diary, draftId) =>
                       _navigateToFormPage(context, diary, draftId),
+                  onEditActivity: _editActivity,
                   onOpenDuplicateReviews: () =>
                       _showDuplicateReviewPage(context),
                   onQuickLaunch: _runQuickLaunch,
@@ -649,6 +682,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
                 ),
                 DiarySearchPage(
                   onEditDiary: (diary) => _navigateToFormPage(context, diary),
+                  onEditActivity: _editActivity,
                   focusRequest: _searchFocusRequest,
                 ),
               ],

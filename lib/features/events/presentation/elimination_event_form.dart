@@ -14,6 +14,7 @@ class EliminationEventForm extends StatefulWidget {
     required this.onUpdate,
     required this.onUndo,
     required this.onDone,
+    this.allowUndo = true,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class EliminationEventForm extends StatefulWidget {
   final ValueChanged<EliminationRecord> onUpdate;
   final VoidCallback onUndo;
   final VoidCallback onDone;
+  final bool allowUndo;
 
   @override
   State<EliminationEventForm> createState() => _EliminationEventFormState();
@@ -250,15 +252,17 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
             const SizedBox(height: AppSpacing.xs),
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    key: const Key('undo-elimination-record'),
-                    onPressed: widget.saving ? null : widget.onUndo,
-                    icon: const Icon(Icons.undo),
-                    label: Text(loc.undo),
+                if (widget.allowUndo) ...[
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const Key('undo-elimination-record'),
+                      onPressed: widget.saving ? null : widget.onUndo,
+                      icon: const Icon(Icons.undo),
+                      label: Text(loc.undo),
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
                 Expanded(
                   child: TextButton(
                     key: const Key('finish-elimination-record'),

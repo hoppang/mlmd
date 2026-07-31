@@ -17,6 +17,7 @@ class SleepEventForm extends StatefulWidget {
     required this.error,
     required this.onBack,
     required this.onSave,
+    this.initialRecord,
     super.key,
   });
 
@@ -24,26 +25,32 @@ class SleepEventForm extends StatefulWidget {
   final String? error;
   final VoidCallback onBack;
   final Future<void> Function(SleepFormResult result) onSave;
+  final SleepRecord? initialRecord;
 
   @override
   State<SleepEventForm> createState() => _SleepEventFormState();
 }
 
 class _SleepEventFormState extends State<SleepEventForm> {
-  final _noteController = TextEditingController();
+  late final TextEditingController _noteController;
   late DateTime _startedAt;
   late DateTime _endedAt;
   late SleepRecordKind _kind;
-  SleepRecordSource _source = SleepRecordSource.suggested;
-  final Set<SleepRecordMarker> _markers = {};
+  late SleepRecordSource _source;
+  late final Set<SleepRecordMarker> _markers;
   String? _timeError;
 
   @override
   void initState() {
     super.initState();
-    _endedAt = DateTime.now();
-    _startedAt = _endedAt.subtract(const Duration(hours: 1));
-    _kind = _suggestKind(_startedAt, _endedAt);
+    final initial = widget.initialRecord;
+    _noteController = TextEditingController(text: initial?.note ?? '');
+    _startedAt =
+        initial?.startedAt ?? DateTime.now().subtract(const Duration(hours: 1));
+    _endedAt = initial?.endedAt ?? DateTime.now();
+    _kind = initial?.kind ?? _suggestKind(_startedAt, _endedAt);
+    _source = initial?.source ?? SleepRecordSource.suggested;
+    _markers = {...?initial?.markers};
   }
 
   @override
@@ -104,12 +111,14 @@ class _SleepEventFormState extends State<SleepEventForm> {
     }
     final note = _noteController.text.trim();
     final record = SleepRecord(
-      status: SleepRecordStatus.completed,
+      status: widget.initialRecord?.status ?? SleepRecordStatus.completed,
       kind: _kind,
       source: _source,
       startedAt: _startedAt,
       endedAt: _endedAt,
       markers: _markers.toList(growable: false),
+      endedByAuthorProfileId: widget.initialRecord?.endedByAuthorProfileId,
+      endedByDeviceProfileId: widget.initialRecord?.endedByDeviceProfileId,
       note: note.isEmpty ? null : note,
     );
     await widget.onSave(

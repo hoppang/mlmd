@@ -20,6 +20,7 @@ class TemperatureEventForm extends StatefulWidget {
     required this.onBack,
     required this.onChangeTime,
     required this.onSave,
+    this.initialRecord,
     super.key,
   });
 
@@ -29,16 +30,28 @@ class TemperatureEventForm extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onChangeTime;
   final ValueChanged<TemperatureFormResult> onSave;
+  final TemperatureRecord? initialRecord;
 
   @override
   State<TemperatureEventForm> createState() => _TemperatureEventFormState();
 }
 
 class _TemperatureEventFormState extends State<TemperatureEventForm> {
-  final _temperatureController = TextEditingController();
-  final _noteController = TextEditingController();
+  late final TextEditingController _temperatureController;
+  late final TextEditingController _noteController;
   TemperatureMeasurementSite? _measurementSite;
   String? _validationError;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialRecord;
+    _temperatureController = TextEditingController(
+      text: initial?.celsius.toStringAsFixed(1) ?? '',
+    );
+    _noteController = TextEditingController(text: initial?.note ?? '');
+    _measurementSite = initial?.measurementSite;
+  }
 
   @override
   void dispose() {

@@ -829,6 +829,15 @@ class AttachmentNotifier extends Notifier<List<EventAttachment>> {
     List<EventAttachment> attachments,
   ) async {
     final repository = ref.read(attachmentRepositoryProvider);
+    final retainedIds = attachments
+        .map((attachment) => attachment.attachmentId)
+        .toSet();
+    final removed = repository
+        .getAttachmentsForRecord(recordId)
+        .where((attachment) => !retainedIds.contains(attachment.attachmentId));
+    for (final attachment in removed) {
+      await repository.removeAttachmentMetadata(attachment.attachmentId);
+    }
     await repository.saveAttachmentsForRecord(recordId, attachments);
     state = repository.getAttachmentsForRecord(recordId);
   }

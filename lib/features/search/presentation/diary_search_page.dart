@@ -7,6 +7,7 @@ import '../../../core/presentation/app_empty_state.dart';
 import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/activity_entity.dart';
 import '../../../models/diary_entity.dart';
 import '../../../models/author_profile_entity.dart';
 import '../../../repositories/diary_repository.dart';
@@ -23,11 +24,18 @@ enum _DiarySearchSort { relevance, newest, oldest }
 class DiarySearchPage extends ConsumerStatefulWidget {
   const DiarySearchPage({
     required this.onEditDiary,
+    required this.onEditActivity,
     this.focusRequest,
     super.key,
   });
 
   final ValueChanged<DiaryEntity> onEditDiary;
+  final void Function(
+    DiaryEntity diary,
+    ActivityEntity activity,
+    Widget? editContext,
+  )
+  onEditActivity;
   final ValueListenable<int>? focusRequest;
 
   @override
@@ -170,20 +178,104 @@ class _DiarySearchPageState extends ConsumerState<DiarySearchPage> {
     return results;
   }
 
-  Future<void> _openResult(DiarySearchResult result) async {
-    final showAuthorTags = shouldShowAuthorTags(
-      ref.read(diaryListProvider),
-      ref.read(profileRepositoryProvider),
+  void _openResult(DiarySearchResult result) {
+    final activity = result.activity;
+    if (activity == null) {
+      widget.onEditDiary(result.diary);
+      return;
+    }
+    widget.onEditActivity(
+      result.diary,
+      activity,
+      _buildEditContext(result, ref.read(diaryListProvider)),
     );
-    final shouldEdit = await showAdaptiveDetail<bool>(
-      context: context,
-      builder: (context) => _SearchResultDetail(
-        result: result,
-        showAuthorTag: showAuthorTags,
-        allDiaries: ref.read(diaryListProvider),
+  }
+
+  Widget? _buildEditContext(
+    DiarySearchResult result,
+    List<DiaryEntity> allDiaries,
+  ) {
+    final activity = result.activity;
+    if (activity == null) return null;
+    final guidance = evaluateMedicalGuidance(activity);
+    final surrounding = <({DateTime occurredAt, String label})>[];
+    for (final candidate in allDiaries) {
+      if (!_isSameDate(candidate.date, result.occurredAt)) continue;
+      if (candidate.id != result.diary.id &&
+          candidate.title.trim().isNotEmpty) {
+        surrounding.add((
+          occurredAt: candidate.date,
+          label: candidate.title.trim(),
+        ));
+      }
+      for (final item in candidate.activities) {
+        if (item.id == activity.id) continue;
+        surrounding.add((
+          occurredAt: item.time,
+          label: item.details.trim().isEmpty
+              ? item.type
+              : '${item.type} · ${item.details.trim()}',
+        ));
+      }
+    }
+    surrounding.sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+    if (!guidance.requiresAttention && surrounding.isEmpty) return null;
+    final loc = AppLocalizations.of(context)!;
+    return Card(
+      child: ExpansionTile(
+        key: const Key('record-edit-search-context'),
+        initiallyExpanded: false,
+        leading: Icon(
+          guidance.requiresAttention
+              ? Icons.health_and_safety_outlined
+              : Icons.history_outlined,
+        ),
+        title: Text(
+          guidance.requiresAttention
+              ? loc.medicalAttentionRequired
+              : loc.searchSameDayContext,
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          AppSpacing.md,
+        ),
+        children: [
+          if (guidance.requiresAttention)
+            MedicalGuidanceSection(activity: activity),
+          if (guidance.requiresAttention && surrounding.isNotEmpty)
+            const SizedBox(height: AppSpacing.md),
+          if (surrounding.isNotEmpty) ...[
+            if (guidance.requiresAttention) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  loc.searchSameDayContext,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+            ],
+            for (final item in surrounding.take(5))
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(item.occurredAt))} · ${item.label}',
+                ),
+              ),
+            const SizedBox(height: AppSpacing.xs),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                loc.searchSameDayContextHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ],
       ),
     );
-    if (shouldEdit == true && mounted) widget.onEditDiary(result.diary);
   }
 
   @override
@@ -495,7 +587,7 @@ class _SearchResultCard extends StatelessWidget {
       excludeSemantics: true,
       label:
           '$typeLabel, $title, $timeLabel, ${_reason(loc)}, '
-          '${loc.searchReadOnly}',
+          '${loc.edit}',
       child: Card(
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
@@ -568,168 +660,6 @@ class _SearchResultCard extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchResultDetail extends StatelessWidget {
-  const _SearchResultDetail({
-    required this.result,
-    required this.showAuthorTag,
-    required this.allDiaries,
-  });
-
-  final DiarySearchResult result;
-  final bool showAuthorTag;
-  final List<DiaryEntity> allDiaries;
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final diary = result.diary;
-    final activity = result.activity;
-    final surrounding = <({DateTime occurredAt, String label})>[];
-    for (final candidate in allDiaries) {
-      if (!_isSameDate(candidate.date, result.occurredAt)) continue;
-      if ((activity != null || candidate.id != diary.id) &&
-          candidate.title.trim().isNotEmpty) {
-        surrounding.add((
-          occurredAt: candidate.date,
-          label: candidate.title.trim(),
-        ));
-      }
-      for (final item in candidate.activities) {
-        if (item.id == activity?.id) continue;
-        surrounding.add((
-          occurredAt: item.time,
-          label: item.details.trim().isEmpty
-              ? item.type
-              : '${item.type} · ${item.details.trim()}',
-        ));
-      }
-    }
-    surrounding.sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
-
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    loc.searchResultDetail,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                Chip(
-                  avatar: const Icon(Icons.visibility_outlined, size: 16),
-                  label: Text(loc.searchReadOnly),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              _formatResultTime(context, result),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (showAuthorTag) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: RecordAuthorTag(
-                  authorProfileId:
-                      activity?.createdByAuthorProfileId ??
-                      diary.createdByAuthorProfileId,
-                  visible: true,
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              activity?.type ?? diary.title,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            if (activity != null) ...[
-              if (activity.details.trim().isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(activity.details.trim()),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                diary.title,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              if (evaluateMedicalGuidance(activity).requiresAttention) ...[
-                const SizedBox(height: AppSpacing.sm),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: MedicalAttentionLabel(),
-                ),
-                MedicalGuidanceSection(activity: activity),
-              ],
-            ] else ...[
-              if (diary.summary.trim().isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  loc.summaryLabel,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(diary.summary.trim()),
-              ],
-              if (diary.content.trim().isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  loc.contentLabel,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(diary.content.trim()),
-              ],
-            ],
-            if (surrounding.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                loc.searchSameDayContext,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              for (final item in surrounding.take(5))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
-                  child: Text(
-                    '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(item.occurredAt))} · ${item.label}',
-                  ),
-                ),
-              Text(
-                loc.searchSameDayContextHint,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton.icon(
-              key: const Key('search-result-edit-button'),
-              onPressed: () => Navigator.pop(context, true),
-              icon: const Icon(Icons.edit_outlined),
-              label: Text(loc.edit),
-            ),
-          ],
         ),
       ),
     );

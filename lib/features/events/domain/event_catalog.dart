@@ -9,6 +9,15 @@ import 'bath_record.dart';
 import 'care_procedure_record.dart';
 import 'tummy_time_record.dart';
 import 'growth_measurement_record.dart';
+import 'temperature_record.dart';
+import 'medication_record.dart';
+import 'symptom_record.dart';
+import 'hospital_visit_record.dart';
+import 'vaccination_record.dart';
+import 'accident_injury_record.dart';
+import 'memo_record.dart';
+import 'sleep_record.dart';
+import 'intake_record.dart';
 
 enum EventCategoryId { basicCare, healthMedical, activityPlay, growthMemory }
 
@@ -219,6 +228,63 @@ const defaultQuickEventIds = <EventTypeId>[
 
 EventCatalogItem eventCatalogItem(EventTypeId id) =>
     eventCatalog.firstWhere((item) => item.id == id);
+
+EventCatalogItem? eventCatalogItemForActivity(ActivityEntity activity) {
+  final encoded = activity.structuredDataJson;
+  if (encoded == null || encoded.isEmpty) return null;
+  if (TemperatureRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.temperature);
+  }
+  if (MedicationRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.medication);
+  }
+  if (SymptomRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.symptom);
+  }
+  if (HospitalVisitRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.hospital);
+  }
+  if (VaccinationRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.vaccination);
+  }
+  if (AccidentInjuryRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.accidentInjury);
+  }
+  if (CareProcedureRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.careProcedure);
+  }
+  if (PumpingRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.pumping);
+  }
+  if (TummyTimeRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.tummyTime);
+  }
+  if (BathRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.bath);
+  }
+  if (GrowthMeasurementRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.growthMeasurement);
+  }
+  if (MemoRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.memo);
+  }
+  final intake = IntakeRecord.decode(encoded);
+  if (intake != null) {
+    return eventCatalogItem(switch (intake.kind) {
+      IntakeRecordKind.feeding => EventTypeId.feeding,
+      IntakeRecordKind.meal => EventTypeId.meal,
+      IntakeRecordKind.water => EventTypeId.water,
+      IntakeRecordKind.snack => EventTypeId.snack,
+    });
+  }
+  if (SleepRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.sleep);
+  }
+  if (EliminationRecord.decode(encoded) != null) {
+    return eventCatalogItem(EventTypeId.diaper);
+  }
+  return null;
+}
 
 List<EventCatalogItem> buildQuickEventItems({
   Set<EventTypeId> hiddenIds = const {},

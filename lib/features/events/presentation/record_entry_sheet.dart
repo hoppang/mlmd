@@ -5,6 +5,7 @@ import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/presentation/app_section_header.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/activity_entity.dart';
 import '../../../models/shared_custom_event_definition_entity.dart';
 import '../../diary/application/diary_list_notifier.dart';
 import '../../duplicate_review/application/duplicate_review_notifier.dart';
@@ -32,9 +33,17 @@ import '../domain/care_procedure_record.dart';
 import '../domain/tummy_time_record.dart';
 import '../domain/growth_measurement_record.dart';
 import '../domain/memo_record.dart';
+import '../domain/temperature_record.dart';
+import '../domain/symptom_record.dart';
+import '../domain/medication_record.dart';
+import '../domain/sleep_record.dart';
+import '../domain/hospital_visit_record.dart';
+import '../domain/vaccination_record.dart';
+import '../domain/accident_injury_record.dart';
 import 'symptom_event_form.dart';
 import 'temperature_event_form.dart';
 import '../../attachments/application/attachment_service.dart';
+import '../../attachments/domain/event_attachment.dart';
 import '../../tracking/domain/tracking_models.dart';
 import '../../../widgets/stt_memo_text_field.dart';
 
@@ -49,8 +58,10 @@ typedef UpdateEventRecord =
     Future<void> Function(
       String recordId,
       String details,
-      String structuredDataJson,
-    );
+      String structuredDataJson, {
+      DateTime? occurredAt,
+      String? type,
+    });
 typedef DeleteEventRecord = Future<void> Function(String recordId);
 typedef SaveCustomEventRecord =
     Future<void> Function(
@@ -92,6 +103,8 @@ class RecordEntrySheet extends ConsumerStatefulWidget {
     required this.onOpenDetailedRecord,
     this.initialItem,
     this.initialStructuredDataJson,
+    this.editActivity,
+    this.editContext,
     this.onEditQuickLaunch,
     super.key,
   });
@@ -108,6 +121,8 @@ class RecordEntrySheet extends ConsumerStatefulWidget {
   final VoidCallback onOpenDetailedRecord;
   final EventCatalogItem? initialItem;
   final String? initialStructuredDataJson;
+  final ActivityEntity? editActivity;
+  final Widget? editContext;
   final VoidCallback? onEditQuickLaunch;
 
   @override
@@ -129,11 +144,70 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   void initState() {
     super.initState();
     _selectedItem = widget.initialItem;
-    _structuredDataJson = widget.initialStructuredDataJson;
+    final editActivity = widget.editActivity;
+    _structuredDataJson =
+        editActivity?.structuredDataJson ?? widget.initialStructuredDataJson;
+    if (editActivity != null) {
+      _occurredAt = editActivity.time;
+      _detailsController.text = editActivity.details;
+      final recordId = editActivity.recordId;
+      if (recordId != null) {
+        try {
+          ref
+              .read(attachmentNotifierProvider.notifier)
+              .loadAttachmentsForRecord(recordId);
+        } catch (_) {
+          // Lightweight widget hosts may not provide an attachment repository.
+        }
+      }
+      if (_selectedItem?.id == EventTypeId.diaper) {
+        _savedEliminationRecordId =
+            editActivity.recordId ?? 'local:${editActivity.id}';
+        _savedEliminationRecord = EliminationRecord.decode(
+          editActivity.structuredDataJson ?? '',
+        );
+      }
+    }
+  }
+
+  bool get _isEditing => widget.editActivity != null;
+
+  Future<String> _persistEvent({
+    required String type,
+    required String details,
+    required DateTime occurredAt,
+    required String? structuredDataJson,
+  }) async {
+    final editActivity = widget.editActivity;
+    if (editActivity == null) {
+      return widget.onSave(type, details, occurredAt, structuredDataJson);
+    }
+    final recordId = editActivity.recordId ?? 'local:${editActivity.id}';
+    await widget.onUpdate(
+      recordId,
+      details,
+      structuredDataJson ?? editActivity.structuredDataJson ?? '',
+      occurredAt: occurredAt,
+      type: type,
+    );
+    return recordId;
+  }
+
+  void _closeOrReturnToPicker() {
+    if (_isEditing) {
+      Navigator.pop(context);
+      return;
+    }
+    setState(() {
+      _selectedItem = null;
+      _selectedCustomEvent = null;
+      _structuredDataJson = null;
+      _error = null;
+    });
   }
 
   bool _usesDailyCheckIn(EventCatalogItem item) =>
-      widget.trackingModes[item.id] == TrackingMode.dailyCheckIn;
+      !_isEditing && widget.trackingModes[item.id] == TrackingMode.dailyCheckIn;
 
   @override
   void dispose() {
@@ -225,21 +299,22 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   Future<void> _save() async {
     final selected = _selectedItem;
     final custom = _selectedCustomEvent;
-    if ((selected == null && custom == null) || _saving) return;
+    if ((selected == null && custom == null && !_isEditing) || _saving) return;
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
       final loc = AppLocalizations.of(context)!;
-      final savedName = custom?.name ?? selected!.label(loc);
+      final savedName =
+          custom?.name ?? selected?.label(loc) ?? widget.editActivity!.type;
       String? recordId;
       if (custom == null) {
-        recordId = await widget.onSave(
-          savedName,
-          _detailsController.text.trim(),
-          _occurredAt,
-          null,
+        recordId = await _persistEvent(
+          type: savedName,
+          details: _detailsController.text.trim(),
+          occurredAt: _occurredAt,
+          structuredDataJson: _structuredDataJson,
         );
       } else {
         await widget.onSaveCustom(
@@ -277,11 +352,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        _occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: _occurredAt,
+        structuredDataJson: result.record.encode(),
       );
       if (mounted) {
         Navigator.pop(
@@ -311,11 +386,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
       if (mounted) {
         Navigator.pop(
@@ -345,11 +420,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = result.symptomName;
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
       if (mounted) {
         Navigator.pop(
@@ -379,11 +454,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = result.medicationName;
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.administeredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.administeredAt,
+        structuredDataJson: result.record.encode(),
       );
       if (!mounted) return;
 
@@ -452,13 +527,13 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.visitedAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.visitedAt,
+        structuredDataJson: result.record.encode(),
       );
-      if (result.attachments.isNotEmpty) {
+      if (_isEditing || result.attachments.isNotEmpty) {
         await ref
             .read(attachmentNotifierProvider.notifier)
             .saveAttachmentsForRecord(recordId, result.attachments);
@@ -491,13 +566,13 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.vaccinatedAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.vaccinatedAt,
+        structuredDataJson: result.record.encode(),
       );
-      if (result.attachments.isNotEmpty) {
+      if (_isEditing || result.attachments.isNotEmpty) {
         await ref
             .read(attachmentNotifierProvider.notifier)
             .saveAttachmentsForRecord(recordId, result.attachments);
@@ -530,13 +605,13 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
-      if (result.attachments.isNotEmpty) {
+      if (_isEditing || result.attachments.isNotEmpty) {
         await ref
             .read(attachmentNotifierProvider.notifier)
             .saveAttachmentsForRecord(recordId, result.attachments);
@@ -569,13 +644,13 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = result.procedureName;
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
-      if (result.attachments.isNotEmpty) {
+      if (_isEditing || result.attachments.isNotEmpty) {
         await ref
             .read(attachmentNotifierProvider.notifier)
             .saveAttachmentsForRecord(recordId, result.attachments);
@@ -608,11 +683,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
       if (mounted) {
         Navigator.pop(
@@ -642,13 +717,13 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
-      if (result.attachments.isNotEmpty) {
+      if (_isEditing || result.attachments.isNotEmpty) {
         await ref
             .read(attachmentNotifierProvider.notifier)
             .saveAttachmentsForRecord(recordId, result.attachments);
@@ -681,11 +756,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
       if (mounted) {
         Navigator.pop(
@@ -717,11 +792,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
       if (mounted) {
         Navigator.pop(
@@ -751,11 +826,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.occurredAt,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.occurredAt,
+        structuredDataJson: result.record.encode(),
       );
       if (mounted) {
         Navigator.pop(
@@ -864,6 +939,8 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
         recordId,
         eliminationRecordDetails(loc, record),
         record.encode(),
+        occurredAt: record.occurredAt,
+        type: _selectedItem?.label(loc),
       );
       if (!mounted) return;
       setState(() {
@@ -930,11 +1007,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = selected.label(AppLocalizations.of(context)!);
-      final recordId = await widget.onSave(
-        savedName,
-        result.details,
-        result.record.endedAt!,
-        result.record.encode(),
+      final recordId = await _persistEvent(
+        type: savedName,
+        details: result.details,
+        occurredAt: result.record.endedAt!,
+        structuredDataJson: result.record.encode(),
       );
       if (mounted) {
         Navigator.pop(
@@ -1012,306 +1089,326 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   @override
   Widget build(BuildContext context) {
     final selected = _selectedItem;
+    final selectedId = selected?.id;
     final custom = _selectedCustomEvent;
     final customState = ref.watch(customEventCatalogProvider);
+    final List<EventAttachment> editAttachments = _isEditing
+        ? ref.watch(attachmentNotifierProvider)
+        : const <EventAttachment>[];
     return PopScope<RecordEntryResult>(
       canPop: _savedEliminationRecordId == null,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _finishElimination();
       },
       child: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: selected == null && custom == null
-              ? _EventPicker(
-                  key: const ValueKey('event-picker'),
-                  recentPresets: widget.recentPresets,
-                  customState: customState,
-                  hiddenQuickEventIds: widget.hiddenQuickEventIds,
-                  saving: _saving,
-                  error: _error,
-                  onSelect: _select,
-                  onStartSleep: (item) => _usesDailyCheckIn(item)
-                      ? _select(item)
-                      : _startSleep(item),
-                  onQuickElimination: (item, kind, {preset}) =>
-                      _usesDailyCheckIn(item)
-                      ? _select(item)
-                      : _saveElimination(item, kind, preset: preset),
-                  onSelectCustom: _selectCustom,
-                  onCreateCustom: _createCustomEvent,
-                  onRenameCustom: _renameCustomEvent,
-                  onArchiveCustom: _archiveCustomEvent,
-                  onToggleCustomPin: (definition) {
-                    ref
-                        .read(customEventCatalogProvider.notifier)
-                        .setPinned(
-                          definition.customEventTypeId,
-                          pinned: !customState.isPinned(
-                            definition.customEventTypeId,
-                          ),
-                        );
-                  },
-                  onEditQuickLaunch: widget.onEditQuickLaunch,
-                  onOpenDetailedRecord: widget.onOpenDetailedRecord,
+        child: ConstrainedBox(
+          constraints: _isEditing
+              ? BoxConstraints.tightFor(
+                  height: MediaQuery.sizeOf(context).height * 0.9,
                 )
-              : custom == null && _usesDailyCheckIn(selected!)
-              ? _DailyCheckInForm(
-                  key: ValueKey('daily-check-in-${selected.id.name}'),
-                  item: selected,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onSave: (relativeState, memo) =>
-                      _saveDailyCheckIn(selected, relativeState, memo),
-                )
-              : custom == null && selected!.id == EventTypeId.diaper
-              ? EliminationEventForm(
-                  key: const ValueKey('elimination'),
-                  savedRecord: _savedEliminationRecord,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onQuickSave: (kind) => _saveElimination(selected, kind),
-                  onUpdate: _updateElimination,
-                  onUndo: _undoElimination,
-                  onDone: _finishElimination,
-                )
-              : custom == null && selected!.id == EventTypeId.sleep
-              ? SleepEventForm(
-                  key: const ValueKey('sleep'),
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onSave: _saveSleep,
-                )
-              : custom == null && selected!.id == EventTypeId.temperature
-              ? TemperatureEventForm(
-                  key: const ValueKey('temperature'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveTemperature,
-                )
-              : custom == null && selected!.id == EventTypeId.symptom
-              ? SymptomEventForm(
-                  key: const ValueKey('symptom'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveSymptom,
-                )
-              : custom == null && selected!.id == EventTypeId.medication
-              ? MedicationEventForm(
-                  key: const ValueKey('medication'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveMedication,
-                )
-              : custom == null && selected!.id == EventTypeId.hospital
-              ? HospitalEventForm(
-                  key: const ValueKey('hospital'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveHospital,
-                )
-              : custom == null && selected!.id == EventTypeId.vaccination
-              ? VaccinationEventForm(
-                  key: const ValueKey('vaccination'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveVaccination,
-                )
-              : custom == null && selected!.id == EventTypeId.accidentInjury
-              ? AccidentEventForm(
-                  key: const ValueKey('accidentInjury'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveAccident,
-                )
-              : custom == null && selected!.id == EventTypeId.careProcedure
-              ? CareProcedureEventForm(
-                  key: const ValueKey('careProcedure'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  initialRecord: _structuredDataJson != null
-                      ? CareProcedureRecord.decode(_structuredDataJson!)
-                      : null,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _structuredDataJson = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveCareProcedure,
-                )
-              : custom == null && selected!.id == EventTypeId.pumping
-              ? PumpingEventForm(
-                  key: const ValueKey('pumping'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  initialRecord: _structuredDataJson != null
-                      ? PumpingRecord.decode(_structuredDataJson!)
-                      : null,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _structuredDataJson = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _savePumping,
-                )
-              : custom == null && selected!.id == EventTypeId.tummyTime
-              ? TummyTimeEventForm(
-                  key: const ValueKey('tummyTime'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  initialRecord: _structuredDataJson != null
-                      ? TummyTimeRecord.decode(_structuredDataJson!)
-                      : null,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _structuredDataJson = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveTummyTime,
-                )
-              : custom == null && selected!.id == EventTypeId.bath
-              ? BathEventForm(
-                  key: const ValueKey('bath'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  initialRecord: _structuredDataJson != null
-                      ? BathRecord.decode(_structuredDataJson!)
-                      : null,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _structuredDataJson = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveBath,
-                )
-              : custom == null && selected!.id == EventTypeId.growthMeasurement
-              ? GrowthMeasurementEventForm(
-                  key: const ValueKey('growthMeasurement'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  initialRecord: _structuredDataJson != null
-                      ? GrowthMeasurementRecord.decode(_structuredDataJson!)
-                      : null,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _structuredDataJson = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveGrowthMeasurement,
-                )
-              : custom == null && selected!.id == EventTypeId.memo
-              ? MemoEventForm(
-                  key: const ValueKey('memo'),
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  initialRecord: _structuredDataJson != null
-                      ? MemoRecord.decode(_structuredDataJson!)
-                      : null,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _structuredDataJson = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveMemo,
-                )
-              : custom == null && _isIntakeEvent(selected!.id)
-              ? IntakeEventForm(
-                  key: ValueKey(selected.id.name),
-                  item: selected,
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  initialStructuredDataJson: _structuredDataJson,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _structuredDataJson = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _saveIntake,
-                )
-              : _EventForm(
-                  key: ValueKey(custom?.customEventTypeId ?? selected!.id.name),
-                  label:
-                      custom?.name ??
-                      selected!.label(AppLocalizations.of(context)!),
-                  icon: custom == null
-                      ? selected!.icon
-                      : Icons.bookmark_outline,
-                  custom: custom != null,
-                  detailsController: _detailsController,
-                  occurredAt: _occurredAt,
-                  saving: _saving,
-                  error: _error,
-                  onBack: () => setState(() {
-                    _selectedItem = null;
-                    _selectedCustomEvent = null;
-                    _structuredDataJson = null;
-                    _error = null;
-                  }),
-                  onChangeTime: _changeTime,
-                  onSave: _save,
+              : BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
                 ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isEditing && widget.editContext != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                    AppSpacing.md,
+                    0,
+                  ),
+                  child: widget.editContext!,
+                ),
+              Flexible(
+                fit: _isEditing ? FlexFit.tight : FlexFit.loose,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: selected == null && custom == null && !_isEditing
+                      ? _EventPicker(
+                          key: const ValueKey('event-picker'),
+                          recentPresets: widget.recentPresets,
+                          customState: customState,
+                          hiddenQuickEventIds: widget.hiddenQuickEventIds,
+                          saving: _saving,
+                          error: _error,
+                          onSelect: _select,
+                          onStartSleep: (item) => _usesDailyCheckIn(item)
+                              ? _select(item)
+                              : _startSleep(item),
+                          onQuickElimination: (item, kind, {preset}) =>
+                              _usesDailyCheckIn(item)
+                              ? _select(item)
+                              : _saveElimination(item, kind, preset: preset),
+                          onSelectCustom: _selectCustom,
+                          onCreateCustom: _createCustomEvent,
+                          onRenameCustom: _renameCustomEvent,
+                          onArchiveCustom: _archiveCustomEvent,
+                          onToggleCustomPin: (definition) {
+                            ref
+                                .read(customEventCatalogProvider.notifier)
+                                .setPinned(
+                                  definition.customEventTypeId,
+                                  pinned: !customState.isPinned(
+                                    definition.customEventTypeId,
+                                  ),
+                                );
+                          },
+                          onEditQuickLaunch: widget.onEditQuickLaunch,
+                          onOpenDetailedRecord: widget.onOpenDetailedRecord,
+                        )
+                      : custom == null &&
+                            selected != null &&
+                            _usesDailyCheckIn(selected)
+                      ? _DailyCheckInForm(
+                          key: ValueKey('daily-check-in-${selected.id.name}'),
+                          item: selected,
+                          saving: _saving,
+                          error: _error,
+                          onBack: () => setState(() {
+                            _selectedItem = null;
+                            _error = null;
+                          }),
+                          onSave: (relativeState, memo) =>
+                              _saveDailyCheckIn(selected, relativeState, memo),
+                        )
+                      : custom == null && selectedId == EventTypeId.diaper
+                      ? EliminationEventForm(
+                          key: const ValueKey('elimination'),
+                          savedRecord: _savedEliminationRecord,
+                          saving: _saving,
+                          error: _error,
+                          allowUndo: !_isEditing,
+                          onBack: _closeOrReturnToPicker,
+                          onQuickSave: (kind) =>
+                              _saveElimination(selected!, kind),
+                          onUpdate: _updateElimination,
+                          onUndo: _undoElimination,
+                          onDone: _finishElimination,
+                        )
+                      : custom == null && selectedId == EventTypeId.sleep
+                      ? SleepEventForm(
+                          key: const ValueKey('sleep'),
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson == null
+                              ? null
+                              : SleepRecord.decode(_structuredDataJson!),
+                          onBack: _closeOrReturnToPicker,
+                          onSave: _saveSleep,
+                        )
+                      : custom == null && selectedId == EventTypeId.temperature
+                      ? TemperatureEventForm(
+                          key: const ValueKey('temperature'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson == null
+                              ? null
+                              : TemperatureRecord.decode(_structuredDataJson!),
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveTemperature,
+                        )
+                      : custom == null && selectedId == EventTypeId.symptom
+                      ? SymptomEventForm(
+                          key: const ValueKey('symptom'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson == null
+                              ? null
+                              : SymptomRecord.decode(_structuredDataJson!),
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveSymptom,
+                        )
+                      : custom == null && selectedId == EventTypeId.medication
+                      ? MedicationEventForm(
+                          key: const ValueKey('medication'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson == null
+                              ? null
+                              : MedicationRecord.decode(_structuredDataJson!),
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveMedication,
+                        )
+                      : custom == null && selectedId == EventTypeId.hospital
+                      ? HospitalEventForm(
+                          key: const ValueKey('hospital'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson == null
+                              ? null
+                              : HospitalVisitRecord.decode(
+                                  _structuredDataJson!,
+                                ),
+                          initialAttachments: editAttachments,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveHospital,
+                        )
+                      : custom == null && selectedId == EventTypeId.vaccination
+                      ? VaccinationEventForm(
+                          key: const ValueKey('vaccination'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson == null
+                              ? null
+                              : VaccinationRecord.decode(_structuredDataJson!),
+                          initialAttachments: editAttachments,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveVaccination,
+                        )
+                      : custom == null &&
+                            selectedId == EventTypeId.accidentInjury
+                      ? AccidentEventForm(
+                          key: const ValueKey('accidentInjury'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson == null
+                              ? null
+                              : AccidentInjuryRecord.decode(
+                                  _structuredDataJson!,
+                                ),
+                          initialAttachments: editAttachments,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveAccident,
+                        )
+                      : custom == null &&
+                            selectedId == EventTypeId.careProcedure
+                      ? CareProcedureEventForm(
+                          key: const ValueKey('careProcedure'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson != null
+                              ? CareProcedureRecord.decode(_structuredDataJson!)
+                              : null,
+                          initialAttachments: editAttachments,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveCareProcedure,
+                        )
+                      : custom == null && selectedId == EventTypeId.pumping
+                      ? PumpingEventForm(
+                          key: const ValueKey('pumping'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson != null
+                              ? PumpingRecord.decode(_structuredDataJson!)
+                              : null,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _savePumping,
+                        )
+                      : custom == null && selectedId == EventTypeId.tummyTime
+                      ? TummyTimeEventForm(
+                          key: const ValueKey('tummyTime'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson != null
+                              ? TummyTimeRecord.decode(_structuredDataJson!)
+                              : null,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveTummyTime,
+                        )
+                      : custom == null && selectedId == EventTypeId.bath
+                      ? BathEventForm(
+                          key: const ValueKey('bath'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson != null
+                              ? BathRecord.decode(_structuredDataJson!)
+                              : null,
+                          initialAttachments: editAttachments,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveBath,
+                        )
+                      : custom == null &&
+                            selectedId == EventTypeId.growthMeasurement
+                      ? GrowthMeasurementEventForm(
+                          key: const ValueKey('growthMeasurement'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson != null
+                              ? GrowthMeasurementRecord.decode(
+                                  _structuredDataJson!,
+                                )
+                              : null,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveGrowthMeasurement,
+                        )
+                      : custom == null && selectedId == EventTypeId.memo
+                      ? MemoEventForm(
+                          key: const ValueKey('memo'),
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialRecord: _structuredDataJson != null
+                              ? MemoRecord.decode(_structuredDataJson!)
+                              : null,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveMemo,
+                        )
+                      : custom == null &&
+                            selectedId != null &&
+                            _isIntakeEvent(selectedId)
+                      ? IntakeEventForm(
+                          key: ValueKey(selected!.id.name),
+                          item: selected,
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          initialStructuredDataJson: _structuredDataJson,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _saveIntake,
+                        )
+                      : _EventForm(
+                          key: ValueKey(
+                            custom?.customEventTypeId ??
+                                selected?.id.name ??
+                                'edit-activity',
+                          ),
+                          label:
+                              custom?.name ??
+                              selected?.label(AppLocalizations.of(context)!) ??
+                              widget.editActivity!.type,
+                          icon: custom != null
+                              ? Icons.bookmark_outline
+                              : selected?.icon ?? Icons.event_note_outlined,
+                          custom: custom != null,
+                          detailsController: _detailsController,
+                          occurredAt: _occurredAt,
+                          saving: _saving,
+                          error: _error,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onSave: _save,
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -264,12 +264,14 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
     required String details,
     required String structuredDataJson,
     DateTime? occurredAt,
+    String? type,
   }) async {
     final activity = _activityByRecordId(recordId);
     if (activity == null) {
       throw StateError('Activity $recordId does not exist.');
     }
     final updated = _copyActivity(activity)
+      ..type = type ?? activity.type
       ..details = details
       ..structuredDataJson = structuredDataJson
       ..time = occurredAt ?? activity.time;
@@ -301,6 +303,16 @@ class DiaryListNotifier extends Notifier<List<DiaryEntity>> {
 
   ActivityEntity? _activityByRecordId(String? recordId) {
     if (recordId == null) return null;
+    if (recordId.startsWith('local:')) {
+      final localId = int.tryParse(recordId.substring('local:'.length));
+      if (localId != null) {
+        for (final diary in state) {
+          for (final activity in diary.activities) {
+            if (activity.id == localId) return activity;
+          }
+        }
+      }
+    }
     for (final diary in state) {
       for (final activity in diary.activities) {
         if (activity.recordId == recordId) return activity;
