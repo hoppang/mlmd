@@ -22,7 +22,12 @@ class V1DiaryImporter implements DiaryImporter {
       );
     }
     final exportedAt = validator.utcInstant(json, 'exportedAt', r'$');
-    final appVersion = validator.string(json, 'appVersion', r'$');
+    final appVersion = validator.boundedString(
+      json,
+      'appVersion',
+      r'$',
+      V1TransferValidator.maxAppVersionLength,
+    );
     final rawDiaries = validator.list(json['diaries'], r'$.diaries');
     if (rawDiaries.length > V1TransferValidator.maxDiaryCount) {
       validator.tooManyDiaries();
@@ -30,6 +35,7 @@ class V1DiaryImporter implements DiaryImporter {
 
     final recordIds = <String>{};
     final diaries = <CanonicalDiary>[];
+    var totalActivityCount = 0;
     for (var index = 0; index < rawDiaries.length; index++) {
       final path =
           r'$.diaries['
@@ -46,6 +52,19 @@ class V1DiaryImporter implements DiaryImporter {
         item['activities'],
         '$path.activities',
       );
+      if (rawActivities.length > V1TransferValidator.maxActivitiesPerDiary) {
+        throw DiaryTransferException(
+          'invalid_document',
+          'Invalid diary backup at $path.activities: contains too many activities.',
+        );
+      }
+      totalActivityCount += rawActivities.length;
+      if (totalActivityCount > V1TransferValidator.maxTotalActivityCount) {
+        throw const DiaryTransferException(
+          'invalid_document',
+          'The diary backup contains too many activities.',
+        );
+      }
       final activities = <CanonicalActivity>[];
       for (
         var activityIndex = 0;
@@ -70,10 +89,20 @@ class V1DiaryImporter implements DiaryImporter {
         }
         activities.add(
           CanonicalActivity(
-            type: validator.string(activity, 'type', activityPath),
+            type: validator.boundedString(
+              activity,
+              'type',
+              activityPath,
+              V1TransferValidator.maxActivityTypeLength,
+            ),
             time: validator.wallClock(activity, 'time', activityPath),
             timePrecision: timePrecision,
-            details: validator.string(activity, 'details', activityPath),
+            details: validator.boundedString(
+              activity,
+              'details',
+              activityPath,
+              V1TransferValidator.maxActivityDetailsLength,
+            ),
             lastModified: validator.utcInstant(
               activity,
               'lastModified',
@@ -87,9 +116,24 @@ class V1DiaryImporter implements DiaryImporter {
         CanonicalDiary(
           recordId: recordId,
           date: validator.wallClock(item, 'date', path),
-          title: validator.string(item, 'title', path),
-          summary: validator.string(item, 'summary', path),
-          content: validator.string(item, 'content', path),
+          title: validator.boundedString(
+            item,
+            'title',
+            path,
+            V1TransferValidator.maxTitleLength,
+          ),
+          summary: validator.boundedString(
+            item,
+            'summary',
+            path,
+            V1TransferValidator.maxSummaryLength,
+          ),
+          content: validator.boundedString(
+            item,
+            'content',
+            path,
+            V1TransferValidator.maxContentLength,
+          ),
           lastModified: validator.utcInstant(item, 'lastModified', path),
           activities: List.unmodifiable(activities),
         ),

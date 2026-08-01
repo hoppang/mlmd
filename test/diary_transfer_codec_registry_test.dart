@@ -64,6 +64,32 @@ void main() {
     expect(() => registry.decode(json), throwsA(isA<DiaryTransferException>()));
   });
 
+  test('oversized diary strings are rejected', () {
+    final json = fixture('v1_valid.mlmd.json');
+    final diary = (json['diaries'] as List).single as Map<String, Object?>;
+    diary['content'] = 'x' * 1000001;
+
+    expect(
+      () => registry.decode(json),
+      throwsA(
+        isA<DiaryTransferException>().having(
+          (error) => error.code,
+          'code',
+          'invalid_document',
+        ),
+      ),
+    );
+  });
+
+  test('excessive activities per diary are rejected', () {
+    final json = fixture('v1_valid.mlmd.json');
+    final diary = (json['diaries'] as List).single as Map<String, Object?>;
+    final activity = (diary['activities'] as List).single;
+    diary['activities'] = List<Object?>.filled(1001, activity);
+
+    expect(() => registry.decode(json), throwsA(isA<DiaryTransferException>()));
+  });
+
   test('export ordering is deterministic', () {
     CanonicalDiary diary(String id, DateTime date) => CanonicalDiary(
       recordId: id,

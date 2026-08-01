@@ -1,47 +1,63 @@
 import 'dart:io';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 
 import '../utils/logger.dart';
 
-Future<void> registerLocalModelIfNeeded() async {
+/// Initializes local inference and optionally installs a model explicitly
+/// trusted by both its path and SHA-256 digest.
+///
+/// Production startup does not scan Downloads or other shared directories.
+/// A developer may opt in with [trustedModelPath] and [expectedSha256], or the
+/// corresponding `MLMD_LOCAL_MODEL_PATH` and `MLMD_LOCAL_MODEL_SHA256`
+/// environment variables on desktop builds.
+Future<void> registerLocalModelIfNeeded({
+  String? trustedModelPath,
+  String? expectedSha256,
+}) async {
   await FlutterGemma.initialize(inferenceEngines: [LiteRtLmEngine()]);
   if (FlutterGemma.hasActiveModel()) {
-    logger.i('[LLM] 기존 활성 모델을 사용합니다.');
+    logger.i('[LLM] An active local model is already registered.');
     return;
   }
 
-  final candidatePaths = <String>[
-    if (Platform.isWindows)
-      '${Platform.environment['USERPROFILE']}\\Downloads\\gemma4-e2b-it.litertlm',
-    if (Platform.isAndroid) '/sdcard/Download/gemma4-e2b-it.litertlm',
-    if (Platform.isMacOS)
-      '${Platform.environment['HOME']}/Downloads/gemma4-e2b-it.litertlm',
-  ];
-
-  String? foundPath;
-  for (final path in candidatePaths) {
-    if (await File(path).exists()) {
-      foundPath = path;
-      break;
-    }
+  final path =
+      trustedModelPath ?? Platform.environment['MLMD_LOCAL_MODEL_PATH'];
+  final expected =
+      (expectedSha256 ?? Platform.environment['MLMD_LOCAL_MODEL_SHA256'])
+          ?.trim()
+          .toLowerCase();
+  if (path == null || path.trim().isEmpty || expected == null) {
+    logger.i(
+      '[LLM] No explicitly trusted local model was configured; '
+      'local generation remains disabled.',
+    );
+    return;
   }
-
-  if (foundPath == null) {
-    logger.w('[LLM] 모델 파일을 찾을 수 없습니다. 제목 자동 생성이 비활성화됩니다.');
-    logger.i('[LLM] 다음 위치에 파일을 놓아주세요: ${candidatePaths.join(", ")}');
+  if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(expected)) {
+    logger.e('[LLM] The configured local model SHA-256 is invalid.');
     return;
   }
 
-  logger.i('[LLM] 모델 파일 발견: $foundPath — 등록 중...');
+  final file = File(path);
   try {
+    if (!await file.exists()) {
+      logger.w('[LLM] The configured local model file does not exist.');
+      return;
+    }
+    final actual = (await crypto.sha256.bind(file.openRead()).first).toString();
+    if (actual != expected) {
+      logger.e('[LLM] Local model integrity verification failed.');
+      return;
+    }
     await FlutterGemma.installModel(
       modelType: ModelType.gemma4,
       fileType: ModelFileType.litertlm,
-    ).fromFile(foundPath).install();
-    logger.i('[LLM] 모델 등록 완료.');
+    ).fromFile(file.path).install();
+    logger.i('[LLM] Verified local model registration completed.');
   } catch (error) {
-    logger.e('[LLM] 모델 등록 실패: $error');
+    logger.e('[LLM] Local model registration failed: $error');
   }
 }

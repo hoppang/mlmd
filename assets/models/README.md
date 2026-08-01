@@ -8,8 +8,16 @@
 프로젝트 루트 폴더에서 아래 Dart 스크립트를 실행하면 필요한 파일들이 이 폴더에 자동으로 다운로드됩니다.
 
 ```bash
-dart run scripts/download_model.dart
+dart run scripts/download_model.dart \
+  --revision=<full-40-character-commit-sha> \
+  --tokenizer-sha256=<verified-sha256> \
+  --tokenizer-size=<verified-byte-size> \
+  --model-sha256=<verified-sha256> \
+  --model-size=<verified-byte-size>
 ```
+
+The revision, SHA-256 digests, and exact byte sizes are mandatory. Obtain them
+from a trusted release process; do not copy values from an unverified download.
 
 ### 다운로드되는 파일
 1. `tokenizer.json` (다국어 임베딩 토크나이저)

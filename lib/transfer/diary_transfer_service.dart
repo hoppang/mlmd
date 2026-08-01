@@ -80,6 +80,9 @@ class DiaryExportOutcome {
 class DiaryTransferService {
   static const maxFileSizeInMegabytes = 100;
   static const maxFileBytes = maxFileSizeInMegabytes * 1024 * 1024;
+  static const maxAttachmentCount = 200;
+  static const maxAttachmentBytes = 25 * 1024 * 1024;
+  static const maxTotalAttachmentBytes = 75 * 1024 * 1024;
   static const _fileTooLargeMessage =
       'Diary backup files may not exceed $maxFileSizeInMegabytes MB.';
   static const _bundleMarker = 'mlmd.backup.bundle';
@@ -420,7 +423,14 @@ class DiaryTransferService {
         'The backup attachment list is invalid.',
       );
     }
+    if (value.length > maxAttachmentCount) {
+      throw const DiaryTransferException(
+        'too_many_attachments',
+        'The backup contains too many attachments.',
+      );
+    }
     final result = <PreparedBackupAttachment>[];
+    var totalDecodedBytes = 0;
     for (final raw in value) {
       final item = _stringKeyedMap(raw, field: 'attachment');
       final metadata = item['metadata'];
@@ -434,6 +444,34 @@ class DiaryTransferService {
           'A backup attachment is incomplete.',
         );
       }
+      if (!RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(expectedHash)) {
+        throw const DiaryTransferException(
+          'invalid_attachment',
+          'A backup attachment has an invalid SHA-256 digest.',
+        );
+      }
+      if (metadata.length > 32) {
+        throw const DiaryTransferException(
+          'invalid_attachment',
+          'A backup attachment has too many metadata fields.',
+        );
+      }
+      for (final entry in metadata.entries) {
+        if (entry.key is! String ||
+            (entry.value is String && (entry.value as String).length > 4096)) {
+          throw const DiaryTransferException(
+            'invalid_attachment',
+            'A backup attachment has oversized or invalid metadata.',
+          );
+        }
+      }
+      final maxEncodedLength = ((maxAttachmentBytes + 2) ~/ 3) * 4;
+      if (encodedBytes.length > maxEncodedLength) {
+        throw const DiaryTransferException(
+          'attachment_too_large',
+          'A backup attachment exceeds the allowed size.',
+        );
+      }
       Uint8List bytes;
       try {
         bytes = base64Decode(encodedBytes);
@@ -444,8 +482,21 @@ class DiaryTransferService {
           error,
         );
       }
+      if (bytes.length > maxAttachmentBytes) {
+        throw const DiaryTransferException(
+          'attachment_too_large',
+          'A backup attachment exceeds the allowed size.',
+        );
+      }
+      totalDecodedBytes += bytes.length;
+      if (totalDecodedBytes > maxTotalAttachmentBytes) {
+        throw const DiaryTransferException(
+          'attachments_too_large',
+          'The backup attachments exceed the allowed total size.',
+        );
+      }
       final actualHash = crypto.sha256.convert(bytes).toString();
-      if (actualHash != expectedHash) {
+      if (actualHash != expectedHash.toLowerCase()) {
         throw const DiaryTransferException(
           'attachment_checksum_mismatch',
           'A backup attachment failed its integrity check.',

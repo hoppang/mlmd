@@ -317,7 +317,6 @@ class LlmDiaryService implements DiaryAnalysisService {
       }
 
       final raw = buffer.toString();
-      logger.d('[LlmDiaryService] raw output:\n$raw');
       return DiaryAnalysisOutcome.success(_parse(raw, content));
     } catch (e) {
       logger.e('[LlmDiaryService] 분석 실패: $e');

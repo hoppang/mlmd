@@ -86,7 +86,7 @@ class LlmTitleService {
       final raw = buffer.toString();
       final title = _sanitizeTitle(raw);
 
-      logger.i('[LlmTitleService] 생성된 제목: "$title"');
+      logger.d('[LlmTitleService] Title generation completed.');
       return title.isNotEmpty ? title : fallback;
     } catch (e) {
       logger.e('[LlmTitleService] 제목 생성 실패: $e');

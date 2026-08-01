@@ -346,4 +346,29 @@ void main() {
       ),
     );
   });
+
+  test('backup bundles reject excessive attachment counts before decoding', () {
+    final service = DiaryTransferService(repository: repository);
+    final records = jsonDecode(utf8.decode(service.buildExportBytes()));
+    final bundle = <String, Object?>{
+      'bundle': 'mlmd.backup.bundle',
+      'bundleVersion': 1,
+      'records': records,
+      'attachments': List<Object?>.filled(
+        DiaryTransferService.maxAttachmentCount + 1,
+        null,
+      ),
+    };
+
+    expect(
+      () => service.decodeImportBytes(utf8.encode(jsonEncode(bundle))),
+      throwsA(
+        isA<DiaryTransferException>().having(
+          (error) => error.code,
+          'code',
+          'too_many_attachments',
+        ),
+      ),
+    );
+  });
 }

@@ -1,7 +1,17 @@
 import '../diary_transfer_exception.dart';
 
 class V1TransferValidator {
-  static const maxDiaryCount = 50000;
+  static const maxDiaryCount = 20000;
+  static const maxActivitiesPerDiary = 1000;
+  static const maxTotalActivityCount = 100000;
+  static const maxProfileCount = 1000;
+  static const maxAppVersionLength = 128;
+  static const maxTitleLength = 500;
+  static const maxSummaryLength = 20000;
+  static const maxContentLength = 1000000;
+  static const maxActivityTypeLength = 128;
+  static const maxActivityDetailsLength = 65536;
+  static const maxStructuredDataLength = 262144;
   static final _uuidV4 = RegExp(
     r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
   );
@@ -36,6 +46,32 @@ class V1TransferValidator {
     final value = json[key];
     if (value == null) return null;
     if (value is! String) _invalid('$path.$key', 'must be a string or null');
+    return value;
+  }
+
+  String boundedString(
+    Map<String, Object?> json,
+    String key,
+    String path,
+    int maxLength,
+  ) {
+    final value = string(json, key, path);
+    if (value.length > maxLength) {
+      _invalid('$path.$key', 'must not exceed $maxLength characters');
+    }
+    return value;
+  }
+
+  String? optionalBoundedString(
+    Map<String, Object?> json,
+    String key,
+    String path,
+    int maxLength,
+  ) {
+    final value = optionalString(json, key, path);
+    if (value != null && value.length > maxLength) {
+      _invalid('$path.$key', 'must not exceed $maxLength characters');
+    }
     return value;
   }
 

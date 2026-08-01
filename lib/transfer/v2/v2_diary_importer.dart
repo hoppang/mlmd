@@ -31,6 +31,7 @@ class V2DiaryImporter implements DiaryImporter {
     }
     final recordIds = <String>{};
     final diaries = <CanonicalDiary>[];
+    var totalActivityCount = 0;
     for (var index = 0; index < rawDiaries.length; index++) {
       final path =
           r'$.diaries['
@@ -46,6 +47,10 @@ class V2DiaryImporter implements DiaryImporter {
         authorIds: authorIds,
         deviceIds: deviceIds,
       );
+      totalActivityCount += activities.length;
+      if (totalActivityCount > V1TransferValidator.maxTotalActivityCount) {
+        _invalid(r'$.diaries', 'contains too many activities');
+      }
       final createdByAuthor = validator.uuid(
         item,
         'createdByAuthorProfileId',
@@ -79,9 +84,24 @@ class V2DiaryImporter implements DiaryImporter {
         CanonicalDiary(
           recordId: recordId,
           date: validator.wallClock(item, 'date', path),
-          title: validator.string(item, 'title', path),
-          summary: validator.string(item, 'summary', path),
-          content: validator.string(item, 'content', path),
+          title: validator.boundedString(
+            item,
+            'title',
+            path,
+            V1TransferValidator.maxTitleLength,
+          ),
+          summary: validator.boundedString(
+            item,
+            'summary',
+            path,
+            V1TransferValidator.maxSummaryLength,
+          ),
+          content: validator.boundedString(
+            item,
+            'content',
+            path,
+            V1TransferValidator.maxContentLength,
+          ),
           createdAt: validator.utcInstant(item, 'createdAt', path),
           createdByAuthorProfileId: createdByAuthor,
           createdByDeviceProfileId: createdByDevice,
@@ -95,7 +115,12 @@ class V2DiaryImporter implements DiaryImporter {
     diaries.sort((a, b) => a.date.compareTo(b.date));
     return CanonicalImportDocument(
       exportedAt: validator.utcInstant(json, 'exportedAt', r'$'),
-      appVersion: validator.string(json, 'appVersion', r'$'),
+      appVersion: validator.boundedString(
+        json,
+        'appVersion',
+        r'$',
+        V1TransferValidator.maxAppVersionLength,
+      ),
       authorProfiles: List.unmodifiable(authors),
       deviceProfiles: List.unmodifiable(devices),
       diaries: List.unmodifiable(diaries),
@@ -104,6 +129,9 @@ class V2DiaryImporter implements DiaryImporter {
 
   List<CanonicalAuthorProfile> _authors(Map<String, Object?> json) {
     final raw = validator.list(json['authorProfiles'], r'$.authorProfiles');
+    if (raw.length > V1TransferValidator.maxProfileCount) {
+      _invalid(r'$.authorProfiles', 'contains too many profiles');
+    }
     final ids = <String>{};
     final result = <CanonicalAuthorProfile>[];
     for (var index = 0; index < raw.length; index++) {
@@ -135,6 +163,9 @@ class V2DiaryImporter implements DiaryImporter {
 
   List<CanonicalDeviceProfile> _devices(Map<String, Object?> json) {
     final raw = validator.list(json['deviceProfiles'], r'$.deviceProfiles');
+    if (raw.length > V1TransferValidator.maxProfileCount) {
+      _invalid(r'$.deviceProfiles', 'contains too many profiles');
+    }
     final ids = <String>{};
     final result = <CanonicalDeviceProfile>[];
     for (var index = 0; index < raw.length; index++) {
@@ -161,6 +192,9 @@ class V2DiaryImporter implements DiaryImporter {
     required Set<String> deviceIds,
   }) {
     final raw = validator.list(diary['activities'], '$path.activities');
+    if (raw.length > V1TransferValidator.maxActivitiesPerDiary) {
+      _invalid('$path.activities', 'contains too many activities');
+    }
     final result = <CanonicalActivity>[];
     for (var index = 0; index < raw.length; index++) {
       final activityPath = '$path.activities[$index]';
@@ -204,14 +238,25 @@ class V2DiaryImporter implements DiaryImporter {
       );
       result.add(
         CanonicalActivity(
-          type: validator.string(item, 'type', activityPath),
+          type: validator.boundedString(
+            item,
+            'type',
+            activityPath,
+            V1TransferValidator.maxActivityTypeLength,
+          ),
           time: validator.wallClock(item, 'time', activityPath),
           timePrecision: timePrecision,
-          details: validator.string(item, 'details', activityPath),
-          structuredDataJson: validator.optionalString(
+          details: validator.boundedString(
+            item,
+            'details',
+            activityPath,
+            V1TransferValidator.maxActivityDetailsLength,
+          ),
+          structuredDataJson: validator.optionalBoundedString(
             item,
             'structuredDataJson',
             activityPath,
+            V1TransferValidator.maxStructuredDataLength,
           ),
           createdAt: validator.utcInstant(item, 'createdAt', activityPath),
           createdByAuthorProfileId: createdByAuthor,
