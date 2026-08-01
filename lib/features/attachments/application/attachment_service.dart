@@ -808,6 +808,11 @@ final attachmentRepositoryProvider = Provider<AttachmentRepository>((ref) {
 final attachmentFileStoreProvider = FutureProvider<AttachmentFileStore>((
   ref,
 ) async {
+  // Application documents are app-private on Android. The manifest and both
+  // Android backup rule formats exclude this directory from cloud backup and
+  // device-to-device transfer because attachments may contain medical data.
+  // Keep the existing location: persisted metadata contains absolute file URIs,
+  // so moving it without a coordinated migration would orphan user files.
   final documents = await getApplicationDocumentsDirectory();
   return LocalAttachmentFileStore(
     Directory(p.join(documents.path, 'mlmd-managed')),

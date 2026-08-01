@@ -44,6 +44,14 @@ class ObjectBoxHelper {
   }
 
   /// 데이터베이스 저장 공간을 열고 초기화합니다.
+  /// Opens the database in the platform's app-private documents directory.
+  ///
+  /// On Android this directory is sandboxed from other apps. The Android
+  /// manifest and backup rules also exclude it from cloud backup and
+  /// device-to-device transfer because it contains sensitive family data.
+  /// ObjectBox for Dart does not expose database-at-rest encryption, and moving
+  /// this existing store without a migration would risk data loss. At-rest
+  /// protection therefore relies on the device file system and screen lock.
   static Future<ObjectBoxHelper> create() async {
     final docsDir = await getApplicationDocumentsDirectory();
     final storePath = p.join(docsDir.path, "obx-db");
