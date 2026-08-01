@@ -1,9 +1,27 @@
 # Miscellaneous
 *.class
 *.lock
+!pubspec.lock
 *.log
 *.pyc
 *.swp
+.env
+.env.*
+!.env.example
+!*.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+**/firebase-adminsdk*.json
+**/service-account*.json
+!**/google-services.example.json
+!**/GoogleService-Info.example.plist
+!**/firebase_options.example.dart
 .buildlog/
 .history
 
@@ -48,10 +66,13 @@ unlinked_spec.ds
 
 # Android related
 **/android/**/gradle-wrapper.jar
+!android/gradle/wrapper/gradle-wrapper.jar
 .gradle/
 **/android/captures/
 **/android/gradlew
 **/android/gradlew.bat
+!android/gradlew
+!android/gradlew.bat
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties

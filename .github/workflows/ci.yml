@@ -10,22 +10,52 @@ on:
       - main
       - master
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        # v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Verify vendored executable artifacts
+        # Wrapper digest is published by Gradle for v9.1.0.
+        # lib/objectbox.dll is from the verified ObjectBox C v5.3.2
+        # objectbox-windows-x64.zip release asset.
+        run: |
+          echo "76805e32c009c0cf0dd5d206bddc9fb22ea42e84db904b764f3047de095493f3  android/gradle/wrapper/gradle-wrapper.jar" \
+            | sha256sum --check --strict
+          echo "614d00e1f6c7b23d676e784c39b67f56ed6a7889d172e7080ac52122d4695c6e  lib/objectbox.dll" \
+            | sha256sum --check --strict
+
+      - name: Verify Gradle wrapper
+        # Generated artifacts from the official Gradle v9.1.0 distribution
+        # and source tag (commit e45a8dbf2470c2e2474ccc25be9f49331406a07e).
+        run: |
+          echo "76805e32c009c0cf0dd5d206bddc9fb22ea42e84db904b764f3047de095493f3  android/gradle/wrapper/gradle-wrapper.jar" \
+            | sha256sum --check --strict
+          echo "b2fe376b143a459ba5d0bd290dc89beed5399fc6d159cd1214bd642ea94bcf07  android/gradlew" \
+            | sha256sum --check --strict
+          echo "9386e790d58b9368ca8e034536a5baa688643d51cb37bfa462503d36fd0291a6  android/gradlew.bat" \
+            | sha256sum --check --strict
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        # v2.23.0
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
           channel: 'stable'
+          flutter-version: '3.44.7'
           cache: true
 
       - name: Install dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
@@ -34,7 +64,21 @@ jobs:
         run: flutter analyze
 
       - name: Install ObjectBox for tests
-        run: bash <(curl -s https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh)
+        env:
+          OBJECTBOX_VERSION: '5.3.2'
+          OBJECTBOX_SHA256: '6dbb5450c36dd11ee9074f16ecc61e79b45ff43c2082934601f3166b39c8a613'
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/objectbox-linux-x64.tar.gz"
+          extract_dir="${RUNNER_TEMP}/objectbox-${OBJECTBOX_VERSION}"
+          curl --proto '=https' --tlsv1.2 --fail --location --retry 3 \
+            --output "${archive}" \
+            "https://github.com/objectbox/objectbox-c/releases/download/v${OBJECTBOX_VERSION}/objectbox-linux-x64.tar.gz"
+          echo "${OBJECTBOX_SHA256}  ${archive}" | sha256sum --check --strict
+          mkdir -p "${extract_dir}"
+          tar --extract --gzip --file "${archive}" --directory "${extract_dir}"
+          sudo install -m 0755 "${extract_dir}/lib/libobjectbox.so" /usr/lib/libobjectbox.so
+          sudo ldconfig
 
       - name: Run tests
         run: flutter test

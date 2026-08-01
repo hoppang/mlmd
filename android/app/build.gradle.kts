@@ -1,7 +1,33 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val releaseSigningProperties = Properties()
+val releaseSigningPropertiesFile = rootProject.file("key.properties")
+if (releaseSigningPropertiesFile.isFile) {
+    FileInputStream(releaseSigningPropertiesFile).use {
+        releaseSigningProperties.load(it)
+    }
+}
+
+fun releaseSigningValue(environmentName: String, propertyName: String): String? =
+    System.getenv(environmentName)?.takeIf { it.isNotBlank() }
+        ?: releaseSigningProperties.getProperty(propertyName)?.takeIf { it.isNotBlank() }
+
+val releaseStorePath = releaseSigningValue("MLMD_KEYSTORE_PATH", "storeFile")
+val releaseStorePassword = releaseSigningValue("MLMD_KEYSTORE_PASSWORD", "storePassword")
+val releaseKeyAlias = releaseSigningValue("MLMD_KEY_ALIAS", "keyAlias")
+val releaseKeyPassword = releaseSigningValue("MLMD_KEY_PASSWORD", "keyPassword")
+val releaseStoreFile = releaseStorePath?.let { rootProject.file(it) }
+val hasReleaseSigning = releaseStoreFile?.isFile == true &&
+    releaseStorePassword != null && releaseKeyAlias != null && releaseKeyPassword != null
+val releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
 }
 
 android {
@@ -25,11 +51,28 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = releaseStoreFile!!
+                storePassword = releaseStorePassword!!
+                keyAlias = releaseKeyAlias!!
+                keyPassword = releaseKeyPassword!!
+            }
+        }
+    }
+
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            } else if (releaseBuildRequested) {
+                throw GradleException(
+                    "Release signing is not configured. Set MLMD_KEYSTORE_PATH, " +
+                        "MLMD_KEYSTORE_PASSWORD, MLMD_KEY_ALIAS, and MLMD_KEY_PASSWORD " +
+                        "or provide android/key.properties. Debug keys are never used for release builds.",
+                )
+            }
         }
     }
 }

@@ -64,24 +64,48 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
-# Download and copy onnxruntime.dll if not present
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime/onnxruntime.dll")
-  message(STATUS "Downloading ONNX Runtime 1.23.0 DLL...")
+# Download ONNX Runtime into the build tree and verify the release artifact.
+set(ONNXRUNTIME_VERSION "1.23.0")
+set(ONNXRUNTIME_ARCHIVE
+  "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime-win-x64-${ONNXRUNTIME_VERSION}.zip")
+set(ONNXRUNTIME_EXTRACT_DIR
+  "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime-win-x64-${ONNXRUNTIME_VERSION}")
+set(ONNXRUNTIME_DLL
+  "${ONNXRUNTIME_EXTRACT_DIR}/lib/onnxruntime.dll")
+
+if(NOT EXISTS "${ONNXRUNTIME_DLL}")
+  message(STATUS "Downloading ONNX Runtime ${ONNXRUNTIME_VERSION} DLL...")
   file(DOWNLOAD
-    "https://github.com/microsoft/onnxruntime/releases/download/v1.23.0/onnxruntime-win-x64-1.23.0.zip"
-    "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime.zip"
+    "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-win-x64-${ONNXRUNTIME_VERSION}.zip"
+    "${ONNXRUNTIME_ARCHIVE}"
+    EXPECTED_HASH
+      "SHA256=72c23470310ec79a7d42d27fe9d257e6c98540c73fa5a1db1f67f538c6c16f2f"
+    STATUS ONNXRUNTIME_DOWNLOAD_STATUS
+    TLS_VERIFY ON
+    TIMEOUT 120
+    INACTIVITY_TIMEOUT 30
     SHOW_PROGRESS
   )
-  message(STATUS "Extracting ONNX Runtime 1.23.0 DLL...")
+
+  list(GET ONNXRUNTIME_DOWNLOAD_STATUS 0 ONNXRUNTIME_DOWNLOAD_CODE)
+  list(GET ONNXRUNTIME_DOWNLOAD_STATUS 1 ONNXRUNTIME_DOWNLOAD_MESSAGE)
+  if(NOT ONNXRUNTIME_DOWNLOAD_CODE EQUAL 0)
+    file(REMOVE "${ONNXRUNTIME_ARCHIVE}")
+    message(FATAL_ERROR
+      "Failed to download ONNX Runtime: ${ONNXRUNTIME_DOWNLOAD_MESSAGE}")
+  endif()
+
+  message(STATUS "Extracting ONNX Runtime ${ONNXRUNTIME_VERSION} DLL...")
   execute_process(
-    COMMAND ${CMAKE_COMMAND} -E tar xf "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime.zip"
+    COMMAND ${CMAKE_COMMAND} -E tar xf "${ONNXRUNTIME_ARCHIVE}"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    RESULT_VARIABLE ONNXRUNTIME_EXTRACT_RESULT
   )
-  file(COPY "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime-win-x64-1.23.0/lib/onnxruntime.dll"
-    DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime"
-  )
-  file(REMOVE "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime.zip")
-  file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime-win-x64-1.23.0")
+  file(REMOVE "${ONNXRUNTIME_ARCHIVE}")
+  if(NOT ONNXRUNTIME_EXTRACT_RESULT EQUAL 0 OR NOT EXISTS "${ONNXRUNTIME_DLL}")
+    file(REMOVE_RECURSE "${ONNXRUNTIME_EXTRACT_DIR}")
+    message(FATAL_ERROR "Failed to extract the verified ONNX Runtime archive")
+  endif()
 endif()
 
 # === Installation ===
@@ -114,7 +138,7 @@ if(PLUGIN_BUNDLED_LIBRARIES)
 endif()
 
 # Install onnxruntime.dll next to executable
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime/onnxruntime.dll"
+install(FILES "${ONNXRUNTIME_DLL}"
   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
