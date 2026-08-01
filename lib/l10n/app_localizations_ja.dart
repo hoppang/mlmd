@@ -1454,6 +1454,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get editStartTime => '開始時刻を修正';
 
   @override
+  String get sleepDateYesterday => '昨日';
+
+  @override
+  String get sleepDateOther => '別の日付';
+
+  @override
+  String sleepAdjustEarlier(int minutes) {
+    return '$minutes分早める';
+  }
+
+  @override
+  String sleepAdjustLater(int minutes) {
+    return '$minutes分遅らせる';
+  }
+
+  @override
   String get addSleepMarkers => '状態を追加';
 
   @override

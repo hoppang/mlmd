@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../domain/sleep_record.dart';
+import 'sleep_date_time_picker.dart';
 
 class SleepFormResult {
   const SleepFormResult({required this.record, required this.details});
@@ -59,24 +60,21 @@ class _SleepEventFormState extends State<SleepEventForm> {
     super.dispose();
   }
 
-  Future<DateTime?> _pickDateTime(DateTime initial) async {
-    final date = await showDatePicker(
+  Future<DateTime?> _pickDateTime(DateTime initial, String title) async {
+    return showSleepDateTimePicker(
       context: context,
-      initialDate: initial,
+      title: title,
+      initialValue: initial,
       firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      lastDate: DateTime.now(),
     );
-    if (date == null || !mounted) return null;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initial),
-    );
-    if (time == null) return null;
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
   Future<void> _changeStart() async {
-    final value = await _pickDateTime(_startedAt);
+    final value = await _pickDateTime(
+      _startedAt,
+      AppLocalizations.of(context)!.sleepStartTime,
+    );
     if (value == null || !mounted) return;
     setState(() {
       _startedAt = value;
@@ -88,7 +86,10 @@ class _SleepEventFormState extends State<SleepEventForm> {
   }
 
   Future<void> _changeEnd() async {
-    final value = await _pickDateTime(_endedAt);
+    final value = await _pickDateTime(
+      _endedAt,
+      AppLocalizations.of(context)!.sleepEndTime,
+    );
     if (value == null || !mounted) return;
     setState(() {
       _endedAt = value;

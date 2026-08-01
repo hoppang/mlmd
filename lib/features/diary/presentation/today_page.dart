@@ -18,6 +18,7 @@ import '../../duplicate_review/application/duplicate_review_notifier.dart';
 import '../../events/domain/medical_guidance.dart';
 import '../../events/domain/sleep_record.dart';
 import '../../events/presentation/medical_guidance_widgets.dart';
+import '../../events/presentation/sleep_date_time_picker.dart';
 import '../../events/presentation/sleep_event_form.dart';
 import '../../../models/duplicate_review_edge_entity.dart';
 import '../../profiles/presentation/record_author_tag.dart';
@@ -239,25 +240,14 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         recordId == null) {
       return;
     }
-    final date = await showDatePicker(
+    final value = await showSleepDateTimePicker(
       context: context,
-      initialDate: record.startedAt,
+      title: AppLocalizations.of(context)!.editStartTime,
+      initialValue: record.startedAt,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(record.startedAt),
-    );
-    if (time == null) return;
-    final value = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    if (value == null || !mounted) return;
     if (value.isAfter(DateTime.now())) return;
     await ref
         .read(diaryListProvider.notifier)

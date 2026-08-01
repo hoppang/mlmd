@@ -1509,6 +1509,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editStartTime => 'Edit start time';
 
   @override
+  String get sleepDateYesterday => 'Yesterday';
+
+  @override
+  String get sleepDateOther => 'Other date';
+
+  @override
+  String sleepAdjustEarlier(int minutes) {
+    return 'Move $minutes minutes earlier';
+  }
+
+  @override
+  String sleepAdjustLater(int minutes) {
+    return 'Move $minutes minutes later';
+  }
+
+  @override
   String get addSleepMarkers => 'Add observations';
 
   @override

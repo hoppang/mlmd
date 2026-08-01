@@ -2763,6 +2763,30 @@ abstract class AppLocalizations {
   /// **'시작 시각 수정'**
   String get editStartTime;
 
+  /// No description provided for @sleepDateYesterday.
+  ///
+  /// In ko, this message translates to:
+  /// **'어제'**
+  String get sleepDateYesterday;
+
+  /// No description provided for @sleepDateOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 날짜'**
+  String get sleepDateOther;
+
+  /// No description provided for @sleepAdjustEarlier.
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분 앞당기기'**
+  String sleepAdjustEarlier(int minutes);
+
+  /// No description provided for @sleepAdjustLater.
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분 늦추기'**
+  String sleepAdjustLater(int minutes);
+
   /// No description provided for @addSleepMarkers.
   ///
   /// In ko, this message translates to:

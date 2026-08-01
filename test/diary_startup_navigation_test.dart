@@ -72,6 +72,7 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   int sleepStartCallCount = 0;
   bool sleepStartCreated = true;
   ActivityEntity? completedSleep;
+  DateTime? editedSleepStart;
   String? reopenedSleepRecordId;
   List<SleepRecordMarker>? updatedSleepMarkers;
 
@@ -195,6 +196,11 @@ class _TestDiaryListNotifier extends DiaryListNotifier {
   @override
   Future<void> reopenSleep(String recordId) async {
     reopenedSleepRecordId = recordId;
+  }
+
+  @override
+  Future<void> editActiveSleepStart(String recordId, DateTime startedAt) async {
+    editedSleepStart = startedAt;
   }
 
   @override
@@ -975,6 +981,24 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('edit-active-sleep-start')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('edit-active-sleep-start')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('sleep-hour-wheel')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('adjust-sleep-time--1')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('apply-sleep-date-time')));
+    await tester.pumpAndSettle();
+    expect(
+      notifier.editedSleepStart,
+      DateTime(
+        startedAt.year,
+        startedAt.month,
+        startedAt.day,
+        startedAt.hour,
+        startedAt.minute - 1,
+      ),
+    );
+
     await tester.tap(find.byKey(const Key('end-active-sleep')));
     await tester.pumpAndSettle();
 

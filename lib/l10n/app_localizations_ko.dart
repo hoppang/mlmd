@@ -1463,6 +1463,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get editStartTime => '시작 시각 수정';
 
   @override
+  String get sleepDateYesterday => '어제';
+
+  @override
+  String get sleepDateOther => '다른 날짜';
+
+  @override
+  String sleepAdjustEarlier(int minutes) {
+    return '$minutes분 앞당기기';
+  }
+
+  @override
+  String sleepAdjustLater(int minutes) {
+    return '$minutes분 늦추기';
+  }
+
+  @override
   String get addSleepMarkers => '상태 추가';
 
   @override
