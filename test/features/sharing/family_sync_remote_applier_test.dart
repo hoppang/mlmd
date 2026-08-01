@@ -309,10 +309,17 @@ void main() {
     expect(objectBox.careTaskBox.getAll(), hasLength(1));
     expect(objectBox.careTaskOccurrenceBox.getAll(), hasLength(1));
     expect(
+      objectBox.authorProfileBox.getAll().where(
+        (item) => item.authorProfileId == 'remote-author',
+      ),
+      hasLength(1),
+    );
+    expect(
       objectBox.authorProfileBox
           .getAll()
-          .where((item) => item.authorProfileId == 'remote-author'),
-      hasLength(1),
+          .singleWhere((item) => item.authorProfileId == 'remote-author')
+          .isCurrent,
+      isFalse,
     );
     final storedAttachment = Box<AttachmentEntity>(store).getAll().single;
     expect(storedAttachment.toDomain()!.missingReason, 'binary_not_shared');
@@ -320,6 +327,168 @@ void main() {
     expect(
       Box<SharedCustomEventDefinitionEntity>(store).getAll(),
       hasLength(1),
+    );
+  });
+
+  test('ignores mismatched IDs, family spaces, and revisions', () {
+    final validPayload = <String, Object?>{
+      'recordId': 'record-2',
+      'revision': 1,
+      'type': 'meal',
+      'time': '2026-07-29T10:15:00.000Z',
+      'timePrecision': ActivityEntity.timePrecisionExact,
+      'details': 'milk',
+      'lastModified': '2026-07-29T10:15:00.000Z',
+    };
+
+    final attacks = [
+      _change(
+        entityType: FamilySyncPayloads.activity,
+        entityId: 'different-record',
+        revision: 1,
+        payload: validPayload,
+      ),
+      SyncChange(
+        changeId: 'wrong-family',
+        familySpaceId: 'family-2',
+        sourceDeviceProfileId: 'remote-device',
+        sourceAuthorProfileId: 'remote-author',
+        entityType: FamilySyncPayloads.activity,
+        entityId: 'record-2',
+        entityRevision: 1,
+        operation: SyncOperation.create,
+        payload: validPayload,
+        occurredAt: DateTime.utc(2026, 7, 29),
+      ),
+      _change(
+        entityType: FamilySyncPayloads.activity,
+        entityId: 'record-2',
+        revision: 2,
+        payload: validPayload,
+      ),
+      _change(
+        entityType: FamilySyncPayloads.customEventDefinition,
+        entityId: 'custom-2',
+        revision: 1,
+        payload: {
+          'customEventTypeId': 'custom-2',
+          'familySpaceId': 'family-2',
+          'name': 'Injected',
+          'revision': 1,
+          'createdByAuthorProfileId': 'remote-author',
+          'createdByDeviceProfileId': 'remote-device',
+          'lastModifiedByAuthorProfileId': 'remote-author',
+          'lastModifiedByDeviceProfileId': 'remote-device',
+          'createdAt': '2026-07-29T10:15:00.000Z',
+          'updatedAt': '2026-07-29T10:15:00.000Z',
+        },
+      ),
+    ];
+
+    expect(
+      attacks.map(applier.call).map((result) => result.disposition),
+      everyElement(RemoteApplyDisposition.ignored),
+    );
+    expect(objectBox.activityBox.getAll(), isEmpty);
+    expect(Box<SharedCustomEventDefinitionEntity>(store).getAll(), isEmpty);
+  });
+
+  test('ignores malformed types, dates, enums, JSON, and oversized text', () {
+    final malformed = [
+      _change(
+        entityType: FamilySyncPayloads.activity,
+        entityId: 'record-bad-type',
+        revision: 1,
+        payload: {
+          'recordId': 'record-bad-type',
+          'revision': 1,
+          'type': 'meal',
+          'time': 'not-a-date',
+          'timePrecision': 1,
+          'details': 'milk',
+          'lastModified': '2026-07-29T10:15:00.000Z',
+        },
+      ),
+      _change(
+        entityType: FamilySyncPayloads.careTaskOccurrence,
+        entityId: 'occurrence-bad-enum',
+        revision: 1,
+        payload: {
+          'occurrenceId': 'occurrence-bad-enum',
+          'taskId': 'task-1',
+          'scheduledAt': '2026-07-29T10:15:00.000Z',
+          'status': 'owned-by-attacker',
+        },
+      ),
+      _change(
+        entityType: FamilySyncPayloads.duplicateDecision,
+        entityId: 'a|b',
+        revision: 1,
+        payload: {
+          'pairKey': 'a|b',
+          'recordAId': 'a',
+          'recordBId': 'b',
+          'status': DuplicateReviewEdgeEntity.statusSameEvent,
+          'signatureA': 'a',
+          'signatureB': 'b',
+          'revisionA': 1,
+          'revisionB': 1,
+          'detectionReasonsJson': '{broken',
+          'detectedAt': '2026-07-29T10:15:00.000Z',
+          'detectorVersion': 'test',
+        },
+      ),
+      _change(
+        entityType: FamilySyncPayloads.authorProfile,
+        entityId: 'author-long',
+        revision: 1,
+        payload: {
+          'authorProfileId': 'author-long',
+          'nickname': 'x' * 129,
+          'colorValue': 0xff000000,
+          'createdAt': '2026-07-29T10:15:00.000Z',
+        },
+      ),
+    ];
+
+    expect(
+      malformed.map(applier.call).map((result) => result.disposition),
+      everyElement(RemoteApplyDisposition.ignored),
+    );
+    expect(objectBox.activityBox.getAll(), isEmpty);
+    expect(objectBox.careTaskOccurrenceBox.getAll(), isEmpty);
+    expect(objectBox.duplicateReviewEdgeBox.getAll(), isEmpty);
+    expect(
+      objectBox.authorProfileBox.getAll().where(
+        (item) => item.authorProfileId == 'author-long',
+      ),
+      isEmpty,
+    );
+  });
+
+  test('never accepts remote isCurrent state', () {
+    final result = applier(
+      _change(
+        entityType: FamilySyncPayloads.authorProfile,
+        entityId: 'remote-current',
+        revision: 1,
+        payload: {
+          'authorProfileId': 'remote-current',
+          'nickname': 'Remote',
+          'colorValue': 0xff123456,
+          'createdAt': '2026-07-29T10:15:00.000Z',
+          'isCurrent': true,
+        },
+      ),
+    );
+
+    expect(result.disposition, RemoteApplyDisposition.applied);
+    expect(
+      objectBox.authorProfileBox
+          .getAll()
+          .singleWhere((item) => item.authorProfileId == 'remote-current')
+          .isCurrent,
+      isFalse,
     );
   });
 }

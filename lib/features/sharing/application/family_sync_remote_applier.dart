@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:objectbox/objectbox.dart' hide SyncChange;
 
 import '../../../data/objectbox_helper.dart';
@@ -21,23 +23,33 @@ class FamilySyncRemoteApplier {
   final CustomEventRepository _customEvents;
 
   RemoteApplyResult call(SyncChange change) {
-    switch (change.entityType) {
-      case 'activity':
-        return _applyActivity(change);
-      case 'careTask':
-        return _applyCareTask(change);
-      case 'careTaskOccurrence':
-        return _applyOccurrence(change);
-      case 'authorProfile':
-        return _applyAuthor(change);
-      case 'attachmentMetadata':
-        return _applyAttachment(change);
-      case 'duplicateDecision':
-        return _applyDuplicateDecision(change);
-      case 'customEventDefinition':
-        return _applyCustomEventDefinition(change);
-      default:
-        return const RemoteApplyResult.ignored();
+    if (change.familySpaceId != _customEvents.familySpaceId ||
+        !_FamilySyncPayloadValidator.isValid(change)) {
+      return const RemoteApplyResult.ignored();
+    }
+    try {
+      switch (change.entityType) {
+        case 'activity':
+          return _applyActivity(change);
+        case 'careTask':
+          return _applyCareTask(change);
+        case 'careTaskOccurrence':
+          return _applyOccurrence(change);
+        case 'authorProfile':
+          return _applyAuthor(change);
+        case 'attachmentMetadata':
+          return _applyAttachment(change);
+        case 'duplicateDecision':
+          return _applyDuplicateDecision(change);
+        case 'customEventDefinition':
+          return _applyCustomEventDefinition(change);
+        default:
+          return const RemoteApplyResult.ignored();
+      }
+    } on FormatException {
+      return const RemoteApplyResult.ignored();
+    } on TypeError {
+      return const RemoteApplyResult.ignored();
     }
   }
 
@@ -385,7 +397,8 @@ class FamilySyncRemoteApplier {
       nickname: payload['nickname']! as String,
       colorValue: payload['colorValue']! as int,
       createdAt: DateTime.parse(payload['createdAt']! as String),
-      isCurrent: payload['isCurrent'] as bool? ?? false,
+      // Device-local selection must never be controlled by a remote peer.
+      isCurrent: false,
     );
   }
 
@@ -550,4 +563,236 @@ class FamilySyncRemoteApplier {
 
   Box<SharedCustomEventDefinitionEntity> get _customEventBox =>
       Box<SharedCustomEventDefinitionEntity>(_objectBox.store);
+}
+
+/// Validates the untrusted provider boundary before it reaches ObjectBox.
+/// Unknown fields remain allowed for forwards compatibility, while every
+/// field consumed by this client is checked explicitly.
+abstract final class _FamilySyncPayloadValidator {
+  static const _maxId = 256;
+  static const _maxText = 4096;
+  static const _maxJson = 65536;
+
+  static bool isValid(SyncChange change) {
+    if (!_requiredString(change.changeId, _maxId) ||
+        !_requiredString(change.entityId, _maxId) ||
+        !_requiredString(change.familySpaceId, _maxId) ||
+        !_requiredString(change.sourceDeviceProfileId, _maxId) ||
+        !_requiredString(change.sourceAuthorProfileId, _maxId) ||
+        change.entityRevision < 1 ||
+        change.entityRevision > 0x7fffffffffffffff ||
+        change.payload.length > 40) {
+      return false;
+    }
+
+    if (change.operation == SyncOperation.delete) {
+      // Deletion is currently defined only for activities. Requiring an empty
+      // payload also prevents hidden, unvalidated data from crossing the edge.
+      return change.entityType == FamilySyncPayloads.activity &&
+          change.payload.isEmpty;
+    }
+
+    final p = change.payload;
+    switch (change.entityType) {
+      case FamilySyncPayloads.activity:
+        return _sameId(p, 'recordId', change.entityId) &&
+            _integer(p, 'revision', min: 1) == change.entityRevision &&
+            _string(p, 'type', max: 128) &&
+            _date(p, 'time') &&
+            _enumInt(p, 'timePrecision', const {0, 1}) &&
+            _string(p, 'details', max: _maxJson, allowEmpty: true) &&
+            _jsonString(p, 'structuredDataJson', optional: true) &&
+            _optionalString(p, 'customEventTypeId', _maxId) &&
+            _optionalString(p, 'customEventNameSnapshot', _maxText) &&
+            _date(p, 'lastModified') &&
+            _date(p, 'createdAt', optional: true) &&
+            _identityFields(p);
+      case FamilySyncPayloads.careTask:
+        return _sameId(p, 'taskId', change.entityId) &&
+            (p['childId'] == null ||
+                _string(p, 'childId', max: _maxId, allowEmpty: true)) &&
+            _string(p, 'title', max: _maxText) &&
+            _optionalString(p, 'recurrenceRule', _maxText) &&
+            _optionalString(p, 'assignedToAuthorProfileId', _maxId) &&
+            _enumString(p, 'notificationMode', const {
+              'inAppOnly',
+              'quietToAssignee',
+            }, optional: true) &&
+            _optionalString(p, 'linkedCategory', 128) &&
+            _jsonString(p, 'linkedEventTemplateJson', optional: true) &&
+            _date(p, 'createdAt') &&
+            _date(p, 'archivedAt', optional: true) &&
+            _identityFields(p);
+      case FamilySyncPayloads.careTaskOccurrence:
+        return _sameId(p, 'occurrenceId', change.entityId) &&
+            _string(p, 'taskId', max: _maxId) &&
+            _date(p, 'scheduledAt') &&
+            _enumString(p, 'status', const {
+              'scheduled',
+              'due',
+              'completed',
+              'skipped',
+            }, optional: true) &&
+            _date(p, 'completedAt', optional: true) &&
+            _optionalString(p, 'completedByAuthorProfileId', _maxId) &&
+            _optionalString(p, 'completedOnDeviceProfileId', _maxId) &&
+            _optionalString(p, 'linkedRecordId', _maxId);
+      case FamilySyncPayloads.authorProfile:
+        return _sameId(p, 'authorProfileId', change.entityId) &&
+            _string(p, 'nickname', max: 128) &&
+            _integer(p, 'colorValue', min: 0, max: 0xffffffff) != null &&
+            _date(p, 'createdAt') &&
+            (p['isCurrent'] == null || p['isCurrent'] is bool);
+      case FamilySyncPayloads.attachmentMetadata:
+        return _sameId(p, 'attachmentId', change.entityId) &&
+            _string(p, 'recordId', max: _maxId) &&
+            _enumString(
+              p,
+              'attachmentType',
+              AttachmentType.values.map((e) => e.name).toSet(),
+            ) &&
+            _string(p, 'fileName', max: 255) &&
+            _string(p, 'mimeType', max: 128) &&
+            _enumString(
+              p,
+              'sourceKind',
+              AttachmentSourceKind.values.map((e) => e.name).toSet(),
+            ) &&
+            _date(p, 'createdAt') &&
+            _date(p, 'deletedAt', optional: true) &&
+            _integer(p, 'originalByteSize', min: 0, optional: true) != null &&
+            _optionalSha256(p, 'originalSha256') &&
+            _optionalString(p, 'missingReason', _maxText) &&
+            _identityFields(p);
+      case FamilySyncPayloads.duplicateDecision:
+        return _sameId(p, 'pairKey', change.entityId) &&
+            _string(p, 'recordAId', max: _maxId) &&
+            _string(p, 'recordBId', max: _maxId) &&
+            p['recordAId'] != p['recordBId'] &&
+            _enumString(p, 'status', const {
+              DuplicateReviewEdgeEntity.statusPending,
+              DuplicateReviewEdgeEntity.statusSameEvent,
+              DuplicateReviewEdgeEntity.statusDistinctEvents,
+            }) &&
+            _string(p, 'signatureA', max: _maxText) &&
+            _string(p, 'signatureB', max: _maxText) &&
+            _integer(p, 'revisionA', min: 1) != null &&
+            _integer(p, 'revisionB', min: 1) != null &&
+            _jsonString(p, 'detectionReasonsJson') &&
+            _date(p, 'detectedAt') &&
+            _string(p, 'detectorVersion', max: 128) &&
+            _optionalString(p, 'representativeRecordId', _maxId) &&
+            _optionalString(p, 'logicalGroupId', _maxId) &&
+            _date(p, 'deferredAt', optional: true) &&
+            _optionalString(p, 'resolvedByAuthorProfileId', _maxId) &&
+            _optionalString(p, 'resolvedByDeviceProfileId', _maxId) &&
+            _date(p, 'resolvedAt', optional: true);
+      case FamilySyncPayloads.customEventDefinition:
+        return _sameId(p, 'customEventTypeId', change.entityId) &&
+            p['familySpaceId'] == change.familySpaceId &&
+            _string(p, 'familySpaceId', max: _maxId) &&
+            _string(p, 'name', max: 128) &&
+            _integer(p, 'revision', min: 1) == change.entityRevision &&
+            _string(p, 'createdByAuthorProfileId', max: _maxId) &&
+            _string(p, 'createdByDeviceProfileId', max: _maxId) &&
+            _string(p, 'lastModifiedByAuthorProfileId', max: _maxId) &&
+            _string(p, 'lastModifiedByDeviceProfileId', max: _maxId) &&
+            _date(p, 'createdAt') &&
+            _date(p, 'updatedAt') &&
+            _date(p, 'archivedAt', optional: true);
+      default:
+        return false;
+    }
+  }
+
+  static bool _sameId(Map<String, Object?> p, String key, String id) =>
+      _string(p, key, max: _maxId) && p[key] == id;
+
+  static bool _identityFields(Map<String, Object?> p) =>
+      _optionalString(p, 'createdByAuthorProfileId', _maxId) &&
+      _optionalString(p, 'createdByDeviceProfileId', _maxId) &&
+      _optionalString(p, 'lastModifiedByAuthorProfileId', _maxId) &&
+      _optionalString(p, 'lastModifiedByDeviceProfileId', _maxId);
+
+  static bool _requiredString(String value, int max) =>
+      value.isNotEmpty && value.length <= max;
+
+  static bool _string(
+    Map<String, Object?> p,
+    String key, {
+    required int max,
+    bool allowEmpty = false,
+  }) {
+    final value = p[key];
+    return value is String &&
+        value.length <= max &&
+        (allowEmpty || value.isNotEmpty);
+  }
+
+  static bool _optionalString(Map<String, Object?> p, String key, int max) =>
+      p[key] == null || _string(p, key, max: max);
+
+  static int? _integer(
+    Map<String, Object?> p,
+    String key, {
+    int? min,
+    int? max,
+    bool optional = false,
+  }) {
+    final value = p[key];
+    if (value == null && optional) return 0;
+    if (value is! int ||
+        (min != null && value < min) ||
+        (max != null && value > max)) {
+      return null;
+    }
+    return value;
+  }
+
+  static bool _enumInt(Map<String, Object?> p, String key, Set<int> values) =>
+      p[key] is int && values.contains(p[key]);
+
+  static bool _enumString(
+    Map<String, Object?> p,
+    String key,
+    Set<String> values, {
+    bool optional = false,
+  }) =>
+      (optional && p[key] == null) ||
+      (p[key] is String && values.contains(p[key]));
+
+  static bool _date(
+    Map<String, Object?> p,
+    String key, {
+    bool optional = false,
+  }) {
+    final value = p[key];
+    if (value == null) return optional;
+    if (value is! String || value.isEmpty || value.length > 64) return false;
+    return DateTime.tryParse(value) != null;
+  }
+
+  static bool _jsonString(
+    Map<String, Object?> p,
+    String key, {
+    bool optional = false,
+  }) {
+    final value = p[key];
+    if (value == null) return optional;
+    if (value is! String || value.isEmpty || value.length > _maxJson) {
+      return false;
+    }
+    try {
+      jsonDecode(value);
+      return true;
+    } on FormatException {
+      return false;
+    }
+  }
+
+  static bool _optionalSha256(Map<String, Object?> p, String key) {
+    final value = p[key];
+    return value == null ||
+        (value is String && RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(value));
+  }
 }
