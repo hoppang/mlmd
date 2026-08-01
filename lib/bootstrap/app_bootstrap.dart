@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/objectbox_helper.dart';
 import '../services/embedding_service.dart';
 import 'local_model_bootstrap.dart';
-import 'desktop_window_close_handler.dart';
 
 class AppDependencies {
   final ObjectBoxHelper objectBox;
@@ -19,7 +18,6 @@ class AppDependencies {
 }
 
 final appStartupProvider = FutureProvider<AppDependencies>((ref) async {
-  await DesktopWindowCloseHandler.instance.initialize();
   await registerLocalModelIfNeeded();
 
   final objectBox = await ObjectBoxHelper.create();
