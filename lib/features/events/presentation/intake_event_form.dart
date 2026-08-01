@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../providers/locale_provider.dart';
 import '../domain/event_catalog.dart';
 import '../domain/intake_record.dart';
+import 'date_time_adjustment_controls.dart';
 
 class IntakeFormResult {
   const IntakeFormResult({required this.record, required this.details});
@@ -13,6 +15,8 @@ class IntakeFormResult {
   final IntakeRecord record;
   final String details;
 }
+
+enum _FeedingType { formula, breast, expressedMilk }
 
 class IntakeEventForm extends ConsumerStatefulWidget {
   const IntakeEventForm({
@@ -22,6 +26,7 @@ class IntakeEventForm extends ConsumerStatefulWidget {
     required this.error,
     required this.onBack,
     required this.onChangeTime,
+    required this.onOccurredAtChanged,
     required this.onSave,
     this.initialStructuredDataJson,
     super.key,
@@ -34,6 +39,7 @@ class IntakeEventForm extends ConsumerStatefulWidget {
   final String? initialStructuredDataJson;
   final VoidCallback onBack;
   final VoidCallback onChangeTime;
+  final ValueChanged<DateTime> onOccurredAtChanged;
   final ValueChanged<IntakeFormResult> onSave;
 
   @override
@@ -47,7 +53,7 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
   final _foodController = TextEditingController();
   final _memoController = TextEditingController();
 
-  FeedingMethod? _feedingMethod = FeedingMethod.timeOnly;
+  FeedingMethod? _feedingMethod = FeedingMethod.bottle;
   BreastSide _breastSide = BreastSide.left;
   BottleContents _bottleContents = BottleContents.formula;
   MealType _mealType = MealType.other;
@@ -69,10 +75,21 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
   bool get _isFood =>
       widget.item.id == EventTypeId.meal || widget.item.id == EventTypeId.snack;
 
+  _FeedingType get _feedingType {
+    if (_feedingMethod == FeedingMethod.breast) return _FeedingType.breast;
+    if (_bottleContents == BottleContents.expressedMilk) {
+      return _FeedingType.expressedMilk;
+    }
+    return _FeedingType.formula;
+  }
+
   @override
   void initState() {
     super.initState();
     _mealType = _suggestedMealType(widget.occurredAt.hour);
+    if (widget.item.id == EventTypeId.feeding) {
+      _amountKind = AmountExpressionKind.exact;
+    }
     final encoded = widget.initialStructuredDataJson;
     if (encoded != null) _restore(IntakeRecord.decode(encoded));
   }
@@ -94,9 +111,13 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
 
   void _restore(IntakeRecord? record) {
     if (record == null || record.kind != _recordKind) return;
-    _feedingMethod = record.method;
+    _feedingMethod = record.method == FeedingMethod.timeOnly
+        ? FeedingMethod.bottle
+        : record.method;
     _breastSide = record.side ?? _breastSide;
-    _bottleContents = record.bottleContents ?? _bottleContents;
+    _bottleContents = record.bottleContents == BottleContents.other
+        ? BottleContents.formula
+        : record.bottleContents ?? _bottleContents;
     _mealType = record.mealType ?? _mealType;
     _reaction = record.reaction;
     _foodController.text = record.foodName ?? '';
@@ -110,6 +131,35 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
       _exactController.text = _formatNumber(amount.exactValue!);
     }
     _unit = amount.unit ?? _unit;
+  }
+
+  void _selectFeedingType(_FeedingType type) {
+    setState(() {
+      switch (type) {
+        case _FeedingType.formula:
+          _feedingMethod = FeedingMethod.bottle;
+          _bottleContents = BottleContents.formula;
+          break;
+        case _FeedingType.breast:
+          _feedingMethod = FeedingMethod.breast;
+          break;
+        case _FeedingType.expressedMilk:
+          _feedingMethod = FeedingMethod.bottle;
+          _bottleContents = BottleContents.expressedMilk;
+          break;
+      }
+      _amountKind = AmountExpressionKind.exact;
+      _showAmountError = false;
+    });
+  }
+
+  void _adjustFeedingAmount(int delta) {
+    final current = num.tryParse(_exactController.text.trim()) ?? 0;
+    final next = (current + delta).clamp(0, 10000);
+    setState(() {
+      _exactController.text = _formatNumber(next);
+      _showAmountError = false;
+    });
   }
 
   Future<void> _selectAmountKind(AmountExpressionKind kind) async {
@@ -145,9 +195,10 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
   }
 
   AmountExpression? _amount() {
-    if (widget.item.id == EventTypeId.feeding &&
-        _feedingMethod != FeedingMethod.bottle) {
-      return null;
+    if (widget.item.id == EventTypeId.feeding) {
+      final value = num.tryParse(_exactController.text.trim());
+      if (value == null || value <= 0) return null;
+      return AmountExpression.exact(exactValue: value, unit: _unit);
     }
     switch (_amountKind) {
       case AmountExpressionKind.qualitative:
@@ -163,11 +214,11 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
 
   void _submit() {
     final amount = _amount();
-    if (_amountKind == AmountExpressionKind.exact &&
-        (widget.item.id != EventTypeId.feeding ||
-            _feedingMethod == FeedingMethod.bottle) &&
-        _exactController.text.trim().isNotEmpty &&
-        amount == null) {
+    if ((widget.item.id == EventTypeId.feeding && amount == null) ||
+        (_amountKind == AmountExpressionKind.exact &&
+            widget.item.id != EventTypeId.feeding &&
+            _exactController.text.trim().isNotEmpty &&
+            amount == null)) {
       setState(() => _showAmountError = true);
       return;
     }
@@ -175,7 +226,7 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
       kind: _recordKind,
       amountExpression: amount,
       method: widget.item.id == EventTypeId.feeding
-          ? (_feedingMethod ?? FeedingMethod.timeOnly)
+          ? (_feedingMethod ?? FeedingMethod.bottle)
           : null,
       side: _feedingMethod == FeedingMethod.breast ? _breastSide : null,
       bottleContents: _feedingMethod == FeedingMethod.bottle
@@ -232,6 +283,10 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          if (item.id == EventTypeId.feeding) ...[
+            _feedingTimeEditor(loc),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (item.id == EventTypeId.feeding) ..._feedingFields(loc),
           if (item.id == EventTypeId.meal) ..._mealFields(loc),
           if (item.id == EventTypeId.water) ..._amountFields(loc),
@@ -255,15 +310,16 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
             decoration: InputDecoration(labelText: loc.memoOptionalLabel),
           ),
           const SizedBox(height: AppSpacing.md),
-          OutlinedButton.icon(
-            key: const Key('quick-record-time'),
-            onPressed: widget.saving ? null : widget.onChangeTime,
-            icon: const Icon(Icons.schedule),
-            label: Text(
-              '${loc.recordTimeLabel} · '
-              '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(widget.occurredAt))}',
+          if (item.id != EventTypeId.feeding)
+            OutlinedButton.icon(
+              key: const Key('quick-record-time'),
+              onPressed: widget.saving ? null : widget.onChangeTime,
+              icon: const Icon(Icons.schedule),
+              label: Text(
+                '${loc.recordTimeLabel} · '
+                '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(widget.occurredAt))}',
+              ),
             ),
-          ),
           if (widget.error != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -273,16 +329,32 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
-          FilledButton.icon(
-            key: const Key('save-quick-record'),
-            onPressed: widget.saving ? null : _submit,
-            icon: widget.saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check),
-            label: Text(widget.saving ? loc.savingQuickRecord : loc.saveRecord),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('cancel-quick-record'),
+                  onPressed: widget.saving ? null : widget.onBack,
+                  child: Text(loc.cancel),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton.icon(
+                  key: const Key('save-quick-record'),
+                  onPressed: widget.saving ? null : _submit,
+                  icon: widget.saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check),
+                  label: Text(
+                    widget.saving ? loc.savingQuickRecord : loc.saveRecord,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -294,19 +366,16 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
       _FieldLabel(loc.feedingMethodLabel),
       Wrap(
         spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
         children: [
-          for (final method in FeedingMethod.values)
+          for (final type in _FeedingType.values)
             ChoiceChip(
-              key: Key('feeding-method-${method.name}'),
-              label: Text(_feedingMethodLabel(method, loc)),
-              selected: _feedingMethod == method,
+              key: Key('feeding-type-${type.name}'),
+              label: Text(_feedingTypeLabel(type, loc)),
+              selected: _feedingType == type,
               onSelected: widget.saving
                   ? null
-                  : (_) => setState(() {
-                      _feedingMethod = method;
-                      _amountKind = AmountExpressionKind.exact;
-                      _showAmountError = false;
-                    }),
+                  : (_) => _selectFeedingType(type),
             ),
         ],
       ),
@@ -324,19 +393,62 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
         ),
         const SizedBox(height: AppSpacing.md),
       ],
-      if (_feedingMethod == FeedingMethod.bottle) ...[
-        _FieldLabel(loc.bottleContentsLabel),
-        _ChoiceWrap<BottleContents>(
-          values: BottleContents.values,
-          selected: _bottleContents,
-          label: (value) => _bottleContentsLabel(value, loc),
-          onSelected: (value) => setState(() => _bottleContents = value),
-          keyPrefix: 'bottle-contents',
-        ),
-        const SizedBox(height: AppSpacing.md),
-        ..._exactAmountFields(loc),
-      ],
+      _FieldLabel(loc.exactAmountLabel),
+      ..._exactAmountFields(loc),
+      const SizedBox(height: AppSpacing.xs),
+      _feedingAmountAdjustments(),
+      const SizedBox(height: AppSpacing.md),
     ];
+  }
+
+  Widget _feedingTimeEditor(AppLocalizations loc) {
+    final material = MaterialLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _FieldLabel(loc.recordTimeLabel),
+        Text(
+          '${material.formatMediumDate(widget.occurredAt)} · '
+          '${material.formatTimeOfDay(TimeOfDay.fromDateTime(widget.occurredAt))}',
+          key: const Key('feeding-record-date-time'),
+          style: Theme.of(context).textTheme.titleMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DateTimeAdjustmentControls(
+          key: const Key('feeding-date-time-controls'),
+          value: widget.occurredAt,
+          firstDate: DateTime(2000),
+          lastDate: DateTime.now(),
+          onChanged: widget.onOccurredAtChanged,
+          keyPrefix: 'feeding',
+          showSpinner: defaultTargetPlatform != TargetPlatform.windows,
+          showDirectInput: defaultTargetPlatform == TargetPlatform.windows,
+          rollFutureTimeToPreviousDay: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _feedingAmountAdjustments() {
+    final current = num.tryParse(_exactController.text.trim()) ?? 0;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: AppSpacing.xs,
+      runSpacing: AppSpacing.xs,
+      children: [
+        for (final delta in const [-100, -10, 10, 100])
+          OutlinedButton(
+            key: Key('adjust-feeding-amount-$delta'),
+            onPressed: widget.saving || (delta < 0 && current <= 0)
+                ? null
+                : () => _adjustFeedingAmount(delta),
+            child: Text(
+              '${delta > 0 ? '+' : '−'}${delta.abs()} ${_displayUnit(_unit)}',
+            ),
+          ),
+      ],
+    );
   }
 
   List<Widget> _mealFields(AppLocalizations loc) {
@@ -548,16 +660,21 @@ class _ChoiceWrap<T> extends StatelessWidget {
 String intakeRecordDetails(IntakeRecord record, AppLocalizations loc) {
   final values = <String>[];
   if (record.kind == IntakeRecordKind.feeding && record.method != null) {
-    values.add(_feedingMethodLabel(record.method!, loc));
+    values.add(switch (record.method!) {
+      FeedingMethod.breast => loc.breastFeedingOption,
+      FeedingMethod.bottle => switch (record.bottleContents) {
+        BottleContents.formula => loc.formulaOption,
+        BottleContents.expressedMilk => loc.expressedMilkFeedingOption,
+        BottleContents.other || null => loc.otherOption,
+      },
+      FeedingMethod.timeOnly => loc.feedingEvent,
+    });
     if (record.side != null) {
       values.add(
         record.side == BreastSide.left
             ? loc.leftSideOption
             : loc.rightSideOption,
       );
-    }
-    if (record.bottleContents != null) {
-      values.add(_bottleContentsLabel(record.bottleContents!, loc));
     }
   }
   if (record.mealType != null) {
@@ -574,18 +691,11 @@ String intakeRecordDetails(IntakeRecord record, AppLocalizations loc) {
   return values.join(' · ');
 }
 
-String _feedingMethodLabel(FeedingMethod method, AppLocalizations loc) =>
-    switch (method) {
-      FeedingMethod.breast => loc.breastFeedingOption,
-      FeedingMethod.bottle => loc.bottleFeedingOption,
-      FeedingMethod.timeOnly => loc.feedingTimeOnlyOption,
-    };
-
-String _bottleContentsLabel(BottleContents value, AppLocalizations loc) =>
-    switch (value) {
-      BottleContents.formula => loc.formulaOption,
-      BottleContents.expressedMilk => loc.expressedMilkOption,
-      BottleContents.other => loc.otherOption,
+String _feedingTypeLabel(_FeedingType type, AppLocalizations loc) =>
+    switch (type) {
+      _FeedingType.formula => loc.formulaOption,
+      _FeedingType.breast => loc.breastFeedingOption,
+      _FeedingType.expressedMilk => loc.expressedMilkFeedingOption,
     };
 
 String _mealTypeLabel(MealType value, AppLocalizations loc) => switch (value) {

@@ -569,10 +569,20 @@ void main() {
     await tester.tap(find.byKey(const Key('quick-launch-slot-0')));
     await tester.pumpAndSettle();
 
+    await tester.tap(
+      find.byKey(const Key('feeding-quick-choice-formulaFeeding')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('exact-amount-value')), '120');
+    final quickFeedingSave = find.byKey(const Key('save-quick-record'));
+    await tester.ensureVisible(quickFeedingSave);
+    await tester.tap(quickFeedingSave);
+    await tester.pumpAndSettle();
+
     expect(notifier.addedActivityType, '수유');
     expect(find.byKey(const Key('top-undo-button')), findsOneWidget);
     expect(find.byKey(const Key('edit-saved-quick-launch')), findsNothing);
-    expect(find.byType(SnackBar), findsNothing);
+    expect(find.byType(SnackBar), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('top-undo-button')));
     await tester.pumpAndSettle();
@@ -631,14 +641,15 @@ void main() {
     await tester.tap(find.byKey(const Key('quick-record-feeding')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('intake-record-form')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('feeding-method-bottle')));
-    await tester.pump();
+    expect(find.byKey(const Key('feeding-type-formula')), findsOneWidget);
     await tester.enterText(find.byKey(const Key('exact-amount-value')), '200');
-    await tester.tap(find.byKey(const Key('save-quick-record')));
+    final feedingSave = find.byKey(const Key('save-quick-record'));
+    await tester.ensureVisible(feedingSave);
+    await tester.tap(feedingSave);
     await tester.pumpAndSettle();
 
     expect(notifier.addedActivityType, '수유');
-    expect(notifier.addedActivityDetails, '젖병 · 분유 · 200 mL');
+    expect(notifier.addedActivityDetails, '분유 · 200 mL');
     expect(notifier.addedActivityOccurredAt, isNotNull);
     final savedIntake = IntakeRecord.decode(
       notifier.addedActivityStructuredDataJson!,

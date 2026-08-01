@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import 'date_time_adjustment_controls.dart';
 
 Future<DateTime?> showSleepDateTimePicker({
   required BuildContext context,
@@ -66,49 +66,19 @@ class _SleepDateTimePicker extends StatefulWidget {
 class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
   late DateTime _value;
   late bool _showCalendar;
-  late final FixedExtentScrollController _hourController;
-  late final FixedExtentScrollController _minuteController;
-  late final TextEditingController _hourTextController;
-  late final TextEditingController _minuteTextController;
 
   bool get _isWindows => defaultTargetPlatform == TargetPlatform.windows;
-  DateTime get _earliestValue {
-    final value = _truncateToMinute(widget.firstDate);
-    return value.isBefore(widget.firstDate)
-        ? value.add(const Duration(minutes: 1))
-        : value;
-  }
+  DateTime get _earliestValue => earliestSelectableMinute(widget.firstDate);
 
-  DateTime get _latestValue => _truncateToMinute(widget.lastDate);
+  DateTime get _latestValue => truncateToMinute(widget.lastDate);
   bool get _isValid =>
       !_value.isBefore(_earliestValue) && !_value.isAfter(_latestValue);
 
   @override
   void initState() {
     super.initState();
-    _value = DateTime(
-      widget.initialValue.year,
-      widget.initialValue.month,
-      widget.initialValue.day,
-      widget.initialValue.hour,
-      widget.initialValue.minute,
-    );
+    _value = truncateToMinute(widget.initialValue);
     _showCalendar = _isWindows || !_isTodayOrYesterday(_value);
-    _hourController = FixedExtentScrollController(initialItem: _value.hour);
-    _minuteController = FixedExtentScrollController(initialItem: _value.minute);
-    _hourTextController = TextEditingController(text: _twoDigits(_value.hour));
-    _minuteTextController = TextEditingController(
-      text: _twoDigits(_value.minute),
-    );
-  }
-
-  @override
-  void dispose() {
-    _hourController.dispose();
-    _minuteController.dispose();
-    _hourTextController.dispose();
-    _minuteTextController.dispose();
-    super.dispose();
   }
 
   bool _isTodayOrYesterday(DateTime value) {
@@ -123,56 +93,8 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
     );
   }
 
-  void _setTime({int? hour, int? minute}) {
-    _setValue(
-      DateTime(
-        _value.year,
-        _value.month,
-        _value.day,
-        hour ?? _value.hour,
-        minute ?? _value.minute,
-      ),
-      syncWheels: false,
-    );
-  }
-
-  void _adjust(Duration adjustment) {
-    final next = _value.add(adjustment);
-    _setValue(
-      next.isBefore(_earliestValue)
-          ? _earliestValue
-          : next.isAfter(_latestValue)
-          ? _latestValue
-          : next,
-    );
-  }
-
-  bool _canAdjust(Duration adjustment) => adjustment.isNegative
-      ? _value.isAfter(_earliestValue)
-      : _value.isBefore(_latestValue);
-
-  void _setValue(DateTime value, {bool syncWheels = true}) {
+  void _setValue(DateTime value) {
     setState(() => _value = value);
-    _hourTextController.text = _twoDigits(value.hour);
-    _minuteTextController.text = _twoDigits(value.minute);
-    if (!syncWheels) return;
-    if (_hourController.hasClients) _hourController.jumpToItem(value.hour);
-    if (_minuteController.hasClients) {
-      _minuteController.jumpToItem(value.minute);
-    }
-  }
-
-  void _applyTypedTime() {
-    final hour = int.tryParse(_hourTextController.text);
-    final minute = int.tryParse(_minuteTextController.text);
-    if (hour == null || hour > 23 || minute == null || minute > 59) {
-      _hourTextController.text = _twoDigits(_value.hour);
-      _minuteTextController.text = _twoDigits(_value.minute);
-      return;
-    }
-    _setTime(hour: hour, minute: minute);
-    if (_hourController.hasClients) _hourController.jumpToItem(hour);
-    if (_minuteController.hasClients) _minuteController.jumpToItem(minute);
   }
 
   @override
@@ -351,200 +273,14 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
   }
 
   Widget _buildTimePanel() {
-    final loc = AppLocalizations.of(context)!;
-    final material = MaterialLocalizations.of(context);
-    return Column(
-      children: [
-        if (!_isWindows)
-          SizedBox(
-            height: 132,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _TimeWheel(
-                  key: const Key('sleep-hour-wheel'),
-                  controller: _hourController,
-                  count: 24,
-                  label: material.timePickerHourLabel,
-                  onChanged: (value) => _setTime(hour: value),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                  child: Text(
-                    ':',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                ),
-                _TimeWheel(
-                  key: const Key('sleep-minute-wheel'),
-                  controller: _minuteController,
-                  count: 60,
-                  label: material.timePickerMinuteLabel,
-                  onChanged: (value) => _setTime(minute: value),
-                ),
-              ],
-            ),
-          ),
-        if (_isWindows)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildTimeTextField(
-                key: const Key('sleep-hour-input'),
-                controller: _hourTextController,
-                label: material.timePickerHourLabel,
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                child: Text(':'),
-              ),
-              _buildTimeTextField(
-                key: const Key('sleep-minute-input'),
-                controller: _minuteTextController,
-                label: material.timePickerMinuteLabel,
-              ),
-            ],
-          ),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: [
-            for (final hours in const [-1, 1])
-              OutlinedButton(
-                key: Key('adjust-sleep-hour-$hours'),
-                onPressed: _canAdjust(Duration(hours: hours))
-                    ? () => _adjust(Duration(hours: hours))
-                    : null,
-                child: Text(
-                  '${hours > 0 ? '+' : '−'}'
-                  '${loc.sleepDurationHours(hours.abs())}',
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: [
-            for (final delta in const [-10, -1, 1, 10])
-              Tooltip(
-                message: delta < 0
-                    ? loc.sleepAdjustEarlier(-delta)
-                    : loc.sleepAdjustLater(delta),
-                child: OutlinedButton(
-                  key: Key('adjust-sleep-time-$delta'),
-                  onPressed: _canAdjust(Duration(minutes: delta))
-                      ? () => _adjust(Duration(minutes: delta))
-                      : null,
-                  child: Text(
-                    '${delta > 0 ? '+' : '−'}'
-                    '${loc.sleepDurationMinutes(delta.abs())}',
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeTextField({
-    required Key key,
-    required TextEditingController controller,
-    required String label,
-  }) {
-    return SizedBox(
-      width: 76,
-      child: TextField(
-        key: key,
-        controller: controller,
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(2),
-        ],
-        decoration: InputDecoration(labelText: label),
-        onSubmitted: (_) => _applyTypedTime(),
-        onTapOutside: (_) => _applyTypedTime(),
-      ),
+    return DateTimeAdjustmentControls(
+      value: _value,
+      firstDate: widget.firstDate,
+      lastDate: widget.lastDate,
+      onChanged: _setValue,
+      keyPrefix: 'sleep',
+      showSpinner: !_isWindows,
+      showDirectInput: _isWindows,
     );
   }
 }
-
-class _TimeWheel extends StatelessWidget {
-  const _TimeWheel({
-    required super.key,
-    required this.controller,
-    required this.count,
-    required this.label,
-    required this.onChanged,
-  });
-
-  final FixedExtentScrollController controller;
-  final int count;
-  final String label;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      child: SizedBox(
-        width: 88,
-        child: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  IgnorePointer(
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(AppRadii.control),
-                      ),
-                    ),
-                  ),
-                  ListWheelScrollView.useDelegate(
-                    controller: controller,
-                    itemExtent: 40,
-                    physics: const FixedExtentScrollPhysics(),
-                    diameterRatio: 1.5,
-                    perspective: 0.004,
-                    onSelectedItemChanged: onChanged,
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: count,
-                      builder: (context, index) => Center(
-                        child: Text(
-                          _twoDigits(index),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(label, style: Theme.of(context).textTheme.labelSmall),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-String _twoDigits(int value) => value.toString().padLeft(2, '0');
-
-DateTime _truncateToMinute(DateTime value) => DateTime(
-  value.year,
-  value.month,
-  value.day,
-  value.hour,
-  value.minute,
-);

@@ -26,11 +26,7 @@ class _QuickLaunchEditorSheetState
   late int _slotIndex;
   QuickLaunchEventTarget? _target;
   QuickLaunchExecutionMode _mode = QuickLaunchExecutionMode.instant;
-  FeedingMethod _feedingMethod = FeedingMethod.timeOnly;
-  BreastSide _breastSide = BreastSide.left;
-  BottleContents _bottleContents = BottleContents.formula;
   EliminationPreset _eliminationPreset = EliminationPreset.urine;
-  final _amountController = TextEditingController();
   final _labelController = TextEditingController();
 
   @override
@@ -46,14 +42,13 @@ class _QuickLaunchEditorSheetState
 
   @override
   void dispose() {
-    _amountController.dispose();
     _labelController.dispose();
     super.dispose();
   }
 
   void _restoreCurrentSlot() {
     final slot = ref.read(quickLaunchProvider).layout.slotAt(_slotIndex);
-    final intake = IntakeRecord.decode(slot.structuredPresetJson ?? '');
+    final target = slot.eventTypeId;
     String? eliminationKind;
     try {
       final decoded = jsonDecode(slot.structuredPresetJson ?? '');
@@ -62,19 +57,11 @@ class _QuickLaunchEditorSheetState
       // Keep defaults for an invalid legacy preset.
     }
     setState(() {
-      _target = slot.eventTypeId;
-      _mode = slot.executionMode;
+      _target = target;
+      _mode = target != null && quickLaunchOpensCategory(target)
+          ? QuickLaunchExecutionMode.category
+          : slot.executionMode;
       _labelController.text = slot.displayLabel ?? '';
-      if (intake != null) {
-        _feedingMethod = intake.method ?? FeedingMethod.timeOnly;
-        _breastSide = intake.side ?? BreastSide.left;
-        _bottleContents = intake.bottleContents ?? BottleContents.formula;
-        _amountController.text =
-            intake.amountExpression?.exactValue?.toString() ?? '';
-      } else {
-        _feedingMethod = FeedingMethod.timeOnly;
-        _amountController.clear();
-      }
       _eliminationPreset = switch (eliminationKind) {
         'stool' => EliminationPreset.stool,
         'both' => EliminationPreset.both,
@@ -91,7 +78,9 @@ class _QuickLaunchEditorSheetState
   void _selectTarget(QuickLaunchEventTarget target) {
     setState(() {
       _target = target;
-      _mode = quickLaunchCanSaveInstantly(target)
+      _mode = quickLaunchOpensCategory(target)
+          ? QuickLaunchExecutionMode.category
+          : quickLaunchCanSaveInstantly(target)
           ? QuickLaunchExecutionMode.instant
           : QuickLaunchExecutionMode.prefilledForm;
       _labelController.clear();
@@ -134,21 +123,26 @@ class _QuickLaunchEditorSheetState
   }
 
   String? _structuredPreset(QuickLaunchEventTarget target) {
-    if (target == QuickLaunchEventTarget.feeding) {
-      final exactAmount = num.tryParse(_amountController.text.trim());
-      return IntakeRecord(
+    if (target == QuickLaunchEventTarget.feeding) return null;
+    if (target == QuickLaunchEventTarget.formulaFeeding) {
+      return const IntakeRecord(
         kind: IntakeRecordKind.feeding,
-        method: _feedingMethod,
-        side: _feedingMethod == FeedingMethod.breast ? _breastSide : null,
-        bottleContents: _feedingMethod == FeedingMethod.bottle
-            ? _bottleContents
-            : null,
-        amountExpression:
-            _feedingMethod == FeedingMethod.bottle &&
-                exactAmount != null &&
-                exactAmount > 0
-            ? AmountExpression.exact(exactValue: exactAmount, unit: 'ml')
-            : null,
+        method: FeedingMethod.bottle,
+        bottleContents: BottleContents.formula,
+      ).encode();
+    }
+    if (target == QuickLaunchEventTarget.breastFeeding) {
+      return const IntakeRecord(
+        kind: IntakeRecordKind.feeding,
+        method: FeedingMethod.breast,
+        side: BreastSide.left,
+      ).encode();
+    }
+    if (target == QuickLaunchEventTarget.expressedMilkFeeding) {
+      return const IntakeRecord(
+        kind: IntakeRecordKind.feeding,
+        method: FeedingMethod.bottle,
+        bottleContents: BottleContents.expressedMilk,
       ).encode();
     }
     if (target == QuickLaunchEventTarget.diaper) {
@@ -244,27 +238,44 @@ class _QuickLaunchEditorSheetState
               spacing: AppSpacing.xs,
               runSpacing: AppSpacing.xs,
               children: [
-                for (final item in eventCatalog)
-                  ChoiceChip(
-                    key: Key('quick-launch-event-${item.id.name}'),
-                    avatar: Icon(item.icon, size: 18),
-                    label: Text(item.label(loc)),
-                    selected: target?.name == item.id.name,
-                    onSelected: (_) =>
-                        _selectTarget(quickLaunchTarget(item.id)),
-                  ),
+                for (final item in eventCatalog) ...[
+                  if (item.id == EventTypeId.feeding) ...[
+                    for (final feedingTarget in const [
+                      QuickLaunchEventTarget.feeding,
+                      QuickLaunchEventTarget.formulaFeeding,
+                      QuickLaunchEventTarget.breastFeeding,
+                      QuickLaunchEventTarget.expressedMilkFeeding,
+                    ])
+                      ChoiceChip(
+                        key: Key(
+                          'quick-launch-event-${feedingTarget.name}',
+                        ),
+                        avatar: Icon(item.icon, size: 18),
+                        label: Text(
+                          _quickLaunchTargetLabel(feedingTarget, loc),
+                        ),
+                        selected: target == feedingTarget,
+                        onSelected: (_) => _selectTarget(feedingTarget),
+                      ),
+                  ] else
+                    ChoiceChip(
+                      key: Key('quick-launch-event-${item.id.name}'),
+                      avatar: Icon(item.icon, size: 18),
+                      label: Text(item.label(loc)),
+                      selected: target?.name == item.id.name,
+                      onSelected: (_) =>
+                          _selectTarget(quickLaunchTarget(item.id)),
+                    ),
+                ],
               ],
             ),
             if (target != null) ...[
               const SizedBox(height: AppSpacing.md),
               _ExecutionPreview(
                 mode: _mode,
-                label: quickLaunchCatalogItem(target).label(loc),
+                label: _quickLaunchTargetLabel(target, loc),
+                category: quickLaunchOpensCategory(target),
               ),
-              if (target == QuickLaunchEventTarget.feeding) ...[
-                const SizedBox(height: AppSpacing.md),
-                _feedingEditor(loc),
-              ],
               if (target == QuickLaunchEventTarget.diaper) ...[
                 const SizedBox(height: AppSpacing.md),
                 _eliminationEditor(loc),
@@ -302,80 +313,6 @@ class _QuickLaunchEditorSheetState
     );
   }
 
-  Widget _feedingEditor(AppLocalizations loc) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(loc.feedingMethodLabel),
-        const SizedBox(height: AppSpacing.xs),
-        Wrap(
-          spacing: AppSpacing.xs,
-          children: [
-            for (final method in FeedingMethod.values)
-              ChoiceChip(
-                key: Key('quick-launch-feeding-${method.name}'),
-                label: Text(switch (method) {
-                  FeedingMethod.breast => loc.breastFeedingOption,
-                  FeedingMethod.bottle => loc.bottleFeedingOption,
-                  FeedingMethod.timeOnly => loc.feedingTimeOnlyOption,
-                }),
-                selected: _feedingMethod == method,
-                onSelected: (_) => setState(() => _feedingMethod = method),
-              ),
-          ],
-        ),
-        if (_feedingMethod == FeedingMethod.breast) ...[
-          const SizedBox(height: AppSpacing.sm),
-          SegmentedButton<BreastSide>(
-            segments: [
-              ButtonSegment(
-                value: BreastSide.left,
-                label: Text(loc.leftSideOption),
-              ),
-              ButtonSegment(
-                value: BreastSide.right,
-                label: Text(loc.rightSideOption),
-              ),
-            ],
-            selected: {_breastSide},
-            onSelectionChanged: (values) =>
-                setState(() => _breastSide = values.first),
-          ),
-        ],
-        if (_feedingMethod == FeedingMethod.bottle) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.xs,
-            children: [
-              for (final contents in BottleContents.values)
-                ChoiceChip(
-                  key: Key('quick-launch-bottle-${contents.name}'),
-                  label: Text(switch (contents) {
-                    BottleContents.formula => loc.formulaOption,
-                    BottleContents.expressedMilk => loc.expressedMilkOption,
-                    BottleContents.other => loc.otherOption,
-                  }),
-                  selected: _bottleContents == contents,
-                  onSelected: (_) => setState(() => _bottleContents = contents),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          TextField(
-            key: const Key('quick-launch-feeding-amount'),
-            controller: _amountController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: loc.quickLaunchPresetAmount,
-              suffixText: 'mL',
-              border: const OutlineInputBorder(),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
   Widget _eliminationEditor(AppLocalizations loc) {
     return SegmentedButton<EliminationPreset>(
       segments: [
@@ -401,23 +338,48 @@ class _QuickLaunchEditorSheetState
 
 enum EliminationPreset { urine, stool, both }
 
+String _quickLaunchTargetLabel(
+  QuickLaunchEventTarget target,
+  AppLocalizations loc,
+) => switch (target) {
+  QuickLaunchEventTarget.feeding => loc.feedingEvent,
+  QuickLaunchEventTarget.formulaFeeding => loc.formulaOption,
+  QuickLaunchEventTarget.breastFeeding => loc.breastFeedingOption,
+  QuickLaunchEventTarget.expressedMilkFeeding =>
+    loc.expressedMilkFeedingOption,
+  _ => quickLaunchCatalogItem(target).label(loc),
+};
+
 class _ExecutionPreview extends StatelessWidget {
-  const _ExecutionPreview({required this.mode, required this.label});
+  const _ExecutionPreview({
+    required this.mode,
+    required this.label,
+    this.category = false,
+  });
 
   final QuickLaunchExecutionMode mode;
   final String label;
+  final bool category;
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final instant = mode == QuickLaunchExecutionMode.instant;
+    final instant = mode == QuickLaunchExecutionMode.instant && !category;
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
-        child: Icon(instant ? Icons.bolt : Icons.edit_outlined),
+        child: Icon(
+          category
+              ? Icons.arrow_drop_down
+              : instant
+              ? Icons.bolt
+              : Icons.edit_outlined,
+        ),
       ),
       title: Text(
-        instant
+        category
+            ? loc.quickLaunchCategorySemantic(label)
+            : instant
             ? loc.quickLaunchInstantSemantic(label)
             : loc.quickLaunchFormSemantic(label),
       ),

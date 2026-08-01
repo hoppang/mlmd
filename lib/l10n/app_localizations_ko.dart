@@ -169,6 +169,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get expressedMilkOption => '유축 모유';
 
   @override
+  String get expressedMilkFeedingOption => '유축수유';
+
+  @override
+  String get feedingChooseType => '수유 종류 선택';
+
+  @override
   String get otherOption => '기타';
 
   @override
@@ -2012,6 +2018,11 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String quickLaunchFormSemantic(String label) {
     return '$label, 누르면 세부 입력 열림';
+  }
+
+  @override
+  String quickLaunchCategorySemantic(String label) {
+    return '$label, 누르면 선택 열림';
   }
 
   @override

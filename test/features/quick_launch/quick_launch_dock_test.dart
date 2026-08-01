@@ -46,7 +46,7 @@ void main() {
         home: Scaffold(
           body: QuickLaunchDock(
             layout: layout,
-            onSlotPressed: (slot) => pressed = slot,
+            onSlotPressed: (slot, _) => pressed = slot,
             onEditSlot: (index) => edited = index,
             onOpenAll: () => openedAll = true,
           ),
@@ -60,6 +60,7 @@ void main() {
     }
     expect(find.byKey(const Key('quick-launch-all')), findsOneWidget);
     expect(find.byType(Scrollable), findsNothing);
+    expect(find.byIcon(Icons.arrow_drop_down), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('quick-launch-slot-0')));
     expect(pressed?.eventTypeId, QuickLaunchEventTarget.feeding);
@@ -71,7 +72,7 @@ void main() {
     expect(openedAll, isTrue);
   });
 
-  testWidgets('distinguishes instant and detail-required slots semantically', (
+  testWidgets('distinguishes category and detail-required slots semantically', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -105,7 +106,7 @@ void main() {
         home: Scaffold(
           body: QuickLaunchDock(
             layout: layout,
-            onSlotPressed: (_) {},
+            onSlotPressed: (_, _) {},
             onEditSlot: (_) {},
             onOpenAll: () {},
           ),
@@ -113,10 +114,7 @@ void main() {
       ),
     );
 
-    expect(
-      find.bySemanticsLabel('Feeding, tap to record immediately'),
-      findsOne,
-    );
+    expect(find.bySemanticsLabel('Feeding, tap to open choices'), findsOne);
     expect(find.bySemanticsLabel('Medication, tap to open details'), findsOne);
     semantics.dispose();
   });
@@ -139,7 +137,7 @@ void main() {
         home: Scaffold(
           body: QuickLaunchDock(
             layout: QuickLaunchLayout.empty(),
-            onSlotPressed: (_) {},
+            onSlotPressed: (_, _) {},
             onEditSlot: (_) {},
             onOpenAll: () {},
           ),

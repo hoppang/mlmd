@@ -418,6 +418,18 @@ abstract class AppLocalizations {
   /// **'유축 모유'**
   String get expressedMilkOption;
 
+  /// No description provided for @expressedMilkFeedingOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'유축수유'**
+  String get expressedMilkFeedingOption;
+
+  /// No description provided for @feedingChooseType.
+  ///
+  /// In ko, this message translates to:
+  /// **'수유 종류 선택'**
+  String get feedingChooseType;
+
   /// No description provided for @otherOption.
   ///
   /// In ko, this message translates to:
@@ -3788,6 +3800,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'{label}, 누르면 세부 입력 열림'**
   String quickLaunchFormSemantic(String label);
+
+  /// No description provided for @quickLaunchCategorySemantic.
+  ///
+  /// In ko, this message translates to:
+  /// **'{label}, 누르면 선택 열림'**
+  String quickLaunchCategorySemantic(String label);
 
   /// No description provided for @quickLaunchSaved.
   ///

@@ -168,6 +168,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get expressedMilkOption => '搾乳';
 
   @override
+  String get expressedMilkFeedingOption => '搾乳授乳';
+
+  @override
+  String get feedingChooseType => '授乳の種類を選択';
+
+  @override
   String get otherOption => 'その他';
 
   @override
@@ -2001,6 +2007,11 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String quickLaunchFormSemantic(String label) {
     return '$label、タップで詳細入力を開く';
+  }
+
+  @override
+  String quickLaunchCategorySemantic(String label) {
+    return '$label、タップで選択肢を開く';
   }
 
   @override

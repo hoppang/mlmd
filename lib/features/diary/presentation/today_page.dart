@@ -23,7 +23,6 @@ import '../../events/presentation/sleep_event_form.dart';
 import '../../../models/duplicate_review_edge_entity.dart';
 import '../../profiles/presentation/record_author_tag.dart';
 import '../../quick_launch/application/quick_launch_notifier.dart';
-import '../../quick_launch/domain/quick_launch_models.dart';
 import '../../quick_launch/presentation/quick_launch_dock.dart';
 import '../application/diary_draft_payload.dart';
 import '../application/diary_list_notifier.dart';
@@ -50,7 +49,7 @@ class TodayPage extends ConsumerStatefulWidget {
   )
   onEditActivity;
   final VoidCallback onOpenDuplicateReviews;
-  final ValueChanged<QuickLaunchSlot> onQuickLaunch;
+  final QuickLaunchSlotCallback onQuickLaunch;
   final ValueChanged<int> onEditQuickLaunch;
   final VoidCallback onOpenAllRecords;
   final VoidCallback onReviewQuickLaunchRecommendation;

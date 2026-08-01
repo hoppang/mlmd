@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/stt_memo_text_field.dart';
 import '../domain/pumping_record.dart';
+import 'date_time_adjustment_controls.dart';
 
 class PumpingFormResult {
   const PumpingFormResult({required this.record, required this.details});
@@ -20,6 +22,7 @@ class PumpingEventForm extends StatefulWidget {
     required this.error,
     required this.onBack,
     required this.onChangeTime,
+    required this.onOccurredAtChanged,
     required this.onSave,
     this.initialRecord,
     super.key,
@@ -30,6 +33,7 @@ class PumpingEventForm extends StatefulWidget {
   final String? error;
   final VoidCallback onBack;
   final VoidCallback onChangeTime;
+  final ValueChanged<DateTime> onOccurredAtChanged;
   final ValueChanged<PumpingFormResult> onSave;
   final PumpingRecord? initialRecord;
 
@@ -69,21 +73,28 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
     });
   }
 
+  void _adjustAmount(int delta) {
+    final current = int.tryParse(_amountController.text.trim()) ?? 0;
+    final next = (current + delta).clamp(0, 10000);
+    setState(() {
+      _amountController.text = next.toString();
+      _validationError = null;
+    });
+  }
+
   void _save() {
     final loc = AppLocalizations.of(context)!;
     final amountText = _amountController.text.trim();
     int? amountMl;
 
-    if (amountText.isNotEmpty) {
-      final parsed = int.tryParse(amountText);
-      if (parsed == null || parsed <= 0) {
-        setState(() {
-          _validationError = loc.exactAmountRequired;
-        });
-        return;
-      }
-      amountMl = parsed;
+    final parsed = int.tryParse(amountText);
+    if (parsed == null || parsed <= 0) {
+      setState(() {
+        _validationError = loc.exactAmountRequired;
+      });
+      return;
     }
+    amountMl = parsed;
 
     final noteText = _noteController.text.trim();
     final record = PumpingRecord(
@@ -146,6 +157,8 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          _timeEditor(theme),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             key: const Key('pumping-amount-input'),
             controller: _amountController,
@@ -163,6 +176,27 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
                 setState(() => _validationError = null);
               }
             },
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final delta in const [-100, -10, 10, 100])
+                OutlinedButton(
+                  key: Key('adjust-pumping-amount-$delta'),
+                  onPressed:
+                      widget.saving ||
+                          (delta < 0 &&
+                              (int.tryParse(_amountController.text) ?? 0) <= 0)
+                      ? null
+                      : () => _adjustAmount(delta),
+                  child: Text(
+                    '${delta > 0 ? '+' : '−'}${delta.abs()} mL',
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -208,15 +242,6 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
             labelText: loc.memoOptionalLabel,
           ),
           const SizedBox(height: AppSpacing.md),
-          OutlinedButton.icon(
-            key: const Key('quick-record-time'),
-            onPressed: widget.saving ? null : widget.onChangeTime,
-            icon: const Icon(Icons.schedule),
-            label: Text(
-              '${loc.recordTimeLabel} · '
-              '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(widget.occurredAt))}',
-            ),
-          ),
           if (widget.error != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -226,20 +251,61 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
-          FilledButton.icon(
-            key: const Key('save-pumping-event-button'),
-            onPressed: widget.saving ? null : _save,
-            icon: widget.saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check),
-            label: Text(loc.savePumping),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('cancel-pumping-event-button'),
+                  onPressed: widget.saving ? null : widget.onBack,
+                  child: Text(loc.cancel),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton.icon(
+                  key: const Key('save-pumping-event-button'),
+                  onPressed: widget.saving ? null : _save,
+                  icon: widget.saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check),
+                  label: Text(loc.savePumping),
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _timeEditor(ThemeData theme) {
+    final material = MaterialLocalizations.of(context);
+    return Column(
+      children: [
+        Text(
+          '${material.formatMediumDate(widget.occurredAt)} · '
+          '${material.formatTimeOfDay(TimeOfDay.fromDateTime(widget.occurredAt))}',
+          key: const Key('pumping-record-date-time'),
+          style: theme.textTheme.titleMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DateTimeAdjustmentControls(
+          key: const Key('pumping-date-time-controls'),
+          value: widget.occurredAt,
+          firstDate: DateTime(2000),
+          lastDate: DateTime.now(),
+          onChanged: widget.onOccurredAtChanged,
+          keyPrefix: 'pumping',
+          showSpinner: defaultTargetPlatform != TargetPlatform.windows,
+          showDirectInput: defaultTargetPlatform == TargetPlatform.windows,
+          rollFutureTimeToPreviousDay: true,
+        ),
+      ],
     );
   }
 }

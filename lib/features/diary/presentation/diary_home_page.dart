@@ -25,7 +25,6 @@ import '../../events/domain/bath_record.dart';
 import '../../events/domain/elimination_record.dart';
 import '../../events/domain/intake_record.dart';
 import '../../events/presentation/elimination_event_form.dart';
-import '../../events/presentation/intake_event_form.dart';
 import '../../events/presentation/record_entry_sheet.dart';
 import '../../medical_briefing/presentation/medical_briefing_page.dart';
 import '../../growth/presentation/growth_chart_page.dart';
@@ -44,6 +43,17 @@ import '../application/top_undo_notifier.dart';
 import 'diary_form_page.dart';
 import 'diary_list_page.dart';
 import 'today_page.dart';
+
+String _feedingQuickTargetLabel(
+  QuickLaunchEventTarget target,
+  AppLocalizations loc,
+) => switch (target) {
+  QuickLaunchEventTarget.formulaFeeding => loc.formulaOption,
+  QuickLaunchEventTarget.breastFeeding => loc.breastFeedingOption,
+  QuickLaunchEventTarget.pumping => loc.pumpingEvent,
+  QuickLaunchEventTarget.expressedMilkFeeding => loc.expressedMilkFeedingOption,
+  _ => loc.feedingEvent,
+};
 
 class DiaryDemoPage extends ConsumerStatefulWidget {
   const DiaryDemoPage({super.key});
@@ -506,13 +516,26 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       );
   }
 
-  Future<void> _runQuickLaunch(QuickLaunchSlot slot) async {
+  Future<void> _runQuickLaunch(
+    QuickLaunchSlot slot,
+    BuildContext anchorContext,
+  ) async {
     final target = slot.eventTypeId;
     if (target == null || _busyQuickLaunchSlot != null) return;
+    if (target == QuickLaunchEventTarget.feeding) {
+      final selected = await _chooseFeedingQuickTarget(anchorContext);
+      if (selected == null || !mounted) return;
+      await _showRecordEntry(
+        initialItem: quickLaunchCatalogItem(selected),
+        initialStructuredDataJson: _feedingPreset(selected)?.encode(),
+      );
+      return;
+    }
     if (slot.executionMode == QuickLaunchExecutionMode.prefilledForm) {
       await _showRecordEntry(
         initialItem: quickLaunchCatalogItem(target),
-        initialStructuredDataJson: slot.structuredPresetJson,
+        initialStructuredDataJson:
+            slot.structuredPresetJson ?? _feedingPreset(target)?.encode(),
       );
       return;
     }
@@ -524,22 +547,6 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     String? recordId;
     try {
       switch (target) {
-        case QuickLaunchEventTarget.feeding:
-          final preset =
-              IntakeRecord.decode(slot.structuredPresetJson ?? '') ??
-              const IntakeRecord(
-                kind: IntakeRecordKind.feeding,
-                method: FeedingMethod.timeOnly,
-              );
-          final encoded = preset.encode();
-          recordId = await ref
-              .read(diaryListProvider.notifier)
-              .addActivityRecord(
-                type: item.label(loc),
-                details: intakeRecordDetails(preset, loc),
-                occurredAt: now,
-                structuredDataJson: encoded,
-              );
         case QuickLaunchEventTarget.diaper:
           final kind = _quickLaunchEliminationKind(slot.structuredPresetJson);
           final record = EliminationRecord(kind: kind, occurredAt: now);
@@ -597,6 +604,69 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       if (mounted) setState(() => _busyQuickLaunchSlot = null);
     }
   }
+
+  Future<QuickLaunchEventTarget?> _chooseFeedingQuickTarget(
+    BuildContext anchorContext,
+  ) {
+    final loc = AppLocalizations.of(context)!;
+    const targets = [
+      QuickLaunchEventTarget.formulaFeeding,
+      QuickLaunchEventTarget.breastFeeding,
+      QuickLaunchEventTarget.pumping,
+      QuickLaunchEventTarget.expressedMilkFeeding,
+    ];
+    final anchorBox = anchorContext.findRenderObject()! as RenderBox;
+    final overlayBox =
+        Overlay.of(anchorContext).context.findRenderObject()! as RenderBox;
+    final anchorOffset = anchorBox.localToGlobal(
+      Offset.zero,
+      ancestor: overlayBox,
+    );
+    final anchorRect = anchorOffset & anchorBox.size;
+    return showMenu<QuickLaunchEventTarget>(
+      context: anchorContext,
+      popUpAnimationStyle: AnimationStyle.noAnimation,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(anchorRect.left, anchorRect.bottom, anchorRect.width, 0),
+        Offset.zero & overlayBox.size,
+      ),
+      constraints: const BoxConstraints(minWidth: 180, maxWidth: 240),
+      items: [
+        for (final target in targets)
+          PopupMenuItem(
+            key: Key('feeding-quick-choice-${target.name}'),
+            value: target,
+            child: Row(
+              children: [
+                Icon(quickLaunchCatalogItem(target).icon, size: 20),
+                const SizedBox(width: 12),
+                Text(_feedingQuickTargetLabel(target, loc)),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  IntakeRecord? _feedingPreset(QuickLaunchEventTarget target) =>
+      switch (target) {
+        QuickLaunchEventTarget.formulaFeeding => const IntakeRecord(
+          kind: IntakeRecordKind.feeding,
+          method: FeedingMethod.bottle,
+          bottleContents: BottleContents.formula,
+        ),
+        QuickLaunchEventTarget.breastFeeding => const IntakeRecord(
+          kind: IntakeRecordKind.feeding,
+          method: FeedingMethod.breast,
+          side: BreastSide.left,
+        ),
+        QuickLaunchEventTarget.expressedMilkFeeding => const IntakeRecord(
+          kind: IntakeRecordKind.feeding,
+          method: FeedingMethod.bottle,
+          bottleContents: BottleContents.expressedMilk,
+        ),
+        _ => null,
+      };
 
   EliminationKind _quickLaunchEliminationKind(String? source) {
     try {

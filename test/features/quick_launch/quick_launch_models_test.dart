@@ -10,7 +10,7 @@ void main() {
         eventTypeId: QuickLaunchEventTarget.diaper,
         executionMode: QuickLaunchExecutionMode.prefilledForm,
         structuredPresetJson: '{"kind":"stool"}',
-        displayLabel: '기저귀',
+        displayLabel: 'label-a',
         childId: 'child-a',
         deviceProfileId: 'device-b',
       );
@@ -30,13 +30,24 @@ void main() {
       final updated = slot.copyWith(
         clearEventType: true,
         executionMode: QuickLaunchExecutionMode.prefilledForm,
-        displayLabel: '잠',
+        displayLabel: 'edited',
       );
 
       expect(slot.eventTypeId, QuickLaunchEventTarget.sleep);
       expect(updated.eventTypeId, isNull);
       expect(updated.executionMode, QuickLaunchExecutionMode.prefilledForm);
-      expect(updated.displayLabel, '잠');
+      expect(updated.displayLabel, 'edited');
+    });
+
+    test('preserves new feeding variants in JSON', () {
+      final slot = QuickLaunchSlot(
+        slotIndex: 4,
+        eventTypeId: QuickLaunchEventTarget.expressedMilkFeeding,
+      );
+
+      final decoded = QuickLaunchSlot.fromJsonString(slot.toJsonString());
+
+      expect(decoded.eventTypeId, QuickLaunchEventTarget.expressedMilkFeeding);
     });
   });
 
@@ -127,7 +138,7 @@ void main() {
 
       expect(layout.slots, hasLength(5));
       expect(layout.slotAt(0).eventTypeId, QuickLaunchEventTarget.feeding);
-      expect(layout.slotAt(0).executionMode, QuickLaunchExecutionMode.instant);
+      expect(layout.slotAt(0).executionMode, QuickLaunchExecutionMode.category);
       expect(layout.slotAt(0).childId, 'child-a');
       expect(layout.slotAt(1).eventTypeId, QuickLaunchEventTarget.diaper);
       expect(layout.slotAt(3).eventTypeId, QuickLaunchEventTarget.sleep);
@@ -140,6 +151,7 @@ void main() {
       );
 
       expect(layout.slotAt(0).eventTypeId, QuickLaunchEventTarget.feeding);
+      expect(layout.slotAt(0).executionMode, QuickLaunchExecutionMode.category);
       expect(layout.slotAt(1).eventTypeId, QuickLaunchEventTarget.meal);
       expect(layout.slotAt(2).eventTypeId, QuickLaunchEventTarget.water);
       expect(layout.slotAt(3).eventTypeId, QuickLaunchEventTarget.sleep);

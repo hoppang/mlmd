@@ -2,6 +2,9 @@ import 'dart:convert';
 
 enum QuickLaunchEventTarget {
   feeding,
+  formulaFeeding,
+  breastFeeding,
+  expressedMilkFeeding,
   meal,
   water,
   snack,
@@ -21,7 +24,7 @@ enum QuickLaunchEventTarget {
   memo,
 }
 
-enum QuickLaunchExecutionMode { instant, prefilledForm }
+enum QuickLaunchExecutionMode { instant, prefilledForm, category }
 
 enum QuickLaunchRecommendationDecisionStatus {
   pending,
@@ -474,10 +477,8 @@ class QuickLaunchRecommendationBuilder {
         const QuickLaunchRecommendationTemplate(
           slotIndex: 0,
           eventTypeId: QuickLaunchEventTarget.feeding,
-          executionMode: QuickLaunchExecutionMode.instant,
+          executionMode: QuickLaunchExecutionMode.category,
           displayLabel: 'feeding',
-          structuredPresetJson:
-              '{"version":1,"kind":"feeding","method":"timeOnly"}',
         ),
         const QuickLaunchRecommendationTemplate(
           slotIndex: 1,
@@ -504,10 +505,8 @@ class QuickLaunchRecommendationBuilder {
         const QuickLaunchRecommendationTemplate(
           slotIndex: 0,
           eventTypeId: QuickLaunchEventTarget.feeding,
-          executionMode: QuickLaunchExecutionMode.instant,
+          executionMode: QuickLaunchExecutionMode.category,
           displayLabel: 'feeding',
-          structuredPresetJson:
-              '{"version":1,"kind":"feeding","method":"timeOnly"}',
         ),
         const QuickLaunchRecommendationTemplate(
           slotIndex: 1,
@@ -533,10 +532,8 @@ class QuickLaunchRecommendationBuilder {
         const QuickLaunchRecommendationTemplate(
           slotIndex: 0,
           eventTypeId: QuickLaunchEventTarget.feeding,
-          executionMode: QuickLaunchExecutionMode.instant,
+          executionMode: QuickLaunchExecutionMode.category,
           displayLabel: 'feeding',
-          structuredPresetJson:
-              '{"version":1,"kind":"feeding","method":"timeOnly"}',
         ),
         const QuickLaunchRecommendationTemplate(
           slotIndex: 1,

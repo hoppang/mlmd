@@ -5,6 +5,9 @@ import '../../../l10n/app_localizations.dart';
 import '../domain/quick_launch_models.dart';
 import 'quick_launch_labels.dart';
 
+typedef QuickLaunchSlotCallback =
+    void Function(QuickLaunchSlot slot, BuildContext anchorContext);
+
 class QuickLaunchDock extends StatelessWidget {
   const QuickLaunchDock({
     required this.layout,
@@ -16,7 +19,7 @@ class QuickLaunchDock extends StatelessWidget {
   });
 
   final QuickLaunchLayout layout;
-  final ValueChanged<QuickLaunchSlot> onSlotPressed;
+  final QuickLaunchSlotCallback onSlotPressed;
   final ValueChanged<int> onEditSlot;
   final VoidCallback onOpenAll;
   final int? busySlotIndex;
@@ -43,8 +46,8 @@ class QuickLaunchDock extends StatelessWidget {
                   slot: slot,
                   busy: busySlotIndex == slot.slotIndex,
                   onPressed: slot.hasEventType
-                      ? () => onSlotPressed(slot)
-                      : () => onEditSlot(slot.slotIndex),
+                      ? (anchorContext) => onSlotPressed(slot, anchorContext)
+                      : (_) => onEditSlot(slot.slotIndex),
                 ),
               ),
             ),
@@ -74,7 +77,7 @@ class _QuickLaunchTile extends StatelessWidget {
 
   final QuickLaunchSlot slot;
   final bool busy;
-  final VoidCallback onPressed;
+  final ValueChanged<BuildContext> onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -86,12 +89,18 @@ class _QuickLaunchTile extends StatelessWidget {
         label: loc.quickLaunchAdd,
         icon: Icons.add,
         outlined: true,
-        onPressed: onPressed,
+        onPressed: () => onPressed(context),
       );
     }
-    final instant = slot.executionMode == QuickLaunchExecutionMode.instant;
+    final category =
+        slot.executionMode == QuickLaunchExecutionMode.category ||
+        quickLaunchOpensCategory(target);
+    final instant =
+        slot.executionMode == QuickLaunchExecutionMode.instant && !category;
     final label = quickLaunchSlotLabel(slot, loc);
-    final semanticLabel = instant
+    final semanticLabel = category
+        ? loc.quickLaunchCategorySemantic(label)
+        : instant
         ? loc.quickLaunchInstantSemantic(label)
         : loc.quickLaunchFormSemantic(label);
     final colors = Theme.of(context).colorScheme;
@@ -99,83 +108,91 @@ class _QuickLaunchTile extends StatelessWidget {
       button: true,
       label: semanticLabel,
       excludeSemantics: true,
-      child: InkWell(
-        key: Key('quick-launch-slot-${slot.slotIndex}'),
-        borderRadius: BorderRadius.circular(12),
-        onTap: busy ? null : onPressed,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 76),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xxs,
-              vertical: AppSpacing.xs,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: instant
-                            ? colors.primaryContainer
-                            : colors.surfaceContainerHighest,
-                        shape: instant ? BoxShape.circle : BoxShape.rectangle,
-                        borderRadius: instant
-                            ? null
-                            : BorderRadius.circular(12),
-                        border: instant
-                            ? null
-                            : Border.all(color: colors.outlineVariant),
+      child: Builder(
+        builder: (anchorContext) => InkWell(
+          key: Key('quick-launch-slot-${slot.slotIndex}'),
+          borderRadius: BorderRadius.circular(12),
+          onTap: busy ? null : () => onPressed(anchorContext),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 76),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xxs,
+                vertical: AppSpacing.xs,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: instant
+                              ? colors.primaryContainer
+                              : colors.surfaceContainerHighest,
+                          shape: instant ? BoxShape.circle : BoxShape.rectangle,
+                          borderRadius: instant
+                              ? null
+                              : BorderRadius.circular(12),
+                          border: instant
+                              ? null
+                              : Border.all(color: colors.outlineVariant),
+                        ),
+                        child: busy
+                            ? const Padding(
+                                padding: EdgeInsets.all(11),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                quickLaunchCatalogItem(target).icon,
+                                size: 21,
+                                color: instant
+                                    ? colors.onPrimaryContainer
+                                    : colors.onSurfaceVariant,
+                              ),
                       ),
-                      child: busy
-                          ? const Padding(
-                              padding: EdgeInsets.all(11),
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(
-                              quickLaunchCatalogItem(target).icon,
-                              size: 21,
-                              color: instant
-                                  ? colors.onPrimaryContainer
-                                  : colors.onSurfaceVariant,
+                      if (!busy)
+                        Positioned(
+                          right: -4,
+                          bottom: -3,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: colors.outlineVariant),
                             ),
-                    ),
-                    if (!busy)
-                      Positioned(
-                        right: -4,
-                        bottom: -3,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: colors.surface,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: colors.outlineVariant),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(2),
-                            child: Icon(
-                              instant ? Icons.bolt : Icons.edit_outlined,
-                              size: 12,
-                              color: colors.primary,
+                            child: Padding(
+                              padding: const EdgeInsets.all(2),
+                              child: Icon(
+                                category
+                                    ? Icons.arrow_drop_down
+                                    : instant
+                                    ? Icons.bolt
+                                    : Icons.edit_outlined,
+                                size: 12,
+                                color: colors.primary,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ],
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

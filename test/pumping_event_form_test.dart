@@ -30,6 +30,7 @@ void main() {
             error: null,
             onBack: () {},
             onChangeTime: () {},
+            onOccurredAtChanged: (_) {},
             onSave: (_) {},
           ),
         ),
@@ -46,7 +47,6 @@ void main() {
     testWidgets('selects side chip, enters amount and note, and triggers onSave with formatted details', (tester) async {
       PumpingFormResult? result;
       bool backPressed = false;
-      bool changeTimePressed = false;
       final occurredAt = DateTime(2026, 7, 26, 14, 20);
 
       await tester.pumpWidget(
@@ -56,7 +56,8 @@ void main() {
             saving: false,
             error: null,
             onBack: () => backPressed = true,
-            onChangeTime: () => changeTimePressed = true,
+            onChangeTime: () {},
+            onOccurredAtChanged: (_) {},
             onSave: (res) => result = res,
           ),
         ),
@@ -93,11 +94,10 @@ void main() {
       expect(result!.record.note, '유축기 4단계로 유축');
       expect(result!.details, '120mL · 양쪽');
 
-      // Test back and change time buttons
-      await tester.tap(find.byKey(const Key('back-to-record-types')));
-      await tester.tap(find.byKey(const Key('quick-record-time')));
+      // Test explicit cancel and inline time controls.
+      expect(find.byKey(const Key('pumping-date-time-controls')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('cancel-pumping-event-button')));
       expect(backPressed, isTrue);
-      expect(changeTimePressed, isTrue);
     });
 
     testWidgets('restores initial record values and toggles side chip to deselect', (tester) async {
@@ -119,6 +119,7 @@ void main() {
             initialRecord: initial,
             onBack: () {},
             onChangeTime: () {},
+            onOccurredAtChanged: (_) {},
             onSave: (res) => result = res,
           ),
         ),
@@ -132,7 +133,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Save
-      await tester.tap(find.byKey(const Key('save-pumping-event-button')));
+      final save = find.byKey(const Key('save-pumping-event-button'));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
       await tester.pumpAndSettle();
 
       expect(result, isNotNull);

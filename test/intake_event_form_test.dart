@@ -34,6 +34,7 @@ void main() {
             error: null,
             onBack: () {},
             onChangeTime: () {},
+            onOccurredAtChanged: (_) {},
             onSave: (value) => result = value,
           ),
         ),
@@ -71,5 +72,80 @@ void main() {
     await tester.tap(find.byKey(const Key('amount-kind-fraction')));
     await tester.pumpAndSettle();
     expect(find.text('컵 단위 안내'), findsNothing);
+  });
+
+  testWidgets('feeding requires amount and adjusts amount and time inline', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    var occurredAt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      now.hour,
+      now.minute,
+    ).subtract(const Duration(minutes: 30));
+    IntakeFormResult? result;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          locale: const Locale('ko'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setHarnessState) => IntakeEventForm(
+                item: eventCatalogItem(EventTypeId.feeding),
+                occurredAt: occurredAt,
+                saving: false,
+                error: null,
+                onBack: () {},
+                onChangeTime: () {},
+                onOccurredAtChanged: (value) =>
+                    setHarnessState(() => occurredAt = value),
+                onSave: (value) => result = value,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('feeding-type-expressedMilk')));
+    final addHundred = find.byKey(const Key('adjust-feeding-amount-100'));
+    await tester.ensureVisible(addHundred);
+    await tester.tap(addHundred);
+    final addTen = find.byKey(const Key('adjust-feeding-amount-10'));
+    await tester.ensureVisible(addTen);
+    await tester.tap(addTen);
+    await tester.ensureVisible(
+      find.byKey(const Key('adjust-feeding-hour--1')),
+    );
+    await tester.tap(find.byKey(const Key('adjust-feeding-hour--1')));
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('save-quick-record')));
+    await tester.tap(find.byKey(const Key('save-quick-record')));
+    await tester.pump();
+
+    expect(result?.record.method, FeedingMethod.bottle);
+    expect(result?.record.bottleContents, BottleContents.expressedMilk);
+    expect(result?.record.amountExpression?.exactValue, 110);
+    expect(
+      occurredAt,
+      DateTime(
+        now.year,
+        now.month,
+        now.day,
+        now.hour,
+        now.minute,
+      ).subtract(const Duration(hours: 1, minutes: 30)),
+    );
+    expect(find.byKey(const Key('cancel-quick-record')), findsOneWidget);
   });
 }

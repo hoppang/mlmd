@@ -301,16 +301,18 @@ bool _validateKind({
       }
       if (method == FeedingMethod.breast && side == null) return false;
       if (method != FeedingMethod.breast && side != null) return false;
-      if (method != FeedingMethod.bottle && amountExpression != null) {
+      if (method == FeedingMethod.breast &&
+          amountExpression != null &&
+          amountExpression.kind != AmountExpressionKind.exact) {
+        return false;
+      }
+      if (method == FeedingMethod.timeOnly && amountExpression != null) {
         return false;
       }
       if (method == FeedingMethod.breast &&
           startedAt != null &&
           endedAt != null &&
           startedAt.isAfter(endedAt)) {
-        return false;
-      }
-      if (method == FeedingMethod.timeOnly && amountExpression != null) {
         return false;
       }
       return true;

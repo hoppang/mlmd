@@ -53,7 +53,7 @@ void main() {
         side: BreastSide.left,
         startedAt: DateTime.parse('2026-07-24T08:10:00.000Z'),
         endedAt: DateTime.parse('2026-07-24T08:18:00.000Z'),
-        memo: '아침 수유',
+        memo: '???',
       );
 
       final restored = IntakeRecord.decode(original.encode());
@@ -65,7 +65,29 @@ void main() {
       expect(restored.amountExpression, isNull);
       expect(restored.startedAt, DateTime.parse('2026-07-24T08:10:00.000Z'));
       expect(restored.endedAt, DateTime.parse('2026-07-24T08:18:00.000Z'));
-      expect(restored.memo, '아침 수유');
+      expect(restored.memo, '???');
+    });
+
+    test('round-trips feeding with breast exact amount', () {
+      final original = IntakeRecord(
+        kind: IntakeRecordKind.feeding,
+        method: FeedingMethod.breast,
+        side: BreastSide.right,
+        amountExpression: const AmountExpression.exact(
+          exactValue: 85,
+          unit: 'ml',
+        ),
+      );
+
+      final restored = IntakeRecord.decode(original.encode());
+
+      expect(restored, isNotNull);
+      expect(restored!.method, FeedingMethod.breast);
+      expect(restored.side, BreastSide.right);
+      expect(restored.amountExpression, isNotNull);
+      expect(restored.amountExpression!.kind, AmountExpressionKind.exact);
+      expect(restored.amountExpression!.exactValue, 85);
+      expect(restored.amountExpression!.unit, 'ml');
     });
 
     test('round-trips feeding with bottle details', () {
@@ -92,7 +114,7 @@ void main() {
       final original = IntakeRecord(
         kind: IntakeRecordKind.feeding,
         method: FeedingMethod.timeOnly,
-        memo: '짧은 수유',
+        memo: '???',
       );
 
       final restored = IntakeRecord.decode(original.encode());
@@ -100,20 +122,20 @@ void main() {
       expect(restored, isNotNull);
       expect(restored!.method, FeedingMethod.timeOnly);
       expect(restored.amountExpression, isNull);
-      expect(restored.memo, '짧은 수유');
+      expect(restored.memo, '???');
     });
 
     test('round-trips meal, water, and snack records', () {
       final meal = IntakeRecord(
         kind: IntakeRecordKind.meal,
         mealType: MealType.lunch,
-        foodName: '죽',
+        foodName: '???',
         reaction: IntakeReaction.ateWell,
         amountExpression: const AmountExpression.exact(
           exactValue: 180,
           unit: 'g',
         ),
-        memo: '잘 먹음',
+        memo: '???',
       );
       final water = IntakeRecord(
         kind: IntakeRecordKind.water,
@@ -124,7 +146,7 @@ void main() {
       );
       final snack = IntakeRecord(
         kind: IntakeRecordKind.snack,
-        foodName: '과일',
+        foodName: '???',
         reaction: IntakeReaction.average,
         amountExpression: const AmountExpression.qualitative(
           QualitativeLevel.little,
@@ -137,7 +159,7 @@ void main() {
 
       expect(restoredMeal, isNotNull);
       expect(restoredMeal!.mealType, MealType.lunch);
-      expect(restoredMeal.foodName, '죽');
+      expect(restoredMeal.foodName, '???');
       expect(restoredMeal.reaction, IntakeReaction.ateWell);
 
       expect(restoredWater, isNotNull);
@@ -145,7 +167,7 @@ void main() {
       expect(restoredWater.amountExpression!.exactValue, 90);
 
       expect(restoredSnack, isNotNull);
-      expect(restoredSnack!.foodName, '과일');
+      expect(restoredSnack!.foodName, '???');
       expect(restoredSnack.reaction, IntakeReaction.average);
     });
 
@@ -164,9 +186,9 @@ void main() {
       );
       expect(
         IntakeRecord.decode(
-          '{"version":1,"kind":"feeding","method":"breast","amountExpression":{"kind":"exact","exactValue":120,"unit":"ml"},"startedAt":"2026-07-24T08:10:00.000Z"}',
+          '{"version":1,"kind":"feeding","method":"breast","side":"left","amountExpression":{"kind":"exact","exactValue":120,"unit":"ml"},"startedAt":"2026-07-24T08:10:00.000Z"}',
         ),
-        isNull,
+        isNotNull,
       );
       expect(
         IntakeRecord.decode('{"version":1,"kind":"meal","mealType":"lunch"}'),
@@ -174,13 +196,13 @@ void main() {
       );
       expect(
         IntakeRecord.decode(
-          '{"version":1,"kind":"water","foodName":"물","amountExpression":{"kind":"exact","exactValue":90,"unit":"ml"}}',
+          '{"version":1,"kind":"water","foodName":"???","amountExpression":{"kind":"exact","exactValue":90,"unit":"ml"}}',
         ),
         isNull,
       );
       expect(
         IntakeRecord.decode(
-          '{"version":1,"kind":"snack","foodName":"과일","reaction":"average"}',
+          '{"version":1,"kind":"snack","foodName":"???","reaction":"average"}',
         ),
         isNull,
       );

@@ -173,6 +173,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expressedMilkOption => 'Expressed milk';
 
   @override
+  String get expressedMilkFeedingOption => 'Expressed milk feeding';
+
+  @override
+  String get feedingChooseType => 'Choose feeding type';
+
+  @override
   String get otherOption => 'Other';
 
   @override
@@ -2070,6 +2076,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String quickLaunchFormSemantic(String label) {
     return '$label, tap to open details';
+  }
+
+  @override
+  String quickLaunchCategorySemantic(String label) {
+    return '$label, tap to open choices';
   }
 
   @override
