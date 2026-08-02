@@ -40,25 +40,28 @@ void main() {
       expect(MemoRecord.decode('not a json'), isNull);
     });
 
-    test('copyWith updates specified fields and supports clearing optionals', () {
-      final now = DateTime.now();
-      final original = MemoRecord(
-        occurredAt: now,
-        content: '원본 내용',
-        legacyTitle: '기존 제목',
-        rawSttText: 'STT 원문',
-      );
+    test(
+      'copyWith updates specified fields and supports clearing optionals',
+      () {
+        final now = DateTime.now();
+        final original = MemoRecord(
+          occurredAt: now,
+          content: '원본 내용',
+          legacyTitle: '기존 제목',
+          rawSttText: 'STT 원문',
+        );
 
-      final updated = original.copyWith(
-        content: '수정된 내용',
-        clearLegacyTitle: true,
-        clearRawSttText: true,
-      );
+        final updated = original.copyWith(
+          content: '수정된 내용',
+          clearLegacyTitle: true,
+          clearRawSttText: true,
+        );
 
-      expect(updated.content, equals('수정된 내용'));
-      expect(updated.legacyTitle, isNull);
-      expect(updated.rawSttText, isNull);
-      expect(updated.occurredAt, equals(now));
-    });
+        expect(updated.content, equals('수정된 내용'));
+        expect(updated.legacyTitle, isNull);
+        expect(updated.rawSttText, isNull);
+        expect(updated.occurredAt, equals(now));
+      },
+    );
   });
 }

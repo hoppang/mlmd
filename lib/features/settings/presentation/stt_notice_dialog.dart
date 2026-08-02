@@ -41,9 +41,7 @@ class SttNoticeDialog extends ConsumerWidget {
           children: [
             Text(
               l10n.sttNoticeBody,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.5,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
             ),
             const SizedBox(height: 12),
             Container(

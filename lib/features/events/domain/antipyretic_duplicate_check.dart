@@ -43,8 +43,9 @@ AntipyreticDuplicateCandidate? findAntipyreticDuplicateCandidate({
     final record = MedicationRecord.decode(jsonStr);
     if (record == null || !record.isAntipyretic) continue;
 
-    final diff =
-        newRecord.administeredAt.difference(record.administeredAt).abs();
+    final diff = newRecord.administeredAt
+        .difference(record.administeredAt)
+        .abs();
     if (diff > timeWindow) continue;
 
     if (shortestDiff == null || diff < shortestDiff) {

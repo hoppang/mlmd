@@ -2,12 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-enum SttStatus {
-  idle,
-  listening,
-  disabled,
-  error,
-}
+enum SttStatus { idle, listening, disabled, error }
 
 class SttService {
   final stt.SpeechToText _speechToText;
@@ -15,11 +10,9 @@ class SttService {
   bool _isAvailable = false;
   bool _isListening = false;
 
-  SttService({
-    stt.SpeechToText? speechToText,
-    TargetPlatform? platform,
-  })  : _speechToText = speechToText ?? stt.SpeechToText(),
-        _platform = platform ?? defaultTargetPlatform;
+  SttService({stt.SpeechToText? speechToText, TargetPlatform? platform})
+    : _speechToText = speechToText ?? stt.SpeechToText(),
+      _platform = platform ?? defaultTargetPlatform;
 
   /// Android 플랫폼에서만 공통 STT가 지원됨 (Windows 등 MVP 지원 제외)
   bool get isSupportedPlatform => _platform == TargetPlatform.android;

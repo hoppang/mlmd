@@ -4,8 +4,8 @@ call flutter pub get
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo.
-echo === Running dart format ===
-call dart format .
+echo === Checking dart format ===
+call dart format --output=none --set-exit-if-changed lib test scripts
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo.

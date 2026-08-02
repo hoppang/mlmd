@@ -98,28 +98,29 @@ class SymptomRecord {
       final status = statusName == null
           ? null
           : SymptomEpisodeStatus.values
-              .where((e) => e.name == statusName)
-              .firstOrNull;
+                .where((e) => e.name == statusName)
+                .firstOrNull;
       if (statusName != null && status == null) return null;
 
       final onsetPrecisionName = decoded['onsetPrecision'] as String?;
       final onsetPrecision = onsetPrecisionName == null
           ? null
           : SymptomOnsetPrecision.values
-              .where((e) => e.name == onsetPrecisionName)
-              .firstOrNull;
+                .where((e) => e.name == onsetPrecisionName)
+                .firstOrNull;
       if (onsetPrecisionName != null && onsetPrecision == null) return null;
 
       final resolvedAtStr = decoded['resolvedAt'] as String?;
-      final resolvedAt =
-          resolvedAtStr == null ? null : DateTime.tryParse(resolvedAtStr);
+      final resolvedAt = resolvedAtStr == null
+          ? null
+          : DateTime.tryParse(resolvedAtStr);
 
       final severityName = decoded['severity'] as String?;
       final severity = severityName == null
           ? null
           : SymptomSeverity.values
-              .where((e) => e.name == severityName)
-              .firstOrNull;
+                .where((e) => e.name == severityName)
+                .firstOrNull;
       if (severityName != null && severity == null) return null;
 
       final trendName = decoded['trend'] as String?;
@@ -131,17 +132,15 @@ class SymptomRecord {
       final amountName = decoded['amount'] as String?;
       final amount = amountName == null
           ? null
-          : SymptomAmount.values
-              .where((e) => e.name == amountName)
-              .firstOrNull;
+          : SymptomAmount.values.where((e) => e.name == amountName).firstOrNull;
       if (amountName != null && amount == null) return null;
 
       final contextName = decoded['context'] as String?;
       final context = contextName == null
           ? null
           : SymptomContext.values
-              .where((e) => e.name == contextName)
-              .firstOrNull;
+                .where((e) => e.name == contextName)
+                .firstOrNull;
       if (contextName != null && context == null) return null;
 
       final note = decoded['note'] as String?;
@@ -184,14 +183,12 @@ String symptomContextLabel(AppLocalizations loc, SymptomContext context) =>
       SymptomContext.unknown => '모름',
     };
 
-String symptomSeverityLabel(
-  AppLocalizations loc,
-  SymptomSeverity severity,
-) => switch (severity) {
-  SymptomSeverity.mild => '약함',
-  SymptomSeverity.moderate => '보통',
-  SymptomSeverity.severe => '심함',
-};
+String symptomSeverityLabel(AppLocalizations loc, SymptomSeverity severity) =>
+    switch (severity) {
+      SymptomSeverity.mild => '약함',
+      SymptomSeverity.moderate => '보통',
+      SymptomSeverity.severe => '심함',
+    };
 
 String symptomTrendLabel(AppLocalizations loc, SymptomTrend trend) =>
     switch (trend) {

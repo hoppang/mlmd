@@ -109,8 +109,9 @@ class _VaccinationEventFormState extends State<VaccinationEventForm> {
       return;
     }
     try {
-      final opened = await (widget.launchExternal?.call(uri) ??
-          launchUrl(uri, mode: LaunchMode.externalApplication));
+      final opened =
+          await (widget.launchExternal?.call(uri) ??
+              launchUrl(uri, mode: LaunchMode.externalApplication));
       if (!opened && context.mounted) _showFailure(context);
     } catch (_) {
       if (context.mounted) _showFailure(context);
@@ -211,9 +212,9 @@ class _VaccinationEventFormState extends State<VaccinationEventForm> {
                   onPressed: widget.saving
                       ? null
                       : () => _addAttachment(
-                            type: AttachmentType.vaccinationRecord,
-                            sourceKind: AttachmentSourceKind.inAppCamera,
-                          ),
+                          type: AttachmentType.vaccinationRecord,
+                          sourceKind: AttachmentSourceKind.inAppCamera,
+                        ),
                   icon: const Icon(Icons.camera_alt_outlined),
                   label: Text(loc.vaccinationBookButton),
                 ),
@@ -225,9 +226,9 @@ class _VaccinationEventFormState extends State<VaccinationEventForm> {
                   onPressed: widget.saving
                       ? null
                       : () => _addAttachment(
-                            type: AttachmentType.general,
-                            sourceKind: AttachmentSourceKind.filePicker,
-                          ),
+                          type: AttachmentType.general,
+                          sourceKind: AttachmentSourceKind.filePicker,
+                        ),
                   icon: const Icon(Icons.attach_file),
                   label: Text(loc.attachFileButton),
                 ),

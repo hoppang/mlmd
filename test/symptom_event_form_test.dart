@@ -48,7 +48,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Enter note
-    await tester.enterText(find.byKey(const Key('symptom-note-input')), '맑은 콧물');
+    await tester.enterText(
+      find.byKey(const Key('symptom-note-input')),
+      '맑은 콧물',
+    );
     await tester.pumpAndSettle();
 
     // Save

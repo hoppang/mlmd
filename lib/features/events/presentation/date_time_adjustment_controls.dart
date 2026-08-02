@@ -310,17 +310,14 @@ class _TimeWheel extends StatelessWidget {
   );
 }
 
-DateTime truncateToMinute(DateTime value) => DateTime(
-  value.year,
-  value.month,
-  value.day,
-  value.hour,
-  value.minute,
-);
+DateTime truncateToMinute(DateTime value) =>
+    DateTime(value.year, value.month, value.day, value.hour, value.minute);
 
 DateTime earliestSelectableMinute(DateTime value) {
   final minute = truncateToMinute(value);
-  return minute.isBefore(value) ? minute.add(const Duration(minutes: 1)) : minute;
+  return minute.isBefore(value)
+      ? minute.add(const Duration(minutes: 1))
+      : minute;
 }
 
 String _twoDigits(int value) => value.toString().padLeft(2, '0');

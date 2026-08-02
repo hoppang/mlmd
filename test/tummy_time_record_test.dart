@@ -66,9 +66,7 @@ void main() {
       );
       // Missing occurredAt
       expect(
-        TummyTimeRecord.decode(
-          '{"schema":"mlmd.tummytime","version":1}',
-        ),
+        TummyTimeRecord.decode('{"schema":"mlmd.tummytime","version":1}'),
         isNull,
       );
     });
@@ -101,7 +99,10 @@ void main() {
       final locEn = await AppLocalizations.delegate.load(const Locale('en'));
       final now = DateTime(2026, 7, 27, 10, 30);
 
-      final recWithDuration = TummyTimeRecord(occurredAt: now, durationMinutes: 5);
+      final recWithDuration = TummyTimeRecord(
+        occurredAt: now,
+        durationMinutes: 5,
+      );
       expect(recWithDuration.buildDetails(locKo), '5분');
       expect(recWithDuration.buildDetails(locEn), '5 min');
     });
@@ -111,8 +112,7 @@ void main() {
       final locEn = await AppLocalizations.delegate.load(const Locale('en'));
       final now = DateTime(2026, 7, 27, 10, 30);
 
-      final recWithNote =
-          TummyTimeRecord(occurredAt: now, note: '잘 버텼어요');
+      final recWithNote = TummyTimeRecord(occurredAt: now, note: '잘 버텼어요');
       expect(recWithNote.buildDetails(locKo), '잘 버텼어요');
       expect(recWithNote.buildDetails(locEn), '잘 버텼어요');
 

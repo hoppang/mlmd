@@ -74,9 +74,9 @@ class _MemoEventFormState extends ConsumerState<MemoEventForm> {
     if (!mounted) return;
 
     if (!result.hasChanges) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('교정할 맞춤법이나 오탈자가 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('교정할 맞춤법이나 오탈자가 없습니다.')));
       return;
     }
 
@@ -192,9 +192,9 @@ class _MemoEventFormState extends ConsumerState<MemoEventForm> {
         _contentController.text = _previousContent!;
         _previousContent = null;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('원문으로 되돌렸습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('원문으로 되돌렸습니다.')));
     }
   }
 
@@ -217,10 +217,8 @@ class _MemoEventFormState extends ConsumerState<MemoEventForm> {
       inputSource: _inputSource,
       legacyTitle: widget.initialRecord?.legacyTitle,
       rawSttText: _rawSttText,
-      createdByAuthorProfileId:
-          widget.initialRecord?.createdByAuthorProfileId,
-      createdByDeviceProfileId:
-          widget.initialRecord?.createdByDeviceProfileId,
+      createdByAuthorProfileId: widget.initialRecord?.createdByAuthorProfileId,
+      createdByDeviceProfileId: widget.initialRecord?.createdByDeviceProfileId,
       createdAt: widget.initialRecord?.createdAt,
       lastModified: widget.initialRecord?.lastModified,
     );

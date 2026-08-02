@@ -30,9 +30,7 @@ void main() {
 
     test('encode and decode without note (minimal record)', () {
       final now = DateTime(2026, 7, 25, 10, 0);
-      final record = HospitalVisitRecord(
-        visitedAt: now,
-      );
+      final record = HospitalVisitRecord(visitedAt: now);
 
       final jsonString = record.encode();
       final decoded = HospitalVisitRecord.decode(jsonString);

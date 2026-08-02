@@ -3,56 +3,52 @@ import '../../../repositories/task_repository.dart';
 import '../domain/care_task_model.dart';
 
 class TaskItemPair {
-  const TaskItemPair({
-    required this.task,
-    required this.occurrence,
-  });
+  const TaskItemPair({required this.task, required this.occurrence});
 
   final CareTask task;
   final CareTaskOccurrence occurrence;
 }
 
 class TaskListState {
-  const TaskListState({
-    required this.selectedDate,
-    required this.items,
-  });
+  const TaskListState({required this.selectedDate, required this.items});
 
   final DateTime selectedDate;
   final List<TaskItemPair> items;
 
   List<TaskItemPair> get dueItems => items
-      .where((item) => item.occurrence.computedStatusAt(DateTime.now()) == TaskStatus.due && !item.occurrence.isDone)
+      .where(
+        (item) =>
+            item.occurrence.computedStatusAt(DateTime.now()) ==
+                TaskStatus.due &&
+            !item.occurrence.isDone,
+      )
       .toList();
 
   List<TaskItemPair> get scheduledItems => items
-      .where((item) => item.occurrence.computedStatusAt(DateTime.now()) == TaskStatus.scheduled && !item.occurrence.isDone)
+      .where(
+        (item) =>
+            item.occurrence.computedStatusAt(DateTime.now()) ==
+                TaskStatus.scheduled &&
+            !item.occurrence.isDone,
+      )
       .toList();
 
-  List<TaskItemPair> get completedItems => items
-      .where((item) => item.occurrence.isCompleted)
-      .toList();
+  List<TaskItemPair> get completedItems =>
+      items.where((item) => item.occurrence.isCompleted).toList();
 
-  List<TaskItemPair> get skippedItems => items
-      .where((item) => item.occurrence.isSkipped)
-      .toList();
+  List<TaskItemPair> get skippedItems =>
+      items.where((item) => item.occurrence.isSkipped).toList();
 }
 
 class TaskNotifier extends Notifier<TaskListState> {
   @override
   TaskListState build() {
     final now = DateTime.now();
-    return TaskListState(
-      selectedDate: now,
-      items: _fetchItemsForDate(now),
-    );
+    return TaskListState(selectedDate: now, items: _fetchItemsForDate(now));
   }
 
   void selectDate(DateTime date) {
-    state = TaskListState(
-      selectedDate: date,
-      items: _fetchItemsForDate(date),
-    );
+    state = TaskListState(selectedDate: date, items: _fetchItemsForDate(date));
   }
 
   void refresh() {

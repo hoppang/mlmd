@@ -122,16 +122,16 @@ class _GrowthMeasurementEventFormState
       weightKg: weightRaw,
       headCm: headRaw,
       note: noteText.isNotEmpty ? noteText : null,
-      createdByAuthorProfileId:
-          widget.initialRecord?.createdByAuthorProfileId,
-      createdByDeviceProfileId:
-          widget.initialRecord?.createdByDeviceProfileId,
+      createdByAuthorProfileId: widget.initialRecord?.createdByAuthorProfileId,
+      createdByDeviceProfileId: widget.initialRecord?.createdByDeviceProfileId,
       createdAt: widget.initialRecord?.createdAt,
       lastModified: widget.initialRecord?.lastModified,
     );
 
     final details = record.buildDetails(loc);
-    widget.onSave(GrowthMeasurementFormResult(record: record, details: details));
+    widget.onSave(
+      GrowthMeasurementFormResult(record: record, details: details),
+    );
   }
 
   void _clearValidationError() {

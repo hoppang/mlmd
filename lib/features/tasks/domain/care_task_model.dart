@@ -68,7 +68,8 @@ class CareTask {
   final String createdByDeviceProfileId;
 
   bool get isArchived => archivedAt != null;
-  bool get isAssignedToAnyone => assignedToAuthorProfileId == null || assignedToAuthorProfileId!.isEmpty;
+  bool get isAssignedToAnyone =>
+      assignedToAuthorProfileId == null || assignedToAuthorProfileId!.isEmpty;
 }
 
 class CareTaskOccurrence {

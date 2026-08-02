@@ -97,7 +97,9 @@ class PumpingRecord {
       if (occurredAt == null) return null;
 
       final amountMlVal = decoded['amountMl'];
-      final amountMl = amountMlVal is int && amountMlVal > 0 ? amountMlVal : null;
+      final amountMl = amountMlVal is int && amountMlVal > 0
+          ? amountMlVal
+          : null;
 
       final sideStr = decoded['side'] as String?;
       final side = PumpingSide.values.firstWhere(
@@ -119,9 +121,12 @@ class PumpingRecord {
             decoded['createdByAuthorProfileId'] as String?,
         createdByDeviceProfileId:
             decoded['createdByDeviceProfileId'] as String?,
-        createdAt: createdAtStr != null ? DateTime.tryParse(createdAtStr) : null,
-        lastModified:
-            lastModifiedStr != null ? DateTime.tryParse(lastModifiedStr) : null,
+        createdAt: createdAtStr != null
+            ? DateTime.tryParse(createdAtStr)
+            : null,
+        lastModified: lastModifiedStr != null
+            ? DateTime.tryParse(lastModifiedStr)
+            : null,
       );
     } catch (_) {
       return null;
@@ -140,10 +145,11 @@ class PumpingRecord {
     return parts.join(' · ');
   }
 
-  static String? _sideLabel(PumpingSide side, AppLocalizations loc) => switch (side) {
-    PumpingSide.left => loc.leftSideOption,
-    PumpingSide.right => loc.rightSideOption,
-    PumpingSide.both => loc.bothSidesOption,
-    PumpingSide.unknown => null,
-  };
+  static String? _sideLabel(PumpingSide side, AppLocalizations loc) =>
+      switch (side) {
+        PumpingSide.left => loc.leftSideOption,
+        PumpingSide.right => loc.rightSideOption,
+        PumpingSide.both => loc.bothSidesOption,
+        PumpingSide.unknown => null,
+      };
 }

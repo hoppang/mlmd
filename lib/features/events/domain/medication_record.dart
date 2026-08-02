@@ -11,21 +11,9 @@ enum MedicationCategory {
   other,
 }
 
-enum MedicationRoute {
-  oral,
-  suppository,
-  topical,
-  inhaled,
-  other,
-  unknown,
-}
+enum MedicationRoute { oral, suppository, topical, inhaled, other, unknown }
 
-enum AntipyreticIngredient {
-  acetaminophen,
-  ibuprofen,
-  other,
-  unknown,
-}
+enum AntipyreticIngredient { acetaminophen, ibuprofen, other, unknown }
 
 class MedicationRecord {
   const MedicationRecord({
@@ -117,8 +105,8 @@ class MedicationRecord {
       final ingredient = ingredientName == null
           ? null
           : AntipyreticIngredient.values
-              .where((e) => e.name == ingredientName)
-              .firstOrNull;
+                .where((e) => e.name == ingredientName)
+                .firstOrNull;
 
       final amountNum = decoded['amount'];
       final amount = amountNum is num ? amountNum.toDouble() : null;
@@ -146,15 +134,17 @@ class MedicationRecord {
   }
 }
 
-String medicationCategoryLabel(AppLocalizations loc, MedicationCategory category) =>
-    switch (category) {
-      MedicationCategory.antipyretic => loc.medicationCategoryAntipyretic,
-      MedicationCategory.coughCold => loc.medicationCategoryCoughCold,
-      MedicationCategory.antibiotic => loc.medicationCategoryAntibiotic,
-      MedicationCategory.ointment => loc.medicationCategoryOintment,
-      MedicationCategory.eyeEarNose => loc.medicationCategoryEyeEarNose,
-      MedicationCategory.other => loc.medicationCategoryOther,
-    };
+String medicationCategoryLabel(
+  AppLocalizations loc,
+  MedicationCategory category,
+) => switch (category) {
+  MedicationCategory.antipyretic => loc.medicationCategoryAntipyretic,
+  MedicationCategory.coughCold => loc.medicationCategoryCoughCold,
+  MedicationCategory.antibiotic => loc.medicationCategoryAntibiotic,
+  MedicationCategory.ointment => loc.medicationCategoryOintment,
+  MedicationCategory.eyeEarNose => loc.medicationCategoryEyeEarNose,
+  MedicationCategory.other => loc.medicationCategoryOther,
+};
 
 String medicationRouteLabel(AppLocalizations loc, MedicationRoute route) =>
     switch (route) {
@@ -189,8 +179,9 @@ String medicationRecordDetails(AppLocalizations loc, MedicationRecord record) {
 
   if (record.amount case final amount?) {
     final unitStr = record.unit ?? 'mL';
-    final formattedAmount =
-        amount == amount.toInt() ? '${amount.toInt()}' : '$amount';
+    final formattedAmount = amount == amount.toInt()
+        ? '${amount.toInt()}'
+        : '$amount';
     parts.add('$formattedAmount$unitStr');
   }
 

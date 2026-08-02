@@ -103,52 +103,61 @@ void main() {
     expect(occurrences.first.status, TaskStatus.scheduled);
   });
 
-  test('completeOccurrence - creates linked ActivityEntity when linkedCategory is present', () {
-    final scheduledAt = DateTime.now();
-    final task = taskRepo.createTask(
-      title: 'Measure temperature',
-      linkedCategory: 'temperature',
-      firstScheduledAt: scheduledAt,
-    );
+  test(
+    'completeOccurrence - creates linked ActivityEntity when linkedCategory is present',
+    () {
+      final scheduledAt = DateTime.now();
+      final task = taskRepo.createTask(
+        title: 'Measure temperature',
+        linkedCategory: 'temperature',
+        firstScheduledAt: scheduledAt,
+      );
 
-    expect(task.title, 'Measure temperature');
+      expect(task.title, 'Measure temperature');
 
-    final initialOccurrences = taskRepo.getOccurrencesForDate(scheduledAt);
-    final occurrenceId = initialOccurrences.first.occurrenceId;
+      final initialOccurrences = taskRepo.getOccurrencesForDate(scheduledAt);
+      final occurrenceId = initialOccurrences.first.occurrenceId;
 
-    final completedOccurrence = taskRepo.completeOccurrence(
-      occurrenceId: occurrenceId,
-    );
+      final completedOccurrence = taskRepo.completeOccurrence(
+        occurrenceId: occurrenceId,
+      );
 
-    expect(completedOccurrence.isCompleted, isTrue);
-    expect(completedOccurrence.linkedRecordId, isNotNull);
+      expect(completedOccurrence.isCompleted, isTrue);
+      expect(completedOccurrence.linkedRecordId, isNotNull);
 
-    final activities = objectBox.activityBox.getAll();
-    expect(activities.length, 1);
-    expect(activities.first.recordId, completedOccurrence.linkedRecordId);
-    expect(activities.first.type, 'temperature');
-    expect(activities.first.details, 'Measure temperature');
-  });
+      final activities = objectBox.activityBox.getAll();
+      expect(activities.length, 1);
+      expect(activities.first.recordId, completedOccurrence.linkedRecordId);
+      expect(activities.first.type, 'temperature');
+      expect(activities.first.details, 'Measure temperature');
+    },
+  );
 
-  test('undoOccurrenceCompletion - removes linked ActivityEntity and resets status', () {
-    final scheduledAt = DateTime.now();
-    final task = taskRepo.createTask(
-      title: 'Take medicine',
-      linkedCategory: 'medication',
-      firstScheduledAt: scheduledAt,
-    );
-    expect(task.title, 'Take medicine');
+  test(
+    'undoOccurrenceCompletion - removes linked ActivityEntity and resets status',
+    () {
+      final scheduledAt = DateTime.now();
+      final task = taskRepo.createTask(
+        title: 'Take medicine',
+        linkedCategory: 'medication',
+        firstScheduledAt: scheduledAt,
+      );
+      expect(task.title, 'Take medicine');
 
-    final occurrenceId = taskRepo.getOccurrencesForDate(scheduledAt).first.occurrenceId;
-    taskRepo.completeOccurrence(occurrenceId: occurrenceId);
+      final occurrenceId = taskRepo
+          .getOccurrencesForDate(scheduledAt)
+          .first
+          .occurrenceId;
+      taskRepo.completeOccurrence(occurrenceId: occurrenceId);
 
-    expect(objectBox.activityBox.getAll().length, 1);
+      expect(objectBox.activityBox.getAll().length, 1);
 
-    final undone = taskRepo.undoOccurrenceCompletion(occurrenceId);
-    expect(undone.isCompleted, isFalse);
-    expect(undone.linkedRecordId, isNull);
-    expect(objectBox.activityBox.getAll().length, 0);
-  });
+      final undone = taskRepo.undoOccurrenceCompletion(occurrenceId);
+      expect(undone.isCompleted, isFalse);
+      expect(undone.linkedRecordId, isNull);
+      expect(objectBox.activityBox.getAll().length, 0);
+    },
+  );
 
   test('skipOccurrence - marks status as skipped and creates no event', () {
     final scheduledAt = DateTime.now();
@@ -158,7 +167,10 @@ void main() {
       firstScheduledAt: scheduledAt,
     );
 
-    final occurrenceId = taskRepo.getOccurrencesForDate(scheduledAt).first.occurrenceId;
+    final occurrenceId = taskRepo
+        .getOccurrencesForDate(scheduledAt)
+        .first
+        .occurrenceId;
     final skipped = taskRepo.skipOccurrence(occurrenceId);
 
     expect(skipped.isSkipped, isTrue);

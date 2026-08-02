@@ -162,10 +162,12 @@ class GrowthMeasurementRecord {
             decoded['createdByAuthorProfileId'] as String?,
         createdByDeviceProfileId:
             decoded['createdByDeviceProfileId'] as String?,
-        createdAt:
-            createdAtStr != null ? DateTime.tryParse(createdAtStr) : null,
-        lastModified:
-            lastModifiedStr != null ? DateTime.tryParse(lastModifiedStr) : null,
+        createdAt: createdAtStr != null
+            ? DateTime.tryParse(createdAtStr)
+            : null,
+        lastModified: lastModifiedStr != null
+            ? DateTime.tryParse(lastModifiedStr)
+            : null,
       );
     } catch (_) {
       return null;

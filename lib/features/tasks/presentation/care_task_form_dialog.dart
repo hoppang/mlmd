@@ -6,10 +6,7 @@ import '../application/task_notifier.dart';
 import '../domain/care_task_model.dart';
 
 class CareTaskFormDialog extends ConsumerStatefulWidget {
-  const CareTaskFormDialog({
-    super.key,
-    this.initialDate,
-  });
+  const CareTaskFormDialog({super.key, this.initialDate});
 
   final DateTime? initialDate;
 
@@ -95,10 +92,12 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
                     value: null,
                     child: Text('No assignee (default)'),
                   ),
-                  ...authorProfiles.map((author) => DropdownMenuItem<String?>(
-                        value: author.authorProfileId,
-                        child: Text(author.nickname),
-                      )),
+                  ...authorProfiles.map(
+                    (author) => DropdownMenuItem<String?>(
+                      value: author.authorProfileId,
+                      child: Text(author.nickname),
+                    ),
+                  ),
                 ],
                 onChanged: (val) {
                   setState(() {
@@ -107,7 +106,10 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              const Text('Notification', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Notification',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               RadioGroup<TaskNotificationMode>(
                 groupValue: _notificationMode,
                 onChanged: (val) {
@@ -156,10 +158,7 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
                   helperText: 'A matching event will be created automatically.',
                 ),
                 items: const [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('None'),
-                  ),
+                  DropdownMenuItem<String?>(value: null, child: Text('None')),
                   DropdownMenuItem<String?>(
                     value: 'medication',
                     child: Text('Medication'),
@@ -168,10 +167,7 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
                     value: 'temperature',
                     child: Text('Temperature'),
                   ),
-                  DropdownMenuItem<String?>(
-                    value: 'bath',
-                    child: Text('Bath'),
-                  ),
+                  DropdownMenuItem<String?>(value: 'bath', child: Text('Bath')),
                 ],
                 onChanged: (val) {
                   setState(() {
@@ -188,10 +184,7 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
+        ElevatedButton(onPressed: _save, child: const Text('Save')),
       ],
     );
   }
@@ -219,7 +212,9 @@ class _CareTaskFormDialogState extends ConsumerState<CareTaskFormDialog> {
       _scheduledTime.minute,
     );
 
-    ref.read(taskNotifierProvider.notifier).createTask(
+    ref
+        .read(taskNotifierProvider.notifier)
+        .createTask(
           title: _titleController.text.trim(),
           assignedToAuthorProfileId: _selectedAssigneeAuthorId,
           notificationMode: _notificationMode,

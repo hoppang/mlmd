@@ -124,9 +124,7 @@ void main() {
     final addTen = find.byKey(const Key('adjust-feeding-amount-10'));
     await tester.ensureVisible(addTen);
     await tester.tap(addTen);
-    await tester.ensureVisible(
-      find.byKey(const Key('adjust-feeding-hour--1')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('adjust-feeding-hour--1')));
     await tester.tap(find.byKey(const Key('adjust-feeding-hour--1')));
     await tester.pump();
     await tester.ensureVisible(find.byKey(const Key('save-quick-record')));

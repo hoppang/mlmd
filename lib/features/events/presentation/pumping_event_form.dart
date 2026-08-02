@@ -112,12 +112,7 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
 
     final details = record.buildDetails(loc);
 
-    widget.onSave(
-      PumpingFormResult(
-        record: record,
-        details: details,
-      ),
-    );
+    widget.onSave(PumpingFormResult(record: record, details: details));
   }
 
   @override
@@ -192,9 +187,7 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
                               (int.tryParse(_amountController.text) ?? 0) <= 0)
                       ? null
                       : () => _adjustAmount(delta),
-                  child: Text(
-                    '${delta > 0 ? '+' : '−'}${delta.abs()} mL',
-                  ),
+                  child: Text('${delta > 0 ? '+' : '−'}${delta.abs()} mL'),
                 ),
             ],
           ),
@@ -213,7 +206,9 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
                   key: const Key('pumping-side-chip-left'),
                   label: Center(child: Text(loc.leftSideOption)),
                   selected: _selectedSide == PumpingSide.left,
-                  onSelected: widget.saving ? null : (_) => _onSideTapped(PumpingSide.left),
+                  onSelected: widget.saving
+                      ? null
+                      : (_) => _onSideTapped(PumpingSide.left),
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
@@ -222,7 +217,9 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
                   key: const Key('pumping-side-chip-right'),
                   label: Center(child: Text(loc.rightSideOption)),
                   selected: _selectedSide == PumpingSide.right,
-                  onSelected: widget.saving ? null : (_) => _onSideTapped(PumpingSide.right),
+                  onSelected: widget.saving
+                      ? null
+                      : (_) => _onSideTapped(PumpingSide.right),
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
@@ -231,7 +228,9 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
                   key: const Key('pumping-side-chip-both'),
                   label: Center(child: Text(loc.bothSidesOption)),
                   selected: _selectedSide == PumpingSide.both,
-                  onSelected: widget.saving ? null : (_) => _onSideTapped(PumpingSide.both),
+                  onSelected: widget.saving
+                      ? null
+                      : (_) => _onSideTapped(PumpingSide.both),
                 ),
               ),
             ],

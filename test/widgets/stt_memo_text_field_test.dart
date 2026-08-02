@@ -15,9 +15,7 @@ void main() {
     required SttNoticeRepository noticeRepo,
   }) {
     return ProviderScope(
-      overrides: [
-        sttNoticeRepositoryProvider.overrideWithValue(noticeRepo),
-      ],
+      overrides: [sttNoticeRepositoryProvider.overrideWithValue(noticeRepo)],
       child: MaterialApp(
         locale: const Locale('ko'),
         localizationsDelegates: const [
@@ -28,18 +26,16 @@ void main() {
         ],
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: child,
-          ),
+          body: Padding(padding: const EdgeInsets.all(16), child: child),
         ),
       ),
     );
   }
 
   group('SttMemoTextField Widget Tests', () {
-    testWidgets('Shows mic icon when Android platform is specified',
-        (tester) async {
+    testWidgets('Shows mic icon when Android platform is specified', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final noticeRepo = SttNoticeRepository(prefs);
@@ -59,8 +55,9 @@ void main() {
       expect(find.byIcon(Icons.info_outline), findsOneWidget);
     });
 
-    testWidgets('Hides mic icon when non-Android platform is specified',
-        (tester) async {
+    testWidgets('Hides mic icon when non-Android platform is specified', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final noticeRepo = SttNoticeRepository(prefs);
@@ -79,8 +76,9 @@ void main() {
       expect(find.byIcon(Icons.mic_none), findsNothing);
     });
 
-    testWidgets('Tapping mic shows SttNoticeDialog if consent not granted',
-        (tester) async {
+    testWidgets('Tapping mic shows SttNoticeDialog if consent not granted', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final noticeRepo = SttNoticeRepository(prefs);

@@ -60,20 +60,20 @@ class BathRecord {
   }
 
   String encode() => jsonEncode({
-        'schema': schema,
-        'version': version,
-        if (recordId != null) 'recordId': recordId,
-        if (childId != null) 'childId': childId,
-        'occurredAt': occurredAt.toIso8601String(),
-        'isQuickBath': isQuickBath,
-        if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
-        if (createdByAuthorProfileId != null)
-          'createdByAuthorProfileId': createdByAuthorProfileId,
-        if (createdByDeviceProfileId != null)
-          'createdByDeviceProfileId': createdByDeviceProfileId,
-        if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
-        if (lastModified != null) 'lastModified': lastModified!.toIso8601String(),
-      });
+    'schema': schema,
+    'version': version,
+    if (recordId != null) 'recordId': recordId,
+    if (childId != null) 'childId': childId,
+    'occurredAt': occurredAt.toIso8601String(),
+    'isQuickBath': isQuickBath,
+    if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
+    if (createdByAuthorProfileId != null)
+      'createdByAuthorProfileId': createdByAuthorProfileId,
+    if (createdByDeviceProfileId != null)
+      'createdByDeviceProfileId': createdByDeviceProfileId,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+    if (lastModified != null) 'lastModified': lastModified!.toIso8601String(),
+  });
 
   static BathRecord? decode(String value) {
     if (value.trim().isEmpty) return null;
@@ -85,8 +85,9 @@ class BathRecord {
         return null;
       }
       final occurredAtStr = decoded['occurredAt'] as String?;
-      final occurredAt =
-          occurredAtStr != null ? DateTime.tryParse(occurredAtStr) : null;
+      final occurredAt = occurredAtStr != null
+          ? DateTime.tryParse(occurredAtStr)
+          : null;
       if (occurredAt == null) return null;
 
       final isQuickBath = decoded['isQuickBath'] as bool? ?? true;
@@ -98,11 +99,13 @@ class BathRecord {
       final createdByDeviceProfileId =
           decoded['createdByDeviceProfileId'] as String?;
       final createdAtStr = decoded['createdAt'] as String?;
-      final createdAt =
-          createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
+      final createdAt = createdAtStr != null
+          ? DateTime.tryParse(createdAtStr)
+          : null;
       final lastModifiedStr = decoded['lastModified'] as String?;
-      final lastModified =
-          lastModifiedStr != null ? DateTime.tryParse(lastModifiedStr) : null;
+      final lastModified = lastModifiedStr != null
+          ? DateTime.tryParse(lastModifiedStr)
+          : null;
 
       return BathRecord(
         recordId: recordId,
@@ -139,14 +142,14 @@ class BathRecord {
 
   @override
   int get hashCode => Object.hash(
-        recordId,
-        childId,
-        occurredAt,
-        isQuickBath,
-        note,
-        createdByAuthorProfileId,
-        createdByDeviceProfileId,
-        createdAt,
-        lastModified,
-      );
+    recordId,
+    childId,
+    occurredAt,
+    isQuickBath,
+    note,
+    createdByAuthorProfileId,
+    createdByDeviceProfileId,
+    createdAt,
+    lastModified,
+  );
 }

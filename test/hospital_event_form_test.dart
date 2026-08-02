@@ -7,65 +7,68 @@ import 'package:mlmd/l10n/app_localizations.dart';
 
 void main() {
   Widget localized(Widget child) => MaterialApp(
-        locale: const Locale('ko'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: child),
+    locale: const Locale('ko'),
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(body: child),
+  );
+
+  testWidgets(
+    'HospitalEventForm saves hospital visit record with doctor notes and prescription bag photo',
+    (tester) async {
+      HospitalFormResult? result;
+      final occurredAt = DateTime(2026, 7, 25, 14, 20);
+
+      await tester.pumpWidget(
+        localized(
+          HospitalEventForm(
+            occurredAt: occurredAt,
+            saving: false,
+            error: null,
+            onBack: () {},
+            onChangeTime: () {},
+            onSave: (val) => result = val,
+          ),
+        ),
       );
 
-  testWidgets('HospitalEventForm saves hospital visit record with doctor notes and prescription bag photo', (tester) async {
-    HospitalFormResult? result;
-    final occurredAt = DateTime(2026, 7, 25, 14, 20);
+      expect(find.text('병원·상담'), findsOneWidget);
+      expect(find.text('의사에게 들은 내용 (선택)'), findsOneWidget);
 
-    await tester.pumpWidget(
-      localized(
-        HospitalEventForm(
-          occurredAt: occurredAt,
-          saving: false,
-          error: null,
-          onBack: () {},
-          onChangeTime: () {},
-          onSave: (val) => result = val,
-        ),
-      ),
-    );
+      // Enter doctor's note
+      await tester.enterText(find.byType(TextField), '중이염 처방. 3일 뒤 재진.');
+      await tester.pumpAndSettle();
 
-    expect(find.text('병원·상담'), findsOneWidget);
-    expect(find.text('의사에게 들은 내용 (선택)'), findsOneWidget);
+      // Tap prescription bag photo button
+      await tester.tap(find.byKey(const Key('add-prescription-bag-btn')));
+      await tester.pumpAndSettle();
 
-    // Enter doctor's note
-    await tester.enterText(
-      find.byType(TextField),
-      '중이염 처방. 3일 뒤 재진.',
-    );
-    await tester.pumpAndSettle();
+      expect(find.text('약봉투'), findsOneWidget);
 
-    // Tap prescription bag photo button
-    await tester.tap(find.byKey(const Key('add-prescription-bag-btn')));
-    await tester.pumpAndSettle();
+      // Tap general attachment button
+      await tester.tap(find.byKey(const Key('attach-file-btn')));
+      await tester.pumpAndSettle();
 
-    expect(find.text('약봉투'), findsOneWidget);
+      expect(find.text('첨부파일'), findsOneWidget);
 
-    // Tap general attachment button
-    await tester.tap(find.byKey(const Key('attach-file-btn')));
-    await tester.pumpAndSettle();
+      // Tap save
+      await tester.tap(find.byKey(const Key('save-hospital-event')));
+      await tester.pumpAndSettle();
 
-    expect(find.text('첨부파일'), findsOneWidget);
-
-    // Tap save
-    await tester.tap(find.byKey(const Key('save-hospital-event')));
-    await tester.pumpAndSettle();
-
-    expect(result, isNotNull);
-    expect(result?.record.visitedAt, occurredAt);
-    expect(result?.record.note, '중이염 처방. 3일 뒤 재진.');
-    expect(result?.attachments.length, 2);
-    expect(result?.attachments[0].attachmentType, AttachmentType.prescriptionBag);
-    expect(result?.attachments[1].attachmentType, AttachmentType.general);
-  });
+      expect(result, isNotNull);
+      expect(result?.record.visitedAt, occurredAt);
+      expect(result?.record.note, '중이염 처방. 3일 뒤 재진.');
+      expect(result?.attachments.length, 2);
+      expect(
+        result?.attachments[0].attachmentType,
+        AttachmentType.prescriptionBag,
+      );
+      expect(result?.attachments[1].attachmentType, AttachmentType.general);
+    },
+  );
 }

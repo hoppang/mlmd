@@ -332,8 +332,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     if (selectedPayload['revision'] is int) {
       selectedPayload['revision'] = nextRevision;
     }
-    final selectedOperation =
-        resolution == SyncConflictResolution.useIncoming
+    final selectedOperation = resolution == SyncConflictResolution.useIncoming
         ? SyncOperation.parse(entity.incomingOperation ?? 'update')
         : SyncOperation.update;
 

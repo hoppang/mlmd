@@ -62,174 +62,198 @@ void main() {
       expect(details, contains('2.5mL'));
     });
 
-    test('Flags requiresIngredientCheck for antipyretic with unknown ingredient', () {
-      final now = DateTime.utc(2026, 7, 25, 14, 0);
-      final record = MedicationRecord(
-        medicationId: 'med-3',
-        category: MedicationCategory.antipyretic,
-        medicationName: '해열제',
-        route: MedicationRoute.oral,
-        administeredAt: now,
-        ingredient: AntipyreticIngredient.unknown,
-        amount: 3.0,
-        unit: 'mL',
-      );
+    test(
+      'Flags requiresIngredientCheck for antipyretic with unknown ingredient',
+      () {
+        final now = DateTime.utc(2026, 7, 25, 14, 0);
+        final record = MedicationRecord(
+          medicationId: 'med-3',
+          category: MedicationCategory.antipyretic,
+          medicationName: '해열제',
+          route: MedicationRoute.oral,
+          administeredAt: now,
+          ingredient: AntipyreticIngredient.unknown,
+          amount: 3.0,
+          unit: 'mL',
+        );
 
-      expect(record.isAntipyretic, isTrue);
-      expect(record.requiresIngredientCheck, isTrue);
+        expect(record.isAntipyretic, isTrue);
+        expect(record.requiresIngredientCheck, isTrue);
 
-      final details = medicationRecordDetails(loc, record);
-      expect(details, contains('모름'));
-      expect(details, contains('3mL'));
-    });
+        final details = medicationRecordDetails(loc, record);
+        expect(details, contains('모름'));
+        expect(details, contains('3mL'));
+      },
+    );
 
-    test('Formats topical medication details with application site correctly', () {
-      final now = DateTime.utc(2026, 7, 25, 15, 0);
-      final record = MedicationRecord(
-        medicationId: 'med-4',
-        category: MedicationCategory.ointment,
-        medicationName: '연고·크림',
-        route: MedicationRoute.topical,
-        administeredAt: now,
-        administrationSite: '오른쪽 팔',
-      );
+    test(
+      'Formats topical medication details with application site correctly',
+      () {
+        final now = DateTime.utc(2026, 7, 25, 15, 0);
+        final record = MedicationRecord(
+          medicationId: 'med-4',
+          category: MedicationCategory.ointment,
+          medicationName: '연고·크림',
+          route: MedicationRoute.topical,
+          administeredAt: now,
+          administrationSite: '오른쪽 팔',
+        );
 
-      final details = medicationRecordDetails(loc, record);
-      expect(details, contains('연고·크림'));
-      expect(details, contains('오른쪽 팔'));
-      expect(details, contains('바르는 약'));
-    });
+        final details = medicationRecordDetails(loc, record);
+        expect(details, contains('연고·크림'));
+        expect(details, contains('오른쪽 팔'));
+        expect(details, contains('바르는 약'));
+      },
+    );
   });
 
   group('Antipyretic Duplicate Check tests', () {
-    test('Detects same ingredient antipyretic duplicate within time window', () {
-      final baseTime = DateTime.utc(2026, 7, 25, 18, 0);
+    test(
+      'Detects same ingredient antipyretic duplicate within time window',
+      () {
+        final baseTime = DateTime.utc(2026, 7, 25, 18, 0);
 
-      final existingRecord = MedicationRecord(
-        medicationId: 'med-old',
-        category: MedicationCategory.antipyretic,
-        medicationName: '해열제',
-        route: MedicationRoute.oral,
-        administeredAt: baseTime,
-        ingredient: AntipyreticIngredient.acetaminophen,
-        amount: 2.5,
-      );
+        final existingRecord = MedicationRecord(
+          medicationId: 'med-old',
+          category: MedicationCategory.antipyretic,
+          medicationName: '해열제',
+          route: MedicationRoute.oral,
+          administeredAt: baseTime,
+          ingredient: AntipyreticIngredient.acetaminophen,
+          amount: 2.5,
+        );
 
-      final existingActivity = ActivityEntity(
-        id: 1,
-        recordId: 'rec-old',
-        type: '투약',
-        details: '해열제 · 아세트아미노펜 · 2.5mL',
-        time: baseTime,
-        lastModified: baseTime,
-        structuredDataJson: existingRecord.encode(),
-        createdByDeviceProfileId: 'device-A',
-      );
+        final existingActivity = ActivityEntity(
+          id: 1,
+          recordId: 'rec-old',
+          type: '투약',
+          details: '해열제 · 아세트아미노펜 · 2.5mL',
+          time: baseTime,
+          lastModified: baseTime,
+          structuredDataJson: existingRecord.encode(),
+          createdByDeviceProfileId: 'device-A',
+        );
 
-      final newRecord = MedicationRecord(
-        medicationId: 'med-new',
-        category: MedicationCategory.antipyretic,
-        medicationName: '해열제',
-        route: MedicationRoute.oral,
-        administeredAt: baseTime.add(const Duration(hours: 1)),
-        ingredient: AntipyreticIngredient.acetaminophen,
-        amount: 2.5,
-      );
+        final newRecord = MedicationRecord(
+          medicationId: 'med-new',
+          category: MedicationCategory.antipyretic,
+          medicationName: '해열제',
+          route: MedicationRoute.oral,
+          administeredAt: baseTime.add(const Duration(hours: 1)),
+          ingredient: AntipyreticIngredient.acetaminophen,
+          amount: 2.5,
+        );
 
-      final candidate = findAntipyreticDuplicateCandidate(
-        newRecord: newRecord,
-        newRecordId: 'rec-new',
-        existingActivities: [existingActivity],
-      );
+        final candidate = findAntipyreticDuplicateCandidate(
+          newRecord: newRecord,
+          newRecordId: 'rec-new',
+          existingActivities: [existingActivity],
+        );
 
-      expect(candidate, isNotNull);
-      expect(candidate!.relation, AntipyreticDuplicateRelation.sameIngredient);
-    });
+        expect(candidate, isNotNull);
+        expect(
+          candidate!.relation,
+          AntipyreticDuplicateRelation.sameIngredient,
+        );
+      },
+    );
 
-    test('Detects different ingredient antipyretic cross-dosing within time window', () {
-      final baseTime = DateTime.utc(2026, 7, 25, 18, 0);
+    test(
+      'Detects different ingredient antipyretic cross-dosing within time window',
+      () {
+        final baseTime = DateTime.utc(2026, 7, 25, 18, 0);
 
-      final existingRecord = MedicationRecord(
-        medicationId: 'med-old',
-        category: MedicationCategory.antipyretic,
-        medicationName: '해열제',
-        route: MedicationRoute.oral,
-        administeredAt: baseTime,
-        ingredient: AntipyreticIngredient.acetaminophen,
-        amount: 2.5,
-      );
+        final existingRecord = MedicationRecord(
+          medicationId: 'med-old',
+          category: MedicationCategory.antipyretic,
+          medicationName: '해열제',
+          route: MedicationRoute.oral,
+          administeredAt: baseTime,
+          ingredient: AntipyreticIngredient.acetaminophen,
+          amount: 2.5,
+        );
 
-      final existingActivity = ActivityEntity(
-        id: 1,
-        recordId: 'rec-old',
-        type: '투약',
-        details: '해열제 · 아세트아미노펜 · 2.5mL',
-        time: baseTime,
-        lastModified: baseTime,
-        structuredDataJson: existingRecord.encode(),
-        createdByDeviceProfileId: 'device-A',
-      );
+        final existingActivity = ActivityEntity(
+          id: 1,
+          recordId: 'rec-old',
+          type: '투약',
+          details: '해열제 · 아세트아미노펜 · 2.5mL',
+          time: baseTime,
+          lastModified: baseTime,
+          structuredDataJson: existingRecord.encode(),
+          createdByDeviceProfileId: 'device-A',
+        );
 
-      final newRecord = MedicationRecord(
-        medicationId: 'med-new',
-        category: MedicationCategory.antipyretic,
-        medicationName: '해열제',
-        route: MedicationRoute.oral,
-        administeredAt: baseTime.add(const Duration(hours: 2)),
-        ingredient: AntipyreticIngredient.ibuprofen,
-        amount: 3.0,
-      );
+        final newRecord = MedicationRecord(
+          medicationId: 'med-new',
+          category: MedicationCategory.antipyretic,
+          medicationName: '해열제',
+          route: MedicationRoute.oral,
+          administeredAt: baseTime.add(const Duration(hours: 2)),
+          ingredient: AntipyreticIngredient.ibuprofen,
+          amount: 3.0,
+        );
 
-      final candidate = findAntipyreticDuplicateCandidate(
-        newRecord: newRecord,
-        newRecordId: 'rec-new',
-        existingActivities: [existingActivity],
-      );
+        final candidate = findAntipyreticDuplicateCandidate(
+          newRecord: newRecord,
+          newRecordId: 'rec-new',
+          existingActivities: [existingActivity],
+        );
 
-      expect(candidate, isNotNull);
-      expect(candidate!.relation, AntipyreticDuplicateRelation.differentIngredient);
-    });
+        expect(candidate, isNotNull);
+        expect(
+          candidate!.relation,
+          AntipyreticDuplicateRelation.differentIngredient,
+        );
+      },
+    );
 
-    test('Detects unknown ingredient antipyretic relation within time window', () {
-      final baseTime = DateTime.utc(2026, 7, 25, 18, 0);
+    test(
+      'Detects unknown ingredient antipyretic relation within time window',
+      () {
+        final baseTime = DateTime.utc(2026, 7, 25, 18, 0);
 
-      final existingRecord = MedicationRecord(
-        medicationId: 'med-old',
-        category: MedicationCategory.antipyretic,
-        medicationName: '해열제',
-        route: MedicationRoute.oral,
-        administeredAt: baseTime,
-        ingredient: AntipyreticIngredient.unknown,
-      );
+        final existingRecord = MedicationRecord(
+          medicationId: 'med-old',
+          category: MedicationCategory.antipyretic,
+          medicationName: '해열제',
+          route: MedicationRoute.oral,
+          administeredAt: baseTime,
+          ingredient: AntipyreticIngredient.unknown,
+        );
 
-      final existingActivity = ActivityEntity(
-        id: 1,
-        recordId: 'rec-old',
-        type: '투약',
-        details: '해열제 · 성분 모름',
-        time: baseTime,
-        lastModified: baseTime,
-        structuredDataJson: existingRecord.encode(),
-      );
+        final existingActivity = ActivityEntity(
+          id: 1,
+          recordId: 'rec-old',
+          type: '투약',
+          details: '해열제 · 성분 모름',
+          time: baseTime,
+          lastModified: baseTime,
+          structuredDataJson: existingRecord.encode(),
+        );
 
-      final newRecord = MedicationRecord(
-        medicationId: 'med-new',
-        category: MedicationCategory.antipyretic,
-        medicationName: '해열제',
-        route: MedicationRoute.oral,
-        administeredAt: baseTime.add(const Duration(hours: 1)),
-        ingredient: AntipyreticIngredient.acetaminophen,
-      );
+        final newRecord = MedicationRecord(
+          medicationId: 'med-new',
+          category: MedicationCategory.antipyretic,
+          medicationName: '해열제',
+          route: MedicationRoute.oral,
+          administeredAt: baseTime.add(const Duration(hours: 1)),
+          ingredient: AntipyreticIngredient.acetaminophen,
+        );
 
-      final candidate = findAntipyreticDuplicateCandidate(
-        newRecord: newRecord,
-        newRecordId: 'rec-new',
-        existingActivities: [existingActivity],
-      );
+        final candidate = findAntipyreticDuplicateCandidate(
+          newRecord: newRecord,
+          newRecordId: 'rec-new',
+          existingActivities: [existingActivity],
+        );
 
-      expect(candidate, isNotNull);
-      expect(candidate!.relation, AntipyreticDuplicateRelation.unknownIngredient);
-    });
+        expect(candidate, isNotNull);
+        expect(
+          candidate!.relation,
+          AntipyreticDuplicateRelation.unknownIngredient,
+        );
+      },
+    );
 
     test('Returns null when antipyretic records are outside 6-hour window', () {
       final baseTime = DateTime.utc(2026, 7, 25, 10, 0);
@@ -273,30 +297,33 @@ void main() {
   });
 
   group('Medical Guidance evaluation for MedicationRecord', () {
-    test('Triggers medical attention warning for unknown ingredient antipyretic', () {
-      final now = DateTime.now();
-      final record = MedicationRecord(
-        medicationId: 'med-unk',
-        category: MedicationCategory.antipyretic,
-        medicationName: '해열제',
-        route: MedicationRoute.oral,
-        administeredAt: now,
-        ingredient: AntipyreticIngredient.unknown,
-      );
+    test(
+      'Triggers medical attention warning for unknown ingredient antipyretic',
+      () {
+        final now = DateTime.now();
+        final record = MedicationRecord(
+          medicationId: 'med-unk',
+          category: MedicationCategory.antipyretic,
+          medicationName: '해열제',
+          route: MedicationRoute.oral,
+          administeredAt: now,
+          ingredient: AntipyreticIngredient.unknown,
+        );
 
-      final activity = ActivityEntity(
-        id: 1,
-        recordId: 'rec-unk',
-        type: '투약',
-        details: '해열제 · 성분 모름',
-        time: now,
-        lastModified: now,
-        structuredDataJson: record.encode(),
-      );
+        final activity = ActivityEntity(
+          id: 1,
+          recordId: 'rec-unk',
+          type: '투약',
+          details: '해열제 · 성분 모름',
+          time: now,
+          lastModified: now,
+          structuredDataJson: record.encode(),
+        );
 
-      final evaluation = evaluateMedicalGuidance(activity);
-      expect(evaluation.requiresAttention, isTrue);
-      expect(evaluation.reason, '성분 확인 필요');
-    });
+        final evaluation = evaluateMedicalGuidance(activity);
+        expect(evaluation.requiresAttention, isTrue);
+        expect(evaluation.reason, '성분 확인 필요');
+      },
+    );
   });
 }
