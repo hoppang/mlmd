@@ -37,17 +37,6 @@ jobs:
           echo "614d00e1f6c7b23d676e784c39b67f56ed6a7889d172e7080ac52122d4695c6e  lib/objectbox.dll" \
             | sha256sum --check --strict
 
-      - name: Verify Gradle wrapper
-        # Generated artifacts from the official Gradle v9.1.0 distribution
-        # and source tag (commit e45a8dbf2470c2e2474ccc25be9f49331406a07e).
-        run: |
-          echo "76805e32c009c0cf0dd5d206bddc9fb22ea42e84db904b764f3047de095493f3  android/gradle/wrapper/gradle-wrapper.jar" \
-            | sha256sum --check --strict
-          echo "b2fe376b143a459ba5d0bd290dc89beed5399fc6d159cd1214bd642ea94bcf07  android/gradlew" \
-            | sha256sum --check --strict
-          echo "9386e790d58b9368ca8e034536a5baa688643d51cb37bfa462503d36fd0291a6  android/gradlew.bat" \
-            | sha256sum --check --strict
-
       - name: Set up Flutter
         # v2.23.0
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
@@ -107,8 +96,13 @@ jobs:
         run: |
           set -euo pipefail
           awk -F: -v minimum="${MINIMUM_LINE_COVERAGE}" '
-            /^LF:/ { total += $2 }
-            /^LH:/ { covered += $2 }
+            /^SF:/ {
+              excluded = ($2 ~ /lib\/l10n\/app_localizations[^/]*\.dart$/ ||
+                          $2 ~ /lib\/objectbox\.g\.dart$/)
+              next
+            }
+            /^LF:/ && !excluded { total += $2 }
+            /^LH:/ && !excluded { covered += $2 }
             END {
               if (total == 0) {
                 print "No coverable lines found in coverage/lcov.info."
@@ -140,6 +134,17 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
+
+      - name: Verify Gradle wrapper
+        # Generated artifacts from the official Gradle v9.1.0 distribution
+        # and source tag (commit e45a8dbf2470c2e2474ccc25be9f49331406a07e).
+        run: |
+          echo "76805e32c009c0cf0dd5d206bddc9fb22ea42e84db904b764f3047de095493f3  android/gradle/wrapper/gradle-wrapper.jar" \
+            | sha256sum --check --strict
+          echo "b2fe376b143a459ba5d0bd290dc89beed5399fc6d159cd1214bd642ea94bcf07  android/gradlew" \
+            | sha256sum --check --strict
+          echo "9386e790d58b9368ca8e034536a5baa688643d51cb37bfa462503d36fd0291a6  android/gradlew.bat" \
+            | sha256sum --check --strict
 
       - name: Set up Flutter
         # v2.23.0
