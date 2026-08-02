@@ -204,9 +204,9 @@ class _BathEventFormState extends State<BathEventForm> {
                   onPressed: widget.saving
                       ? null
                       : () => _addAttachment(
-                            type: AttachmentType.general,
-                            sourceKind: AttachmentSourceKind.inAppCamera,
-                          ),
+                          type: AttachmentType.general,
+                          sourceKind: AttachmentSourceKind.inAppCamera,
+                        ),
                   icon: const Icon(Icons.camera_alt_outlined),
                   label: Text(loc.attachmentGeneral),
                 ),
@@ -218,9 +218,9 @@ class _BathEventFormState extends State<BathEventForm> {
                   onPressed: widget.saving
                       ? null
                       : () => _addAttachment(
-                            type: AttachmentType.general,
-                            sourceKind: AttachmentSourceKind.filePicker,
-                          ),
+                          type: AttachmentType.general,
+                          sourceKind: AttachmentSourceKind.filePicker,
+                        ),
                   icon: const Icon(Icons.attach_file),
                   label: Text(loc.attachFileButton),
                 ),
@@ -242,10 +242,7 @@ class _BathEventFormState extends State<BathEventForm> {
                           : Icons.insert_drive_file,
                       size: 18,
                     ),
-                    label: Text(
-                      att.fileName,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    label: Text(att.fileName, overflow: TextOverflow.ellipsis),
                     onDeleted: widget.saving
                         ? null
                         : () => _removeAttachment(att.attachmentId),

@@ -112,8 +112,9 @@ class TummyTimeRecord {
       if (occurredAt == null) return null;
 
       final durationVal = decoded['durationMinutes'];
-      final durationMinutes =
-          durationVal is int && durationVal > 0 ? durationVal : null;
+      final durationMinutes = durationVal is int && durationVal > 0
+          ? durationVal
+          : null;
 
       final createdAtStr = decoded['createdAt'] as String?;
       final lastModifiedStr = decoded['lastModified'] as String?;
@@ -128,8 +129,9 @@ class TummyTimeRecord {
             decoded['createdByAuthorProfileId'] as String?,
         createdByDeviceProfileId:
             decoded['createdByDeviceProfileId'] as String?,
-        createdAt:
-            createdAtStr != null ? DateTime.tryParse(createdAtStr) : null,
+        createdAt: createdAtStr != null
+            ? DateTime.tryParse(createdAtStr)
+            : null,
         lastModified: lastModifiedStr != null
             ? DateTime.tryParse(lastModifiedStr)
             : null,
@@ -156,14 +158,14 @@ class TummyTimeRecord {
 
   @override
   int get hashCode => Object.hash(
-        recordId,
-        childId,
-        occurredAt,
-        durationMinutes,
-        note,
-        createdByAuthorProfileId,
-        createdByDeviceProfileId,
-        createdAt,
-        lastModified,
-      );
+    recordId,
+    childId,
+    occurredAt,
+    durationMinutes,
+    note,
+    createdByAuthorProfileId,
+    createdByDeviceProfileId,
+    createdAt,
+    lastModified,
+  );
 }

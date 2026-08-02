@@ -9,9 +9,7 @@ class PastNoticesPage extends ConsumerWidget {
   const PastNoticesPage({super.key});
 
   static Route<void> route() {
-    return MaterialPageRoute(
-      builder: (_) => const PastNoticesPage(),
-    );
+    return MaterialPageRoute(builder: (_) => const PastNoticesPage());
   }
 
   @override
@@ -26,9 +24,7 @@ class PastNoticesPage extends ConsumerWidget {
         : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.pastNoticesTitle),
-      ),
+      appBar: AppBar(title: Text(l10n.pastNoticesTitle)),
       body: ListView(
         children: [
           ListTile(

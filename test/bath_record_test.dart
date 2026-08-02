@@ -36,9 +36,7 @@ void main() {
 
     test('round-trips minimal BathRecord without optional fields', () {
       final now = DateTime(2026, 7, 26, 19, 30);
-      final original = BathRecord(
-        occurredAt: now,
-      );
+      final original = BathRecord(occurredAt: now);
 
       final encoded = original.encode();
       final restored = BathRecord.decode(encoded);
@@ -90,10 +88,7 @@ void main() {
         note: '첫 메모',
       );
 
-      final updated = original.copyWith(
-        note: '수정된 메모',
-        isQuickBath: false,
-      );
+      final updated = original.copyWith(note: '수정된 메모', isQuickBath: false);
 
       expect(updated.recordId, 'rec-1');
       expect(updated.note, '수정된 메모');
@@ -105,21 +100,9 @@ void main() {
 
     test('equality and hashCode work as expected', () {
       final now = DateTime(2026, 7, 26, 19, 30);
-      final r1 = BathRecord(
-        recordId: 'rec-1',
-        occurredAt: now,
-        note: '목욕',
-      );
-      final r2 = BathRecord(
-        recordId: 'rec-1',
-        occurredAt: now,
-        note: '목욕',
-      );
-      final r3 = BathRecord(
-        recordId: 'rec-2',
-        occurredAt: now,
-        note: '목욕',
-      );
+      final r1 = BathRecord(recordId: 'rec-1', occurredAt: now, note: '목욕');
+      final r2 = BathRecord(recordId: 'rec-1', occurredAt: now, note: '목욕');
+      final r3 = BathRecord(recordId: 'rec-2', occurredAt: now, note: '목욕');
 
       expect(r1, equals(r2));
       expect(r1.hashCode, equals(r2.hashCode));

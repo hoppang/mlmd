@@ -49,20 +49,19 @@ class VaccinationRecord {
   }
 
   String encode() => jsonEncode({
-        'schema': schema,
-        'version': version,
-        if (recordId != null) 'recordId': recordId,
-        if (childId != null) 'childId': childId,
-        'vaccinatedAt': vaccinatedAt.toIso8601String(),
-        if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
-        if (createdByAuthorProfileId != null)
-          'createdByAuthorProfileId': createdByAuthorProfileId,
-        if (createdByDeviceProfileId != null)
-          'createdByDeviceProfileId': createdByDeviceProfileId,
-        if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
-        if (lastModified != null)
-          'lastModified': lastModified!.toIso8601String(),
-      });
+    'schema': schema,
+    'version': version,
+    if (recordId != null) 'recordId': recordId,
+    if (childId != null) 'childId': childId,
+    'vaccinatedAt': vaccinatedAt.toIso8601String(),
+    if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
+    if (createdByAuthorProfileId != null)
+      'createdByAuthorProfileId': createdByAuthorProfileId,
+    if (createdByDeviceProfileId != null)
+      'createdByDeviceProfileId': createdByDeviceProfileId,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+    if (lastModified != null) 'lastModified': lastModified!.toIso8601String(),
+  });
 
   static VaccinationRecord? decode(String value) {
     if (value.trim().isEmpty) return null;
@@ -91,9 +90,12 @@ class VaccinationRecord {
             decoded['createdByAuthorProfileId'] as String?,
         createdByDeviceProfileId:
             decoded['createdByDeviceProfileId'] as String?,
-        createdAt: createdAtStr != null ? DateTime.tryParse(createdAtStr) : null,
-        lastModified:
-            lastModifiedStr != null ? DateTime.tryParse(lastModifiedStr) : null,
+        createdAt: createdAtStr != null
+            ? DateTime.tryParse(createdAtStr)
+            : null,
+        lastModified: lastModifiedStr != null
+            ? DateTime.tryParse(lastModifiedStr)
+            : null,
       );
     } catch (_) {
       return null;

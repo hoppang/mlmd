@@ -23,14 +23,13 @@ class SttNoticeRepository {
   SttNoticeState _state;
 
   SttNoticeRepository([this._prefs])
-      : _state = SttNoticeState(
-          isAccepted: _prefs?.getBool(_keyIsAccepted) ?? false,
-          acceptedAt: _prefs?.getString(_keyAcceptedAt) != null
-              ? DateTime.tryParse(_prefs!.getString(_keyAcceptedAt)!)
-              : null,
-          noticeVersion:
-              _prefs?.getString(_keyNoticeVersion) ?? currentVersion,
-        );
+    : _state = SttNoticeState(
+        isAccepted: _prefs?.getBool(_keyIsAccepted) ?? false,
+        acceptedAt: _prefs?.getString(_keyAcceptedAt) != null
+            ? DateTime.tryParse(_prefs!.getString(_keyAcceptedAt)!)
+            : null,
+        noticeVersion: _prefs?.getString(_keyNoticeVersion) ?? currentVersion,
+      );
 
   SttNoticeState get state => _state;
   bool get isAccepted => _state.isAccepted;

@@ -83,24 +83,23 @@ class MemoRecord {
   }
 
   Map<String, Object?> toJson() => {
-        'schema': schema,
-        'version': version,
-        if (recordId != null) 'recordId': recordId,
-        if (childId != null) 'childId': childId,
-        'occurredAt': occurredAt.toIso8601String(),
-        'content': content,
-        'inputSource': inputSource,
-        if (legacyTitle?.trim().isNotEmpty == true)
-          'legacyTitle': legacyTitle!.trim(),
-        if (rawSttText?.trim().isNotEmpty == true)
-          'rawSttText': rawSttText!.trim(),
-        if (createdByAuthorProfileId != null)
-          'createdByAuthorProfileId': createdByAuthorProfileId,
-        if (createdByDeviceProfileId != null)
-          'createdByDeviceProfileId': createdByDeviceProfileId,
-        if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
-        if (lastModified != null) 'lastModified': lastModified!.toIso8601String(),
-      };
+    'schema': schema,
+    'version': version,
+    if (recordId != null) 'recordId': recordId,
+    if (childId != null) 'childId': childId,
+    'occurredAt': occurredAt.toIso8601String(),
+    'content': content,
+    'inputSource': inputSource,
+    if (legacyTitle?.trim().isNotEmpty == true)
+      'legacyTitle': legacyTitle!.trim(),
+    if (rawSttText?.trim().isNotEmpty == true) 'rawSttText': rawSttText!.trim(),
+    if (createdByAuthorProfileId != null)
+      'createdByAuthorProfileId': createdByAuthorProfileId,
+    if (createdByDeviceProfileId != null)
+      'createdByDeviceProfileId': createdByDeviceProfileId,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+    if (lastModified != null) 'lastModified': lastModified!.toIso8601String(),
+  };
 
   String encode() => jsonEncode(toJson());
 
@@ -114,8 +113,9 @@ class MemoRecord {
         return null;
       }
       final occurredAtStr = decoded['occurredAt'] as String?;
-      final occurredAt =
-          occurredAtStr != null ? DateTime.tryParse(occurredAtStr) : null;
+      final occurredAt = occurredAtStr != null
+          ? DateTime.tryParse(occurredAtStr)
+          : null;
       if (occurredAt == null) return null;
 
       final content = decoded['content'] as String? ?? '';
@@ -129,11 +129,13 @@ class MemoRecord {
       final createdByDeviceProfileId =
           decoded['createdByDeviceProfileId'] as String?;
       final createdAtStr = decoded['createdAt'] as String?;
-      final createdAt =
-          createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
+      final createdAt = createdAtStr != null
+          ? DateTime.tryParse(createdAtStr)
+          : null;
       final lastModifiedStr = decoded['lastModified'] as String?;
-      final lastModified =
-          lastModifiedStr != null ? DateTime.tryParse(lastModifiedStr) : null;
+      final lastModified = lastModifiedStr != null
+          ? DateTime.tryParse(lastModifiedStr)
+          : null;
 
       return MemoRecord(
         recordId: recordId,

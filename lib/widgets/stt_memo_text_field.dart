@@ -103,9 +103,9 @@ class _SttMemoTextFieldState extends ConsumerState<SttMemoTextField> {
       });
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.sttNotSupportedTooltip)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.sttNotSupportedTooltip)));
       }
     }
   }
@@ -113,7 +113,7 @@ class _SttMemoTextFieldState extends ConsumerState<SttMemoTextField> {
   void _insertTextAtCursor(String text) {
     final currentText = _controller.text;
     final selection = _controller.selection;
-    
+
     if (selection.isValid && selection.start >= 0) {
       final newText = currentText.replaceRange(
         selection.start,
@@ -128,7 +128,9 @@ class _SttMemoTextFieldState extends ConsumerState<SttMemoTextField> {
       );
     } else {
       // 커서 위치가 없으면 기존 텍스트에 공백 후 연결
-      final separator = currentText.isNotEmpty && !currentText.endsWith(' ') ? ' ' : '';
+      final separator = currentText.isNotEmpty && !currentText.endsWith(' ')
+          ? ' '
+          : '';
       final newText = currentText + separator + text;
       _controller.value = TextEditingValue(
         text: newText,

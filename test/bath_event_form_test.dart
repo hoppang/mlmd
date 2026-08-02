@@ -7,19 +7,20 @@ import 'package:mlmd/l10n/app_localizations.dart';
 
 void main() {
   Widget localized(Widget child) => MaterialApp(
-        locale: const Locale('ko'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: child),
-      );
+    locale: const Locale('ko'),
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(body: child),
+  );
 
-  testWidgets('BathEventForm renders one-touch hint and title correctly',
-      (tester) async {
+  testWidgets('BathEventForm renders one-touch hint and title correctly', (
+    tester,
+  ) async {
     final occurredAt = DateTime(2026, 7, 26, 19, 30);
 
     await tester.pumpWidget(
@@ -43,8 +44,9 @@ void main() {
     expect(find.byKey(const Key('save-bath-record')), findsOneWidget);
   });
 
-  testWidgets('BathEventForm saves bath record instantly with current time',
-      (tester) async {
+  testWidgets('BathEventForm saves bath record instantly with current time', (
+    tester,
+  ) async {
     BathFormResult? result;
     final occurredAt = DateTime(2026, 7, 26, 19, 30);
 
@@ -73,8 +75,9 @@ void main() {
     expect(result?.attachments, isEmpty);
   });
 
-  testWidgets('BathEventForm saves with note and attachments when added',
-      (tester) async {
+  testWidgets('BathEventForm saves with note and attachments when added', (
+    tester,
+  ) async {
     BathFormResult? result;
     final occurredAt = DateTime(2026, 7, 26, 19, 30);
 
@@ -118,8 +121,9 @@ void main() {
     expect(result?.attachments[1].sourceKind, AttachmentSourceKind.filePicker);
   });
 
-  testWidgets('BathEventForm triggers onBack and onChangeTime callbacks',
-      (tester) async {
+  testWidgets('BathEventForm triggers onBack and onChangeTime callbacks', (
+    tester,
+  ) async {
     bool backTapped = false;
     bool changeTimeTapped = false;
 

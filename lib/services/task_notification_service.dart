@@ -44,8 +44,10 @@ class TaskNotificationService {
     final currentAuthorId = currentAuthor?.authorProfileId;
 
     // Check if current user is the assignee or if assigned to anyone
-    final isAssignee = task.isAssignedToAnyone ||
-        (currentAuthorId != null && task.assignedToAuthorProfileId == currentAuthorId);
+    final isAssignee =
+        task.isAssignedToAnyone ||
+        (currentAuthorId != null &&
+            task.assignedToAuthorProfileId == currentAuthorId);
 
     if (!isAssignee) {
       return const TaskNotificationPolicy(
@@ -67,6 +69,8 @@ class TaskNotificationService {
   }
 }
 
-final taskNotificationServiceProvider = Provider<TaskNotificationService>((ref) {
+final taskNotificationServiceProvider = Provider<TaskNotificationService>((
+  ref,
+) {
   return TaskNotificationService(ref.watch(profileRepositoryProvider));
 }, dependencies: [profileRepositoryProvider]);

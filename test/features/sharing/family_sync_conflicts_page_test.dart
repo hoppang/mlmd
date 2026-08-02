@@ -50,10 +50,7 @@ void main() {
     await tester.tap(find.byKey(const Key('sync-conflict-use-incoming')));
     await tester.pumpAndSettle();
     expect(find.text('이 충돌을 해결할까요?'), findsOneWidget);
-    expect(
-      find.textContaining('새 변경으로 저장되어 연결된 기기에 공유'),
-      findsNWidgets(2),
-    );
+    expect(find.textContaining('새 변경으로 저장되어 연결된 기기에 공유'), findsNWidgets(2));
   });
 }
 

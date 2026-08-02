@@ -14,7 +14,8 @@ class _FakeProfileRepository implements ProfileRepository {
   AuthorProfileEntity? get currentAuthor => author;
 
   @override
-  DeviceProfileEntity get currentDevice => DeviceProfileEntity(deviceProfileId: 'dev-1', createdAt: DateTime.now());
+  DeviceProfileEntity get currentDevice =>
+      DeviceProfileEntity(deviceProfileId: 'dev-1', createdAt: DateTime.now());
 
   @override
   bool get hasSharedHistory => false;
@@ -26,15 +27,23 @@ class _FakeProfileRepository implements ProfileRepository {
   }
 
   @override
-  List<AuthorProfileEntity> getAuthorProfiles() => author != null ? [author!] : [];
+  List<AuthorProfileEntity> getAuthorProfiles() =>
+      author != null ? [author!] : [];
 
   @override
-  AuthorProfileEntity createAuthor({required String nickname, required int colorValue}) {
+  AuthorProfileEntity createAuthor({
+    required String nickname,
+    required int colorValue,
+  }) {
     throw UnimplementedError();
   }
 
   @override
-  AuthorProfileEntity updateAuthor({required String authorProfileId, required String nickname, required int colorValue}) {
+  AuthorProfileEntity updateAuthor({
+    required String authorProfileId,
+    required String nickname,
+    required int colorValue,
+  }) {
     throw UnimplementedError();
   }
 
@@ -61,104 +70,114 @@ void main() {
     createdAt: DateTime.now(),
   );
 
-  test('evaluateNotificationPolicy - inAppOnly mode disables quiet notification', () {
-    final profileRepo = _FakeProfileRepository(mom);
-    final notificationService = TaskNotificationService(profileRepo);
+  test(
+    'evaluateNotificationPolicy - inAppOnly mode disables quiet notification',
+    () {
+      final profileRepo = _FakeProfileRepository(mom);
+      final notificationService = TaskNotificationService(profileRepo);
 
-    final now = DateTime.now();
-    final task = CareTask(
-      taskId: 'task-1',
-      title: '비타민 주기',
-      notificationMode: TaskNotificationMode.inAppOnly,
-      createdAt: now,
-      createdByAuthorProfileId: mom.authorProfileId,
-      createdByDeviceProfileId: 'dev-1',
-    );
+      final now = DateTime.now();
+      final task = CareTask(
+        taskId: 'task-1',
+        title: '비타민 주기',
+        notificationMode: TaskNotificationMode.inAppOnly,
+        createdAt: now,
+        createdByAuthorProfileId: mom.authorProfileId,
+        createdByDeviceProfileId: 'dev-1',
+      );
 
-    final occurrence = CareTaskOccurrence(
-      occurrenceId: 'occ-1',
-      taskId: 'task-1',
-      scheduledAt: now.subtract(const Duration(minutes: 10)),
-    );
+      final occurrence = CareTaskOccurrence(
+        occurrenceId: 'occ-1',
+        taskId: 'task-1',
+        scheduledAt: now.subtract(const Duration(minutes: 10)),
+      );
 
-    final policy = notificationService.evaluateNotificationPolicy(
-      task: task,
-      occurrence: occurrence,
-      now: now,
-    );
+      final policy = notificationService.evaluateNotificationPolicy(
+        task: task,
+        occurrence: occurrence,
+        now: now,
+      );
 
-    expect(policy.shouldShowInApp, isTrue);
-    expect(policy.shouldNotifyQuietly, isFalse);
-  });
+      expect(policy.shouldShowInApp, isTrue);
+      expect(policy.shouldNotifyQuietly, isFalse);
+    },
+  );
 
-  test('evaluateNotificationPolicy - quietToAssignee notifies quietly for assigned user when due', () {
-    final profileRepo = _FakeProfileRepository(mom);
-    final notificationService = TaskNotificationService(profileRepo);
+  test(
+    'evaluateNotificationPolicy - quietToAssignee notifies quietly for assigned user when due',
+    () {
+      final profileRepo = _FakeProfileRepository(mom);
+      final notificationService = TaskNotificationService(profileRepo);
 
-    final now = DateTime.now();
-    final task = CareTask(
-      taskId: 'task-2',
-      title: '해열제 먹이기',
-      assignedToAuthorProfileId: 'author-mom',
-      notificationMode: TaskNotificationMode.quietToAssignee,
-      createdAt: now,
-      createdByAuthorProfileId: mom.authorProfileId,
-      createdByDeviceProfileId: 'dev-1',
-    );
+      final now = DateTime.now();
+      final task = CareTask(
+        taskId: 'task-2',
+        title: '해열제 먹이기',
+        assignedToAuthorProfileId: 'author-mom',
+        notificationMode: TaskNotificationMode.quietToAssignee,
+        createdAt: now,
+        createdByAuthorProfileId: mom.authorProfileId,
+        createdByDeviceProfileId: 'dev-1',
+      );
 
-    final occurrence = CareTaskOccurrence(
-      occurrenceId: 'occ-2',
-      taskId: 'task-2',
-      scheduledAt: now.subtract(const Duration(minutes: 5)),
-    );
+      final occurrence = CareTaskOccurrence(
+        occurrenceId: 'occ-2',
+        taskId: 'task-2',
+        scheduledAt: now.subtract(const Duration(minutes: 5)),
+      );
 
-    final policy = notificationService.evaluateNotificationPolicy(
-      task: task,
-      occurrence: occurrence,
-      now: now,
-    );
+      final policy = notificationService.evaluateNotificationPolicy(
+        task: task,
+        occurrence: occurrence,
+        now: now,
+      );
 
-    expect(policy.shouldShowInApp, isTrue);
-    expect(policy.shouldNotifyQuietly, isTrue);
-    expect(policy.allowVibration, isTrue);
-    expect(policy.allowSound, isFalse);
-  });
+      expect(policy.shouldShowInApp, isTrue);
+      expect(policy.shouldNotifyQuietly, isTrue);
+      expect(policy.allowVibration, isTrue);
+      expect(policy.allowSound, isFalse);
+    },
+  );
 
-  test('evaluateNotificationPolicy - quietToAssignee does NOT quietly notify different user', () {
-    final dad = AuthorProfileEntity(
-      authorProfileId: 'author-dad',
-      nickname: '아빠',
-      colorValue: 0xFF2196F3,
-      createdAt: DateTime.now(),
-    );
+  test(
+    'evaluateNotificationPolicy - quietToAssignee does NOT quietly notify different user',
+    () {
+      final dad = AuthorProfileEntity(
+        authorProfileId: 'author-dad',
+        nickname: '아빠',
+        colorValue: 0xFF2196F3,
+        createdAt: DateTime.now(),
+      );
 
-    final profileRepo = _FakeProfileRepository(dad);
-    final notificationService = TaskNotificationService(profileRepo);
+      final profileRepo = _FakeProfileRepository(dad);
+      final notificationService = TaskNotificationService(profileRepo);
 
-    final now = DateTime.now();
-    final task = CareTask(
-      taskId: 'task-3',
-      title: '해열제 먹이기',
-      assignedToAuthorProfileId: 'author-mom', // assigned to mom, but current user is dad
-      notificationMode: TaskNotificationMode.quietToAssignee,
-      createdAt: now,
-      createdByAuthorProfileId: mom.authorProfileId,
-      createdByDeviceProfileId: 'dev-1',
-    );
+      final now = DateTime.now();
+      final task = CareTask(
+        taskId: 'task-3',
+        title: '해열제 먹이기',
+        assignedToAuthorProfileId:
+            'author-mom', // assigned to mom, but current user is dad
+        notificationMode: TaskNotificationMode.quietToAssignee,
+        createdAt: now,
+        createdByAuthorProfileId: mom.authorProfileId,
+        createdByDeviceProfileId: 'dev-1',
+      );
 
-    final occurrence = CareTaskOccurrence(
-      occurrenceId: 'occ-3',
-      taskId: 'task-3',
-      scheduledAt: now.subtract(const Duration(minutes: 5)),
-    );
+      final occurrence = CareTaskOccurrence(
+        occurrenceId: 'occ-3',
+        taskId: 'task-3',
+        scheduledAt: now.subtract(const Duration(minutes: 5)),
+      );
 
-    final policy = notificationService.evaluateNotificationPolicy(
-      task: task,
-      occurrence: occurrence,
-      now: now,
-    );
+      final policy = notificationService.evaluateNotificationPolicy(
+        task: task,
+        occurrence: occurrence,
+        now: now,
+      );
 
-    expect(policy.shouldShowInApp, isTrue);
-    expect(policy.shouldNotifyQuietly, isFalse);
-  });
+      expect(policy.shouldShowInApp, isTrue);
+      expect(policy.shouldNotifyQuietly, isFalse);
+    },
+  );
 }

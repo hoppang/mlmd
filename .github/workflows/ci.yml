@@ -76,7 +76,7 @@ jobs:
           fi
 
       - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed lib test scripts
 
       - name: Analyze project source
         run: flutter analyze

@@ -19,7 +19,10 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "9.0.1" apply false
+    // flutter_embedder 0.1.7 bundles CargoKit code that still calls
+    // Project.exec(), which Gradle 9 removed. Stay on the latest compatible
+    // AGP 8 line until that dependency supports Gradle 9.
+    id("com.android.application") version "8.11.1" apply false
     id("org.jetbrains.kotlin.android") version "2.3.20" apply false
 }
 

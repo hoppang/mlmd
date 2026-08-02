@@ -83,10 +83,8 @@ class _TummyTimeEventFormState extends State<TummyTimeEventForm> {
       occurredAt: widget.occurredAt,
       durationMinutes: durationMinutes,
       note: noteText.isNotEmpty ? noteText : null,
-      createdByAuthorProfileId:
-          widget.initialRecord?.createdByAuthorProfileId,
-      createdByDeviceProfileId:
-          widget.initialRecord?.createdByDeviceProfileId,
+      createdByAuthorProfileId: widget.initialRecord?.createdByAuthorProfileId,
+      createdByDeviceProfileId: widget.initialRecord?.createdByDeviceProfileId,
       createdAt: widget.initialRecord?.createdAt,
       lastModified: widget.initialRecord?.lastModified,
     );
@@ -167,8 +165,9 @@ class _TummyTimeEventFormState extends State<TummyTimeEventForm> {
                   Text(
                     loc.tummyTimeInfantRecommendationSource,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer
-                          .withValues(alpha: 0.7),
+                      color: theme.colorScheme.onSecondaryContainer.withValues(
+                        alpha: 0.7,
+                      ),
                       fontStyle: FontStyle.italic,
                     ),
                   ),

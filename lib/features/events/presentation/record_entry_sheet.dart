@@ -1309,11 +1309,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           initialRecord: _structuredDataJson != null
                               ? PumpingRecord.decode(_structuredDataJson!)
                               : null,
-                           onBack: _closeOrReturnToPicker,
-                           onChangeTime: _changeTime,
-                           onOccurredAtChanged: (value) =>
-                               setState(() => _occurredAt = value),
-                           onSave: _savePumping,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onOccurredAtChanged: (value) =>
+                              setState(() => _occurredAt = value),
+                          onSave: _savePumping,
                         )
                       : custom == null && selectedId == EventTypeId.tummyTime
                       ? TummyTimeEventForm(
@@ -1381,11 +1381,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           saving: _saving,
                           error: _error,
                           initialStructuredDataJson: _structuredDataJson,
-                           onBack: _closeOrReturnToPicker,
-                           onChangeTime: _changeTime,
-                           onOccurredAtChanged: (value) =>
-                               setState(() => _occurredAt = value),
-                           onSave: _saveIntake,
+                          onBack: _closeOrReturnToPicker,
+                          onChangeTime: _changeTime,
+                          onOccurredAtChanged: (value) =>
+                              setState(() => _occurredAt = value),
+                          onSave: _saveIntake,
                         )
                       : _EventForm(
                           key: ValueKey(

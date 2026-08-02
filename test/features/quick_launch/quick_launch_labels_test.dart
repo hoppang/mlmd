@@ -11,7 +11,10 @@ Future<AppLocalizations> _loadLoc() =>
 
 void main() {
   test('feeding targets require a choice or an amount form', () {
-    expect(quickLaunchCanSaveInstantly(QuickLaunchEventTarget.feeding), isFalse);
+    expect(
+      quickLaunchCanSaveInstantly(QuickLaunchEventTarget.feeding),
+      isFalse,
+    );
     expect(
       quickLaunchCanSaveInstantly(QuickLaunchEventTarget.formulaFeeding),
       isFalse,

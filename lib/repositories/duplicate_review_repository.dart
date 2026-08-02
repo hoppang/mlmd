@@ -47,8 +47,7 @@ class DuplicateReviewRepositoryImpl implements DuplicateReviewRepository {
     this._objectBox,
     this._profiles, {
     FamilySyncRepository? familySyncRepository,
-  }) :
-       // Public name keeps construction sites independent of the field name.
+  }) : // Public name keeps construction sites independent of the field name.
        // ignore: prefer_initializing_formals
        _familySyncRepository = familySyncRepository;
 

@@ -85,7 +85,9 @@ class SttTypoCorrectorService {
     final regexPunctuationSpace = RegExp(r'([가-힣\w])([,\.])([가-힣a-zA-Z])');
     if (regexPunctuationSpace.hasMatch(result)) {
       result = result.replaceAllMapped(regexPunctuationSpace, (match) {
-        changes.add("구두점 띄어쓰기 교정 ('${match.group(0)}' -> '${match.group(1)}${match.group(2)} ${match.group(3)}')");
+        changes.add(
+          "구두점 띄어쓰기 교정 ('${match.group(0)}' -> '${match.group(1)}${match.group(2)} ${match.group(3)}')",
+        );
         return '${match.group(1)}${match.group(2)} ${match.group(3)}';
       });
     }

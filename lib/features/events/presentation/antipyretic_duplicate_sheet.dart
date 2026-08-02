@@ -5,11 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../domain/antipyretic_duplicate_check.dart';
 import '../domain/medication_record.dart';
 
-enum AntipyreticDuplicateDecision {
-  sameEvent,
-  distinctEvent,
-  defer,
-}
+enum AntipyreticDuplicateDecision { sameEvent, distinctEvent, defer }
 
 class AntipyreticDuplicateSheet extends StatelessWidget {
   const AntipyreticDuplicateSheet({
@@ -190,13 +186,15 @@ class AntipyreticDuplicateSheet extends StatelessWidget {
             // Action Buttons
             ElevatedButton(
               key: const Key('antipyretic-dup-same-btn'),
-              onPressed: () => onDecision(AntipyreticDuplicateDecision.sameEvent),
+              onPressed: () =>
+                  onDecision(AntipyreticDuplicateDecision.sameEvent),
               child: Text(loc.antipyreticDupSameEventAction),
             ),
             const SizedBox(height: AppSpacing.xs),
             OutlinedButton(
               key: const Key('antipyretic-dup-distinct-btn'),
-              onPressed: () => onDecision(AntipyreticDuplicateDecision.distinctEvent),
+              onPressed: () =>
+                  onDecision(AntipyreticDuplicateDecision.distinctEvent),
               child: Text(loc.antipyreticDupDistinctEventAction),
             ),
             const SizedBox(height: AppSpacing.xs),

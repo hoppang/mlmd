@@ -40,7 +40,7 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
   @override
   late final Box<LogicalEventGroupEntity> logicalEventGroupBox;
   late final Box<SharedCustomEventDefinitionEntity>
-      sharedCustomEventDefinitionBox;
+  sharedCustomEventDefinitionBox;
   @override
   late final Box<CareTaskEntity> careTaskBox;
   @override
@@ -56,8 +56,9 @@ class TestObjectBoxHelper implements ObjectBoxHelper {
     aiSummaryBox = Box<AiSummaryEntity>(store);
     duplicateReviewEdgeBox = Box<DuplicateReviewEdgeEntity>(store);
     logicalEventGroupBox = Box<LogicalEventGroupEntity>(store);
-    sharedCustomEventDefinitionBox =
-        Box<SharedCustomEventDefinitionEntity>(store);
+    sharedCustomEventDefinitionBox = Box<SharedCustomEventDefinitionEntity>(
+      store,
+    );
     careTaskBox = Box<CareTaskEntity>(store);
     careTaskOccurrenceBox = Box<CareTaskOccurrenceEntity>(store);
   }
@@ -84,29 +85,32 @@ void main() {
     }
   });
 
-  test('migrates legacy diary to memo event preserving legacyTitle and content', () {
-    final legacyDiary = DiaryEntity(
-      date: DateTime(2026, 7, 20, 14, 0),
-      title: '레거시 일기 제목',
-      content: '레거시 일기 본문 내용입니다.',
-      lastModified: DateTime(2026, 7, 20, 14, 0),
-    );
-    obxHelper.diaryBox.put(legacyDiary);
+  test(
+    'migrates legacy diary to memo event preserving legacyTitle and content',
+    () {
+      final legacyDiary = DiaryEntity(
+        date: DateTime(2026, 7, 20, 14, 0),
+        title: '레거시 일기 제목',
+        content: '레거시 일기 본문 내용입니다.',
+        lastModified: DateTime(2026, 7, 20, 14, 0),
+      );
+      obxHelper.diaryBox.put(legacyDiary);
 
-    DiaryRepositoryImpl(obxHelper, profileRepo);
+      DiaryRepositoryImpl(obxHelper, profileRepo);
 
-    final activities = obxHelper.activityBox.getAll();
-    expect(activities.length, equals(1));
+      final activities = obxHelper.activityBox.getAll();
+      expect(activities.length, equals(1));
 
-    final activity = activities.first;
-    expect(activity.type, equals('메모'));
-    expect(activity.details, equals('레거시 일기 본문 내용입니다.'));
+      final activity = activities.first;
+      expect(activity.type, equals('메모'));
+      expect(activity.details, equals('레거시 일기 본문 내용입니다.'));
 
-    final memoRecord = MemoRecord.decode(activity.structuredDataJson ?? '');
-    expect(memoRecord, isNotNull);
-    expect(memoRecord!.content, equals('레거시 일기 본문 내용입니다.'));
-    expect(memoRecord.legacyTitle, equals('레거시 일기 제목'));
-  });
+      final memoRecord = MemoRecord.decode(activity.structuredDataJson ?? '');
+      expect(memoRecord, isNotNull);
+      expect(memoRecord!.content, equals('레거시 일기 본문 내용입니다.'));
+      expect(memoRecord.legacyTitle, equals('레거시 일기 제목'));
+    },
+  );
 
   test('supports adding multiple memo activities to the same day', () {
     final diaryRepo = DiaryRepositoryImpl(obxHelper, profileRepo);

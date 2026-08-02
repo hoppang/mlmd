@@ -75,7 +75,8 @@ class _ConflictTile extends StatelessWidget {
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => _ConflictDetailPage(conflictId: conflict.conflictId),
+            builder: (_) =>
+                _ConflictDetailPage(conflictId: conflict.conflictId),
           ),
         ),
       ),
@@ -92,7 +93,9 @@ class _ConflictDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loc = AppLocalizations.of(context)!;
     final conflicts = ref.watch(familySyncConflictsProvider);
-    final conflict = conflicts.where((item) => item.conflictId == conflictId).firstOrNull;
+    final conflict = conflicts
+        .where((item) => item.conflictId == conflictId)
+        .firstOrNull;
     if (conflict == null) {
       return Scaffold(
         appBar: AppBar(title: Text(loc.syncConflictsTitle)),
@@ -216,15 +219,14 @@ class _ConflictDetailPage extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
     try {
-      await ref.read(familySyncConflictControllerProvider).resolve(
-        conflictId: conflict.conflictId,
-        resolution: resolution,
-      );
+      await ref
+          .read(familySyncConflictControllerProvider)
+          .resolve(conflictId: conflict.conflictId, resolution: resolution);
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.syncConflictResolveFailed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.syncConflictResolveFailed)));
     }
   }
 }

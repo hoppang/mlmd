@@ -49,10 +49,7 @@ void main() {
     expect(startDecoded?.kind, SymptomKind.continuous);
     expect(startDecoded?.episodeId, 'ep-12345');
     expect(startDecoded?.status, SymptomEpisodeStatus.active);
-    expect(
-      symptomRecordDetails(AppLocalizationsKo(), startRecord),
-      '시작 · 약함',
-    );
+    expect(symptomRecordDetails(AppLocalizationsKo(), startRecord), '시작 · 약함');
 
     final updateRecord = SymptomRecord(
       symptomId: 'runny_nose',
@@ -84,10 +81,7 @@ void main() {
 
     final resolvedDecoded = SymptomRecord.decode(resolvedRecord.encode());
     expect(resolvedDecoded?.status, SymptomEpisodeStatus.resolved);
-    expect(
-      symptomRecordDetails(AppLocalizationsKo(), resolvedRecord),
-      '끝났어요',
-    );
+    expect(symptomRecordDetails(AppLocalizationsKo(), resolvedRecord), '끝났어요');
   });
 
   test('알 수 없는 schema/버전 및 유효하지 않은 JSON을 거부한다', () {

@@ -30,9 +30,7 @@ void main() {
 
     test('encode and decode without note (minimal record)', () {
       final now = DateTime(2026, 7, 25, 10, 30);
-      final record = VaccinationRecord(
-        vaccinatedAt: now,
-      );
+      final record = VaccinationRecord(vaccinatedAt: now);
 
       final jsonString = record.encode();
       final decoded = VaccinationRecord.decode(jsonString);

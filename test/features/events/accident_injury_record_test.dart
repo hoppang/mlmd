@@ -53,11 +53,23 @@ void main() {
     });
 
     test('category mapping and attention requirement check', () {
-      expect(AccidentInjuryType.bumpBruise.category, AccidentCategory.traumatic);
-      expect(AccidentInjuryType.scratchWound.category, AccidentCategory.traumatic);
+      expect(
+        AccidentInjuryType.bumpBruise.category,
+        AccidentCategory.traumatic,
+      );
+      expect(
+        AccidentInjuryType.scratchWound.category,
+        AccidentCategory.traumatic,
+      );
       expect(AccidentInjuryType.fallTrip.category, AccidentCategory.traumatic);
-      expect(AccidentInjuryType.foreignIngestion.category, AccidentCategory.nonTraumatic);
-      expect(AccidentInjuryType.chokingAspiration.category, AccidentCategory.nonTraumatic);
+      expect(
+        AccidentInjuryType.foreignIngestion.category,
+        AccidentCategory.nonTraumatic,
+      );
+      expect(
+        AccidentInjuryType.chokingAspiration.category,
+        AccidentCategory.nonTraumatic,
+      );
 
       expect(AccidentInjuryType.fallTrip.requiresAttention, isTrue);
       expect(AccidentInjuryType.burn.requiresAttention, isTrue);

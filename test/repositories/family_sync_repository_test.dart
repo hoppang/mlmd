@@ -229,63 +229,69 @@ void main() {
     },
   );
 
-  test('using the incoming version queues an authoritative new revision', () async {
-    repository.enqueue(
-      entityType: 'memo',
-      entityId: 'memo-2',
-      entityRevision: 4,
-      operation: SyncOperation.update,
-      payload: const {'text': '로컬 수정'},
-    );
-    final incoming = SyncChange(
-      changeId: 'remote-change-2',
-      familySpaceId: 'family-1',
-      sourceDeviceProfileId: 'other-device',
-      sourceAuthorProfileId: 'other-author',
-      entityType: 'memo',
-      entityId: 'memo-2',
-      entityRevision: 3,
-      operation: SyncOperation.update,
-      payload: const {'text': '선택할 다른 기기 수정'},
-      occurredAt: DateTime.utc(2026, 7, 29),
-    );
-    await repository.synchronize(
-      _FakeTransport(
-        SyncExchange(
-          acknowledgedChangeIds: const {},
-          incomingChanges: [incoming],
+  test(
+    'using the incoming version queues an authoritative new revision',
+    () async {
+      repository.enqueue(
+        entityType: 'memo',
+        entityId: 'memo-2',
+        entityRevision: 4,
+        operation: SyncOperation.update,
+        payload: const {'text': '로컬 수정'},
+      );
+      final incoming = SyncChange(
+        changeId: 'remote-change-2',
+        familySpaceId: 'family-1',
+        sourceDeviceProfileId: 'other-device',
+        sourceAuthorProfileId: 'other-author',
+        entityType: 'memo',
+        entityId: 'memo-2',
+        entityRevision: 3,
+        operation: SyncOperation.update,
+        payload: const {'text': '선택할 다른 기기 수정'},
+        occurredAt: DateTime.utc(2026, 7, 29),
+      );
+      await repository.synchronize(
+        _FakeTransport(
+          SyncExchange(
+            acknowledgedChangeIds: const {},
+            incomingChanges: [incoming],
+          ),
         ),
-      ),
-      applyRemoteChange: (_) => const RemoteApplyResult.applied(),
-    );
+        applyRemoteChange: (_) => const RemoteApplyResult.applied(),
+      );
 
-    SyncChange? applied;
-    final resolution = await repository.resolveConflict(
-      conflictId: 'remote-change-2',
-      resolution: SyncConflictResolution.useIncoming,
-      applyRemoteChange: (change) {
-        applied = change;
-        return const RemoteApplyResult.applied();
-      },
-    );
+      SyncChange? applied;
+      final resolution = await repository.resolveConflict(
+        conflictId: 'remote-change-2',
+        resolution: SyncConflictResolution.useIncoming,
+        applyRemoteChange: (change) {
+          applied = change;
+          return const RemoteApplyResult.applied();
+        },
+      );
 
-    expect(applied?.entityRevision, 5);
-    expect(applied?.payload['text'], '선택할 다른 기기 수정');
-    expect(resolution.conflict.resolution, SyncConflictResolution.useIncoming);
+      expect(applied?.entityRevision, 5);
+      expect(applied?.payload['text'], '선택할 다른 기기 수정');
+      expect(
+        resolution.conflict.resolution,
+        SyncConflictResolution.useIncoming,
+      );
 
-    final transport = _FakeTransport(
-      const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
-    );
-    await repository.synchronize(
-      transport,
-      applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
-    );
-    final authoritative = transport.receivedOutgoing.singleWhere(
-      (change) => change.entityType == 'memo' && change.entityId == 'memo-2',
-    );
-    expect(authoritative.entityRevision, 5);
-    expect(authoritative.payload['text'], '선택할 다른 기기 수정');
-  });
+      final transport = _FakeTransport(
+        const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+      );
+      await repository.synchronize(
+        transport,
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      final authoritative = transport.receivedOutgoing.singleWhere(
+        (change) => change.entityType == 'memo' && change.entityId == 'memo-2',
+      );
+      expect(authoritative.entityRevision, 5);
+      expect(authoritative.payload['text'], '선택할 다른 기기 수정');
+    },
+  );
 
   test('record save paths enqueue shareable text changes', () async {
     final diaryRepository = DiaryRepositoryImpl(

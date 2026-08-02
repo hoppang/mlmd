@@ -55,8 +55,10 @@ class _AccidentEventFormState extends State<AccidentEventForm> {
   @override
   void initState() {
     super.initState();
-    _selectedCategory = widget.initialRecord?.category ?? AccidentCategory.traumatic;
-    _selectedInjuryType = widget.initialRecord?.injuryType ??
+    _selectedCategory =
+        widget.initialRecord?.category ?? AccidentCategory.traumatic;
+    _selectedInjuryType =
+        widget.initialRecord?.injuryType ??
         (_selectedCategory == AccidentCategory.traumatic
             ? AccidentInjuryType.bumpBruise
             : AccidentInjuryType.foreignIngestion);
@@ -189,10 +191,7 @@ class _AccidentEventFormState extends State<AccidentEventForm> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text(
-            loc.accidentCategoryLabel,
-            style: theme.textTheme.titleMedium,
-          ),
+          Text(loc.accidentCategoryLabel, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.xs),
           SegmentedButton<AccidentCategory>(
             segments: [
@@ -215,10 +214,7 @@ class _AccidentEventFormState extends State<AccidentEventForm> {
             },
           ),
           const SizedBox(height: AppSpacing.md),
-          Text(
-            loc.accidentInjuryTypeLabel,
-            style: theme.textTheme.titleMedium,
-          ),
+          Text(loc.accidentInjuryTypeLabel, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.xs),
           Wrap(
             spacing: AppSpacing.xs,

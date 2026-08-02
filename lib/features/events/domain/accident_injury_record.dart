@@ -2,10 +2,7 @@ import 'dart:convert';
 
 import '../../../l10n/app_localizations.dart';
 
-enum AccidentCategory {
-  traumatic,
-  nonTraumatic,
-}
+enum AccidentCategory { traumatic, nonTraumatic }
 
 enum AccidentInjuryType {
   // Traumatic
@@ -27,54 +24,50 @@ enum AccidentInjuryType {
 
 extension AccidentCategoryX on AccidentCategory {
   String label(AppLocalizations loc) => switch (this) {
-        AccidentCategory.traumatic => loc.accidentCategoryTraumatic,
-        AccidentCategory.nonTraumatic => loc.accidentCategoryNonTraumatic,
-      };
+    AccidentCategory.traumatic => loc.accidentCategoryTraumatic,
+    AccidentCategory.nonTraumatic => loc.accidentCategoryNonTraumatic,
+  };
 }
 
 extension AccidentInjuryTypeX on AccidentInjuryType {
   AccidentCategory get category => switch (this) {
-        AccidentInjuryType.bumpBruise ||
-        AccidentInjuryType.scratchWound ||
-        AccidentInjuryType.fallTrip ||
-        AccidentInjuryType.burn ||
-        AccidentInjuryType.biteSting ||
-        AccidentInjuryType.otherTrauma =>
-          AccidentCategory.traumatic,
-        AccidentInjuryType.foreignIngestion ||
-        AccidentInjuryType.chokingAspiration ||
-        AccidentInjuryType.eyeEarForeignObject ||
-        AccidentInjuryType.poisoningChemical ||
-        AccidentInjuryType.heatColdInjury ||
-        AccidentInjuryType.otherNonTrauma =>
-          AccidentCategory.nonTraumatic,
-      };
+    AccidentInjuryType.bumpBruise ||
+    AccidentInjuryType.scratchWound ||
+    AccidentInjuryType.fallTrip ||
+    AccidentInjuryType.burn ||
+    AccidentInjuryType.biteSting ||
+    AccidentInjuryType.otherTrauma => AccidentCategory.traumatic,
+    AccidentInjuryType.foreignIngestion ||
+    AccidentInjuryType.chokingAspiration ||
+    AccidentInjuryType.eyeEarForeignObject ||
+    AccidentInjuryType.poisoningChemical ||
+    AccidentInjuryType.heatColdInjury ||
+    AccidentInjuryType.otherNonTrauma => AccidentCategory.nonTraumatic,
+  };
 
   bool get requiresAttention => switch (this) {
-        AccidentInjuryType.fallTrip ||
-        AccidentInjuryType.burn ||
-        AccidentInjuryType.foreignIngestion ||
-        AccidentInjuryType.chokingAspiration ||
-        AccidentInjuryType.poisoningChemical =>
-          true,
-        _ => false,
-      };
+    AccidentInjuryType.fallTrip ||
+    AccidentInjuryType.burn ||
+    AccidentInjuryType.foreignIngestion ||
+    AccidentInjuryType.chokingAspiration ||
+    AccidentInjuryType.poisoningChemical => true,
+    _ => false,
+  };
 
   String label(AppLocalizations loc) => switch (this) {
-        AccidentInjuryType.bumpBruise => loc.injuryTypeBumpBruise,
-        AccidentInjuryType.scratchWound => loc.injuryTypeScratchWound,
-        AccidentInjuryType.fallTrip => loc.injuryTypeFallTrip,
-        AccidentInjuryType.burn => loc.injuryTypeBurn,
-        AccidentInjuryType.biteSting => loc.injuryTypeBiteSting,
-        AccidentInjuryType.otherTrauma => loc.injuryTypeOtherTrauma,
-        AccidentInjuryType.foreignIngestion => loc.injuryTypeForeignIngestion,
-        AccidentInjuryType.chokingAspiration => loc.injuryTypeChokingAspiration,
-        AccidentInjuryType.eyeEarForeignObject =>
-          loc.injuryTypeEyeEarForeignObject,
-        AccidentInjuryType.poisoningChemical => loc.injuryTypePoisoningChemical,
-        AccidentInjuryType.heatColdInjury => loc.injuryTypeHeatColdInjury,
-        AccidentInjuryType.otherNonTrauma => loc.injuryTypeOtherNonTrauma,
-      };
+    AccidentInjuryType.bumpBruise => loc.injuryTypeBumpBruise,
+    AccidentInjuryType.scratchWound => loc.injuryTypeScratchWound,
+    AccidentInjuryType.fallTrip => loc.injuryTypeFallTrip,
+    AccidentInjuryType.burn => loc.injuryTypeBurn,
+    AccidentInjuryType.biteSting => loc.injuryTypeBiteSting,
+    AccidentInjuryType.otherTrauma => loc.injuryTypeOtherTrauma,
+    AccidentInjuryType.foreignIngestion => loc.injuryTypeForeignIngestion,
+    AccidentInjuryType.chokingAspiration => loc.injuryTypeChokingAspiration,
+    AccidentInjuryType.eyeEarForeignObject => loc.injuryTypeEyeEarForeignObject,
+    AccidentInjuryType.poisoningChemical => loc.injuryTypePoisoningChemical,
+    AccidentInjuryType.heatColdInjury => loc.injuryTypeHeatColdInjury,
+    AccidentInjuryType.otherNonTrauma => loc.injuryTypeOtherNonTrauma,
+  };
 }
 
 class AccidentInjuryRecord {
@@ -151,23 +144,22 @@ class AccidentInjuryRecord {
   }
 
   String encode() => jsonEncode({
-        'schema': schema,
-        'version': version,
-        if (recordId != null) 'recordId': recordId,
-        if (childId != null) 'childId': childId,
-        'occurredAt': occurredAt.toIso8601String(),
-        'category': category.name,
-        'injuryType': injuryType.name,
-        if (customType?.trim().isNotEmpty == true) 'customType': customType!.trim(),
-        if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
-        if (createdByAuthorProfileId != null)
-          'createdByAuthorProfileId': createdByAuthorProfileId,
-        if (createdByDeviceProfileId != null)
-          'createdByDeviceProfileId': createdByDeviceProfileId,
-        if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
-        if (lastModified != null)
-          'lastModified': lastModified!.toIso8601String(),
-      });
+    'schema': schema,
+    'version': version,
+    if (recordId != null) 'recordId': recordId,
+    if (childId != null) 'childId': childId,
+    'occurredAt': occurredAt.toIso8601String(),
+    'category': category.name,
+    'injuryType': injuryType.name,
+    if (customType?.trim().isNotEmpty == true) 'customType': customType!.trim(),
+    if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
+    if (createdByAuthorProfileId != null)
+      'createdByAuthorProfileId': createdByAuthorProfileId,
+    if (createdByDeviceProfileId != null)
+      'createdByDeviceProfileId': createdByDeviceProfileId,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+    if (lastModified != null) 'lastModified': lastModified!.toIso8601String(),
+  });
 
   static AccidentInjuryRecord? decode(String value) {
     if (value.trim().isEmpty) return null;
@@ -194,9 +186,9 @@ class AccidentInjuryRecord {
 
       final category = categoryName != null
           ? AccidentCategory.values
-                  .where((e) => e.name == categoryName)
-                  .firstOrNull ??
-              injuryType.category
+                    .where((e) => e.name == categoryName)
+                    .firstOrNull ??
+                injuryType.category
           : injuryType.category;
 
       final createdAtStr = decoded['createdAt'] as String?;
@@ -214,8 +206,9 @@ class AccidentInjuryRecord {
             decoded['createdByAuthorProfileId'] as String?,
         createdByDeviceProfileId:
             decoded['createdByDeviceProfileId'] as String?,
-        createdAt:
-            createdAtStr != null ? DateTime.tryParse(createdAtStr) : null,
+        createdAt: createdAtStr != null
+            ? DateTime.tryParse(createdAtStr)
+            : null,
         lastModified: lastModifiedStr != null
             ? DateTime.tryParse(lastModifiedStr)
             : null,

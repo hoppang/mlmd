@@ -38,10 +38,7 @@ void main() {
 
     test('encode and decode roundtrip with height only', () {
       final now = DateTime(2026, 7, 28, 9, 0);
-      final record = GrowthMeasurementRecord(
-        occurredAt: now,
-        heightCm: 60.5,
-      );
+      final record = GrowthMeasurementRecord(occurredAt: now, heightCm: 60.5);
 
       final decoded = GrowthMeasurementRecord.decode(record.encode());
 
@@ -53,10 +50,7 @@ void main() {
 
     test('encode and decode roundtrip with weight only', () {
       final now = DateTime(2026, 7, 28, 9, 0);
-      final record = GrowthMeasurementRecord(
-        occurredAt: now,
-        weightKg: 7.25,
-      );
+      final record = GrowthMeasurementRecord(occurredAt: now, weightKg: 7.25);
 
       final decoded = GrowthMeasurementRecord.decode(record.encode());
 
@@ -68,10 +62,7 @@ void main() {
 
     test('encode and decode roundtrip with head only', () {
       final now = DateTime(2026, 7, 28, 9, 0);
-      final record = GrowthMeasurementRecord(
-        occurredAt: now,
-        headCm: 40.0,
-      );
+      final record = GrowthMeasurementRecord(occurredAt: now, headCm: 40.0);
 
       final decoded = GrowthMeasurementRecord.decode(record.encode());
 
@@ -83,10 +74,7 @@ void main() {
 
     test('encode and decode with no optional fields', () {
       final now = DateTime(2026, 7, 28, 8, 0);
-      final record = GrowthMeasurementRecord(
-        occurredAt: now,
-        heightCm: 52.0,
-      );
+      final record = GrowthMeasurementRecord(occurredAt: now, heightCm: 52.0);
 
       final jsonString = record.encode();
       final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
@@ -121,29 +109,38 @@ void main() {
       expect(decoded.headCm, 38.0);
     });
 
-    test('hasAnyMeasurement returns true when at least one value is present', () {
-      final now = DateTime(2026, 7, 28, 8, 0);
+    test(
+      'hasAnyMeasurement returns true when at least one value is present',
+      () {
+        final now = DateTime(2026, 7, 28, 8, 0);
 
-      expect(
-        GrowthMeasurementRecord(occurredAt: now, heightCm: 55.0)
-            .hasAnyMeasurement,
-        isTrue,
-      );
-      expect(
-        GrowthMeasurementRecord(occurredAt: now, weightKg: 6.0)
-            .hasAnyMeasurement,
-        isTrue,
-      );
-      expect(
-        GrowthMeasurementRecord(occurredAt: now, headCm: 38.0)
-            .hasAnyMeasurement,
-        isTrue,
-      );
-      expect(
-        GrowthMeasurementRecord(occurredAt: now).hasAnyMeasurement,
-        isFalse,
-      );
-    });
+        expect(
+          GrowthMeasurementRecord(
+            occurredAt: now,
+            heightCm: 55.0,
+          ).hasAnyMeasurement,
+          isTrue,
+        );
+        expect(
+          GrowthMeasurementRecord(
+            occurredAt: now,
+            weightKg: 6.0,
+          ).hasAnyMeasurement,
+          isTrue,
+        );
+        expect(
+          GrowthMeasurementRecord(
+            occurredAt: now,
+            headCm: 38.0,
+          ).hasAnyMeasurement,
+          isTrue,
+        );
+        expect(
+          GrowthMeasurementRecord(occurredAt: now).hasAnyMeasurement,
+          isFalse,
+        );
+      },
+    );
 
     test('copyWith updates specified fields and clears others', () {
       final now = DateTime(2026, 7, 28, 8, 0);
@@ -188,9 +185,7 @@ void main() {
         isNull,
       );
       expect(
-        GrowthMeasurementRecord.decode(
-          '{"schema":"mlmd.growth","version":1}',
-        ),
+        GrowthMeasurementRecord.decode('{"schema":"mlmd.growth","version":1}'),
         isNull, // missing occurredAt
       );
     });
@@ -201,10 +196,7 @@ void main() {
       final jsonMap = jsonDecode(record.encode()) as Map<String, dynamic>;
       jsonMap['version'] = 99;
 
-      expect(
-        GrowthMeasurementRecord.decode(jsonEncode(jsonMap)),
-        isNull,
-      );
+      expect(GrowthMeasurementRecord.decode(jsonEncode(jsonMap)), isNull);
     });
 
     test('equality and hashCode are value-based', () {
@@ -219,10 +211,7 @@ void main() {
         heightCm: 55.0,
         weightKg: 6.5,
       );
-      final c = GrowthMeasurementRecord(
-        occurredAt: now,
-        heightCm: 56.0,
-      );
+      final c = GrowthMeasurementRecord(occurredAt: now, heightCm: 56.0);
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -245,16 +234,19 @@ void main() {
         expect(record.hasAnyMeasurement, isFalse);
       });
 
-      test('all three measurements produce a record with hasAnyMeasurement', () {
-        final now = DateTime(2026, 7, 28, 8, 0);
-        final record = GrowthMeasurementRecord(
-          occurredAt: now,
-          heightCm: 55.0,
-          weightKg: 6.50,
-          headCm: 38.5,
-        );
-        expect(record.hasAnyMeasurement, isTrue);
-      });
+      test(
+        'all three measurements produce a record with hasAnyMeasurement',
+        () {
+          final now = DateTime(2026, 7, 28, 8, 0);
+          final record = GrowthMeasurementRecord(
+            occurredAt: now,
+            heightCm: 55.0,
+            weightKg: 6.50,
+            headCm: 38.5,
+          );
+          expect(record.hasAnyMeasurement, isTrue);
+        },
+      );
     });
   });
 }

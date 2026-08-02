@@ -39,8 +39,7 @@ class ActivityRepositoryImpl implements ActivityRepository {
     this._obxHelper,
     this._profileRepository, {
     FamilySyncRepository? familySyncRepository,
-  }) :
-       // Public name keeps construction sites independent of the field name.
+  }) : // Public name keeps construction sites independent of the field name.
        // ignore: prefer_initializing_formals
        _familySyncRepository = familySyncRepository;
 

@@ -116,7 +116,6 @@ class SettingsPage extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 class TrackingPreferencesPage extends ConsumerWidget {

@@ -180,9 +180,9 @@ class _HospitalEventFormState extends State<HospitalEventForm> {
                   onPressed: widget.saving
                       ? null
                       : () => _addAttachment(
-                            type: AttachmentType.prescriptionBag,
-                            sourceKind: AttachmentSourceKind.inAppCamera,
-                          ),
+                          type: AttachmentType.prescriptionBag,
+                          sourceKind: AttachmentSourceKind.inAppCamera,
+                        ),
                   icon: const Icon(Icons.camera_alt_outlined),
                   label: Text(loc.prescriptionBagButton),
                 ),
@@ -194,9 +194,9 @@ class _HospitalEventFormState extends State<HospitalEventForm> {
                   onPressed: widget.saving
                       ? null
                       : () => _addAttachment(
-                            type: AttachmentType.general,
-                            sourceKind: AttachmentSourceKind.filePicker,
-                          ),
+                          type: AttachmentType.general,
+                          sourceKind: AttachmentSourceKind.filePicker,
+                        ),
                   icon: const Icon(Icons.attach_file),
                   label: Text(loc.attachFileButton),
                 ),

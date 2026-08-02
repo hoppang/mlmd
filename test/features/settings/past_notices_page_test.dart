@@ -12,9 +12,7 @@ void main() {
 
   Widget buildTestableWidget({required SttNoticeRepository noticeRepo}) {
     return ProviderScope(
-      overrides: [
-        sttNoticeRepositoryProvider.overrideWithValue(noticeRepo),
-      ],
+      overrides: [sttNoticeRepositoryProvider.overrideWithValue(noticeRepo)],
       child: const MaterialApp(
         locale: Locale('ko'),
         localizationsDelegates: [
@@ -30,8 +28,9 @@ void main() {
   }
 
   group('PastNoticesPage Widget Tests', () {
-    testWidgets('Displays unconfirmed status when consent is not granted',
-        (tester) async {
+    testWidgets('Displays unconfirmed status when consent is not granted', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final noticeRepo = SttNoticeRepository(prefs);
@@ -45,8 +44,9 @@ void main() {
       expect(find.text('고지문 다시 보기'), findsOneWidget);
     });
 
-    testWidgets('Displays confirmed status when consent is granted',
-        (tester) async {
+    testWidgets('Displays confirmed status when consent is granted', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final noticeRepo = SttNoticeRepository(prefs);

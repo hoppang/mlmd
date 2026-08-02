@@ -118,10 +118,9 @@ MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
         TemperatureRecord.decode(activity.structuredDataJson ?? '') ??
         _legacyTemperatureRecord(activity);
     if (record != null && record.celsius >= 38) {
-      final links = guidanceLinkRules
-          .where((rule) => rule.matches(record))
-          .toList()
-        ..sort((a, b) => a.priority.compareTo(b.priority));
+      final links =
+          guidanceLinkRules.where((rule) => rule.matches(record)).toList()
+            ..sort((a, b) => a.priority.compareTo(b.priority));
       return MedicalGuidanceEvaluation(
         requiresAttention: true,
         reason: '${record.celsius.toStringAsFixed(1)}°C ≥ 38.0°C',
@@ -130,9 +129,7 @@ MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
     }
   }
 
-  final symptomRecord = SymptomRecord.decode(
-    activity.structuredDataJson ?? '',
-  );
+  final symptomRecord = SymptomRecord.decode(activity.structuredDataJson ?? '');
   if (symptomRecord != null) {
     final isSevereVomiting =
         (symptomRecord.symptomId == 'vomiting' ||
@@ -143,14 +140,15 @@ MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
         symptomRecord.symptomId == 'lethargy' ||
         symptomRecord.symptomName == '처짐';
     if (isSevereVomiting || isLethargy) {
-      final links = guidanceLinkRules
-          .where(
-            (rule) =>
-                rule.ruleId == 'aap-symptom-severe-vomiting-lethargy' &&
-                rule.enabled,
-          )
-          .toList()
-        ..sort((a, b) => a.priority.compareTo(b.priority));
+      final links =
+          guidanceLinkRules
+              .where(
+                (rule) =>
+                    rule.ruleId == 'aap-symptom-severe-vomiting-lethargy' &&
+                    rule.enabled,
+              )
+              .toList()
+            ..sort((a, b) => a.priority.compareTo(b.priority));
       return MedicalGuidanceEvaluation(
         requiresAttention: true,
         reason: isSevereVomiting ? '심각한 구토' : '처짐 증상',
@@ -174,12 +172,13 @@ MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
     activity.structuredDataJson ?? '',
   );
   if (accidentRecord != null && accidentRecord.injuryType.requiresAttention) {
-    final links = guidanceLinkRules
-        .where(
-          (rule) => rule.ruleId == 'aap-accident-first-aid' && rule.enabled,
-        )
-        .toList()
-      ..sort((a, b) => a.priority.compareTo(b.priority));
+    final links =
+        guidanceLinkRules
+            .where(
+              (rule) => rule.ruleId == 'aap-accident-first-aid' && rule.enabled,
+            )
+            .toList()
+          ..sort((a, b) => a.priority.compareTo(b.priority));
     return MedicalGuidanceEvaluation(
       requiresAttention: true,
       reason: '사고·다침 주의 필요',
