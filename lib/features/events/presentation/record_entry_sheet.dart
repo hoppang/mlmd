@@ -1628,6 +1628,14 @@ class _EventPicker extends StatelessWidget {
                         ? null
                         : () => onQuickElimination(item, EliminationKind.stool),
                   ),
+                  _EliminationPresetChip(
+                    key: const Key('quick-record-diaper-both'),
+                    label: loc.eliminationBothPreset,
+                    icon: Icons.done_all,
+                    onTap: saving
+                        ? null
+                        : () => onQuickElimination(item, EliminationKind.both),
+                  ),
                 ] else
                   _EventChoiceChip(
                     key: Key('quick-record-${item.id.name}'),

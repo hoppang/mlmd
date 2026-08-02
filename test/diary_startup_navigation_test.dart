@@ -703,6 +703,7 @@ void main() {
 
     expect(find.byKey(const Key('quick-record-diaper-urine')), findsOneWidget);
     expect(find.byKey(const Key('quick-record-diaper-stool')), findsOneWidget);
+    expect(find.byKey(const Key('quick-record-diaper-both')), findsOneWidget);
     expect(find.byKey(const Key('quick-record-diaper')), findsNothing);
 
     await tester.tap(find.byKey(const Key('quick-record-diaper-urine')));
@@ -716,12 +717,24 @@ void main() {
     expect(initial?.kind, EliminationKind.urine);
     expect(notifier.addedActivityOccurredAt, initial?.occurredAt);
     expect(find.byKey(const Key('elimination-saved-hint')), findsOneWidget);
+    expect(find.byKey(const Key('elimination-record-time')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('elimination-record-time')));
+    await tester.pumpAndSettle();
+    expect(find.byType(TimePickerDialog), findsOneWidget);
+    final cancelLabel = MaterialLocalizations.of(
+      tester.element(find.byType(TimePickerDialog)),
+    ).cancelButtonLabel;
+    await tester.tap(find.text(cancelLabel));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('elimination-kind-both')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('elimination-amount-normal')));
     await tester.tap(find.byKey(const Key('stool-consistency-hard')));
-    await tester.tap(find.byKey(const Key('stool-color-brown')));
+    final stoolColor = find.byKey(const Key('stool-color-brown'));
+    await tester.ensureVisible(stoolColor);
+    await tester.tap(stoolColor);
     await tester.enterText(find.byKey(const Key('elimination-note')), '저녁 관찰');
     final saveChanges = find.byKey(const Key('save-elimination-changes'));
     await tester.ensureVisible(saveChanges);
@@ -782,6 +795,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(notifier.deletedActivityRecordId, 'activity-record');
     expect(find.byKey(const Key('elimination-record-form')), findsNothing);
+  });
+
+  testWidgets('diaper subtypes can each be assigned to the quick bar', (
+    tester,
+  ) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('edit-quick-launch')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('quick-launch-event-diaperUrine')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('quick-launch-event-diaperStool')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('quick-launch-event-diaperBoth')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('quick-launch-event-diaperBoth')));
+    final saveSlot = find.byKey(const Key('save-quick-launch-slot'));
+    await tester.ensureVisible(saveSlot);
+    await tester.tap(saveSlot);
+    await tester.pumpAndSettle();
+
+    final slot = find.byKey(const Key('quick-launch-slot-0'));
+    await tester.ensureVisible(slot);
+    await tester.tap(slot);
+    await tester.pumpAndSettle();
+
+    final saved = EliminationRecord.decode(
+      notifier.addedActivityStructuredDataJson!,
+    );
+    expect(saved?.kind, EliminationKind.both);
   });
 
   testWidgets('나만의 기록은 이름만으로 만들고 메모와 이름 스냅샷을 저장한다', (tester) async {

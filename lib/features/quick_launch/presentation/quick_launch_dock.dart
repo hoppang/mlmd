@@ -234,10 +234,9 @@ class _QuickLaunchTile extends StatelessWidget {
                           color: instant
                               ? colors.primaryContainer
                               : colors.surfaceContainerHighest,
-                          shape: instant ? BoxShape.circle : BoxShape.rectangle,
-                          borderRadius: instant
-                              ? null
-                              : BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            instant ? 20 : 12,
+                          ),
                           border: instant
                               ? null
                               : Border.all(color: colors.outlineVariant),

@@ -35,6 +35,7 @@ class EliminationEventForm extends StatefulWidget {
 class _EliminationEventFormState extends State<EliminationEventForm> {
   final _noteController = TextEditingController();
   EliminationKind? _kind;
+  DateTime? _occurredAt;
   EliminationAmount? _stoolAmount;
   StoolConsistency? _stoolConsistency;
   StoolColor? _stoolColor;
@@ -61,6 +62,7 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
 
   void _restore(EliminationRecord? record) {
     _kind = record?.kind;
+    _occurredAt = record?.occurredAt;
     _stoolAmount = record?.stoolAmount;
     _stoolConsistency = record?.stoolConsistency;
     _stoolColor = record?.stoolColor;
@@ -81,11 +83,18 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
   void _saveChanges() {
     final original = widget.savedRecord;
     final kind = _kind;
-    if (original == null || kind == null || widget.saving) return;
+    final occurredAt = _occurredAt;
+    if (original == null ||
+        kind == null ||
+        occurredAt == null ||
+        widget.saving) {
+      return;
+    }
     final note = _noteController.text.trim();
     widget.onUpdate(
       original.copyWith(
         kind: kind,
+        occurredAt: occurredAt,
         stoolAmount: _stoolAmount,
         clearStoolAmount: _stoolAmount == null,
         stoolConsistency: _stoolConsistency,
@@ -96,6 +105,25 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
         clearNote: note.isEmpty,
       ),
     );
+  }
+
+  Future<void> _changeTime() async {
+    final occurredAt = _occurredAt;
+    if (occurredAt == null || widget.saving) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(occurredAt),
+    );
+    if (time == null || !mounted) return;
+    setState(() {
+      _occurredAt = DateTime(
+        occurredAt.year,
+        occurredAt.month,
+        occurredAt.day,
+        time.hour,
+        time.minute,
+      );
+    });
   }
 
   @override
@@ -149,6 +177,16 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
               child: Text(
                 loc.eliminationSavedHint,
                 key: const Key('elimination-saved-hint'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton.icon(
+              key: const Key('elimination-record-time'),
+              onPressed: widget.saving ? null : _changeTime,
+              icon: const Icon(Icons.schedule),
+              label: Text(
+                '${loc.recordTimeLabel} · '
+                '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_occurredAt!))}',
               ),
             ),
             const SizedBox(height: AppSpacing.md),

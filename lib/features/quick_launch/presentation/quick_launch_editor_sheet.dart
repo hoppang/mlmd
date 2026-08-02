@@ -92,6 +92,15 @@ class _QuickLaunchEditorSheetState
     });
   }
 
+  void _selectEliminationPreset(EliminationPreset preset) {
+    setState(() {
+      _target = QuickLaunchEventTarget.diaper;
+      _mode = QuickLaunchExecutionMode.instant;
+      _eliminationPreset = preset;
+      _labelController.clear();
+    });
+  }
+
   Future<void> _moveSelectedSlot(int offset) async {
     final targetIndex = _slotIndex + offset;
     if (targetIndex < 0 || targetIndex >= _editableSlotCount) return;
@@ -263,6 +272,19 @@ class _QuickLaunchEditorSheetState
                         selected: target == feedingTarget,
                         onSelected: (_) => _selectTarget(feedingTarget),
                       ),
+                  ] else if (item.id == EventTypeId.diaper) ...[
+                    for (final preset in EliminationPreset.values)
+                      ChoiceChip(
+                        key: Key(
+                          'quick-launch-event-diaper${_presetKeySuffix(preset)}',
+                        ),
+                        avatar: Icon(_presetIcon(preset), size: 18),
+                        label: Text(_eliminationPresetLabel(preset, loc)),
+                        selected:
+                            target == QuickLaunchEventTarget.diaper &&
+                            _eliminationPreset == preset,
+                        onSelected: (_) => _selectEliminationPreset(preset),
+                      ),
                   ] else
                     ChoiceChip(
                       key: Key('quick-launch-event-${item.id.name}'),
@@ -279,13 +301,11 @@ class _QuickLaunchEditorSheetState
               const SizedBox(height: AppSpacing.md),
               _ExecutionPreview(
                 mode: _mode,
-                label: _quickLaunchTargetLabel(target, loc),
+                label: target == QuickLaunchEventTarget.diaper
+                    ? _eliminationPresetLabel(_eliminationPreset, loc)
+                    : _quickLaunchTargetLabel(target, loc),
                 category: quickLaunchOpensCategory(target),
               ),
-              if (target == QuickLaunchEventTarget.diaper) ...[
-                const SizedBox(height: AppSpacing.md),
-                _eliminationEditor(loc),
-              ],
               const SizedBox(height: AppSpacing.md),
               TextField(
                 key: const Key('quick-launch-display-label'),
@@ -318,31 +338,30 @@ class _QuickLaunchEditorSheetState
       ),
     );
   }
-
-  Widget _eliminationEditor(AppLocalizations loc) {
-    return SegmentedButton<EliminationPreset>(
-      segments: [
-        ButtonSegment(
-          value: EliminationPreset.urine,
-          label: Text(loc.eliminationUrinePreset),
-        ),
-        ButtonSegment(
-          value: EliminationPreset.stool,
-          label: Text(loc.eliminationStoolPreset),
-        ),
-        ButtonSegment(
-          value: EliminationPreset.both,
-          label: Text(loc.eliminationBothPreset),
-        ),
-      ],
-      selected: {_eliminationPreset},
-      onSelectionChanged: (values) =>
-          setState(() => _eliminationPreset = values.first),
-    );
-  }
 }
 
 enum EliminationPreset { urine, stool, both }
+
+String _eliminationPresetLabel(
+  EliminationPreset preset,
+  AppLocalizations loc,
+) => switch (preset) {
+  EliminationPreset.urine => loc.eliminationUrinePreset,
+  EliminationPreset.stool => loc.eliminationStoolPreset,
+  EliminationPreset.both => loc.eliminationBothPreset,
+};
+
+String _presetKeySuffix(EliminationPreset preset) => switch (preset) {
+  EliminationPreset.urine => 'Urine',
+  EliminationPreset.stool => 'Stool',
+  EliminationPreset.both => 'Both',
+};
+
+IconData _presetIcon(EliminationPreset preset) => switch (preset) {
+  EliminationPreset.urine => Icons.water_drop_outlined,
+  EliminationPreset.stool => Icons.circle_outlined,
+  EliminationPreset.both => Icons.done_all,
+};
 
 String _quickLaunchTargetLabel(
   QuickLaunchEventTarget target,
