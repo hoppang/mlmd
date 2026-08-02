@@ -630,7 +630,11 @@ void main() {
     expect(find.text('이유식·식사 · 120g'), findsOneWidget);
     expect(find.text('수유 · 180mL'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('event-category-healthMedical')));
+    final healthMedicalCategory = find.byKey(
+      const Key('event-category-healthMedical'),
+    );
+    await tester.ensureVisible(healthMedicalCategory);
+    await tester.tap(healthMedicalCategory);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('category-event-medication')), findsOneWidget);
     expect(
@@ -638,7 +642,9 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const Key('quick-record-feeding')));
+    final quickRecordFeeding = find.byKey(const Key('quick-record-feeding'));
+    await tester.ensureVisible(quickRecordFeeding);
+    await tester.tap(quickRecordFeeding);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('intake-record-form')), findsOneWidget);
     expect(find.byKey(const Key('feeding-type-formula')), findsOneWidget);
