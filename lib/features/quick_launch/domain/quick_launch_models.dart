@@ -251,7 +251,8 @@ class QuickLaunchSlot {
   );
 }
 
-const quickLaunchSlotCount = 5;
+const quickLaunchCoreSlotCount = 5;
+const quickLaunchSlotCount = 8;
 
 class QuickLaunchLayout {
   const QuickLaunchLayout({required this.slots})
@@ -286,14 +287,31 @@ class QuickLaunchLayout {
 
   factory QuickLaunchLayout.fromJson(Map<String, dynamic> json) {
     final rawSlots = (json['slots'] as List<dynamic>? ?? const []);
-    final slots = rawSlots
+    final decodedSlots = rawSlots
         .map((value) => QuickLaunchSlot.fromJson(value as Map<String, dynamic>))
         .toList(growable: false);
-    if (slots.length != quickLaunchSlotCount) {
+    if (decodedSlots.length != quickLaunchCoreSlotCount &&
+        decodedSlots.length != quickLaunchSlotCount) {
       throw FormatException(
-        'Expected $quickLaunchSlotCount quick launch slots, got ${slots.length}',
+        'Expected $quickLaunchCoreSlotCount or $quickLaunchSlotCount '
+        'quick launch slots, got ${decodedSlots.length}',
       );
     }
+    final first = decodedSlots.first;
+    final slots = <QuickLaunchSlot>[
+      for (var index = 0; index < decodedSlots.length; index++)
+        decodedSlots[index].copyWith(slotIndex: index),
+      for (
+        var index = decodedSlots.length;
+        index < quickLaunchSlotCount;
+        index++
+      )
+        QuickLaunchSlot(
+          slotIndex: index,
+          childId: first.childId,
+          deviceProfileId: first.deviceProfileId,
+        ),
+    ];
     return QuickLaunchLayout(slots: slots);
   }
 

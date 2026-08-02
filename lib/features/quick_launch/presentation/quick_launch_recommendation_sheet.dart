@@ -19,7 +19,7 @@ class QuickLaunchRecommendationSheet extends ConsumerStatefulWidget {
 class _QuickLaunchRecommendationSheetState
     extends ConsumerState<QuickLaunchRecommendationSheet> {
   final Set<int> _selected = Set<int>.from(
-    List.generate(quickLaunchSlotCount, (index) => index),
+    List.generate(quickLaunchCoreSlotCount, (index) => index),
   );
   bool _saving = false;
 
@@ -78,7 +78,7 @@ class _QuickLaunchRecommendationSheetState
             const SizedBox(height: AppSpacing.xs),
             Text(loc.quickLaunchRecommendationDescription),
             const SizedBox(height: AppSpacing.md),
-            for (var index = 0; index < quickLaunchSlotCount; index++)
+            for (var index = 0; index < quickLaunchCoreSlotCount; index++)
               CheckboxListTile(
                 key: Key('quick-launch-recommendation-$index'),
                 value: _selected.contains(index),

@@ -123,7 +123,9 @@ class QuickLaunchNotifier extends Notifier<QuickLaunchState> {
     if (milestone == null || recommendation == null) return;
     final indexes =
         selectedSlots ??
-        Set<int>.from(List.generate(quickLaunchSlotCount, (index) => index));
+        Set<int>.from(
+          List.generate(quickLaunchCoreSlotCount, (index) => index),
+        );
     var next = state.layout;
     for (final index in indexes) {
       next = next.copyWithSlot(index, recommendation.slotAt(index));
@@ -137,7 +139,7 @@ class QuickLaunchNotifier extends Notifier<QuickLaunchState> {
         milestone: milestone,
         recommendationVersion:
             QuickLaunchPreferencesRepository.recommendationVersion,
-        status: indexes.length == quickLaunchSlotCount
+        status: indexes.length == quickLaunchCoreSlotCount
             ? QuickLaunchRecommendationDecisionStatus.applied
             : QuickLaunchRecommendationDecisionStatus.partiallyApplied,
         suggestedAt: now,

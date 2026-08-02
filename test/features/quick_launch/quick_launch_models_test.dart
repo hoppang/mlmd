@@ -52,13 +52,13 @@ void main() {
   });
 
   group('QuickLaunchLayout', () {
-    test('always keeps five slots', () {
+    test('always keeps eight slots', () {
       final layout = QuickLaunchLayout.empty(
         childId: 'child-a',
         deviceProfileId: 'device-b',
       );
 
-      expect(layout.slots, hasLength(5));
+      expect(layout.slots, hasLength(8));
       expect(layout.slots.every((slot) => slot.childId == 'child-a'), isTrue);
       expect(
         layout.slots.every((slot) => slot.deviceProfileId == 'device-b'),
@@ -79,6 +79,44 @@ void main() {
       final decoded = QuickLaunchLayout.fromJsonString(layout.toJsonString());
 
       expect(decoded, equals(layout));
+    });
+
+    test('migrates a legacy five-slot layout without losing settings', () {
+      final legacy =
+          QuickLaunchLayout.empty(
+            childId: 'child-a',
+            deviceProfileId: 'device-b',
+          ).copyWithSlot(
+            4,
+            const QuickLaunchSlot(
+              slotIndex: 4,
+              eventTypeId: QuickLaunchEventTarget.memo,
+              displayLabel: 'legacy memo',
+              childId: 'child-a',
+              deviceProfileId: 'device-b',
+            ),
+          );
+      final json = legacy.toJson();
+      json['slots'] = (json['slots']! as List<dynamic>).take(5).toList();
+
+      final migrated = QuickLaunchLayout.fromJson(json);
+
+      expect(migrated.slots, hasLength(8));
+      expect(migrated.slotAt(4).eventTypeId, QuickLaunchEventTarget.memo);
+      expect(migrated.slotAt(4).displayLabel, 'legacy memo');
+      for (var index = 5; index < 8; index++) {
+        expect(migrated.slotAt(index).eventTypeId, isNull);
+        expect(migrated.slotAt(index).slotIndex, index);
+        expect(migrated.slotAt(index).childId, 'child-a');
+        expect(migrated.slotAt(index).deviceProfileId, 'device-b');
+      }
+    });
+
+    test('rejects unsupported slot counts', () {
+      final json = QuickLaunchLayout.empty().toJson();
+      json['slots'] = (json['slots']! as List<dynamic>).take(6).toList();
+
+      expect(() => QuickLaunchLayout.fromJson(json), throwsFormatException);
     });
   });
 
@@ -129,20 +167,22 @@ void main() {
   group('QuickLaunchRecommendationBuilder', () {
     const builder = QuickLaunchRecommendationBuilder();
 
-    test('builds five slot template for newborn milestone', () {
+    test('builds an eight slot template with five recommendation slots', () {
       final layout = builder.buildForMilestone(
         milestone: GrowthMilestone.newborn,
         childId: 'child-a',
         deviceProfileId: 'device-b',
       );
 
-      expect(layout.slots, hasLength(5));
+      expect(layout.slots, hasLength(8));
       expect(layout.slotAt(0).eventTypeId, QuickLaunchEventTarget.feeding);
       expect(layout.slotAt(0).executionMode, QuickLaunchExecutionMode.category);
       expect(layout.slotAt(0).childId, 'child-a');
       expect(layout.slotAt(1).eventTypeId, QuickLaunchEventTarget.diaper);
       expect(layout.slotAt(3).eventTypeId, QuickLaunchEventTarget.sleep);
       expect(layout.slotAt(4).eventTypeId, isNull);
+      expect(layout.slotAt(5).eventTypeId, isNull);
+      expect(layout.slotAt(7).eventTypeId, isNull);
     });
 
     test('builds a month6 template', () {

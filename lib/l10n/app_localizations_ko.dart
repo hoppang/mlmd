@@ -1981,10 +1981,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get quickLaunchEditTitle => '퀵런치 편집';
 
   @override
-  String get quickLaunchEditDescription => '다섯 자리에 자주 쓰는 기록과 세부값을 정해 둘 수 있어요.';
+  String get quickLaunchEditDescription => '자주 쓰는 기록과 재사용할 세부값을 정해 둘 수 있어요.';
 
   @override
   String get quickLaunchAll => '전체';
+
+  @override
+  String get quickLaunchMore => '더보기';
 
   @override
   String get quickLaunchAdd => '추가';

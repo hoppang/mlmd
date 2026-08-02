@@ -3732,7 +3732,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickLaunchEditDescription.
   ///
   /// In ko, this message translates to:
-  /// **'다섯 자리에 자주 쓰는 기록과 세부값을 정해 둘 수 있어요.'**
+  /// **'자주 쓰는 기록과 재사용할 세부값을 정해 둘 수 있어요.'**
   String get quickLaunchEditDescription;
 
   /// No description provided for @quickLaunchAll.
@@ -3740,6 +3740,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'전체'**
   String get quickLaunchAll;
+
+  /// No description provided for @quickLaunchMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'더보기'**
+  String get quickLaunchMore;
 
   /// No description provided for @quickLaunchAdd.
   ///

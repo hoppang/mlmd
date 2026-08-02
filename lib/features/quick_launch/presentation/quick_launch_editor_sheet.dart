@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,13 +30,17 @@ class _QuickLaunchEditorSheetState
   EliminationPreset _eliminationPreset = EliminationPreset.urine;
   final _labelController = TextEditingController();
 
+  int get _editableSlotCount => defaultTargetPlatform == TargetPlatform.windows
+      ? quickLaunchSlotCount
+      : quickLaunchCoreSlotCount;
+
   @override
   void initState() {
     super.initState();
     _slotIndex = widget.initialSlotIndex < 0
         ? 0
-        : widget.initialSlotIndex >= quickLaunchSlotCount
-        ? quickLaunchSlotCount - 1
+        : widget.initialSlotIndex >= _editableSlotCount
+        ? _editableSlotCount - 1
         : widget.initialSlotIndex;
     WidgetsBinding.instance.addPostFrameCallback((_) => _restoreCurrentSlot());
   }
@@ -89,7 +94,7 @@ class _QuickLaunchEditorSheetState
 
   Future<void> _moveSelectedSlot(int offset) async {
     final targetIndex = _slotIndex + offset;
-    if (targetIndex < 0 || targetIndex >= quickLaunchSlotCount) return;
+    if (targetIndex < 0 || targetIndex >= _editableSlotCount) return;
     await ref
         .read(quickLaunchProvider.notifier)
         .moveSlot(_slotIndex, targetIndex);
@@ -195,17 +200,20 @@ class _QuickLaunchEditorSheetState
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: AppSpacing.xs),
-            SegmentedButton<int>(
-              segments: [
-                for (var index = 0; index < quickLaunchSlotCount; index++)
-                  ButtonSegment(
-                    value: index,
-                    label: Text('${index + 1}'),
-                    tooltip: quickLaunchSlotLabel(layout.slotAt(index), loc),
-                  ),
-              ],
-              selected: {_slotIndex},
-              onSelectionChanged: (values) => _selectSlot(values.first),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SegmentedButton<int>(
+                segments: [
+                  for (var index = 0; index < _editableSlotCount; index++)
+                    ButtonSegment(
+                      value: index,
+                      label: Text('${index + 1}'),
+                      tooltip: quickLaunchSlotLabel(layout.slotAt(index), loc),
+                    ),
+                ],
+                selected: {_slotIndex},
+                onSelectionChanged: (values) => _selectSlot(values.first),
+              ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -220,7 +228,7 @@ class _QuickLaunchEditorSheetState
                 ),
                 IconButton(
                   key: const Key('move-quick-launch-right'),
-                  onPressed: _slotIndex == quickLaunchSlotCount - 1
+                  onPressed: _slotIndex == _editableSlotCount - 1
                       ? null
                       : () => _moveSelectedSlot(1),
                   tooltip: loc.quickLaunchMoveRight,
@@ -247,9 +255,7 @@ class _QuickLaunchEditorSheetState
                       QuickLaunchEventTarget.expressedMilkFeeding,
                     ])
                       ChoiceChip(
-                        key: Key(
-                          'quick-launch-event-${feedingTarget.name}',
-                        ),
+                        key: Key('quick-launch-event-${feedingTarget.name}'),
                         avatar: Icon(item.icon, size: 18),
                         label: Text(
                           _quickLaunchTargetLabel(feedingTarget, loc),
@@ -345,8 +351,7 @@ String _quickLaunchTargetLabel(
   QuickLaunchEventTarget.feeding => loc.feedingEvent,
   QuickLaunchEventTarget.formulaFeeding => loc.formulaOption,
   QuickLaunchEventTarget.breastFeeding => loc.breastFeedingOption,
-  QuickLaunchEventTarget.expressedMilkFeeding =>
-    loc.expressedMilkFeedingOption,
+  QuickLaunchEventTarget.expressedMilkFeeding => loc.expressedMilkFeedingOption,
   _ => quickLaunchCatalogItem(target).label(loc),
 };
 
