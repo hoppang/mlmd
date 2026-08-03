@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	backupcrypto "github.com/hoppang/mlmd/server/internal/backup"
+	"github.com/hoppang/mlmd/server/migrations"
 )
 
 var ErrBackupDestinationExists = errors.New("backup destination already exists")
@@ -41,7 +42,7 @@ func (s *Store) Backup(ctx context.Context, destination string) error {
 	if err := os.Chmod(temporaryPath, 0o600); err != nil {
 		return fmt.Errorf("restrict backup permissions: %w", err)
 	}
-	if err := validateBackup(ctx, temporaryPath); err != nil {
+	if err := ValidateDatabase(ctx, temporaryPath); err != nil {
 		return err
 	}
 	if err := syncFile(temporaryPath); err != nil {
@@ -133,7 +134,9 @@ func publishBackup(source, destination string) error {
 	return nil
 }
 
-func validateBackup(ctx context.Context, path string) error {
+// ValidateDatabase verifies SQLite integrity and the minimum MLMD schema
+// without mutating the candidate.
+func ValidateDatabase(ctx context.Context, path string) error {
 	dsn := "file:" + filepath.ToSlash(path) + "?mode=ro&_pragma=query_only(1)"
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
@@ -150,7 +153,80 @@ func validateBackup(ctx context.Context, path string) error {
 	if result != "ok" {
 		return fmt.Errorf("validate backup: quick_check returned %q", result)
 	}
+	if err := db.QueryRowContext(ctx, `PRAGMA integrity_check`).Scan(&result); err != nil {
+		return fmt.Errorf("validate backup integrity: %w", err)
+	}
+	if result != "ok" {
+		return fmt.Errorf("validate backup: integrity_check returned %q", result)
+	}
+	var userVersion int
+	if err := db.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&userVersion); err != nil {
+		return fmt.Errorf("read backup schema version: %w", err)
+	}
+	if userVersion > migrations.CurrentVersion {
+		return fmt.Errorf(
+			"backup schema version %d is newer than supported version %d",
+			userVersion,
+			migrations.CurrentVersion,
+		)
+	}
+	for _, table := range []string{
+		"family_spaces",
+		"devices",
+		"invites",
+		"changes",
+		"device_cursors",
+		"readiness_probe",
+	} {
+		var found int
+		if err := db.QueryRowContext(
+			ctx,
+			`SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = ?`,
+			table,
+		).Scan(&found); err != nil {
+			return fmt.Errorf("validate MLMD table %q: %w", table, err)
+		}
+	}
+	rows, err := db.QueryContext(ctx, `PRAGMA foreign_key_check`)
+	if err != nil {
+		return fmt.Errorf("validate backup foreign keys: %w", err)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		return fmt.Errorf("validate backup: foreign key violations found")
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("validate backup foreign keys: %w", err)
+	}
 	return nil
+}
+
+// PrepareRestore validates, migrates, checkpoints, and revalidates a decrypted
+// database before it is eligible to replace the live database.
+func PrepareRestore(ctx context.Context, path string) error {
+	if err := ValidateDatabase(ctx, path); err != nil {
+		return err
+	}
+	store, err := Open(ctx, path)
+	if err != nil {
+		return fmt.Errorf("migrate restored database: %w", err)
+	}
+	if _, err := store.db.ExecContext(ctx, `PRAGMA wal_checkpoint(TRUNCATE)`); err != nil {
+		store.Close()
+		return fmt.Errorf("checkpoint restored database: %w", err)
+	}
+	if err := store.Close(); err != nil {
+		return fmt.Errorf("close restored database: %w", err)
+	}
+	for _, sidecar := range []string{path + "-wal", path + "-shm"} {
+		if err := os.Remove(sidecar); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("remove restored database sidecar: %w", err)
+		}
+	}
+	if err := syncFile(path); err != nil {
+		return fmt.Errorf("sync restored database: %w", err)
+	}
+	return ValidateDatabase(ctx, path)
 }
 
 func syncFile(path string) error {

@@ -73,9 +73,29 @@ existing destination is never overwritten. The temporary plaintext snapshot
 stays beside the protected source database and is removed after encryption.
 
 Losing the backup key makes every backup encrypted with it unrecoverable. Do
-not store the only key copy in the same volume as `mlmd.db`. The restore CLI
-is the next implementation step; the encrypted format already has verified
-decryption tests.
+not store the only key copy in the same volume as `mlmd.db`.
+
+## Restore an encrypted SQLite backup
+
+Stop the HTTP server before restoring. The restore command refuses to run
+while the server or another maintenance command holds the database lock:
+
+```powershell
+$env:MLMD_DATABASE_PATH = 'data/mlmd.db'
+go run ./cmd/mlmd-server restore --key-file $keyPath --input 'backups/mlmd-2026-08-03.mlmd-backup'
+```
+
+The command authenticates and decrypts the complete backup into a private
+temporary file, runs SQLite integrity and foreign-key checks, rejects schemas
+newer than the running binary, and applies supported migrations before it
+touches the live database. It then moves the old database together with any
+WAL/SHM sidecars into a sibling `mlmd.db.pre-restore-*` directory and installs
+the prepared database. If installation fails, the old files are moved back.
+
+Keep the preserved directory until the server has started successfully and
+all clients have completed a sync. Restoring an older snapshot can move the
+server cursor backwards; clients must retain their local outboxes and warn
+about server rollback as described in the sync plan.
 
 ## Verify
 

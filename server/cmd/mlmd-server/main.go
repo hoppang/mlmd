@@ -16,7 +16,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hoppang/mlmd/server/internal/filelock"
 	"github.com/hoppang/mlmd/server/internal/httpapi"
+	"github.com/hoppang/mlmd/server/internal/restore"
 	"github.com/hoppang/mlmd/server/internal/store/sqlite"
 )
 
@@ -40,6 +42,12 @@ func main() {
 				os.Exit(1)
 			}
 			return
+		case "restore":
+			if err := runRestore(logger, os.Args[2:]); err != nil {
+				logger.Error("restore failed", "error", err)
+				os.Exit(1)
+			}
+			return
 		case "generate-backup-key":
 			if err := runGenerateBackupKey(os.Args[2:]); err != nil {
 				logger.Error("backup key generation failed", "error", err)
@@ -52,6 +60,42 @@ func main() {
 		logger.Error("server stopped", "error", err)
 		os.Exit(1)
 	}
+}
+
+func runRestore(logger *slog.Logger, args []string) error {
+	flags := flag.NewFlagSet("restore", flag.ContinueOnError)
+	input := flags.String("input", "", "path to the encrypted backup")
+	keyFile := flags.String("key-file", "", "file containing a 32-byte base64url backup key")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if *input == "" || flags.NArg() != 0 {
+		return errors.New("usage: mlmd-server restore --input <path> [--key-file <path>]")
+	}
+	backupKey, err := loadBackupKey(*keyFile)
+	if err != nil {
+		return err
+	}
+	defer clear(backupKey)
+
+	restoreCtx, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
+	databasePath := envOrDefault("MLMD_DATABASE_PATH", "data/mlmd.db")
+	result, err := restore.Database(restoreCtx, *input, databasePath, backupKey)
+	if err != nil {
+		return err
+	}
+	logger.Info(
+		"restore completed",
+		"database", databasePath,
+		"input", *input,
+		"preserved_database_directory", result.PreservedDirectory,
+	)
+	return nil
 }
 
 func runGenerateBackupKey(args []string) error {
@@ -126,6 +170,11 @@ func runBackup(logger *slog.Logger, args []string) error {
 		syscall.SIGTERM,
 	)
 	defer stop()
+	maintenanceLock, err := filelock.AcquireShared(databasePath + ".maintenance.lock")
+	if err != nil {
+		return fmt.Errorf("acquire backup maintenance lock: %w", err)
+	}
+	defer maintenanceLock.Release()
 	serverStore, err := sqlite.Open(backupCtx, databasePath)
 	if err != nil {
 		return err
@@ -192,6 +241,11 @@ func run(logger *slog.Logger) error {
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	serverLock, err := filelock.Acquire(databasePath + ".server.lock")
+	if err != nil {
+		return fmt.Errorf("acquire database server lock: %w", err)
+	}
+	defer serverLock.Release()
 	serverStore, err := sqlite.Open(rootCtx, databasePath)
 	if err != nil {
 		return err

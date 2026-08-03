@@ -110,6 +110,64 @@ func TestGenerateBackupKeyCreatesBase64URLKeyWithoutOverwrite(t *testing.T) {
 	}
 }
 
+func TestRunRestoreInstallsBackupAndPreservesExistingDatabase(t *testing.T) {
+	tempDir := t.TempDir()
+	ctx := context.Background()
+	key := bytes.Repeat([]byte{0x51}, 32)
+	sourcePath := filepath.Join(tempDir, "source.db")
+	backupPath := filepath.Join(tempDir, "source.mlmd-backup")
+	sourceStore, err := sqlite.Open(ctx, sourcePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := sourceStore.CreateSpace(ctx, "Source", "source-space", "source-device", "Source device", []byte("source-token")); err != nil {
+		sourceStore.Close()
+		t.Fatal(err)
+	}
+	if err := sourceStore.BackupEncrypted(ctx, backupPath, key); err != nil {
+		sourceStore.Close()
+		t.Fatal(err)
+	}
+	if err := sourceStore.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	livePath := filepath.Join(tempDir, "live.db")
+	liveStore, err := sqlite.Open(ctx, livePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := liveStore.CreateSpace(ctx, "Live", "live-space", "live-device", "Live device", []byte("live-token")); err != nil {
+		liveStore.Close()
+		t.Fatal(err)
+	}
+	if err := liveStore.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("MLMD_DATABASE_PATH", livePath)
+	t.Setenv("MLMD_BACKUP_KEY", base64.RawURLEncoding.EncodeToString(key))
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	if err := runRestore(logger, []string{"--input", backupPath}); err != nil {
+		t.Fatal(err)
+	}
+	restoredStore, err := sqlite.Open(ctx, livePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restoredStore.Close()
+	if _, err := restoredStore.AuthenticateDevice(ctx, "source-device", []byte("source-token")); err != nil {
+		t.Fatalf("restored source device is unavailable: %v", err)
+	}
+	matches, err := filepath.Glob(livePath + ".pre-restore-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected one preserved database directory, got %v", matches)
+	}
+}
+
 func TestLoadBackupKeyRejectsAmbiguousOrInvalidInput(t *testing.T) {
 	t.Setenv("MLMD_BACKUP_KEY", "invalid")
 	if _, err := loadBackupKey(""); err == nil {
