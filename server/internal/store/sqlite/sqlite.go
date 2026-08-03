@@ -17,7 +17,8 @@ import (
 )
 
 type Store struct {
-	db *sql.DB
+	db           *sql.DB
+	databasePath string
 }
 
 func Open(ctx context.Context, path string) (*Store, error) {
@@ -38,7 +39,7 @@ func Open(ctx context.Context, path string) (*Store, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("apply migrations: %w", err)
 	}
-	return &Store{db: db}, nil
+	return &Store{db: db, databasePath: absPath}, nil
 }
 
 func (s *Store) Close() error { return s.db.Close() }

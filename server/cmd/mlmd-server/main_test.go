@@ -1,19 +1,25 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"testing"
 
+	backupcrypto "github.com/hoppang/mlmd/server/internal/backup"
 	"github.com/hoppang/mlmd/server/internal/store/sqlite"
 )
 
 func TestRunBackupCreatesSnapshot(t *testing.T) {
 	tempDir := t.TempDir()
 	databasePath := filepath.Join(tempDir, "source.db")
-	backupPath := filepath.Join(tempDir, "backups", "snapshot.db")
+	backupPath := filepath.Join(tempDir, "backups", "snapshot.mlmd-backup")
+	restoredPath := filepath.Join(tempDir, "restored.db")
+	backupKey := bytes.Repeat([]byte{0x42}, 32)
 	store, err := sqlite.Open(context.Background(), databasePath)
 	if err != nil {
 		t.Fatal(err)
@@ -22,17 +28,99 @@ func TestRunBackupCreatesSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("MLMD_DATABASE_PATH", databasePath)
+	t.Setenv("MLMD_BACKUP_KEY", base64.RawURLEncoding.EncodeToString(backupKey))
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	if err := runBackup(logger, []string{"--output", backupPath}); err != nil {
 		t.Fatal(err)
 	}
-	backupStore, err := sqlite.Open(context.Background(), backupPath)
+	encryptedContents, err := os.ReadFile(backupPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.HasPrefix(encryptedContents, []byte("SQLite format 3")) {
+		t.Fatal("backup output contains a plaintext SQLite header")
+	}
+	workspaces, err := filepath.Glob(filepath.Join(tempDir, ".mlmd-backup-work-*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(workspaces) != 0 {
+		t.Fatalf("plaintext backup workspace was not removed: %v", workspaces)
+	}
+	encryptedFile, err := os.Open(backupPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restoredFile, err := os.OpenFile(restoredPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	if err != nil {
+		encryptedFile.Close()
+		t.Fatal(err)
+	}
+	if err := backupcrypto.Decrypt(context.Background(), restoredFile, encryptedFile, backupKey); err != nil {
+		restoredFile.Close()
+		encryptedFile.Close()
+		t.Fatal(err)
+	}
+	if err := restoredFile.Close(); err != nil {
+		encryptedFile.Close()
+		t.Fatal(err)
+	}
+	if err := encryptedFile.Close(); err != nil {
+		t.Fatal(err)
+	}
+	backupStore, err := sqlite.Open(context.Background(), restoredPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer backupStore.Close()
 	if err := backupStore.Ready(context.Background()); err != nil {
 		t.Fatalf("backup is not ready: %v", err)
+	}
+}
+
+func TestGenerateBackupKeyCreatesBase64URLKeyWithoutOverwrite(t *testing.T) {
+	keyPath := filepath.Join(t.TempDir(), "keys", "backup.key")
+	if err := runGenerateBackupKey([]string{"--output", keyPath}); err != nil {
+		t.Fatal(err)
+	}
+	contents, err := os.ReadFile(keyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := base64.RawURLEncoding.Strict().DecodeString(string(contents))
+	if err != nil || len(decoded) != 32 {
+		t.Fatalf("invalid generated key: size=%d err=%v", len(decoded), err)
+	}
+	t.Setenv("MLMD_BACKUP_KEY", "")
+	loaded, err := loadBackupKey(keyPath)
+	if err != nil || !bytes.Equal(loaded, decoded) {
+		t.Fatalf("generated key could not be loaded: %v", err)
+	}
+	original := append([]byte(nil), contents...)
+	if err := runGenerateBackupKey([]string{"--output", keyPath}); err == nil {
+		t.Fatal("expected existing key file to be rejected")
+	}
+	contents, err = os.ReadFile(keyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(contents, original) {
+		t.Fatal("existing key file was modified")
+	}
+}
+
+func TestLoadBackupKeyRejectsAmbiguousOrInvalidInput(t *testing.T) {
+	t.Setenv("MLMD_BACKUP_KEY", "invalid")
+	if _, err := loadBackupKey(""); err == nil {
+		t.Fatal("expected invalid environment key to fail")
+	}
+	keyPath := filepath.Join(t.TempDir(), "backup.key")
+	valid := base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x11}, 32))
+	if err := os.WriteFile(keyPath, []byte(valid), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := loadBackupKey(keyPath); err == nil {
+		t.Fatal("expected simultaneous key file and environment key to fail")
 	}
 }

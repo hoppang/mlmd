@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -36,6 +40,12 @@ func main() {
 				os.Exit(1)
 			}
 			return
+		case "generate-backup-key":
+			if err := runGenerateBackupKey(os.Args[2:]); err != nil {
+				logger.Error("backup key generation failed", "error", err)
+				os.Exit(1)
+			}
+			return
 		}
 	}
 	if err := run(logger); err != nil {
@@ -44,15 +54,67 @@ func main() {
 	}
 }
 
-func runBackup(logger *slog.Logger, args []string) error {
-	flags := flag.NewFlagSet("backup", flag.ContinueOnError)
-	output := flags.String("output", "", "path for the SQLite backup snapshot")
+func runGenerateBackupKey(args []string) error {
+	flags := flag.NewFlagSet("generate-backup-key", flag.ContinueOnError)
+	output := flags.String("output", "", "path for the new backup key file")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
 	if *output == "" || flags.NArg() != 0 {
-		return errors.New("usage: mlmd-server backup --output <path>")
+		return errors.New("usage: mlmd-server generate-backup-key --output <path>")
 	}
+	absOutput, err := filepath.Abs(*output)
+	if err != nil {
+		return fmt.Errorf("resolve backup key path: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(absOutput), 0o700); err != nil {
+		return fmt.Errorf("create backup key directory: %w", err)
+	}
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		return fmt.Errorf("generate backup key: %w", err)
+	}
+	defer clear(key)
+	encoded := base64.RawURLEncoding.EncodeToString(key)
+	keyFile, err := os.OpenFile(absOutput, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return fmt.Errorf("create backup key file: %w", err)
+	}
+	completed := false
+	defer func() {
+		if !completed {
+			_ = keyFile.Close()
+			_ = os.Remove(absOutput)
+		}
+	}()
+	if _, err := keyFile.WriteString(encoded); err != nil {
+		return fmt.Errorf("write backup key file: %w", err)
+	}
+	if err := keyFile.Sync(); err != nil {
+		return fmt.Errorf("sync backup key file: %w", err)
+	}
+	if err := keyFile.Close(); err != nil {
+		return fmt.Errorf("close backup key file: %w", err)
+	}
+	completed = true
+	return nil
+}
+
+func runBackup(logger *slog.Logger, args []string) error {
+	flags := flag.NewFlagSet("backup", flag.ContinueOnError)
+	output := flags.String("output", "", "path for the encrypted backup")
+	keyFile := flags.String("key-file", "", "file containing a 32-byte base64url backup key")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if *output == "" || flags.NArg() != 0 {
+		return errors.New("usage: mlmd-server backup --output <path> [--key-file <path>]")
+	}
+	backupKey, err := loadBackupKey(*keyFile)
+	if err != nil {
+		return err
+	}
+	defer clear(backupKey)
 
 	databasePath := envOrDefault("MLMD_DATABASE_PATH", "data/mlmd.db")
 	if err := os.MkdirAll(filepath.Dir(databasePath), 0o700); err != nil {
@@ -69,11 +131,35 @@ func runBackup(logger *slog.Logger, args []string) error {
 		return err
 	}
 	defer serverStore.Close()
-	if err := serverStore.Backup(backupCtx, *output); err != nil {
+	if err := serverStore.BackupEncrypted(backupCtx, *output, backupKey); err != nil {
 		return err
 	}
 	logger.Info("backup completed", "database", databasePath, "output", *output)
 	return nil
+}
+
+func loadBackupKey(keyFile string) ([]byte, error) {
+	environmentKey := os.Getenv("MLMD_BACKUP_KEY")
+	if keyFile != "" && environmentKey != "" {
+		return nil, errors.New("set either --key-file or MLMD_BACKUP_KEY, not both")
+	}
+	encoded := environmentKey
+	if keyFile != "" {
+		contents, err := os.ReadFile(keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("read backup key file: %w", err)
+		}
+		encoded = string(contents)
+	}
+	encoded = strings.TrimSpace(encoded)
+	if encoded == "" {
+		return nil, errors.New("backup encryption key is required via --key-file or MLMD_BACKUP_KEY")
+	}
+	key, err := base64.RawURLEncoding.Strict().DecodeString(encoded)
+	if err != nil || len(key) != 32 {
+		return nil, errors.New("backup key must be 32 bytes encoded as unpadded base64url")
+	}
+	return key, nil
 }
 
 func runHealthcheck() error {

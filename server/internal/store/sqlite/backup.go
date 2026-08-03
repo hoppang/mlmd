@@ -8,6 +8,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	backupcrypto "github.com/hoppang/mlmd/server/internal/backup"
 )
 
 var ErrBackupDestinationExists = errors.New("backup destination already exists")
@@ -15,19 +17,9 @@ var ErrBackupDestinationExists = errors.New("backup destination already exists")
 // Backup writes a transactionally consistent snapshot of the live database.
 // The destination is published only after SQLite's integrity check succeeds.
 func (s *Store) Backup(ctx context.Context, destination string) error {
-	absDestination, err := filepath.Abs(destination)
+	absDestination, destinationDir, err := prepareBackupDestination(destination)
 	if err != nil {
-		return fmt.Errorf("resolve backup destination: %w", err)
-	}
-	if _, err := os.Lstat(absDestination); err == nil {
-		return ErrBackupDestinationExists
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("inspect backup destination: %w", err)
-	}
-
-	destinationDir := filepath.Dir(absDestination)
-	if err := os.MkdirAll(destinationDir, 0o700); err != nil {
-		return fmt.Errorf("create backup directory: %w", err)
+		return err
 	}
 	temporaryFile, err := os.CreateTemp(
 		destinationDir,
@@ -55,7 +47,84 @@ func (s *Store) Backup(ctx context.Context, destination string) error {
 	if err := syncFile(temporaryPath); err != nil {
 		return fmt.Errorf("sync backup to disk: %w", err)
 	}
-	if err := os.Link(temporaryPath, absDestination); err != nil {
+	return publishBackup(temporaryPath, absDestination)
+}
+
+// BackupEncrypted creates a validated SQLite snapshot and publishes only its
+// authenticated encrypted representation. The raw snapshot is short-lived in
+// a private temporary directory and is removed before this method returns.
+func (s *Store) BackupEncrypted(ctx context.Context, destination string, key []byte) error {
+	if len(key) != 32 {
+		return fmt.Errorf("encrypt backup: key must be exactly 32 bytes")
+	}
+	absDestination, destinationDir, err := prepareBackupDestination(destination)
+	if err != nil {
+		return err
+	}
+	workDir, err := os.MkdirTemp(
+		filepath.Dir(s.databasePath),
+		".mlmd-backup-work-*",
+	)
+	if err != nil {
+		return fmt.Errorf("create private backup workspace: %w", err)
+	}
+	defer os.RemoveAll(workDir)
+	plainSnapshot := filepath.Join(workDir, "snapshot.db")
+	if err := s.Backup(ctx, plainSnapshot); err != nil {
+		return err
+	}
+
+	plainFile, err := os.Open(plainSnapshot)
+	if err != nil {
+		return fmt.Errorf("open sqlite snapshot for encryption: %w", err)
+	}
+	defer plainFile.Close()
+	encryptedFile, err := os.CreateTemp(
+		destinationDir,
+		"."+filepath.Base(absDestination)+".tmp-*",
+	)
+	if err != nil {
+		return fmt.Errorf("create encrypted backup file: %w", err)
+	}
+	encryptedPath := encryptedFile.Name()
+	defer os.Remove(encryptedPath)
+	if err := encryptedFile.Chmod(0o600); err != nil {
+		encryptedFile.Close()
+		return fmt.Errorf("restrict encrypted backup permissions: %w", err)
+	}
+	if err := backupcrypto.Encrypt(ctx, encryptedFile, plainFile, key); err != nil {
+		encryptedFile.Close()
+		return fmt.Errorf("encrypt backup: %w", err)
+	}
+	if err := encryptedFile.Sync(); err != nil {
+		encryptedFile.Close()
+		return fmt.Errorf("sync encrypted backup to disk: %w", err)
+	}
+	if err := encryptedFile.Close(); err != nil {
+		return fmt.Errorf("close encrypted backup: %w", err)
+	}
+	return publishBackup(encryptedPath, absDestination)
+}
+
+func prepareBackupDestination(destination string) (string, string, error) {
+	absDestination, err := filepath.Abs(destination)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve backup destination: %w", err)
+	}
+	if _, err := os.Lstat(absDestination); err == nil {
+		return "", "", ErrBackupDestinationExists
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return "", "", fmt.Errorf("inspect backup destination: %w", err)
+	}
+	destinationDir := filepath.Dir(absDestination)
+	if err := os.MkdirAll(destinationDir, 0o700); err != nil {
+		return "", "", fmt.Errorf("create backup directory: %w", err)
+	}
+	return absDestination, destinationDir, nil
+}
+
+func publishBackup(source, destination string) error {
+	if err := os.Link(source, destination); err != nil {
 		if errors.Is(err, fs.ErrExist) {
 			return ErrBackupDestinationExists
 		}

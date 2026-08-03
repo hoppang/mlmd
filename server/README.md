@@ -40,27 +40,42 @@ Implemented management endpoints:
 - `GET /v1/spaces/{spaceId}/devices`
 - `DELETE /v1/spaces/{spaceId}/devices/{deviceId}`
 
-## Create a consistent SQLite snapshot
+## Create an encrypted SQLite backup
+
+Generate a 256-bit backup key once and keep it outside the server data volume:
+
+```powershell
+$keyPath = '..\mlmd-secrets\backup.key'
+go run ./cmd/mlmd-server generate-backup-key --output $keyPath
+```
 
 The backup command can run while the HTTP server is using the WAL database:
 
 ```powershell
 $env:MLMD_DATABASE_PATH = 'data/mlmd.db'
-go run ./cmd/mlmd-server backup --output 'backups/mlmd-2026-08-03.db'
+go run ./cmd/mlmd-server backup --key-file $keyPath --output 'backups/mlmd-2026-08-03.mlmd-backup'
 ```
 
-For the home-server container, write the snapshot into the mounted data volume:
+For automation or a container exec, `MLMD_BACKUP_KEY` may contain the same
+unpadded base64url key instead of using `--key-file`:
 
 ```sh
-docker compose -f deploy/home-server/compose.yaml exec mlmd-sync-server \
-  /mlmd-server backup --output /data/backups/mlmd-2026-08-03.db
+export MLMD_BACKUP_KEY="$(cat /secure/mlmd-backup.key)"
+docker compose -f deploy/home-server/compose.yaml exec \
+  -e MLMD_BACKUP_KEY mlmd-sync-server \
+  /mlmd-server backup --output /data/backups/mlmd-2026-08-03.mlmd-backup
 ```
 
 The command uses SQLite's transactional `VACUUM INTO` snapshot, validates it
-with `PRAGMA quick_check`, syncs it to disk, and refuses to overwrite an
-existing destination. This first backup step does not encrypt the snapshot yet;
-keep it inside the protected home-server storage until backup encryption is
-implemented.
+with `PRAGMA quick_check`, then encrypts it with chunked AES-256-GCM before
+publishing it. The authenticated final record detects truncation, and an
+existing destination is never overwritten. The temporary plaintext snapshot
+stays beside the protected source database and is removed after encryption.
+
+Losing the backup key makes every backup encrypted with it unrecoverable. Do
+not store the only key copy in the same volume as `mlmd.db`. The restore CLI
+is the next implementation step; the encrypted format already has verified
+decryption tests.
 
 ## Verify
 
