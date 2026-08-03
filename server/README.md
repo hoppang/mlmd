@@ -75,6 +75,24 @@ stays beside the protected source database and is removed after encryption.
 Losing the backup key makes every backup encrypted with it unrecoverable. Do
 not store the only key copy in the same volume as `mlmd.db`.
 
+## Run automatic backups
+
+`backup-scheduler` runs a cycle immediately and checks again every hour by
+default. A failed cycle is logged and retried without stopping the scheduler:
+
+```powershell
+$env:MLMD_DATABASE_PATH = 'data/mlmd.db'
+go run ./cmd/mlmd-server backup-scheduler --key-file $keyPath --directory 'backups'
+```
+
+Each UTC date has at most one managed backup. The scheduler keeps all backups
+from the latest seven UTC dates plus the newest backup in each of the current
+and previous seven ISO weeks. Retention deletes only files matching
+`mlmd-auto-YYYY-MM-DD.mlmd-backup`; manually named backups are never pruned.
+Use `--once` with Task Scheduler, cron, or a systemd timer instead of the
+built-in loop. The Compose deployment runs the loop as a separate service so
+the HTTP server never receives the backup key.
+
 ## Restore an encrypted SQLite backup
 
 Stop the HTTP server before restoring. The restore command refuses to run

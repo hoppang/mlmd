@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hoppang/mlmd/server/internal/autobackup"
 	"github.com/hoppang/mlmd/server/internal/filelock"
 	"github.com/hoppang/mlmd/server/internal/httpapi"
 	"github.com/hoppang/mlmd/server/internal/restore"
@@ -42,6 +43,12 @@ func main() {
 				os.Exit(1)
 			}
 			return
+		case "backup-scheduler":
+			if err := runBackupScheduler(logger, os.Args[2:]); err != nil {
+				logger.Error("backup scheduler stopped", "error", err)
+				os.Exit(1)
+			}
+			return
 		case "restore":
 			if err := runRestore(logger, os.Args[2:]); err != nil {
 				logger.Error("restore failed", "error", err)
@@ -60,6 +67,85 @@ func main() {
 		logger.Error("server stopped", "error", err)
 		os.Exit(1)
 	}
+}
+
+func runBackupScheduler(logger *slog.Logger, args []string) error {
+	flags := flag.NewFlagSet("backup-scheduler", flag.ContinueOnError)
+	directory := flags.String("directory", "", "directory for managed encrypted backups")
+	keyFile := flags.String("key-file", "", "file containing a 32-byte base64url backup key")
+	interval := flags.Duration("interval", time.Hour, "interval for checking whether today's backup exists")
+	once := flags.Bool("once", false, "run one backup and retention cycle, then exit")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if *directory == "" || *interval <= 0 || flags.NArg() != 0 {
+		return errors.New("usage: mlmd-server backup-scheduler --directory <path> [--key-file <path>] [--interval 1h] [--once]")
+	}
+	backupKey, err := loadBackupKey(*keyFile)
+	if err != nil {
+		return err
+	}
+	defer clear(backupKey)
+
+	schedulerCtx, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
+	databasePath := envOrDefault("MLMD_DATABASE_PATH", "data/mlmd.db")
+	cycle := func(ctx context.Context, now time.Time) (autobackup.Result, error) {
+		return autobackup.Run(ctx, autobackup.Options{
+			DatabasePath: databasePath,
+			Directory:    *directory,
+			Key:          backupKey,
+			Now:          now,
+		})
+	}
+	if *once {
+		result, err := cycle(schedulerCtx, time.Now())
+		if err != nil {
+			return err
+		}
+		logScheduledBackupResult(logger, result)
+		return nil
+	}
+	return backupSchedulerLoop(schedulerCtx, logger, *interval, cycle)
+}
+
+type backupCycle func(context.Context, time.Time) (autobackup.Result, error)
+
+func backupSchedulerLoop(ctx context.Context, logger *slog.Logger, interval time.Duration, cycle backupCycle) error {
+	for {
+		result, err := cycle(ctx, time.Now())
+		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
+			logger.Error("scheduled backup cycle failed", "error", err)
+		} else {
+			logScheduledBackupResult(logger, result)
+		}
+		timer := time.NewTimer(interval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil
+		case <-timer.C:
+		}
+	}
+}
+
+func logScheduledBackupResult(logger *slog.Logger, result autobackup.Result) {
+	message := "scheduled backup already exists"
+	if result.Created {
+		message = "scheduled backup completed"
+	}
+	logger.Info(
+		message,
+		"output", result.BackupPath,
+		"expired_backups_removed", len(result.RemovedPaths),
+	)
 }
 
 func runRestore(logger *slog.Logger, args []string) error {

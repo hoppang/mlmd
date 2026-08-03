@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/hoppang/mlmd/server/internal/autobackup"
 	backupcrypto "github.com/hoppang/mlmd/server/internal/backup"
 	"github.com/hoppang/mlmd/server/internal/store/sqlite"
 )
@@ -165,6 +168,52 @@ func TestRunRestoreInstallsBackupAndPreservesExistingDatabase(t *testing.T) {
 	}
 	if len(matches) != 1 {
 		t.Fatalf("expected one preserved database directory, got %v", matches)
+	}
+}
+
+func TestRunBackupSchedulerOnceCreatesManagedBackup(t *testing.T) {
+	tempDir := t.TempDir()
+	databasePath := filepath.Join(tempDir, "mlmd.db")
+	store, err := sqlite.Open(context.Background(), databasePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("MLMD_DATABASE_PATH", databasePath)
+	t.Setenv("MLMD_BACKUP_KEY", base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x61}, 32)))
+	backupDirectory := filepath.Join(tempDir, "backups")
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	if err := runBackupScheduler(logger, []string{"--directory", backupDirectory, "--once"}); err != nil {
+		t.Fatal(err)
+	}
+	matches, err := filepath.Glob(filepath.Join(backupDirectory, "mlmd-auto-*.mlmd-backup"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected one managed backup, got %v", matches)
+	}
+}
+
+func TestBackupSchedulerLoopContinuesAfterCycleFailure(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	attempts := 0
+	err := backupSchedulerLoop(ctx, logger, time.Millisecond, func(context.Context, time.Time) (autobackup.Result, error) {
+		attempts++
+		if attempts == 3 {
+			cancel()
+		}
+		return autobackup.Result{}, errors.New("injected backup failure")
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if attempts != 3 {
+		t.Fatalf("scheduler stopped after failure: attempts=%d", attempts)
 	}
 }
 
