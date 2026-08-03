@@ -1,0 +1,18 @@
+{
+  "acknowledgedChangeIds": [
+    "550e8400-e29b-41d4-a716-446655440000"
+  ],
+  "incoming": [
+    {
+      "envelopeVersion": 1,
+      "changeId": "999e8400-e29b-41d4-a716-446655440111",
+      "sourceDeviceId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "nonce": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "ciphertext": "AAAAAAAAAAAAAAAAAAAAAA",
+      "serverSeq": 1843,
+      "receivedAt": "2026-08-02T12:34:56.000Z"
+    }
+  ],
+  "nextCursor": "2042",
+  "hasMore": true
+}

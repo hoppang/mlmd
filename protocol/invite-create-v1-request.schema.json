@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/invite-create-v1-request.schema.json",
+  "title": "MLMD Invite Create v1 Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["role"],
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": ["owner", "member"]
+    }
+  }
+}

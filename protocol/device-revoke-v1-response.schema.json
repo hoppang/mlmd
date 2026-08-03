@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/device-revoke-v1-response.schema.json",
+  "title": "MLMD Device Revoke v1 Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "deviceId",
+    "revokedAt"
+  ],
+  "properties": {
+    "deviceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "revokedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

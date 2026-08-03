@@ -1046,6 +1046,136 @@ class AppLocalizationsKo extends AppLocalizations {
   String get familySharingOfflineNotice => '인터넷에 연결되면 자동으로 반영됩니다.';
 
   @override
+  String get homeServerConnectTitle => '홈서버 연결';
+
+  @override
+  String get homeServerConnectDescription =>
+      '같은 네트워크에 있는 홈서버의 주소와 서버 콘솔에 표시된 초기 설정 토큰을 입력하세요.';
+
+  @override
+  String get homeServerUrlLabel => '홈서버 주소';
+
+  @override
+  String get homeServerInvalidUrl => 'http 또는 https로 시작하는 홈서버 주소를 입력하세요.';
+
+  @override
+  String get homeServerBootstrapTokenLabel => '초기 설정 토큰';
+
+  @override
+  String get homeServerFamilyNameLabel => '가족 공간 이름';
+
+  @override
+  String get homeServerDeviceNameLabel => '이 기기의 이름';
+
+  @override
+  String get homeServerRequiredField => '필수 항목입니다.';
+
+  @override
+  String get homeServerConnectAction => '새 홈서버 연결';
+
+  @override
+  String get homeServerJoinTitle => '가족 공간 참여';
+
+  @override
+  String get homeServerJoinDescription =>
+      '이 기기의 이름을 입력한 뒤, 이미 연결된 기기에 표시된 QR 코드를 스캔하세요.';
+
+  @override
+  String get homeServerCameraError => '카메라를 사용할 수 없습니다. 카메라 권한을 확인하세요.';
+
+  @override
+  String get homeServerQrSecurityNotice =>
+      '이 QR에는 가족 기록을 여는 암호화 키가 들어 있습니다. 캡처하거나 다른 사람에게 보내지 마세요.';
+
+  @override
+  String homeServerJoinConfirm(String host) {
+    return '$host 서버의 이 가족 공간에 참여할까요?';
+  }
+
+  @override
+  String get homeServerJoinAction => 'QR로 가족 참여';
+
+  @override
+  String get homeServerInvalidQr => '이 앱에서 만든 유효한 초대 QR이 아닙니다.';
+
+  @override
+  String get homeServerInviteTitle => '기기 초대';
+
+  @override
+  String get homeServerInviteDescription =>
+      '추가할 기기에서 이 QR 코드를 직접 스캔하세요. 초대는 10분 뒤 만료됩니다.';
+
+  @override
+  String get homeServerInviteQrSemantics => '가족 공간 기기 초대 QR 코드';
+
+  @override
+  String get homeServerInviteExpired => '이 초대는 만료되었습니다. 기존 기기에서 새 초대를 만들어 주세요.';
+
+  @override
+  String get homeServerDeviceNameRequired => 'QR을 스캔하기 전에 이 기기의 이름을 입력하세요.';
+
+  @override
+  String get homeServerUnavailable =>
+      '홈서버에 연결할 수 없습니다. 같은 네트워크인지 확인하고 다시 시도하세요.';
+
+  @override
+  String get homeServerPairingFailed =>
+      '홈서버 연결을 완료하지 못했습니다. 서버 주소와 초대 상태를 확인하세요.';
+
+  @override
+  String get homeServerCreateInviteAction => '새 기기 초대';
+
+  @override
+  String get homeServerManageDevicesAction => '연결된 기기 관리';
+
+  @override
+  String get homeServerDevicesTitle => '연결된 기기';
+
+  @override
+  String get homeServerDevicesRefresh => '새로고침';
+
+  @override
+  String get homeServerDevicesOwnerOnly =>
+      '기기 목록과 폐기는 가족 공간 owner만 관리할 수 있습니다.';
+
+  @override
+  String get homeServerDevicesLoadFailed => '기기 목록을 불러오지 못했습니다. 홈서버 연결을 확인하세요.';
+
+  @override
+  String get homeServerDeviceRevokeAction => '기기 연결 해제';
+
+  @override
+  String get homeServerDeviceRoleOwner => '관리자';
+
+  @override
+  String get homeServerDeviceRoleMember => '가족 구성원';
+
+  @override
+  String get homeServerDeviceRevoked => '연결 해제됨';
+
+  @override
+  String get homeServerDeviceCurrent => '현재 기기';
+
+  @override
+  String get homeServerDeviceNeverSeen => '아직 동기화한 적 없음';
+
+  @override
+  String homeServerDeviceLastSeen(String date, String time) {
+    return '마지막 접속: $date $time';
+  }
+
+  @override
+  String get homeServerDeviceRevokeTitle => '이 기기의 연결을 해제할까요?';
+
+  @override
+  String homeServerDeviceRevokeConfirm(String name) {
+    return '$name에서는 더 이상 새 가족 기록을 주고받을 수 없습니다. 이미 받은 기록과 가족 키를 원격으로 지울 수는 없습니다.';
+  }
+
+  @override
+  String get homeServerDeviceRevokedSuccess => '기기 연결을 해제했습니다.';
+
+  @override
   String get dataBackupTitle => '데이터 보관 및 백업';
 
   @override
@@ -1937,6 +2067,83 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String syncConflictRevision(int revision) {
     return '리비전 $revision';
+  }
+
+  @override
+  String get syncConflictMedicationTitle => '투약 기록 충돌';
+
+  @override
+  String get syncConflictMedicationWarning =>
+      '약 이름, 용량과 투약 시각이 서로 다릅니다. 실제 투약 여부를 가족에게 직접 확인한 뒤 내용을 선택하세요.';
+
+  @override
+  String syncConflictMedicationNoticeTitle(int count) {
+    return '확인이 필요한 투약 기록 $count건';
+  }
+
+  @override
+  String syncConflictMedicationComparison(
+    String localValue,
+    String incomingValue,
+  ) {
+    return '이 기기: $localValue\n다른 기기: $incomingValue';
+  }
+
+  @override
+  String get syncConflictMedicationReviewAction => '투약 기록 자세히 비교';
+
+  @override
+  String get syncConflictMedicationName => '약 이름';
+
+  @override
+  String get syncConflictMedicationDose => '용량';
+
+  @override
+  String get syncConflictMedicationTime => '투약 시각';
+
+  @override
+  String get syncConflictMedicationAuthor => '작성자 ID';
+
+  @override
+  String get syncConflictMedicationDevice => '기기 ID';
+
+  @override
+  String get syncConflictMedicationModifiedAt => '수정 시각';
+
+  @override
+  String get syncConflictValueUnknown => '정보 없음';
+
+  @override
+  String get syncResolutionNoticeTitle => '동시 수정 결과를 자동으로 정리했습니다';
+
+  @override
+  String get syncResolutionNoticeDescription =>
+      '두 기기에서 충돌을 동시에 해결해 서버 순서에 따라 최종 결과를 적용했습니다. 다시 선택할 필요는 없습니다.';
+
+  @override
+  String get syncResolutionNoticeMedicationTitle => '투약 충돌의 동시 해소 결과';
+
+  @override
+  String get syncResolutionNoticeMedicationWarning =>
+      '두 기기에서 서로 다른 투약 내용을 동시에 선택했습니다. 최종 적용값을 가족에게 직접 확인하세요.';
+
+  @override
+  String get syncResolutionNoticeFirstVersion => '첫 번째 해소';
+
+  @override
+  String get syncResolutionNoticeSecondVersion => '두 번째 해소';
+
+  @override
+  String syncResolutionNoticeWinner(String value) {
+    return '최종 적용: $value';
+  }
+
+  @override
+  String get syncResolutionNoticeAcknowledge => '확인했습니다';
+
+  @override
+  String syncResolutionNoticeAcknowledgedMembers(int count) {
+    return '확인한 구성원 $count명';
   }
 
   @override

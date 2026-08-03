@@ -293,6 +293,229 @@ void main() {
     },
   );
 
+  test(
+    'concurrent resolutions converge without creating another conflict',
+    () async {
+      final localEdit = repository.enqueue(
+        entityType: 'memo',
+        entityId: 'memo-resolution',
+        entityRevision: 2,
+        operation: SyncOperation.update,
+        payload: const {'text': 'local edit'},
+      );
+      await repository.synchronize(
+        _FakeTransport(
+          SyncExchange(
+            acknowledgedChangeIds: const {},
+            incomingChanges: [
+              SyncChange(
+                changeId: 'original-remote-change',
+                familySpaceId: 'family-1',
+                sourceDeviceProfileId: 'remote-device',
+                sourceAuthorProfileId: 'remote-author',
+                entityType: 'memo',
+                entityId: 'memo-resolution',
+                entityRevision: 3,
+                operation: SyncOperation.update,
+                payload: const {'text': 'remote edit'},
+                occurredAt: DateTime.utc(2026, 8, 3, 10),
+              ),
+            ],
+          ),
+        ),
+        applyRemoteChange: (_) => const RemoteApplyResult.applied(),
+      );
+      final conflict = repository.getConflicts(includeResolved: false).single;
+      await repository.resolveConflict(
+        conflictId: conflict.conflictId,
+        resolution: SyncConflictResolution.keepLocal,
+        applyRemoteChange: (_) => const RemoteApplyResult.applied(),
+      );
+
+      SyncChange? converged;
+      final transport = _FakeTransport(
+        SyncExchange(
+          acknowledgedChangeIds: const {},
+          incomingChanges: [
+            SyncChange(
+              changeId: 'remote-resolution-change',
+              familySpaceId: 'family-1',
+              sourceDeviceProfileId: 'remote-device',
+              sourceAuthorProfileId: 'remote-author',
+              entityType: 'memo',
+              entityId: 'memo-resolution',
+              entityRevision: 4,
+              operation: SyncOperation.update,
+              payload: const {'text': 'remote edit'},
+              occurredAt: DateTime.utc(2026, 8, 3, 10, 1),
+              serverSequence: 20,
+              resolutionMetadata: SyncResolutionMetadata(
+                sourceConflictId: 'remote-conflict',
+                parentChangeIds: [
+                  localEdit!.changeId,
+                  'original-remote-change',
+                ],
+                selectedResolution: SyncConflictResolution.useIncoming,
+              ),
+            ),
+          ],
+        ),
+      );
+      final result = await repository.synchronize(
+        transport,
+        applyRemoteChange: (change) {
+          converged = change;
+          return const RemoteApplyResult.applied();
+        },
+      );
+
+      expect(result.conflictCount, 0);
+      expect(result.resolutionCollisionCount, 1);
+      expect(repository.getSnapshot().unresolvedConflictCount, 0);
+      expect(converged?.payload['text'], 'remote edit');
+      expect(converged?.entityRevision, 5);
+      expect(
+        transport.receivedOutgoing
+            .where(
+              (change) =>
+                  change.entityId == 'memo-resolution' &&
+                  change.resolutionMetadata != null,
+            )
+            .single
+            .resolutionMetadata
+            ?.selectedResolution,
+        SyncConflictResolution.keepLocal,
+      );
+      final notice = repository.getResolutionNotices().single;
+      expect(notice.winningChangeId, 'remote-resolution-change');
+
+      final replay = await repository.synchronize(
+        _FakeTransport(
+          SyncExchange(
+            acknowledgedChangeIds: const {},
+            incomingChanges: transport.exchangeResult.incomingChanges,
+          ),
+        ),
+        applyRemoteChange: (_) => const RemoteApplyResult.applied(),
+      );
+      expect(replay.resolutionCollisionCount, 0);
+      expect(repository.getResolutionNotices(), hasLength(1));
+
+      final otherAuthorAcknowledgement = SyncChange(
+        changeId: 'other-author-ack-change',
+        familySpaceId: 'family-1',
+        sourceDeviceProfileId: 'other-device',
+        sourceAuthorProfileId: 'other-author',
+        entityType: FamilySyncPayloads.resolutionNoticeAcknowledgement,
+        entityId:
+            '${notice.noticeId}\u0000${notice.winningChangeId}\u0000other-author',
+        entityRevision: 1,
+        operation: SyncOperation.create,
+        payload: {
+          'schema': 'mlmd.syncResolutionAcknowledgement',
+          'version': 1,
+          'noticeId': notice.noticeId,
+          'winningChangeId': notice.winningChangeId,
+          'authorProfileId': 'other-author',
+          'acknowledgedAt': '2026-08-03T10:05:00.000Z',
+        },
+        occurredAt: DateTime.utc(2026, 8, 3, 10, 5),
+      );
+      final otherAckResult = await repository.synchronize(
+        _FakeTransport(
+          SyncExchange(
+            acknowledgedChangeIds: const {},
+            incomingChanges: [otherAuthorAcknowledgement],
+          ),
+        ),
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      expect(otherAckResult.appliedCount, 1);
+      expect(repository.getResolutionNotices(), hasLength(1));
+      expect(
+        repository
+            .getResolutionNotices(includeAcknowledged: true)
+            .single
+            .acknowledgedAuthorProfileIds,
+        contains('other-author'),
+      );
+
+      repository.acknowledgeResolutionNotice(notice.noticeId);
+      expect(repository.getResolutionNotices(), isEmpty);
+      expect(
+        repository.getResolutionNotices(includeAcknowledged: true),
+        hasLength(1),
+      );
+      final acknowledgementUpload = _FakeTransport(
+        const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+      );
+      await repository.synchronize(
+        acknowledgementUpload,
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      final uploadedAcknowledgement = acknowledgementUpload.receivedOutgoing
+          .singleWhere(
+            (change) =>
+                change.entityType ==
+                FamilySyncPayloads.resolutionNoticeAcknowledgement,
+          );
+      expect(
+        uploadedAcknowledgement.payload['authorProfileId'],
+        profiles.currentAuthor!.authorProfileId,
+      );
+      expect(
+        uploadedAcknowledgement.payload['winningChangeId'],
+        notice.winningChangeId,
+      );
+
+      final acknowledgementReplay = await repository.synchronize(
+        _FakeTransport(
+          SyncExchange(
+            acknowledgedChangeIds: const {},
+            incomingChanges: [uploadedAcknowledgement],
+          ),
+        ),
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      expect(acknowledgementReplay.appliedCount, 0);
+      expect(repository.getResolutionNotices(), isEmpty);
+
+      final laterResolution = await repository.synchronize(
+        _FakeTransport(
+          SyncExchange(
+            acknowledgedChangeIds: const {},
+            incomingChanges: [
+              SyncChange(
+                changeId: 'later-resolution-change',
+                familySpaceId: 'family-1',
+                sourceDeviceProfileId: 'remote-device',
+                sourceAuthorProfileId: 'remote-author',
+                entityType: 'memo',
+                entityId: 'memo-resolution',
+                entityRevision: 6,
+                operation: SyncOperation.update,
+                payload: const {'text': 'later resolved edit'},
+                occurredAt: DateTime.utc(2026, 8, 3, 11),
+                serverSequence: 30,
+                resolutionMetadata: const SyncResolutionMetadata(
+                  sourceConflictId: 'later-conflict',
+                  parentChangeIds: ['later-change-a', 'later-change-b'],
+                  selectedResolution: SyncConflictResolution.keepLocal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        applyRemoteChange: (_) => const RemoteApplyResult.applied(),
+      );
+      expect(laterResolution.resolutionCollisionCount, 0);
+      expect(
+        repository.getResolutionNotices(includeAcknowledged: true),
+        hasLength(1),
+      );
+    },
+  );
+
   test('record save paths enqueue shareable text changes', () async {
     final diaryRepository = DiaryRepositoryImpl(
       objectBox,

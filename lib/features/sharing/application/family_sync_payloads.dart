@@ -16,6 +16,8 @@ abstract final class FamilySyncPayloads {
   static const attachmentMetadata = 'attachmentMetadata';
   static const duplicateDecision = 'duplicateDecision';
   static const customEventDefinition = 'customEventDefinition';
+  static const resolutionNoticeAcknowledgement =
+      'resolutionNoticeAcknowledgement';
 
   static int revisionAt(DateTime value) =>
       value.toUtc().microsecondsSinceEpoch.clamp(1, 0x7fffffffffffffff);

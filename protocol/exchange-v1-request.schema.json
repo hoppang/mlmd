@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/exchange-v1-request.schema.json",
+  "title": "MLMD Sync Exchange v1 Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocolVersion",
+    "afterCursor",
+    "limit",
+    "outgoing"
+  ],
+  "properties": {
+    "protocolVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "afterCursor": {
+      "type": ["string", "null"],
+      "description": "Opaque cursor represented as a decimal server sequence string, or null for initial sync",
+      "pattern": "^[0-9]+$",
+      "minLength": 1,
+      "maxLength": 20
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+    },
+    "outgoing": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "./envelope-v1.schema.json"
+      }
+    }
+  }
+}
