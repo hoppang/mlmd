@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/incoming-envelope-v1.schema.json",
+  "title": "MLMD Sync Incoming Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "serverSeq",
+    "receivedAt",
+    "envelopeVersion",
+    "changeId",
+    "sourceDeviceId",
+    "nonce",
+    "ciphertext"
+  ],
+  "properties": {
+    "serverSeq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "receivedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "envelopeVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "changeId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sourceDeviceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "nonce": {
+      "type": "string",
+      "description": "Unpadded base64url-encoded 24-byte XChaCha20 nonce",
+      "pattern": "^[A-Za-z0-9_-]{32}$",
+      "minLength": 32,
+      "maxLength": 32
+    },
+    "ciphertext": {
+      "type": "string",
+      "description": "Base64url-encoded AEAD ciphertext including authentication tag",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "minLength": 22,
+      "maxLength": 349526
+    }
+  }
+}

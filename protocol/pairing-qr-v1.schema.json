@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/pairing-qr-v1.schema.json",
+  "title": "MLMD Pairing QR v1 Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocolVersion",
+    "serverUrl",
+    "familySpaceId",
+    "familyDisplayName",
+    "inviteId",
+    "inviteToken",
+    "inviterDeviceId",
+    "role",
+    "expiresAt",
+    "familyKey"
+  ],
+  "properties": {
+    "protocolVersion": { "const": 1 },
+    "serverUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://"
+    },
+    "familySpaceId": { "type": "string", "format": "uuid" },
+    "familyDisplayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "inviteId": { "type": "string", "format": "uuid" },
+    "inviteToken": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F-]{36}\\.[A-Za-z0-9_-]{43}$",
+      "minLength": 80,
+      "maxLength": 80
+    },
+    "inviterDeviceId": { "type": "string", "format": "uuid" },
+    "role": { "enum": ["owner", "member"] },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "familyKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$",
+      "minLength": 43,
+      "maxLength": 43
+    }
+  }
+}
