@@ -40,6 +40,28 @@ Implemented management endpoints:
 - `GET /v1/spaces/{spaceId}/devices`
 - `DELETE /v1/spaces/{spaceId}/devices/{deviceId}`
 
+## Create a consistent SQLite snapshot
+
+The backup command can run while the HTTP server is using the WAL database:
+
+```powershell
+$env:MLMD_DATABASE_PATH = 'data/mlmd.db'
+go run ./cmd/mlmd-server backup --output 'backups/mlmd-2026-08-03.db'
+```
+
+For the home-server container, write the snapshot into the mounted data volume:
+
+```sh
+docker compose -f deploy/home-server/compose.yaml exec mlmd-sync-server \
+  /mlmd-server backup --output /data/backups/mlmd-2026-08-03.db
+```
+
+The command uses SQLite's transactional `VACUUM INTO` snapshot, validates it
+with `PRAGMA quick_check`, syncs it to disk, and refuses to overwrite an
+existing destination. This first backup step does not encrypt the snapshot yet;
+keep it inside the protected home-server storage until backup encryption is
+implemented.
+
 ## Verify
 
 ```powershell

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,17 +18,62 @@ import (
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	if len(os.Args) == 2 && os.Args[1] == "healthcheck" {
-		if err := runHealthcheck(); err != nil {
-			logger.Error("healthcheck failed", "error", err)
-			os.Exit(1)
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "healthcheck":
+			if len(os.Args) != 2 {
+				logger.Error("healthcheck does not accept arguments")
+				os.Exit(2)
+			}
+			if err := runHealthcheck(); err != nil {
+				logger.Error("healthcheck failed", "error", err)
+				os.Exit(1)
+			}
+			return
+		case "backup":
+			if err := runBackup(logger, os.Args[2:]); err != nil {
+				logger.Error("backup failed", "error", err)
+				os.Exit(1)
+			}
+			return
 		}
-		return
 	}
 	if err := run(logger); err != nil {
 		logger.Error("server stopped", "error", err)
 		os.Exit(1)
 	}
+}
+
+func runBackup(logger *slog.Logger, args []string) error {
+	flags := flag.NewFlagSet("backup", flag.ContinueOnError)
+	output := flags.String("output", "", "path for the SQLite backup snapshot")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if *output == "" || flags.NArg() != 0 {
+		return errors.New("usage: mlmd-server backup --output <path>")
+	}
+
+	databasePath := envOrDefault("MLMD_DATABASE_PATH", "data/mlmd.db")
+	if err := os.MkdirAll(filepath.Dir(databasePath), 0o700); err != nil {
+		return err
+	}
+	backupCtx, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
+	serverStore, err := sqlite.Open(backupCtx, databasePath)
+	if err != nil {
+		return err
+	}
+	defer serverStore.Close()
+	if err := serverStore.Backup(backupCtx, *output); err != nil {
+		return err
+	}
+	logger.Info("backup completed", "database", databasePath, "output", *output)
+	return nil
 }
 
 func runHealthcheck() error {
