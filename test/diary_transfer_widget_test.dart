@@ -138,7 +138,16 @@ class _FakeFamilySyncRepository implements FamilySyncRepository {
     required SyncOperation operation,
     required Map<String, Object?> payload,
     DateTime? occurredAt,
+    SyncResolutionMetadata? resolutionMetadata,
   }) => null;
+
+  @override
+  List<FamilySyncResolutionNotice> getResolutionNotices({
+    bool includeAcknowledged = false,
+  }) => const [];
+
+  @override
+  void acknowledgeResolutionNotice(String noticeId) {}
 
   @override
   FamilySyncSnapshot getSnapshot() => const FamilySyncSnapshot();

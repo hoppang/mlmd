@@ -26,6 +26,12 @@ abstract interface class FamilySyncRepository {
 
   List<FamilySyncConflict> getConflicts({bool includeResolved = true});
 
+  List<FamilySyncResolutionNotice> getResolutionNotices({
+    bool includeAcknowledged = false,
+  });
+
+  void acknowledgeResolutionNotice(String noticeId);
+
   SyncChange? enqueue({
     required String entityType,
     required String entityId,
@@ -33,6 +39,7 @@ abstract interface class FamilySyncRepository {
     required SyncOperation operation,
     required Map<String, Object?> payload,
     DateTime? occurredAt,
+    SyncResolutionMetadata? resolutionMetadata,
   });
 
   Future<SyncRunResult> synchronize(
@@ -52,7 +59,9 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     : _spaceBox = Box<FamilySpaceEntity>(_objectBox.store),
       _outbox = Box<SyncOutboxEntity>(_objectBox.store),
       _cursorBox = Box<SyncCursorEntity>(_objectBox.store),
-      _conflictBox = Box<SyncConflictEntity>(_objectBox.store) {
+      _conflictBox = Box<SyncConflictEntity>(_objectBox.store),
+      _resolutionStateBox = Box<SyncResolutionStateEntity>(_objectBox.store),
+      _resolutionNoticeBox = Box<SyncResolutionNoticeEntity>(_objectBox.store) {
     if (_profiles case final ProfileRepositoryImpl profiles) {
       _profileMutationSubscription = profiles.mutations.listen(
         _queueProfileMutation,
@@ -67,6 +76,8 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
   final Box<SyncOutboxEntity> _outbox;
   final Box<SyncCursorEntity> _cursorBox;
   final Box<SyncConflictEntity> _conflictBox;
+  final Box<SyncResolutionStateEntity> _resolutionStateBox;
+  final Box<SyncResolutionNoticeEntity> _resolutionNoticeBox;
   final StreamController<void> _changes = StreamController<void>.broadcast();
   StreamSubscription<AuthorProfileMutation>? _profileMutationSubscription;
 
@@ -191,6 +202,37 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
   }
 
   @override
+  List<FamilySyncResolutionNotice> getResolutionNotices({
+    bool includeAcknowledged = false,
+  }) {
+    final familySpaceId = activeFamilySpaceId;
+    if (familySpaceId == null) return const [];
+    final notices =
+        _resolutionNoticeBox
+            .getAll()
+            .where(
+              (item) =>
+                  item.familySpaceId == familySpaceId &&
+                  (includeAcknowledged || item.acknowledgedAt == null),
+            )
+            .map(_fromResolutionNotice)
+            .toList()
+          ..sort((a, b) => b.detectedAt.compareTo(a.detectedAt));
+    return List.unmodifiable(notices);
+  }
+
+  @override
+  void acknowledgeResolutionNotice(String noticeId) {
+    final notice = _resolutionNoticeById(noticeId);
+    if (notice == null || notice.familySpaceId != activeFamilySpaceId) return;
+    if (notice.acknowledgedAt == null) {
+      notice.acknowledgedAt = DateTime.now();
+      _resolutionNoticeBox.put(notice);
+      _notifyChanged();
+    }
+  }
+
+  @override
   SyncChange? enqueue({
     required String entityType,
     required String entityId,
@@ -198,6 +240,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     required SyncOperation operation,
     required Map<String, Object?> payload,
     DateTime? occurredAt,
+    SyncResolutionMetadata? resolutionMetadata,
   }) {
     final familySpaceId = activeFamilySpaceId;
     if (familySpaceId == null) return null;
@@ -218,6 +261,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       operation: operation,
       payload: Map.unmodifiable(payload),
       occurredAt: occurredAt ?? DateTime.now(),
+      resolutionMetadata: resolutionMetadata,
     );
     _outbox.put(_toOutbox(change));
     _notifyChanged();
@@ -260,8 +304,18 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
 
     var appliedCount = 0;
     var conflictCount = 0;
+    var resolutionCollisionCount = 0;
     for (final incoming in exchange.incomingChanges) {
       if (incoming.familySpaceId != space.familySpaceId) continue;
+      if (incoming.resolutionMetadata != null) {
+        final result = await _processResolutionChange(
+          incoming,
+          applyRemoteChange,
+        );
+        if (result.applied) appliedCount++;
+        if (result.collision) resolutionCollisionCount++;
+        continue;
+      }
       final localPending = _pendingForEntity(
         space.familySpaceId,
         incoming.entityType,
@@ -274,6 +328,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
           incoming,
           localRevision: localPending.entityRevision,
           localPayloadJson: localPending.payloadJson,
+          localChangeId: localPending.changeId,
         );
         conflictCount++;
         continue;
@@ -304,6 +359,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       uploadedCount: acknowledged.length,
       appliedCount: appliedCount,
       conflictCount: conflictCount,
+      resolutionCollisionCount: resolutionCollisionCount,
     );
   }
 
@@ -336,29 +392,6 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
         ? SyncOperation.parse(entity.incomingOperation ?? 'update')
         : SyncOperation.update;
 
-    if (resolution == SyncConflictResolution.useIncoming) {
-      final incoming = SyncChange(
-        changeId: entity.incomingChangeId,
-        familySpaceId: entity.familySpaceId,
-        sourceDeviceProfileId:
-            entity.incomingSourceDeviceProfileId ?? 'unknown-device',
-        sourceAuthorProfileId:
-            entity.incomingSourceAuthorProfileId ?? 'unknown-author',
-        entityType: entity.entityType,
-        entityId: entity.entityId,
-        entityRevision: nextRevision,
-        operation: selectedOperation,
-        payload: selectedPayload,
-        occurredAt: entity.incomingOccurredAt ?? entity.detectedAt,
-      );
-      final applyResult = await applyRemoteChange(incoming);
-      if (applyResult.disposition == RemoteApplyDisposition.conflict) {
-        throw StateError(
-          'The local record changed after this conflict was detected.',
-        );
-      }
-    }
-
     final oldPending = _pending(entity.familySpaceId)
         .where(
           (item) =>
@@ -366,6 +399,10 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
               item.entityId == entity.entityId,
         )
         .toList();
+    final parentChangeIds = <String>{
+      if (entity.localChangeId != null) entity.localChangeId!,
+      entity.incomingChangeId,
+    }.toList()..sort();
     if (oldPending.isNotEmpty) {
       _outbox.removeMany(oldPending.map((item) => item.id).toList());
     }
@@ -375,10 +412,25 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       entityRevision: nextRevision,
       operation: selectedOperation,
       payload: selectedPayload,
+      resolutionMetadata: SyncResolutionMetadata(
+        sourceConflictId: entity.conflictId,
+        parentChangeIds: parentChangeIds,
+        selectedResolution: resolution,
+      ),
     );
     if (queued == null) {
       throw StateError('The family space was disconnected during resolution.');
     }
+
+    final applyResult = await applyRemoteChange(queued);
+    if (applyResult.disposition == RemoteApplyDisposition.conflict) {
+      final queuedEntity = _outboxByChangeId(queued.changeId);
+      if (queuedEntity != null) _outbox.remove(queuedEntity.id);
+      throw StateError(
+        'The local record changed after this conflict was detected.',
+      );
+    }
+    _saveResolutionState(queued, effectiveRevision: nextRevision);
 
     final source = _profiles.requireCurrentSource();
     entity
@@ -392,6 +444,104 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     return ConflictResolutionResult(
       conflict: _fromConflict(entity),
       queuedChangeId: queued.changeId,
+    );
+  }
+
+  Future<({bool applied, bool collision})> _processResolutionChange(
+    SyncChange incoming,
+    RemoteChangeApplier applyRemoteChange,
+  ) async {
+    final state = _resolutionState(
+      incoming.familySpaceId,
+      incoming.entityType,
+      incoming.entityId,
+    );
+    if (state == null) {
+      final result = await applyRemoteChange(incoming);
+      if (result.disposition == RemoteApplyDisposition.conflict) {
+        return (applied: false, collision: false);
+      }
+      _saveResolutionState(
+        incoming,
+        effectiveRevision: incoming.entityRevision,
+      );
+      return (
+        applied: result.disposition == RemoteApplyDisposition.applied,
+        collision: false,
+      );
+    }
+    if (state.resolutionGroupId !=
+        incoming.resolutionMetadata!.resolutionGroupId) {
+      final result = await applyRemoteChange(incoming);
+      if (result.disposition == RemoteApplyDisposition.conflict) {
+        return (applied: false, collision: false);
+      }
+      _saveResolutionState(
+        incoming,
+        effectiveRevision: incoming.entityRevision,
+      );
+      return (
+        applied: result.disposition == RemoteApplyDisposition.applied,
+        collision: false,
+      );
+    }
+    if (state.winningChangeId == incoming.changeId) {
+      if (incoming.serverSequence != null &&
+          state.winningServerSequence != incoming.serverSequence) {
+        state.winningServerSequence = incoming.serverSequence;
+        _resolutionStateBox.put(state);
+      }
+      return (applied: false, collision: false);
+    }
+
+    final incomingWins = _resolutionChangeWins(incoming, state);
+    _saveResolutionNotice(
+      state: state,
+      incoming: incoming,
+      winningChangeId: incomingWins ? incoming.changeId : state.winningChangeId,
+    );
+    if (!incomingWins) return (applied: false, collision: true);
+
+    final effectiveRevision =
+        (state.effectiveRevision > incoming.entityRevision
+            ? state.effectiveRevision
+            : incoming.entityRevision) +
+        1;
+    final promotedPayload = Map<String, Object?>.of(incoming.payload);
+    if (promotedPayload['revision'] is int) {
+      promotedPayload['revision'] = effectiveRevision;
+    }
+    final promoted = SyncChange(
+      changeId: incoming.changeId,
+      familySpaceId: incoming.familySpaceId,
+      sourceDeviceProfileId: incoming.sourceDeviceProfileId,
+      sourceAuthorProfileId: incoming.sourceAuthorProfileId,
+      entityType: incoming.entityType,
+      entityId: incoming.entityId,
+      entityRevision: effectiveRevision,
+      operation: incoming.operation,
+      payload: promotedPayload,
+      occurredAt: incoming.occurredAt,
+      serverReceivedAt: incoming.serverReceivedAt,
+      serverSequence: incoming.serverSequence,
+      resolutionMetadata: incoming.resolutionMetadata,
+    );
+    final result = await applyRemoteChange(promoted);
+    if (result.disposition == RemoteApplyDisposition.conflict) {
+      return (applied: false, collision: true);
+    }
+    final losingPending = _pendingForEntity(
+      incoming.familySpaceId,
+      incoming.entityType,
+      incoming.entityId,
+    );
+    if (losingPending?.resolutionMetadataJson != null) {
+      _outbox.remove(losingPending!.id);
+    }
+    _saveResolutionState(promoted, effectiveRevision: effectiveRevision);
+    return (
+      applied: result.disposition == RemoteApplyDisposition.applied,
+      collision: true,
     );
   }
 
@@ -417,6 +567,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     SyncChange incoming, {
     required int localRevision,
     required String localPayloadJson,
+    String? localChangeId,
   }) {
     final existing = _conflictById(incoming.changeId);
     if (existing != null) return;
@@ -430,6 +581,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
         incomingRevision: incoming.entityRevision,
         localPayloadJson: localPayloadJson,
         incomingPayloadJson: incoming.payloadJson,
+        localChangeId: localChangeId,
         incomingChangeId: incoming.changeId,
         incomingOperation: incoming.operation.name,
         incomingSourceDeviceProfileId: incoming.sourceDeviceProfileId,
@@ -513,6 +665,140 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     }
   }
 
+  SyncOutboxEntity? _outboxByChangeId(String changeId) {
+    for (final item in _outbox.getAll()) {
+      if (item.changeId == changeId) return item;
+    }
+    return null;
+  }
+
+  String _resolutionStateKey(
+    String familySpaceId,
+    String entityType,
+    String entityId,
+  ) => '$familySpaceId\u0000$entityType\u0000$entityId';
+
+  SyncResolutionStateEntity? _resolutionState(
+    String familySpaceId,
+    String entityType,
+    String entityId,
+  ) {
+    final key = _resolutionStateKey(familySpaceId, entityType, entityId);
+    for (final item in _resolutionStateBox.getAll()) {
+      if (item.stateKey == key) return item;
+    }
+    return null;
+  }
+
+  void _saveResolutionState(
+    SyncChange change, {
+    required int effectiveRevision,
+  }) {
+    final resolution = change.resolutionMetadata;
+    if (resolution == null) {
+      throw StateError('A resolution state requires resolution metadata.');
+    }
+    final existing = _resolutionState(
+      change.familySpaceId,
+      change.entityType,
+      change.entityId,
+    );
+    _resolutionStateBox.put(
+      SyncResolutionStateEntity(
+        id: existing?.id ?? 0,
+        stateKey: _resolutionStateKey(
+          change.familySpaceId,
+          change.entityType,
+          change.entityId,
+        ),
+        familySpaceId: change.familySpaceId,
+        entityType: change.entityType,
+        entityId: change.entityId,
+        resolutionGroupId: resolution.resolutionGroupId,
+        winningChangeId: change.changeId,
+        winningServerSequence: change.serverSequence,
+        effectiveRevision: effectiveRevision,
+        operation: change.operation.name,
+        payloadJson: change.payloadJson,
+        sourceDeviceProfileId: change.sourceDeviceProfileId,
+        sourceAuthorProfileId: change.sourceAuthorProfileId,
+        occurredAt: change.occurredAt,
+      ),
+    );
+  }
+
+  bool _resolutionChangeWins(
+    SyncChange incoming,
+    SyncResolutionStateEntity state,
+  ) {
+    final incomingSequence = incoming.serverSequence;
+    final currentSequence = state.winningServerSequence;
+    if (incomingSequence != null && currentSequence != null) {
+      if (incomingSequence != currentSequence) {
+        return incomingSequence > currentSequence;
+      }
+    } else if (incomingSequence != null) {
+      return true;
+    } else if (currentSequence != null) {
+      return false;
+    }
+    return incoming.changeId.compareTo(state.winningChangeId) > 0;
+  }
+
+  void _saveResolutionNotice({
+    required SyncResolutionStateEntity state,
+    required SyncChange incoming,
+    required String winningChangeId,
+  }) {
+    final ids = [state.winningChangeId, incoming.changeId]..sort();
+    final noticeId = '${ids[0]}:${ids[1]}';
+    final existing = _resolutionNoticeById(noticeId);
+    final stateIsFirst = state.winningChangeId == ids[0];
+    final winnerChanged =
+        existing != null && existing.winningChangeId != winningChangeId;
+    _resolutionNoticeBox.put(
+      SyncResolutionNoticeEntity(
+        id: existing?.id ?? 0,
+        noticeId: noticeId,
+        familySpaceId: incoming.familySpaceId,
+        entityType: incoming.entityType,
+        entityId: incoming.entityId,
+        firstChangeId: ids[0],
+        secondChangeId: ids[1],
+        winningChangeId: winningChangeId,
+        firstPayloadJson: stateIsFirst
+            ? state.payloadJson
+            : incoming.payloadJson,
+        secondPayloadJson: stateIsFirst
+            ? incoming.payloadJson
+            : state.payloadJson,
+        firstSourceDeviceProfileId: stateIsFirst
+            ? state.sourceDeviceProfileId
+            : incoming.sourceDeviceProfileId,
+        firstSourceAuthorProfileId: stateIsFirst
+            ? state.sourceAuthorProfileId
+            : incoming.sourceAuthorProfileId,
+        secondSourceDeviceProfileId: stateIsFirst
+            ? incoming.sourceDeviceProfileId
+            : state.sourceDeviceProfileId,
+        secondSourceAuthorProfileId: stateIsFirst
+            ? incoming.sourceAuthorProfileId
+            : state.sourceAuthorProfileId,
+        firstOccurredAt: stateIsFirst ? state.occurredAt : incoming.occurredAt,
+        secondOccurredAt: stateIsFirst ? incoming.occurredAt : state.occurredAt,
+        detectedAt: existing?.detectedAt ?? DateTime.now(),
+        acknowledgedAt: winnerChanged ? null : existing?.acknowledgedAt,
+      ),
+    );
+  }
+
+  SyncResolutionNoticeEntity? _resolutionNoticeById(String noticeId) {
+    for (final item in _resolutionNoticeBox.getAll()) {
+      if (item.noticeId == noticeId) return item;
+    }
+    return null;
+  }
+
   SyncOutboxEntity _toOutbox(SyncChange change) => SyncOutboxEntity(
     changeId: change.changeId,
     familySpaceId: change.familySpaceId,
@@ -523,6 +809,9 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     entityRevision: change.entityRevision,
     operation: change.operation.name,
     payloadJson: change.payloadJson,
+    resolutionMetadataJson: change.resolutionMetadata == null
+        ? null
+        : jsonEncode(change.resolutionMetadata!.toJson()),
     occurredAt: change.occurredAt,
   );
 
@@ -537,6 +826,12 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     operation: SyncOperation.parse(entity.operation),
     payload: (jsonDecode(entity.payloadJson) as Map).cast<String, Object?>(),
     occurredAt: entity.occurredAt,
+    resolutionMetadata: entity.resolutionMetadataJson == null
+        ? null
+        : SyncResolutionMetadata.fromJson(
+            (jsonDecode(entity.resolutionMetadataJson!) as Map)
+                .cast<String, Object?>(),
+          ),
   );
 
   Map<String, Object?> _decodePayload(String payloadJson) =>
@@ -558,6 +853,9 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
         incomingOperation: SyncOperation.parse(
           entity.incomingOperation ?? 'update',
         ),
+        incomingSourceDeviceProfileId: entity.incomingSourceDeviceProfileId,
+        incomingSourceAuthorProfileId: entity.incomingSourceAuthorProfileId,
+        incomingOccurredAt: entity.incomingOccurredAt,
         detectedAt: entity.detectedAt,
         resolution: entity.resolution == null
             ? null
@@ -568,6 +866,28 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
         resolvedByAuthorProfileId: entity.resolvedByAuthorProfileId,
         resolvedByDeviceProfileId: entity.resolvedByDeviceProfileId,
       );
+
+  FamilySyncResolutionNotice _fromResolutionNotice(
+    SyncResolutionNoticeEntity entity,
+  ) => FamilySyncResolutionNotice(
+    noticeId: entity.noticeId,
+    familySpaceId: entity.familySpaceId,
+    entityType: entity.entityType,
+    entityId: entity.entityId,
+    firstChangeId: entity.firstChangeId,
+    secondChangeId: entity.secondChangeId,
+    winningChangeId: entity.winningChangeId,
+    firstPayload: Map.unmodifiable(_decodePayload(entity.firstPayloadJson)),
+    secondPayload: Map.unmodifiable(_decodePayload(entity.secondPayloadJson)),
+    firstSourceDeviceProfileId: entity.firstSourceDeviceProfileId,
+    firstSourceAuthorProfileId: entity.firstSourceAuthorProfileId,
+    secondSourceDeviceProfileId: entity.secondSourceDeviceProfileId,
+    secondSourceAuthorProfileId: entity.secondSourceAuthorProfileId,
+    firstOccurredAt: entity.firstOccurredAt,
+    secondOccurredAt: entity.secondOccurredAt,
+    detectedAt: entity.detectedAt,
+    acknowledgedAt: entity.acknowledgedAt,
+  );
 
   void _notifyChanged() {
     if (!_changes.isClosed) _changes.add(null);
@@ -633,3 +953,9 @@ final familySyncConflictsProvider = Provider<List<FamilySyncConflict>>((ref) {
   ref.watch(familySyncStatusProvider);
   return ref.watch(familySyncRepositoryProvider).getConflicts();
 }, dependencies: [familySyncRepositoryProvider, familySyncStatusProvider]);
+
+final familySyncResolutionNoticesProvider =
+    Provider<List<FamilySyncResolutionNotice>>((ref) {
+      ref.watch(familySyncStatusProvider);
+      return ref.watch(familySyncRepositoryProvider).getResolutionNotices();
+    }, dependencies: [familySyncRepositoryProvider, familySyncStatusProvider]);

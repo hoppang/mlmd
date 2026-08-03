@@ -51,6 +51,7 @@ class SyncOutboxEntity {
   int entityRevision;
   String operation;
   String payloadJson;
+  String? resolutionMetadataJson;
 
   @Property(type: PropertyType.date)
   DateTime occurredAt;
@@ -73,10 +74,119 @@ class SyncOutboxEntity {
     required this.entityRevision,
     required this.operation,
     required this.payloadJson,
+    this.resolutionMetadataJson,
     required this.occurredAt,
     this.attemptCount = 0,
     this.lastAttemptAt,
     this.lastErrorCode,
+  });
+}
+
+/// The deterministic winner among concurrent conflict-resolution changes.
+@Entity()
+class SyncResolutionStateEntity {
+  @Id()
+  int id;
+
+  @Unique()
+  String stateKey;
+
+  @Index()
+  String familySpaceId;
+
+  String entityType;
+
+  @Index()
+  String entityId;
+
+  String resolutionGroupId;
+  String winningChangeId;
+  int? winningServerSequence;
+  int effectiveRevision;
+  String operation;
+  String payloadJson;
+  String sourceDeviceProfileId;
+  String sourceAuthorProfileId;
+
+  @Property(type: PropertyType.date)
+  DateTime occurredAt;
+
+  SyncResolutionStateEntity({
+    this.id = 0,
+    required this.stateKey,
+    required this.familySpaceId,
+    required this.entityType,
+    required this.entityId,
+    required this.resolutionGroupId,
+    required this.winningChangeId,
+    this.winningServerSequence,
+    required this.effectiveRevision,
+    required this.operation,
+    required this.payloadJson,
+    required this.sourceDeviceProfileId,
+    required this.sourceAuthorProfileId,
+    required this.occurredAt,
+  });
+}
+
+/// A per-device notice that two users resolved the same entity concurrently.
+@Entity()
+class SyncResolutionNoticeEntity {
+  @Id()
+  int id;
+
+  @Unique()
+  String noticeId;
+
+  @Index()
+  String familySpaceId;
+
+  String entityType;
+
+  @Index()
+  String entityId;
+
+  String firstChangeId;
+  String secondChangeId;
+  String winningChangeId;
+  String firstPayloadJson;
+  String secondPayloadJson;
+  String firstSourceDeviceProfileId;
+  String firstSourceAuthorProfileId;
+  String secondSourceDeviceProfileId;
+  String secondSourceAuthorProfileId;
+
+  @Property(type: PropertyType.date)
+  DateTime firstOccurredAt;
+
+  @Property(type: PropertyType.date)
+  DateTime secondOccurredAt;
+
+  @Property(type: PropertyType.date)
+  DateTime detectedAt;
+
+  @Property(type: PropertyType.date)
+  DateTime? acknowledgedAt;
+
+  SyncResolutionNoticeEntity({
+    this.id = 0,
+    required this.noticeId,
+    required this.familySpaceId,
+    required this.entityType,
+    required this.entityId,
+    required this.firstChangeId,
+    required this.secondChangeId,
+    required this.winningChangeId,
+    required this.firstPayloadJson,
+    required this.secondPayloadJson,
+    required this.firstSourceDeviceProfileId,
+    required this.firstSourceAuthorProfileId,
+    required this.secondSourceDeviceProfileId,
+    required this.secondSourceAuthorProfileId,
+    required this.firstOccurredAt,
+    required this.secondOccurredAt,
+    required this.detectedAt,
+    this.acknowledgedAt,
   });
 }
 
@@ -132,6 +242,7 @@ class SyncConflictEntity {
   int incomingRevision;
   String localPayloadJson;
   String incomingPayloadJson;
+  String? localChangeId;
   String incomingChangeId;
   String? incomingOperation;
   String? incomingSourceDeviceProfileId;
@@ -161,6 +272,7 @@ class SyncConflictEntity {
     required this.incomingRevision,
     required this.localPayloadJson,
     required this.incomingPayloadJson,
+    this.localChangeId,
     required this.incomingChangeId,
     this.incomingOperation,
     this.incomingSourceDeviceProfileId,

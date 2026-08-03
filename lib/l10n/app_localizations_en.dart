@@ -1075,6 +1075,143 @@ class AppLocalizationsEn extends AppLocalizations {
       'Changes will be applied automatically when you are online.';
 
   @override
+  String get homeServerConnectTitle => 'Connect a home server';
+
+  @override
+  String get homeServerConnectDescription =>
+      'Enter the address of the home server on your local network and the setup token shown in its console.';
+
+  @override
+  String get homeServerUrlLabel => 'Home server address';
+
+  @override
+  String get homeServerInvalidUrl =>
+      'Enter a home server address beginning with http or https.';
+
+  @override
+  String get homeServerBootstrapTokenLabel => 'Setup token';
+
+  @override
+  String get homeServerFamilyNameLabel => 'Family space name';
+
+  @override
+  String get homeServerDeviceNameLabel => 'Name of this device';
+
+  @override
+  String get homeServerRequiredField => 'This field is required.';
+
+  @override
+  String get homeServerConnectAction => 'Connect a new home server';
+
+  @override
+  String get homeServerJoinTitle => 'Join a family space';
+
+  @override
+  String get homeServerJoinDescription =>
+      'Name this device, then scan the QR code shown on a device that is already connected.';
+
+  @override
+  String get homeServerCameraError =>
+      'The camera is unavailable. Check the camera permission.';
+
+  @override
+  String get homeServerQrSecurityNotice =>
+      'This QR contains the encryption key for your family records. Do not capture or share it.';
+
+  @override
+  String homeServerJoinConfirm(String host) {
+    return 'Join this family space on the $host server?';
+  }
+
+  @override
+  String get homeServerJoinAction => 'Join with QR';
+
+  @override
+  String get homeServerInvalidQr =>
+      'This is not a valid invitation QR from this app.';
+
+  @override
+  String get homeServerInviteTitle => 'Invite a device';
+
+  @override
+  String get homeServerInviteDescription =>
+      'Scan this QR directly on the device you want to add. The invitation expires in 10 minutes.';
+
+  @override
+  String get homeServerInviteQrSemantics =>
+      'Family space device invitation QR code';
+
+  @override
+  String get homeServerInviteExpired =>
+      'This invitation has expired. Create a new one on a connected device.';
+
+  @override
+  String get homeServerDeviceNameRequired =>
+      'Name this device before scanning the QR.';
+
+  @override
+  String get homeServerUnavailable =>
+      'The home server is unavailable. Check that you are on the same network and try again.';
+
+  @override
+  String get homeServerPairingFailed =>
+      'The home server connection could not be completed. Check the address and invitation status.';
+
+  @override
+  String get homeServerCreateInviteAction => 'Invite a new device';
+
+  @override
+  String get homeServerManageDevicesAction => 'Manage connected devices';
+
+  @override
+  String get homeServerDevicesTitle => 'Connected devices';
+
+  @override
+  String get homeServerDevicesRefresh => 'Refresh';
+
+  @override
+  String get homeServerDevicesOwnerOnly =>
+      'Only a family space owner can view and revoke devices.';
+
+  @override
+  String get homeServerDevicesLoadFailed =>
+      'The device list could not be loaded. Check the home server connection.';
+
+  @override
+  String get homeServerDeviceRevokeAction => 'Revoke device';
+
+  @override
+  String get homeServerDeviceRoleOwner => 'Owner';
+
+  @override
+  String get homeServerDeviceRoleMember => 'Family member';
+
+  @override
+  String get homeServerDeviceRevoked => 'Revoked';
+
+  @override
+  String get homeServerDeviceCurrent => 'This device';
+
+  @override
+  String get homeServerDeviceNeverSeen => 'Has not synchronized yet';
+
+  @override
+  String homeServerDeviceLastSeen(String date, String time) {
+    return 'Last connected: $date $time';
+  }
+
+  @override
+  String get homeServerDeviceRevokeTitle => 'Revoke this device?';
+
+  @override
+  String homeServerDeviceRevokeConfirm(String name) {
+    return '$name will no longer send or receive new family records. Records and the family key already received by that device cannot be erased remotely.';
+  }
+
+  @override
+  String get homeServerDeviceRevokedSuccess => 'The device was revoked.';
+
+  @override
   String get dataBackupTitle => 'Data storage and backup';
 
   @override
@@ -1994,6 +2131,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String syncConflictRevision(int revision) {
     return 'Revision $revision';
   }
+
+  @override
+  String get syncConflictMedicationTitle => 'Medication record conflict';
+
+  @override
+  String get syncConflictMedicationWarning =>
+      'The medication name, dose, or administration time differs. Confirm what was actually administered with your family before choosing a version.';
+
+  @override
+  String syncConflictMedicationNoticeTitle(int count) {
+    return '$count medication records need review';
+  }
+
+  @override
+  String syncConflictMedicationComparison(
+    String localValue,
+    String incomingValue,
+  ) {
+    return 'This device: $localValue\nOther device: $incomingValue';
+  }
+
+  @override
+  String get syncConflictMedicationReviewAction => 'Compare medication details';
+
+  @override
+  String get syncConflictMedicationName => 'Medication';
+
+  @override
+  String get syncConflictMedicationDose => 'Dose';
+
+  @override
+  String get syncConflictMedicationTime => 'Administered at';
+
+  @override
+  String get syncConflictMedicationAuthor => 'Author ID';
+
+  @override
+  String get syncConflictMedicationDevice => 'Device ID';
+
+  @override
+  String get syncConflictMedicationModifiedAt => 'Modified at';
+
+  @override
+  String get syncConflictValueUnknown => 'Not available';
+
+  @override
+  String get syncResolutionNoticeTitle =>
+      'Concurrent changes were reconciled automatically';
+
+  @override
+  String get syncResolutionNoticeDescription =>
+      'Two devices resolved the conflict at the same time. The final result was selected by server order; no further choice is needed.';
+
+  @override
+  String get syncResolutionNoticeMedicationTitle =>
+      'Concurrent medication resolution';
+
+  @override
+  String get syncResolutionNoticeMedicationWarning =>
+      'Two devices selected different medication details at the same time. Confirm the final applied value directly with your family.';
+
+  @override
+  String get syncResolutionNoticeFirstVersion => 'First resolution';
+
+  @override
+  String get syncResolutionNoticeSecondVersion => 'Second resolution';
+
+  @override
+  String syncResolutionNoticeWinner(String value) {
+    return 'Final result: $value';
+  }
+
+  @override
+  String get syncResolutionNoticeAcknowledge => 'Got it';
 
   @override
   String get growthChartTitle => 'Growth';

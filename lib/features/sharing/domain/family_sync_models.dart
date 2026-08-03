@@ -24,6 +24,8 @@ class SyncChange {
     required this.payload,
     required this.occurredAt,
     this.serverReceivedAt,
+    this.serverSequence,
+    this.resolutionMetadata,
   });
 
   final String changeId;
@@ -37,6 +39,8 @@ class SyncChange {
   final Map<String, Object?> payload;
   final DateTime occurredAt;
   final DateTime? serverReceivedAt;
+  final int? serverSequence;
+  final SyncResolutionMetadata? resolutionMetadata;
 
   String get payloadJson => jsonEncode(payload);
 
@@ -53,6 +57,7 @@ class SyncChange {
     'occurredAt': occurredAt.toUtc().toIso8601String(),
     if (serverReceivedAt != null)
       'serverReceivedAt': serverReceivedAt!.toUtc().toIso8601String(),
+    if (resolutionMetadata != null) 'resolution': resolutionMetadata!.toJson(),
   };
 
   factory SyncChange.fromJson(Map<String, Object?> json) {
@@ -74,6 +79,62 @@ class SyncChange {
       serverReceivedAt: json['serverReceivedAt'] == null
           ? null
           : DateTime.parse(json['serverReceivedAt']! as String),
+      serverSequence: json['serverSequence'] as int?,
+      resolutionMetadata: json['resolution'] == null
+          ? null
+          : SyncResolutionMetadata.fromJson(
+              (json['resolution']! as Map).cast<String, Object?>(),
+            ),
+    );
+  }
+}
+
+class SyncResolutionMetadata {
+  const SyncResolutionMetadata({
+    required this.sourceConflictId,
+    required this.parentChangeIds,
+    required this.selectedResolution,
+  });
+
+  static const version = 1;
+
+  final String sourceConflictId;
+  final List<String> parentChangeIds;
+  final SyncConflictResolution selectedResolution;
+
+  String get resolutionGroupId {
+    if (parentChangeIds.isEmpty) {
+      throw StateError('A sync resolution requires parent change IDs.');
+    }
+    final sorted = parentChangeIds.toSet().toList()..sort();
+    return sorted.join('\u0000');
+  }
+
+  Map<String, Object?> toJson() => {
+    'version': version,
+    'sourceConflictId': sourceConflictId,
+    'parentChangeIds': parentChangeIds,
+    'selectedResolution': selectedResolution.name,
+  };
+
+  factory SyncResolutionMetadata.fromJson(Map<String, Object?> json) {
+    final parents = json['parentChangeIds'];
+    if (json['version'] != version ||
+        json['sourceConflictId'] is! String ||
+        parents is! List ||
+        parents.isEmpty ||
+        parents.any((value) => value is! String || value.isEmpty)) {
+      throw const FormatException('Invalid sync resolution metadata.');
+    }
+    final selected = json['selectedResolution'];
+    return SyncResolutionMetadata(
+      sourceConflictId: json['sourceConflictId']! as String,
+      parentChangeIds: List<String>.unmodifiable(parents.cast<String>()),
+      selectedResolution: SyncConflictResolution.values.firstWhere(
+        (value) => value.name == selected,
+        orElse: () =>
+            throw const FormatException('Invalid sync resolution selection.'),
+      ),
     );
   }
 }
@@ -125,6 +186,9 @@ class FamilySyncConflict {
     required this.incomingChangeId,
     required this.incomingOperation,
     required this.detectedAt,
+    this.incomingSourceDeviceProfileId,
+    this.incomingSourceAuthorProfileId,
+    this.incomingOccurredAt,
     this.resolution,
     this.resolvedAt,
     this.resolvedByAuthorProfileId,
@@ -142,6 +206,9 @@ class FamilySyncConflict {
   final String incomingChangeId;
   final SyncOperation incomingOperation;
   final DateTime detectedAt;
+  final String? incomingSourceDeviceProfileId;
+  final String? incomingSourceAuthorProfileId;
+  final DateTime? incomingOccurredAt;
   final SyncConflictResolution? resolution;
   final DateTime? resolvedAt;
   final String? resolvedByAuthorProfileId;
@@ -158,6 +225,48 @@ class ConflictResolutionResult {
 
   final FamilySyncConflict conflict;
   final String queuedChangeId;
+}
+
+class FamilySyncResolutionNotice {
+  const FamilySyncResolutionNotice({
+    required this.noticeId,
+    required this.familySpaceId,
+    required this.entityType,
+    required this.entityId,
+    required this.firstChangeId,
+    required this.secondChangeId,
+    required this.winningChangeId,
+    required this.firstPayload,
+    required this.secondPayload,
+    required this.firstSourceDeviceProfileId,
+    required this.firstSourceAuthorProfileId,
+    required this.secondSourceDeviceProfileId,
+    required this.secondSourceAuthorProfileId,
+    required this.firstOccurredAt,
+    required this.secondOccurredAt,
+    required this.detectedAt,
+    this.acknowledgedAt,
+  });
+
+  final String noticeId;
+  final String familySpaceId;
+  final String entityType;
+  final String entityId;
+  final String firstChangeId;
+  final String secondChangeId;
+  final String winningChangeId;
+  final Map<String, Object?> firstPayload;
+  final Map<String, Object?> secondPayload;
+  final String firstSourceDeviceProfileId;
+  final String firstSourceAuthorProfileId;
+  final String secondSourceDeviceProfileId;
+  final String secondSourceAuthorProfileId;
+  final DateTime firstOccurredAt;
+  final DateTime secondOccurredAt;
+  final DateTime detectedAt;
+  final DateTime? acknowledgedAt;
+
+  bool get isAcknowledged => acknowledgedAt != null;
 }
 
 enum RemoteApplyDisposition { applied, ignored, conflict }
@@ -194,9 +303,11 @@ class SyncRunResult {
     required this.uploadedCount,
     required this.appliedCount,
     required this.conflictCount,
+    this.resolutionCollisionCount = 0,
   });
 
   final int uploadedCount;
   final int appliedCount;
   final int conflictCount;
+  final int resolutionCollisionCount;
 }
