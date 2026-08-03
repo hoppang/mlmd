@@ -14,6 +14,7 @@ import (
 
 	"github.com/hoppang/mlmd/server/internal/autobackup"
 	backupcrypto "github.com/hoppang/mlmd/server/internal/backup"
+	"github.com/hoppang/mlmd/server/internal/backupstatus"
 	"github.com/hoppang/mlmd/server/internal/store/sqlite"
 )
 
@@ -198,11 +199,43 @@ func TestRunBackupSchedulerOnceCreatesManagedBackup(t *testing.T) {
 	}
 }
 
+func TestRunVerifyBackupChecksEncryptedSnapshot(t *testing.T) {
+	tempDir := t.TempDir()
+	databasePath := filepath.Join(tempDir, "mlmd.db")
+	backupPath := filepath.Join(tempDir, "snapshot.mlmd-backup")
+	key := bytes.Repeat([]byte{0x71}, 32)
+	store, err := sqlite.Open(context.Background(), databasePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.BackupEncrypted(context.Background(), backupPath, key); err != nil {
+		store.Close()
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("MLMD_DATABASE_PATH", databasePath)
+	t.Setenv("MLMD_BACKUP_KEY", base64.RawURLEncoding.EncodeToString(key))
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	if err := runVerifyBackup(logger, []string{"--input", backupPath}); err != nil {
+		t.Fatal(err)
+	}
+	workspaces, err := filepath.Glob(filepath.Join(tempDir, ".mlmd-restore-work-*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(workspaces) != 0 {
+		t.Fatalf("verification left plaintext workspaces: %v", workspaces)
+	}
+}
+
 func TestBackupSchedulerLoopContinuesAfterCycleFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	attempts := 0
-	err := backupSchedulerLoop(ctx, logger, time.Millisecond, func(context.Context, time.Time) (autobackup.Result, error) {
+	statusPath := filepath.Join(t.TempDir(), "backup-status.json")
+	err := backupSchedulerLoop(ctx, logger, time.Millisecond, statusPath, func(context.Context, time.Time) (autobackup.Result, error) {
 		attempts++
 		if attempts == 3 {
 			cancel()
@@ -214,6 +247,13 @@ func TestBackupSchedulerLoopContinuesAfterCycleFailure(t *testing.T) {
 	}
 	if attempts != 3 {
 		t.Fatalf("scheduler stopped after failure: attempts=%d", attempts)
+	}
+	status, err := backupstatus.Read(statusPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.ConsecutiveFailures != 2 {
+		t.Fatalf("unexpected recorded failures: %#v", status)
 	}
 }
 

@@ -52,6 +52,27 @@ Inspect recent scheduler activity with:
 docker compose -f deploy/home-server/compose.yaml logs mlmd-backup
 ```
 
+Check the persisted backup state without affecting server readiness:
+
+```sh
+curl http://192.168.1.20:8080/v1/health/backup
+```
+
+Each newly created automatic backup is already decrypted and validated before
+the scheduler reports success. For a manual restore drill, verify a selected
+older backup while the HTTP server remains online:
+
+```sh
+docker compose -f deploy/home-server/compose.yaml run --rm --no-deps \
+  mlmd-backup verify-backup \
+  --input /backups/mlmd-auto-2026-08-03.mlmd-backup \
+  --key-file /run/secrets/mlmd_backup_key
+```
+
+Run this against a different retained backup at least monthly. Success proves
+authenticated decryption, SQLite integrity, schema compatibility, and the
+migration path without changing `/data/mlmd.db`.
+
 ## Restore
 
 Stop both services before restoring so neither the server nor scheduler holds

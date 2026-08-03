@@ -90,8 +90,32 @@ from the latest seven UTC dates plus the newest backup in each of the current
 and previous seven ISO weeks. Retention deletes only files matching
 `mlmd-auto-YYYY-MM-DD.mlmd-backup`; manually named backups are never pruned.
 Use `--once` with Task Scheduler, cron, or a systemd timer instead of the
-built-in loop. The Compose deployment runs the loop as a separate service so
-the HTTP server never receives the backup key.
+built-in loop, and set `--interval` to the external schedule interval so stale
+status detection remains accurate. Every newly created backup is decrypted,
+integrity-checked, and migrated in a disposable workspace before the cycle is
+reported successful. The Compose deployment runs the loop as a separate
+service so the HTTP server never receives the backup key.
+
+The HTTP server exposes backup health separately from readiness:
+
+```http
+GET /v1/health/backup
+```
+
+The response reports `healthy`, `degraded`, or `unknown`, the last successful
+backup time and filename, consecutive failures, the next expected attempt,
+and a non-sensitive error code. Backup degradation never makes
+`/v1/health/ready` fail.
+
+Verify any encrypted backup without replacing the live database:
+
+```powershell
+go run ./cmd/mlmd-server verify-backup --key-file $keyPath --input 'backups/mlmd-auto-2026-08-03.mlmd-backup'
+```
+
+This performs the same authenticated decryption, SQLite integrity and
+foreign-key checks, schema compatibility check, and supported migrations used
+by a real restore. Its private plaintext workspace is removed on every exit.
 
 ## Restore an encrypted SQLite backup
 

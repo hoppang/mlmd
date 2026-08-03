@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hoppang/mlmd/server/internal/filelock"
+	"github.com/hoppang/mlmd/server/internal/restore"
 	"github.com/hoppang/mlmd/server/internal/store/sqlite"
 )
 
@@ -29,6 +30,7 @@ type Options struct {
 
 type Result struct {
 	BackupPath   string
+	BackupTime   time.Time
 	Created      bool
 	RemovedPaths []string
 }
@@ -66,45 +68,80 @@ func Run(ctx context.Context, options Options) (Result, error) {
 		return Result{}, fmt.Errorf("create automatic backup directory: %w", err)
 	}
 	backupPath := filepath.Join(absDirectory, managedFilename(now))
-	created, err := createBackup(ctx, absDatabase, backupPath, options.Key)
+	created, backupTime, err := createBackup(ctx, absDatabase, backupPath, options.Key)
 	if err != nil {
 		return Result{}, err
 	}
 	removed, err := Prune(absDirectory, now)
 	if err != nil {
-		return Result{BackupPath: backupPath, Created: created}, err
+		return Result{BackupPath: backupPath, BackupTime: backupTime, Created: created}, err
 	}
-	return Result{BackupPath: backupPath, Created: created, RemovedPaths: removed}, nil
+	return Result{BackupPath: backupPath, BackupTime: backupTime, Created: created, RemovedPaths: removed}, nil
 }
 
-func createBackup(ctx context.Context, databasePath, backupPath string, key []byte) (bool, error) {
+func createBackup(ctx context.Context, databasePath, backupPath string, key []byte) (bool, time.Time, error) {
 	info, err := os.Stat(backupPath)
 	if err == nil {
 		if !info.Mode().IsRegular() {
-			return false, errors.New("automatic backup destination exists and is not a regular file")
+			return false, time.Time{}, errors.New("automatic backup destination exists and is not a regular file")
 		}
-		return false, nil
+		if _, markerErr := os.Stat(unverifiedMarker(backupPath)); markerErr == nil {
+			maintenanceLock, lockErr := filelock.Acquire(databasePath + ".maintenance.lock")
+			if lockErr != nil {
+				return false, time.Time{}, fmt.Errorf("acquire automatic backup verification lock: %w", lockErr)
+			}
+			defer maintenanceLock.Release()
+			if verifyErr := restore.Verify(ctx, backupPath, filepath.Dir(databasePath), key); verifyErr != nil {
+				cleanupErr := discardUnverifiedBackup(backupPath)
+				return false, time.Time{}, errors.Join(
+					fmt.Errorf("verify previously unverified automatic backup: %w", verifyErr),
+					cleanupErr,
+				)
+			}
+			if removeErr := os.Remove(unverifiedMarker(backupPath)); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+				return false, time.Time{}, fmt.Errorf("clear automatic backup verification marker: %w", removeErr)
+			}
+		} else if !errors.Is(markerErr, fs.ErrNotExist) {
+			return false, time.Time{}, fmt.Errorf("inspect automatic backup verification marker: %w", markerErr)
+		}
+		return false, info.ModTime().UTC(), nil
 	}
 	if !errors.Is(err, fs.ErrNotExist) {
-		return false, fmt.Errorf("inspect automatic backup destination: %w", err)
+		return false, time.Time{}, fmt.Errorf("inspect automatic backup destination: %w", err)
 	}
 	maintenanceLock, err := filelock.Acquire(databasePath + ".maintenance.lock")
 	if err != nil {
-		return false, fmt.Errorf("acquire automatic backup maintenance lock: %w", err)
+		return false, time.Time{}, fmt.Errorf("acquire automatic backup maintenance lock: %w", err)
 	}
 	defer maintenanceLock.Release()
+	if err := markUnverified(backupPath); err != nil {
+		return false, time.Time{}, err
+	}
 	store, err := sqlite.Open(ctx, databasePath)
 	if err != nil {
-		return false, err
+		_ = os.Remove(unverifiedMarker(backupPath))
+		return false, time.Time{}, err
 	}
 	if err := store.BackupEncrypted(ctx, backupPath, key); err != nil {
 		store.Close()
-		return false, err
+		_ = os.Remove(unverifiedMarker(backupPath))
+		return false, time.Time{}, err
 	}
 	if err := store.Close(); err != nil {
-		return false, fmt.Errorf("close automatic backup database: %w", err)
+		return false, time.Time{}, fmt.Errorf("close automatic backup database: %w", err)
 	}
-	return true, nil
+	if err := restore.Verify(ctx, backupPath, filepath.Dir(databasePath), key); err != nil {
+		cleanupErr := discardUnverifiedBackup(backupPath)
+		return false, time.Time{}, errors.Join(fmt.Errorf("verify automatic backup: %w", err), cleanupErr)
+	}
+	if err := os.Remove(unverifiedMarker(backupPath)); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return false, time.Time{}, fmt.Errorf("clear automatic backup verification marker: %w", err)
+	}
+	info, err = os.Stat(backupPath)
+	if err != nil {
+		return false, time.Time{}, fmt.Errorf("inspect verified automatic backup: %w", err)
+	}
+	return true, info.ModTime().UTC(), nil
 }
 
 // Prune removes only files matching the managed filename format. It retains
@@ -177,6 +214,9 @@ func Prune(directory string, now time.Time) ([]string, error) {
 		if err := os.Remove(file.path); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return removed, fmt.Errorf("remove expired automatic backup %q: %w", file.path, err)
 		}
+		if err := os.Remove(unverifiedMarker(file.path)); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return removed, fmt.Errorf("remove expired automatic backup verification marker %q: %w", file.path, err)
+		}
 		removed = append(removed, file.path)
 	}
 	return removed, nil
@@ -211,4 +251,39 @@ func dateOnly(value time.Time) time.Time {
 func isoWeekStart(value time.Time) time.Time {
 	weekday := (int(value.Weekday()) + 6) % 7
 	return dateOnly(value).AddDate(0, 0, -weekday)
+}
+
+func unverifiedMarker(backupPath string) string {
+	return backupPath + ".unverified"
+}
+
+func markUnverified(backupPath string) error {
+	marker, err := os.OpenFile(unverifiedMarker(backupPath), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	if err != nil {
+		return fmt.Errorf("create automatic backup verification marker: %w", err)
+	}
+	if err := marker.Chmod(0o600); err != nil {
+		marker.Close()
+		return fmt.Errorf("restrict automatic backup verification marker: %w", err)
+	}
+	if err := marker.Sync(); err != nil {
+		marker.Close()
+		return fmt.Errorf("sync automatic backup verification marker: %w", err)
+	}
+	if err := marker.Close(); err != nil {
+		return fmt.Errorf("close automatic backup verification marker: %w", err)
+	}
+	return nil
+}
+
+func discardUnverifiedBackup(backupPath string) error {
+	removeErr := os.Remove(backupPath)
+	if removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+		return removeErr
+	}
+	markerErr := os.Remove(unverifiedMarker(backupPath))
+	if errors.Is(markerErr, fs.ErrNotExist) {
+		return nil
+	}
+	return markerErr
 }

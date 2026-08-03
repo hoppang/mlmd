@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/hoppang/mlmd/server/internal/autobackup"
+	"github.com/hoppang/mlmd/server/internal/backupstatus"
 	"github.com/hoppang/mlmd/server/internal/filelock"
 	"github.com/hoppang/mlmd/server/internal/httpapi"
 	"github.com/hoppang/mlmd/server/internal/restore"
@@ -55,6 +56,12 @@ func main() {
 				os.Exit(1)
 			}
 			return
+		case "verify-backup":
+			if err := runVerifyBackup(logger, os.Args[2:]); err != nil {
+				logger.Error("backup verification failed", "error", err)
+				os.Exit(1)
+			}
+			return
 		case "generate-backup-key":
 			if err := runGenerateBackupKey(os.Args[2:]); err != nil {
 				logger.Error("backup key generation failed", "error", err)
@@ -67,6 +74,32 @@ func main() {
 		logger.Error("server stopped", "error", err)
 		os.Exit(1)
 	}
+}
+
+func runVerifyBackup(logger *slog.Logger, args []string) error {
+	flags := flag.NewFlagSet("verify-backup", flag.ContinueOnError)
+	input := flags.String("input", "", "path to the encrypted backup")
+	keyFile := flags.String("key-file", "", "file containing a 32-byte base64url backup key")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if *input == "" || flags.NArg() != 0 {
+		return errors.New("usage: mlmd-server verify-backup --input <path> [--key-file <path>]")
+	}
+	backupKey, err := loadBackupKey(*keyFile)
+	if err != nil {
+		return err
+	}
+	defer clear(backupKey)
+	verifyCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	databasePath := envOrDefault("MLMD_DATABASE_PATH", "data/mlmd.db")
+	workspaceDirectory := filepath.Dir(databasePath)
+	if err := restore.Verify(verifyCtx, *input, workspaceDirectory, backupKey); err != nil {
+		return err
+	}
+	logger.Info("backup verification completed", "input", *input)
+	return nil
 }
 
 func runBackupScheduler(logger *slog.Logger, args []string) error {
@@ -94,6 +127,7 @@ func runBackupScheduler(logger *slog.Logger, args []string) error {
 	)
 	defer stop()
 	databasePath := envOrDefault("MLMD_DATABASE_PATH", "data/mlmd.db")
+	statusPath := databasePath + ".backup-status.json"
 	cycle := func(ctx context.Context, now time.Time) (autobackup.Result, error) {
 		return autobackup.Run(ctx, autobackup.Options{
 			DatabasePath: databasePath,
@@ -103,28 +137,40 @@ func runBackupScheduler(logger *slog.Logger, args []string) error {
 		})
 	}
 	if *once {
-		result, err := cycle(schedulerCtx, time.Now())
+		attemptAt := time.Now().UTC()
+		result, err := cycle(schedulerCtx, attemptAt)
+		nextAttemptAt := attemptAt.Add(*interval)
+		if statusErr := recordBackupCycle(statusPath, attemptAt, &nextAttemptAt, result, err); statusErr != nil {
+			logger.Error("record backup status failed", "error", statusErr)
+		}
 		if err != nil {
 			return err
 		}
 		logScheduledBackupResult(logger, result)
 		return nil
 	}
-	return backupSchedulerLoop(schedulerCtx, logger, *interval, cycle)
+	return backupSchedulerLoop(schedulerCtx, logger, *interval, statusPath, cycle)
 }
 
 type backupCycle func(context.Context, time.Time) (autobackup.Result, error)
 
-func backupSchedulerLoop(ctx context.Context, logger *slog.Logger, interval time.Duration, cycle backupCycle) error {
+func backupSchedulerLoop(ctx context.Context, logger *slog.Logger, interval time.Duration, statusPath string, cycle backupCycle) error {
 	for {
-		result, err := cycle(ctx, time.Now())
+		attemptAt := time.Now().UTC()
+		result, err := cycle(ctx, attemptAt)
 		if err != nil {
 			if ctx.Err() != nil {
 				return nil
 			}
-			logger.Error("scheduled backup cycle failed", "error", err)
-		} else {
+		}
+		nextAttemptAt := attemptAt.Add(interval)
+		if statusErr := recordBackupCycle(statusPath, attemptAt, &nextAttemptAt, result, err); statusErr != nil {
+			logger.Error("record backup status failed", "error", statusErr)
+		}
+		if err == nil {
 			logScheduledBackupResult(logger, result)
+		} else {
+			logger.Error("scheduled backup cycle failed", "error", err)
 		}
 		timer := time.NewTimer(interval)
 		select {
@@ -134,6 +180,18 @@ func backupSchedulerLoop(ctx context.Context, logger *slog.Logger, interval time
 		case <-timer.C:
 		}
 	}
+}
+
+func recordBackupCycle(statusPath string, attemptAt time.Time, nextAttemptAt *time.Time, result autobackup.Result, cycleErr error) error {
+	if cycleErr != nil {
+		return backupstatus.RecordFailure(statusPath, attemptAt, nextAttemptAt)
+	}
+	return backupstatus.RecordSuccess(statusPath, backupstatus.Success{
+		AttemptAt:     attemptAt,
+		BackupAt:      result.BackupTime,
+		BackupPath:    result.BackupPath,
+		NextAttemptAt: nextAttemptAt,
+	})
 }
 
 func logScheduledBackupResult(logger *slog.Logger, result autobackup.Result) {
@@ -340,7 +398,7 @@ func run(logger *slog.Logger) error {
 
 	httpServer := &http.Server{
 		Addr:              listenAddr,
-		Handler:           httpapi.New(serverStore, bootstrapToken, logger).Handler(),
+		Handler:           httpapi.New(serverStore, bootstrapToken, logger, databasePath+".backup-status.json").Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,

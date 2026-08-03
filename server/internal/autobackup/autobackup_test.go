@@ -36,8 +36,11 @@ func TestRunCreatesOneBackupPerUTCDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !first.Created || filepath.Base(first.BackupPath) != "mlmd-auto-2026-08-03.mlmd-backup" {
+	if !first.Created || first.BackupTime.IsZero() || filepath.Base(first.BackupPath) != "mlmd-auto-2026-08-03.mlmd-backup" {
 		t.Fatalf("unexpected first result: %#v", first)
+	}
+	if _, err := os.Stat(unverifiedMarker(first.BackupPath)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("successful backup left verification marker: %v", err)
 	}
 	second, err := Run(ctx, options)
 	if err != nil {
@@ -45,6 +48,49 @@ func TestRunCreatesOneBackupPerUTCDay(t *testing.T) {
 	}
 	if second.Created || second.BackupPath != first.BackupPath {
 		t.Fatalf("same UTC day was backed up twice: %#v", second)
+	}
+}
+
+func TestRunRetriesMarkedBackupAndRemovesItWhenVerificationFails(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	directory := t.TempDir()
+	databasePath := filepath.Join(directory, "mlmd.db")
+	store, err := sqlite.Open(ctx, databasePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	options := Options{
+		DatabasePath: databasePath,
+		Directory:    filepath.Join(directory, "backups"),
+		Key:          testKey(),
+		Now:          time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC),
+	}
+	result, err := Run(ctx, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	contents, err := os.ReadFile(result.BackupPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	contents[len(contents)/2] ^= 0xff
+	if err := os.WriteFile(result.BackupPath, contents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := markUnverified(result.BackupPath); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Run(ctx, options); err == nil {
+		t.Fatal("expected marked corrupted backup to fail verification")
+	}
+	for _, path := range []string{result.BackupPath, unverifiedMarker(result.BackupPath)} {
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("failed verification left %q: %v", path, err)
+		}
 	}
 }
 

@@ -27,10 +27,6 @@ func Database(ctx context.Context, inputPath, databasePath string, key []byte) (
 	if len(key) != 32 {
 		return Result{}, backupcrypto.ErrInvalidKey
 	}
-	absInput, err := filepath.Abs(inputPath)
-	if err != nil {
-		return Result{}, fmt.Errorf("resolve restore input path: %w", err)
-	}
 	absDatabase, err := filepath.Abs(databasePath)
 	if err != nil {
 		return Result{}, fmt.Errorf("resolve database path: %w", err)
@@ -50,36 +46,11 @@ func Database(ctx context.Context, inputPath, databasePath string, key []byte) (
 	}
 	defer maintenanceLock.Release()
 
-	input, err := os.Open(absInput)
+	temporaryPath, cleanup, err := prepareCandidate(ctx, inputPath, filepath.Dir(absDatabase), key)
 	if err != nil {
-		return Result{}, fmt.Errorf("open encrypted backup: %w", err)
+		return Result{}, err
 	}
-	defer input.Close()
-
-	temporary, err := os.CreateTemp(filepath.Dir(absDatabase), ".mlmd-restore-*.db")
-	if err != nil {
-		return Result{}, fmt.Errorf("create restore candidate: %w", err)
-	}
-	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
-	if err := temporary.Chmod(0o600); err != nil {
-		temporary.Close()
-		return Result{}, fmt.Errorf("restrict restore candidate permissions: %w", err)
-	}
-	if err := backupcrypto.Decrypt(ctx, temporary, input, key); err != nil {
-		temporary.Close()
-		return Result{}, fmt.Errorf("decrypt backup: %w", err)
-	}
-	if err := temporary.Sync(); err != nil {
-		temporary.Close()
-		return Result{}, fmt.Errorf("sync restore candidate: %w", err)
-	}
-	if err := temporary.Close(); err != nil {
-		return Result{}, fmt.Errorf("close restore candidate: %w", err)
-	}
-	if err := sqlite.PrepareRestore(ctx, temporaryPath); err != nil {
-		return Result{}, fmt.Errorf("prepare restore candidate: %w", err)
-	}
+	defer cleanup()
 	if err := ctx.Err(); err != nil {
 		return Result{}, err
 	}
@@ -89,6 +60,73 @@ func Database(ctx context.Context, inputPath, databasePath string, key []byte) (
 		return Result{}, err
 	}
 	return Result{PreservedDirectory: preservedDirectory}, nil
+}
+
+// Verify authenticates, decrypts, validates, and migrates a backup in an
+// isolated private workspace without replacing any live database.
+func Verify(ctx context.Context, inputPath, workspaceDirectory string, key []byte) error {
+	if len(key) != 32 {
+		return backupcrypto.ErrInvalidKey
+	}
+	_, cleanup, err := prepareCandidate(ctx, inputPath, workspaceDirectory, key)
+	if cleanup != nil {
+		defer cleanup()
+	}
+	return err
+}
+
+func prepareCandidate(ctx context.Context, inputPath, workspaceDirectory string, key []byte) (string, func(), error) {
+	absInput, err := filepath.Abs(inputPath)
+	if err != nil {
+		return "", nil, fmt.Errorf("resolve restore input path: %w", err)
+	}
+	absWorkspace, err := filepath.Abs(workspaceDirectory)
+	if err != nil {
+		return "", nil, fmt.Errorf("resolve restore workspace: %w", err)
+	}
+	if err := os.MkdirAll(absWorkspace, 0o700); err != nil {
+		return "", nil, fmt.Errorf("create restore workspace parent: %w", err)
+	}
+	workspace, err := os.MkdirTemp(absWorkspace, ".mlmd-restore-work-*")
+	if err != nil {
+		return "", nil, fmt.Errorf("create private restore workspace: %w", err)
+	}
+	cleanup := func() { _ = os.RemoveAll(workspace) }
+	if err := os.Chmod(workspace, 0o700); err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("restrict restore workspace permissions: %w", err)
+	}
+	input, err := os.Open(absInput)
+	if err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("open encrypted backup: %w", err)
+	}
+	defer input.Close()
+	candidatePath := filepath.Join(workspace, "candidate.db")
+	candidate, err := os.OpenFile(candidatePath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	if err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("create restore candidate: %w", err)
+	}
+	if err := backupcrypto.Decrypt(ctx, candidate, input, key); err != nil {
+		candidate.Close()
+		cleanup()
+		return "", nil, fmt.Errorf("decrypt backup: %w", err)
+	}
+	if err := candidate.Sync(); err != nil {
+		candidate.Close()
+		cleanup()
+		return "", nil, fmt.Errorf("sync restore candidate: %w", err)
+	}
+	if err := candidate.Close(); err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("close restore candidate: %w", err)
+	}
+	if err := sqlite.PrepareRestore(ctx, candidatePath); err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("prepare restore candidate: %w", err)
+	}
+	return candidatePath, cleanup, nil
 }
 
 func acquireRestoreLock(path string) (*filelock.Lock, error) {

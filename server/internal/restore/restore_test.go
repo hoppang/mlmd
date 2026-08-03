@@ -176,6 +176,32 @@ func TestDatabaseRejectsNewerSchemaWithoutTouchingLiveDatabase(t *testing.T) {
 	assertDevice(t, ctx, livePath, "live-device", []byte("live-token"), true)
 }
 
+func TestVerifyChecksBackupWithoutTouchingLiveDatabase(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	directory := t.TempDir()
+	key := testKey(6)
+	backupPath := filepath.Join(directory, "source.mlmd-backup")
+	createEncryptedBackup(t, ctx, filepath.Join(directory, "source.db"), backupPath, key, "source-space", "source-device", []byte("source-token"))
+	livePath := filepath.Join(directory, "live.db")
+	createDatabase(t, ctx, livePath, "live-space", "live-device", []byte("live-token"))
+
+	if err := Verify(ctx, backupPath, directory, key); err != nil {
+		t.Fatalf("verify backup: %v", err)
+	}
+	assertDevice(t, ctx, livePath, "live-device", []byte("live-token"), true)
+	if err := Verify(ctx, backupPath, directory, testKey(7)); err == nil {
+		t.Fatal("expected wrong key verification to fail")
+	}
+	workspaces, err := filepath.Glob(filepath.Join(directory, ".mlmd-restore-work-*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(workspaces) != 0 {
+		t.Fatalf("verification left plaintext workspaces: %v", workspaces)
+	}
+}
+
 func TestReplaceDatabaseRollsBackWhenCandidateCannotBeInstalled(t *testing.T) {
 	t.Parallel()
 	directory := t.TempDir()

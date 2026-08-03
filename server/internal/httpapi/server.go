@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/hoppang/mlmd/server/internal/auth"
+	"github.com/hoppang/mlmd/server/internal/backupstatus"
 	"github.com/hoppang/mlmd/server/internal/model"
 	"github.com/hoppang/mlmd/server/internal/store"
 )
@@ -36,10 +38,11 @@ type Server struct {
 	store              store.Store
 	logger             *slog.Logger
 	bootstrapTokenHash [32]byte
+	backupStatusPath   string
 	handler            http.Handler
 }
 
-func New(serverStore store.Store, bootstrapToken string, logger *slog.Logger) *Server {
+func New(serverStore store.Store, bootstrapToken string, logger *slog.Logger, backupStatusPath string) *Server {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -47,10 +50,12 @@ func New(serverStore store.Store, bootstrapToken string, logger *slog.Logger) *S
 		store:              serverStore,
 		logger:             logger,
 		bootstrapTokenHash: sha256.Sum256([]byte(bootstrapToken)),
+		backupStatusPath:   backupStatusPath,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/health/live", s.handleLive)
 	mux.HandleFunc("GET /v1/health/ready", s.handleReady)
+	mux.HandleFunc("GET /v1/health/backup", s.handleBackupHealth)
 	mux.HandleFunc("POST /v1/bootstrap/spaces", s.handleBootstrapSpace)
 	mux.HandleFunc("POST /v1/spaces/{spaceId}/invites", s.handleCreateInvite)
 	mux.HandleFunc("POST /v1/invites/{inviteId}/consume", s.handleConsumeInvite)
@@ -265,6 +270,24 @@ func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ready"})
+}
+
+func (s *Server) handleBackupHealth(w http.ResponseWriter, _ *http.Request) {
+	if s.backupStatusPath == "" {
+		writeJSON(w, http.StatusOK, backupstatus.Unknown("backup_status_not_configured"))
+		return
+	}
+	status, err := backupstatus.Read(s.backupStatusPath)
+	if errors.Is(err, fs.ErrNotExist) {
+		writeJSON(w, http.StatusOK, backupstatus.Unknown("backup_status_unavailable"))
+		return
+	}
+	if err != nil {
+		s.logger.Error("backup health status read failed", "error", err)
+		writeJSON(w, http.StatusOK, backupstatus.Unknown("backup_status_invalid"))
+		return
+	}
+	writeJSON(w, http.StatusOK, backupstatus.Evaluate(status, time.Now()))
 }
 
 type bootstrapSpaceRequest struct {

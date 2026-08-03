@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hoppang/mlmd/server/internal/backupstatus"
 	"github.com/hoppang/mlmd/server/internal/model"
 	"github.com/hoppang/mlmd/server/internal/store/sqlite"
 )
@@ -20,12 +21,13 @@ import (
 const bootstrapToken = "test-bootstrap-token-with-at-least-32-characters"
 
 type testEnvironment struct {
-	server       *httptest.Server
-	store        *sqlite.Store
-	spaceID      string
-	deviceID     string
-	deviceToken  string
-	databasePath string
+	server           *httptest.Server
+	store            *sqlite.Store
+	spaceID          string
+	deviceID         string
+	deviceToken      string
+	databasePath     string
+	backupStatusPath string
 }
 
 func newTestEnvironment(t *testing.T) *testEnvironment {
@@ -36,8 +38,12 @@ func newTestEnvironment(t *testing.T) *testEnvironment {
 		t.Fatal(err)
 	}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	testServer := httptest.NewServer(New(serverStore, bootstrapToken, logger).Handler())
-	environment := &testEnvironment{server: testServer, store: serverStore, databasePath: databasePath}
+	backupStatusPath := databasePath + ".backup-status.json"
+	testServer := httptest.NewServer(New(serverStore, bootstrapToken, logger, backupStatusPath).Handler())
+	environment := &testEnvironment{
+		server: testServer, store: serverStore,
+		databasePath: databasePath, backupStatusPath: backupStatusPath,
+	}
 	t.Cleanup(func() {
 		testServer.Close()
 		serverStore.Close()
@@ -98,12 +104,52 @@ func (e *testEnvironment) request(t *testing.T, method, path, token string, body
 
 func TestHealthEndpoints(t *testing.T) {
 	e := newTestEnvironment(t)
-	for _, path := range []string{"/v1/health/live", "/v1/health/ready"} {
+	for _, path := range []string{"/v1/health/live", "/v1/health/ready", "/v1/health/backup"} {
 		response := e.request(t, http.MethodGet, path, "", nil)
 		if response.StatusCode != http.StatusOK {
 			t.Errorf("GET %s status = %d", path, response.StatusCode)
 		}
 		response.Body.Close()
+	}
+	response := e.request(t, http.MethodGet, "/v1/health/backup", "", nil)
+	defer response.Body.Close()
+	var status backupstatus.Status
+	decodeResponse(t, response, &status)
+	if status.State != backupstatus.StateUnknown {
+		t.Fatalf("missing backup status should be unknown: %#v", status)
+	}
+}
+
+func TestBackupHealthReportsSchedulerStatusWithoutChangingReadiness(t *testing.T) {
+	e := newTestEnvironment(t)
+	now := time.Now().UTC()
+	next := now.Add(time.Hour)
+	if err := backupstatus.RecordSuccess(e.backupStatusPath, backupstatus.Success{
+		AttemptAt: now, BackupAt: now, BackupPath: "mlmd-auto-2026-08-03.mlmd-backup", NextAttemptAt: &next,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	response := e.request(t, http.MethodGet, "/v1/health/backup", "", nil)
+	defer response.Body.Close()
+	var status backupstatus.Status
+	decodeResponse(t, response, &status)
+	if status.State != backupstatus.StateHealthy || status.LastBackupFile != "mlmd-auto-2026-08-03.mlmd-backup" {
+		t.Fatalf("unexpected backup health: %#v", status)
+	}
+	if err := backupstatus.RecordFailure(e.backupStatusPath, now.Add(time.Minute), &next); err != nil {
+		t.Fatal(err)
+	}
+	response = e.request(t, http.MethodGet, "/v1/health/backup", "", nil)
+	var degraded backupstatus.Status
+	decodeResponse(t, response, &degraded)
+	response.Body.Close()
+	if degraded.State != backupstatus.StateDegraded || degraded.ErrorCode != "backup_cycle_failed" {
+		t.Fatalf("backup failure was not reported: %#v", degraded)
+	}
+	response = e.request(t, http.MethodGet, "/v1/health/ready", "", nil)
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("backup degradation changed readiness: %d", response.StatusCode)
 	}
 }
 
