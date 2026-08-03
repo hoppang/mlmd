@@ -2132,6 +2132,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get syncResolutionNoticeAcknowledge => '確認しました';
 
   @override
+  String syncResolutionNoticeAcknowledgedMembers(int count) {
+    return '確認済みのメンバー: $count人';
+  }
+
+  @override
   String get growthChartTitle => '成長';
 
   @override

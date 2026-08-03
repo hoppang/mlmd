@@ -1785,6 +1785,74 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(23, 5931212895407473642),
+    name: 'SyncResolutionAcknowledgementEntity',
+    lastPropertyId: const obx_int.IdUid(9, 7236820584028331236),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 7850261851372197181),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 148416099637133596),
+        name: 'acknowledgementId',
+        type: 9,
+        flags: 2080,
+        indexId: const obx_int.IdUid(46, 6597034619026321263),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 7021570168479031755),
+        name: 'familySpaceId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(47, 8272777081655902880),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 7906492460185268095),
+        name: 'noticeId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(48, 664289692986752317),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 5978551076027563495),
+        name: 'winningChangeId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 2114291691842359652),
+        name: 'authorProfileId',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(49, 1784242907008018229),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 6162132872777154520),
+        name: 'sourceDeviceProfileId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 5947713873200986397),
+        name: 'sourceChangeId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 7236820584028331236),
+        name: 'acknowledgedAt',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -1830,8 +1898,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(22, 726620420635227580),
-    lastIndexId: const obx_int.IdUid(45, 4136476120428159213),
+    lastEntityId: const obx_int.IdUid(23, 5931212895407473642),
+    lastIndexId: const obx_int.IdUid(49, 1784242907008018229),
     lastRelationId: const obx_int.IdUid(1, 6838825628405302824),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -4110,6 +4178,97 @@ obx_int.ModelDefinition getObjectBoxModel() {
             return object;
           },
         ),
+    SyncResolutionAcknowledgementEntity:
+        obx_int.EntityDefinition<SyncResolutionAcknowledgementEntity>(
+          model: _entities[22],
+          toOneRelations: (SyncResolutionAcknowledgementEntity object) => [],
+          toManyRelations: (SyncResolutionAcknowledgementEntity object) => {},
+          getId: (SyncResolutionAcknowledgementEntity object) => object.id,
+          setId: (SyncResolutionAcknowledgementEntity object, int id) {
+            object.id = id;
+          },
+          objectToFB:
+              (SyncResolutionAcknowledgementEntity object, fb.Builder fbb) {
+                final acknowledgementIdOffset = fbb.writeString(
+                  object.acknowledgementId,
+                );
+                final familySpaceIdOffset = fbb.writeString(
+                  object.familySpaceId,
+                );
+                final noticeIdOffset = fbb.writeString(object.noticeId);
+                final winningChangeIdOffset = fbb.writeString(
+                  object.winningChangeId,
+                );
+                final authorProfileIdOffset = fbb.writeString(
+                  object.authorProfileId,
+                );
+                final sourceDeviceProfileIdOffset = fbb.writeString(
+                  object.sourceDeviceProfileId,
+                );
+                final sourceChangeIdOffset = fbb.writeString(
+                  object.sourceChangeId,
+                );
+                fbb.startTable(10);
+                fbb.addInt64(0, object.id);
+                fbb.addOffset(1, acknowledgementIdOffset);
+                fbb.addOffset(2, familySpaceIdOffset);
+                fbb.addOffset(3, noticeIdOffset);
+                fbb.addOffset(4, winningChangeIdOffset);
+                fbb.addOffset(5, authorProfileIdOffset);
+                fbb.addOffset(6, sourceDeviceProfileIdOffset);
+                fbb.addOffset(7, sourceChangeIdOffset);
+                fbb.addInt64(8, object.acknowledgedAt.millisecondsSinceEpoch);
+                fbb.finish(fbb.endTable());
+                return object.id;
+              },
+          objectFromFB: (obx.Store store, ByteData fbData) {
+            final buffer = fb.BufferContext(fbData);
+            final rootOffset = buffer.derefObject(0);
+            final idParam = const fb.Int64Reader().vTableGet(
+              buffer,
+              rootOffset,
+              4,
+              0,
+            );
+            final acknowledgementIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 6, '');
+            final familySpaceIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 8, '');
+            final noticeIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 10, '');
+            final winningChangeIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 12, '');
+            final authorProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 14, '');
+            final sourceDeviceProfileIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 16, '');
+            final sourceChangeIdParam = const fb.StringReader(
+              asciiOptimization: true,
+            ).vTableGet(buffer, rootOffset, 18, '');
+            final acknowledgedAtParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 20, 0),
+            );
+            final object = SyncResolutionAcknowledgementEntity(
+              id: idParam,
+              acknowledgementId: acknowledgementIdParam,
+              familySpaceId: familySpaceIdParam,
+              noticeId: noticeIdParam,
+              winningChangeId: winningChangeIdParam,
+              authorProfileId: authorProfileIdParam,
+              sourceDeviceProfileId: sourceDeviceProfileIdParam,
+              sourceChangeId: sourceChangeIdParam,
+              acknowledgedAt: acknowledgedAtParam,
+            );
+
+            return object;
+          },
+        ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -5440,5 +5599,62 @@ class SyncResolutionStateEntity_ {
   static final resolutionGroupId =
       obx.QueryStringProperty<SyncResolutionStateEntity>(
         _entities[21].properties[13],
+      );
+}
+
+/// [SyncResolutionAcknowledgementEntity] entity fields to define ObjectBox queries.
+class SyncResolutionAcknowledgementEntity_ {
+  /// See [SyncResolutionAcknowledgementEntity.id].
+  static final id =
+      obx.QueryIntegerProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[0],
+      );
+
+  /// See [SyncResolutionAcknowledgementEntity.acknowledgementId].
+  static final acknowledgementId =
+      obx.QueryStringProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[1],
+      );
+
+  /// See [SyncResolutionAcknowledgementEntity.familySpaceId].
+  static final familySpaceId =
+      obx.QueryStringProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[2],
+      );
+
+  /// See [SyncResolutionAcknowledgementEntity.noticeId].
+  static final noticeId =
+      obx.QueryStringProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[3],
+      );
+
+  /// See [SyncResolutionAcknowledgementEntity.winningChangeId].
+  static final winningChangeId =
+      obx.QueryStringProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[4],
+      );
+
+  /// See [SyncResolutionAcknowledgementEntity.authorProfileId].
+  static final authorProfileId =
+      obx.QueryStringProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[5],
+      );
+
+  /// See [SyncResolutionAcknowledgementEntity.sourceDeviceProfileId].
+  static final sourceDeviceProfileId =
+      obx.QueryStringProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[6],
+      );
+
+  /// See [SyncResolutionAcknowledgementEntity.sourceChangeId].
+  static final sourceChangeId =
+      obx.QueryStringProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[7],
+      );
+
+  /// See [SyncResolutionAcknowledgementEntity.acknowledgedAt].
+  static final acknowledgedAt =
+      obx.QueryDateProperty<SyncResolutionAcknowledgementEntity>(
+        _entities[22].properties[8],
       );
 }

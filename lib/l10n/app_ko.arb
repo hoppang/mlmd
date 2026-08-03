@@ -742,6 +742,8 @@
   "syncResolutionNoticeWinner": "최종 적용: {value}",
   "@syncResolutionNoticeWinner": {"placeholders": {"value": {"type": "String"}}},
   "syncResolutionNoticeAcknowledge": "확인했습니다",
+  "syncResolutionNoticeAcknowledgedMembers": "확인한 구성원 {count}명",
+  "@syncResolutionNoticeAcknowledgedMembers": {"placeholders": {"count": {"type": "int"}}},
   "growthChartTitle": "성장",
   "growthChartPersonalTrendDescription": "아이의 원본 측정값이 시간에 따라 어떻게 변했는지 봅니다. 측정하지 않은 기간은 추정하지 않습니다.",
   "growthChartHeight": "키",

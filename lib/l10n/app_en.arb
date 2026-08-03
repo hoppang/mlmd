@@ -742,6 +742,8 @@
   "syncResolutionNoticeWinner": "Final result: {value}",
   "@syncResolutionNoticeWinner": {"placeholders": {"value": {"type": "String"}}},
   "syncResolutionNoticeAcknowledge": "Got it",
+  "syncResolutionNoticeAcknowledgedMembers": "Acknowledged by {count} member(s)",
+  "@syncResolutionNoticeAcknowledgedMembers": {"placeholders": {"count": {"type": "int"}}},
   "growthChartTitle": "Growth",
   "growthChartPersonalTrendDescription": "See your child's original measurements over time. Missing periods are not estimated.",
   "growthChartHeight": "Height",

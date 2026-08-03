@@ -276,6 +276,14 @@ class _ResolutionCollisionNotice extends ConsumerWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(loc.syncResolutionNoticeWinner(winnerLabel)),
             ],
+            if (notice.acknowledgedAuthorProfileIds.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                loc.syncResolutionNoticeAcknowledgedMembers(
+                  notice.acknowledgedAuthorProfileIds.length,
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             FilledButton.tonalIcon(
               key: const Key('family-sharing-acknowledge-resolution-notice'),

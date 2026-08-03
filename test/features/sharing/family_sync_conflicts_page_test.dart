@@ -149,6 +149,7 @@ void main() {
         firstOccurredAt: DateTime.utc(2026, 8, 3, 12),
         secondOccurredAt: DateTime.utc(2026, 8, 3, 12, 1),
         detectedAt: DateTime.utc(2026, 8, 3, 12, 2),
+        acknowledgedAuthorProfileIds: const {'author-a'},
       ),
     );
     await tester.pumpWidget(
@@ -171,6 +172,7 @@ void main() {
     expect(find.textContaining('5 mL'), findsOneWidget);
     expect(find.textContaining('7.5 mL'), findsOneWidget);
     expect(find.text('최종 적용: 두 번째 해소'), findsOneWidget);
+    expect(find.text('확인한 구성원 1명'), findsOneWidget);
 
     await tester.tap(
       find.byKey(const Key('family-sharing-acknowledge-resolution-notice')),

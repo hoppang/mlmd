@@ -190,6 +190,45 @@ class SyncResolutionNoticeEntity {
   });
 }
 
+/// A monotonic per-author acknowledgement of one resolution notice winner.
+@Entity()
+class SyncResolutionAcknowledgementEntity {
+  @Id()
+  int id;
+
+  @Unique()
+  String acknowledgementId;
+
+  @Index()
+  String familySpaceId;
+
+  @Index()
+  String noticeId;
+
+  String winningChangeId;
+
+  @Index()
+  String authorProfileId;
+
+  String sourceDeviceProfileId;
+  String sourceChangeId;
+
+  @Property(type: PropertyType.date)
+  DateTime acknowledgedAt;
+
+  SyncResolutionAcknowledgementEntity({
+    this.id = 0,
+    required this.acknowledgementId,
+    required this.familySpaceId,
+    required this.noticeId,
+    required this.winningChangeId,
+    required this.authorProfileId,
+    required this.sourceDeviceProfileId,
+    required this.sourceChangeId,
+    required this.acknowledgedAt,
+  });
+}
+
 /// The latest server change cursor applied by this device.
 @Entity()
 class SyncCursorEntity {

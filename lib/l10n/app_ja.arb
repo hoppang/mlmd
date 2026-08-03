@@ -742,6 +742,8 @@
   "syncResolutionNoticeWinner": "最終適用: {value}",
   "@syncResolutionNoticeWinner": {"placeholders": {"value": {"type": "String"}}},
   "syncResolutionNoticeAcknowledge": "確認しました",
+  "syncResolutionNoticeAcknowledgedMembers": "確認済みのメンバー: {count}人",
+  "@syncResolutionNoticeAcknowledgedMembers": {"placeholders": {"count": {"type": "int"}}},
   "growthChartTitle": "成長",
   "growthChartPersonalTrendDescription": "お子さまの元の測定値の変化を表示します。測定していない期間は推定しません。",
   "growthChartHeight": "身長",

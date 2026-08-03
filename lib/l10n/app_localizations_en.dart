@@ -2207,6 +2207,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncResolutionNoticeAcknowledge => 'Got it';
 
   @override
+  String syncResolutionNoticeAcknowledgedMembers(int count) {
+    return 'Acknowledged by $count member(s)';
+  }
+
+  @override
   String get growthChartTitle => 'Growth';
 
   @override

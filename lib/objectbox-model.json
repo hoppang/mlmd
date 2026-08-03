@@ -1521,10 +1521,72 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "23:5931212895407473642",
+      "lastPropertyId": "9:7236820584028331236",
+      "name": "SyncResolutionAcknowledgementEntity",
+      "properties": [
+        {
+          "id": "1:7850261851372197181",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:148416099637133596",
+          "name": "acknowledgementId",
+          "indexId": "46:6597034619026321263",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:7021570168479031755",
+          "name": "familySpaceId",
+          "indexId": "47:8272777081655902880",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:7906492460185268095",
+          "name": "noticeId",
+          "indexId": "48:664289692986752317",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "5:5978551076027563495",
+          "name": "winningChangeId",
+          "type": 9
+        },
+        {
+          "id": "6:2114291691842359652",
+          "name": "authorProfileId",
+          "indexId": "49:1784242907008018229",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "7:6162132872777154520",
+          "name": "sourceDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "8:5947713873200986397",
+          "name": "sourceChangeId",
+          "type": 9
+        },
+        {
+          "id": "9:7236820584028331236",
+          "name": "acknowledgedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "22:726620420635227580",
-  "lastIndexId": "45:4136476120428159213",
+  "lastEntityId": "23:5931212895407473642",
+  "lastIndexId": "49:1784242907008018229",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

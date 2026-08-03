@@ -246,6 +246,7 @@ class FamilySyncResolutionNotice {
     required this.secondOccurredAt,
     required this.detectedAt,
     this.acknowledgedAt,
+    this.acknowledgedAuthorProfileIds = const {},
   });
 
   final String noticeId;
@@ -265,6 +266,7 @@ class FamilySyncResolutionNotice {
   final DateTime secondOccurredAt;
   final DateTime detectedAt;
   final DateTime? acknowledgedAt;
+  final Set<String> acknowledgedAuthorProfileIds;
 
   bool get isAcknowledged => acknowledgedAt != null;
 }

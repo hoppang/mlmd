@@ -61,7 +61,10 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       _cursorBox = Box<SyncCursorEntity>(_objectBox.store),
       _conflictBox = Box<SyncConflictEntity>(_objectBox.store),
       _resolutionStateBox = Box<SyncResolutionStateEntity>(_objectBox.store),
-      _resolutionNoticeBox = Box<SyncResolutionNoticeEntity>(_objectBox.store) {
+      _resolutionNoticeBox = Box<SyncResolutionNoticeEntity>(_objectBox.store),
+      _resolutionAcknowledgementBox = Box<SyncResolutionAcknowledgementEntity>(
+        _objectBox.store,
+      ) {
     if (_profiles case final ProfileRepositoryImpl profiles) {
       _profileMutationSubscription = profiles.mutations.listen(
         _queueProfileMutation,
@@ -78,6 +81,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
   final Box<SyncConflictEntity> _conflictBox;
   final Box<SyncResolutionStateEntity> _resolutionStateBox;
   final Box<SyncResolutionNoticeEntity> _resolutionNoticeBox;
+  final Box<SyncResolutionAcknowledgementEntity> _resolutionAcknowledgementBox;
   final StreamController<void> _changes = StreamController<void>.broadcast();
   StreamSubscription<AuthorProfileMutation>? _profileMutationSubscription;
 
@@ -207,17 +211,33 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
   }) {
     final familySpaceId = activeFamilySpaceId;
     if (familySpaceId == null) return const [];
-    final notices =
-        _resolutionNoticeBox
-            .getAll()
-            .where(
-              (item) =>
-                  item.familySpaceId == familySpaceId &&
-                  (includeAcknowledged || item.acknowledgedAt == null),
-            )
-            .map(_fromResolutionNotice)
-            .toList()
-          ..sort((a, b) => b.detectedAt.compareTo(a.detectedAt));
+    final currentAuthorProfileId = _profiles.currentAuthor?.authorProfileId;
+    final notices = <FamilySyncResolutionNotice>[];
+    for (final item in _resolutionNoticeBox.getAll()) {
+      if (item.familySpaceId != familySpaceId) continue;
+      final acknowledgements = _resolutionAcknowledgements(
+        familySpaceId: familySpaceId,
+        noticeId: item.noticeId,
+        winningChangeId: item.winningChangeId,
+      );
+      final currentAcknowledgement = currentAuthorProfileId == null
+          ? null
+          : acknowledgements
+                .where(
+                  (acknowledgement) =>
+                      acknowledgement.authorProfileId == currentAuthorProfileId,
+                )
+                .firstOrNull;
+      if (!includeAcknowledged && currentAcknowledgement != null) continue;
+      notices.add(
+        _fromResolutionNotice(
+          item,
+          acknowledgements: acknowledgements,
+          currentAcknowledgement: currentAcknowledgement,
+        ),
+      );
+    }
+    notices.sort((a, b) => b.detectedAt.compareTo(a.detectedAt));
     return List.unmodifiable(notices);
   }
 
@@ -225,11 +245,31 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
   void acknowledgeResolutionNotice(String noticeId) {
     final notice = _resolutionNoticeById(noticeId);
     if (notice == null || notice.familySpaceId != activeFamilySpaceId) return;
-    if (notice.acknowledgedAt == null) {
-      notice.acknowledgedAt = DateTime.now();
-      _resolutionNoticeBox.put(notice);
-      _notifyChanged();
-    }
+    final source = _profiles.requireCurrentSource();
+    final acknowledgementId = _resolutionAcknowledgementId(
+      noticeId: notice.noticeId,
+      winningChangeId: notice.winningChangeId,
+      authorProfileId: source.authorProfileId,
+    );
+    if (_resolutionAcknowledgementById(acknowledgementId) != null) return;
+    final acknowledgedAt = DateTime.now();
+    final change = enqueue(
+      entityType: FamilySyncPayloads.resolutionNoticeAcknowledgement,
+      entityId: acknowledgementId,
+      entityRevision: 1,
+      operation: SyncOperation.create,
+      payload: {
+        'schema': 'mlmd.syncResolutionAcknowledgement',
+        'version': 1,
+        'noticeId': notice.noticeId,
+        'winningChangeId': notice.winningChangeId,
+        'authorProfileId': source.authorProfileId,
+        'acknowledgedAt': acknowledgedAt.toUtc().toIso8601String(),
+      },
+      occurredAt: acknowledgedAt,
+    );
+    if (change == null) return;
+    _applyResolutionAcknowledgement(change);
   }
 
   @override
@@ -307,6 +347,11 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     var resolutionCollisionCount = 0;
     for (final incoming in exchange.incomingChanges) {
       if (incoming.familySpaceId != space.familySpaceId) continue;
+      if (incoming.entityType ==
+          FamilySyncPayloads.resolutionNoticeAcknowledgement) {
+        if (_applyResolutionAcknowledgement(incoming)) appliedCount++;
+        continue;
+      }
       if (incoming.resolutionMetadata != null) {
         final result = await _processResolutionChange(
           incoming,
@@ -799,6 +844,84 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     return null;
   }
 
+  String _resolutionAcknowledgementId({
+    required String noticeId,
+    required String winningChangeId,
+    required String authorProfileId,
+  }) => '$noticeId\u0000$winningChangeId\u0000$authorProfileId';
+
+  SyncResolutionAcknowledgementEntity? _resolutionAcknowledgementById(
+    String acknowledgementId,
+  ) {
+    for (final item in _resolutionAcknowledgementBox.getAll()) {
+      if (item.acknowledgementId == acknowledgementId) return item;
+    }
+    return null;
+  }
+
+  List<SyncResolutionAcknowledgementEntity> _resolutionAcknowledgements({
+    required String familySpaceId,
+    required String noticeId,
+    required String winningChangeId,
+  }) => _resolutionAcknowledgementBox
+      .getAll()
+      .where(
+        (item) =>
+            item.familySpaceId == familySpaceId &&
+            item.noticeId == noticeId &&
+            item.winningChangeId == winningChangeId,
+      )
+      .toList(growable: false);
+
+  bool _applyResolutionAcknowledgement(SyncChange change) {
+    if (change.operation == SyncOperation.delete) return false;
+    final payload = change.payload;
+    final noticeId = payload['noticeId'];
+    final winningChangeId = payload['winningChangeId'];
+    final authorProfileId = payload['authorProfileId'];
+    final acknowledgedAtValue = payload['acknowledgedAt'];
+    if (payload['schema'] != 'mlmd.syncResolutionAcknowledgement' ||
+        payload['version'] != 1 ||
+        noticeId is! String ||
+        noticeId.isEmpty ||
+        winningChangeId is! String ||
+        winningChangeId.isEmpty ||
+        authorProfileId is! String ||
+        authorProfileId.isEmpty ||
+        authorProfileId != change.sourceAuthorProfileId ||
+        acknowledgedAtValue is! String) {
+      return false;
+    }
+    final acknowledgedAt = DateTime.tryParse(acknowledgedAtValue);
+    if (acknowledgedAt == null) return false;
+    final acknowledgementId = _resolutionAcknowledgementId(
+      noticeId: noticeId,
+      winningChangeId: winningChangeId,
+      authorProfileId: authorProfileId,
+    );
+    if (change.entityId != acknowledgementId) return false;
+    final existing = _resolutionAcknowledgementById(acknowledgementId);
+    if (existing != null &&
+        !acknowledgedAt.toUtc().isBefore(existing.acknowledgedAt.toUtc())) {
+      return false;
+    }
+    _resolutionAcknowledgementBox.put(
+      SyncResolutionAcknowledgementEntity(
+        id: existing?.id ?? 0,
+        acknowledgementId: acknowledgementId,
+        familySpaceId: change.familySpaceId,
+        noticeId: noticeId,
+        winningChangeId: winningChangeId,
+        authorProfileId: authorProfileId,
+        sourceDeviceProfileId: change.sourceDeviceProfileId,
+        sourceChangeId: change.changeId,
+        acknowledgedAt: acknowledgedAt.toUtc(),
+      ),
+    );
+    _notifyChanged();
+    return true;
+  }
+
   SyncOutboxEntity _toOutbox(SyncChange change) => SyncOutboxEntity(
     changeId: change.changeId,
     familySpaceId: change.familySpaceId,
@@ -868,8 +991,10 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       );
 
   FamilySyncResolutionNotice _fromResolutionNotice(
-    SyncResolutionNoticeEntity entity,
-  ) => FamilySyncResolutionNotice(
+    SyncResolutionNoticeEntity entity, {
+    required List<SyncResolutionAcknowledgementEntity> acknowledgements,
+    required SyncResolutionAcknowledgementEntity? currentAcknowledgement,
+  }) => FamilySyncResolutionNotice(
     noticeId: entity.noticeId,
     familySpaceId: entity.familySpaceId,
     entityType: entity.entityType,
@@ -886,7 +1011,10 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     firstOccurredAt: entity.firstOccurredAt,
     secondOccurredAt: entity.secondOccurredAt,
     detectedAt: entity.detectedAt,
-    acknowledgedAt: entity.acknowledgedAt,
+    acknowledgedAt: currentAcknowledgement?.acknowledgedAt,
+    acknowledgedAuthorProfileIds: Set.unmodifiable(
+      acknowledgements.map((item) => item.authorProfileId),
+    ),
   );
 
   void _notifyChanged() {

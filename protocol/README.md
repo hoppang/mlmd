@@ -40,3 +40,4 @@ Contract notes:
 - XChaCha20-Poly1305 AAD is UTF-8 for `mlmd-sync-envelope`, envelope version, family space ID, change ID, and source device ID joined by NUL (`0x00`) bytes
 - A conflict resolution's sorted `parentChangeIds`, local `sourceConflictId`, and selected result are fields of the encrypted `SyncChange` JSON, never plaintext envelope metadata
 - Clients reconcile concurrent resolutions deterministically by the server-assigned sequence, with the change ID as the final fallback; the server does not inspect or resolve them
+- Per-author resolution-notice acknowledgements are ordinary encrypted changes keyed by notice ID, winning change ID, and author profile ID; the server sees only another opaque envelope

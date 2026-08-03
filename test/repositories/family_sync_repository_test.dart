@@ -400,12 +400,85 @@ void main() {
       );
       expect(replay.resolutionCollisionCount, 0);
       expect(repository.getResolutionNotices(), hasLength(1));
+
+      final otherAuthorAcknowledgement = SyncChange(
+        changeId: 'other-author-ack-change',
+        familySpaceId: 'family-1',
+        sourceDeviceProfileId: 'other-device',
+        sourceAuthorProfileId: 'other-author',
+        entityType: FamilySyncPayloads.resolutionNoticeAcknowledgement,
+        entityId:
+            '${notice.noticeId}\u0000${notice.winningChangeId}\u0000other-author',
+        entityRevision: 1,
+        operation: SyncOperation.create,
+        payload: {
+          'schema': 'mlmd.syncResolutionAcknowledgement',
+          'version': 1,
+          'noticeId': notice.noticeId,
+          'winningChangeId': notice.winningChangeId,
+          'authorProfileId': 'other-author',
+          'acknowledgedAt': '2026-08-03T10:05:00.000Z',
+        },
+        occurredAt: DateTime.utc(2026, 8, 3, 10, 5),
+      );
+      final otherAckResult = await repository.synchronize(
+        _FakeTransport(
+          SyncExchange(
+            acknowledgedChangeIds: const {},
+            incomingChanges: [otherAuthorAcknowledgement],
+          ),
+        ),
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      expect(otherAckResult.appliedCount, 1);
+      expect(repository.getResolutionNotices(), hasLength(1));
+      expect(
+        repository
+            .getResolutionNotices(includeAcknowledged: true)
+            .single
+            .acknowledgedAuthorProfileIds,
+        contains('other-author'),
+      );
+
       repository.acknowledgeResolutionNotice(notice.noticeId);
       expect(repository.getResolutionNotices(), isEmpty);
       expect(
         repository.getResolutionNotices(includeAcknowledged: true),
         hasLength(1),
       );
+      final acknowledgementUpload = _FakeTransport(
+        const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+      );
+      await repository.synchronize(
+        acknowledgementUpload,
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      final uploadedAcknowledgement = acknowledgementUpload.receivedOutgoing
+          .singleWhere(
+            (change) =>
+                change.entityType ==
+                FamilySyncPayloads.resolutionNoticeAcknowledgement,
+          );
+      expect(
+        uploadedAcknowledgement.payload['authorProfileId'],
+        profiles.currentAuthor!.authorProfileId,
+      );
+      expect(
+        uploadedAcknowledgement.payload['winningChangeId'],
+        notice.winningChangeId,
+      );
+
+      final acknowledgementReplay = await repository.synchronize(
+        _FakeTransport(
+          SyncExchange(
+            acknowledgedChangeIds: const {},
+            incomingChanges: [uploadedAcknowledgement],
+          ),
+        ),
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      expect(acknowledgementReplay.appliedCount, 0);
+      expect(repository.getResolutionNotices(), isEmpty);
 
       final laterResolution = await repository.synchronize(
         _FakeTransport(

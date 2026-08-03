@@ -2142,6 +2142,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get syncResolutionNoticeAcknowledge => '확인했습니다';
 
   @override
+  String syncResolutionNoticeAcknowledgedMembers(int count) {
+    return '확인한 구성원 $count명';
+  }
+
+  @override
   String get growthChartTitle => '성장';
 
   @override

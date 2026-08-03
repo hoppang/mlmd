@@ -4014,6 +4014,12 @@ abstract class AppLocalizations {
   /// **'확인했습니다'**
   String get syncResolutionNoticeAcknowledge;
 
+  /// No description provided for @syncResolutionNoticeAcknowledgedMembers.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인한 구성원 {count}명'**
+  String syncResolutionNoticeAcknowledgedMembers(int count);
+
   /// No description provided for @growthChartTitle.
   ///
   /// In ko, this message translates to:
