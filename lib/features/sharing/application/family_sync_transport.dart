@@ -1,5 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../domain/family_sync_models.dart';
 
 abstract interface class FamilySyncTransport {
@@ -34,10 +32,3 @@ class UnconfiguredFamilySyncTransport implements FamilySyncTransport {
     throw const FamilySyncUnavailable('transport_not_configured');
   }
 }
-
-/// Authenticated provider adapters override this at the application boundary.
-/// Keeping the default explicit prevents a local-only installation from
-/// accidentally attempting network access.
-final familySyncTransportProvider = Provider<FamilySyncTransport>(
-  (ref) => const UnconfiguredFamilySyncTransport(),
-);

@@ -1076,7 +1076,7 @@
     },
     {
       "id": "18:1462374135511562219",
-      "lastPropertyId": "20:5553906465798719874",
+      "lastPropertyId": "21:345846378362270014",
       "name": "SyncConflictEntity",
       "properties": [
         {
@@ -1185,6 +1185,11 @@
           "id": "20:5553906465798719874",
           "name": "resolvedByDeviceProfileId",
           "type": 9
+        },
+        {
+          "id": "21:345846378362270014",
+          "name": "localChangeId",
+          "type": 9
         }
       ],
       "relations": []
@@ -1239,7 +1244,7 @@
     },
     {
       "id": "20:462491011859536736",
-      "lastPropertyId": "14:8979574227803027226",
+      "lastPropertyId": "15:6715843567616712550",
       "name": "SyncOutboxEntity",
       "properties": [
         {
@@ -1318,13 +1323,270 @@
           "id": "14:8979574227803027226",
           "name": "lastErrorCode",
           "type": 9
+        },
+        {
+          "id": "15:6715843567616712550",
+          "name": "resolutionMetadataJson",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "21:1497523766386625905",
+      "lastPropertyId": "18:1236180253311922845",
+      "name": "SyncResolutionNoticeEntity",
+      "properties": [
+        {
+          "id": "1:1216204229669316637",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:7863782856252433617",
+          "name": "noticeId",
+          "indexId": "40:6457226908209251741",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:3674190323869440962",
+          "name": "familySpaceId",
+          "indexId": "41:5151965670712765349",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:3371823034165732145",
+          "name": "entityType",
+          "type": 9
+        },
+        {
+          "id": "5:1823723913248644082",
+          "name": "entityId",
+          "indexId": "42:207964044449881633",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "6:2322828176828349423",
+          "name": "firstChangeId",
+          "type": 9
+        },
+        {
+          "id": "7:649661739545206303",
+          "name": "secondChangeId",
+          "type": 9
+        },
+        {
+          "id": "8:4683516449948384995",
+          "name": "winningChangeId",
+          "type": 9
+        },
+        {
+          "id": "9:5870528141787160830",
+          "name": "firstPayloadJson",
+          "type": 9
+        },
+        {
+          "id": "10:7633035979934885994",
+          "name": "secondPayloadJson",
+          "type": 9
+        },
+        {
+          "id": "11:7943850541033282757",
+          "name": "detectedAt",
+          "type": 10
+        },
+        {
+          "id": "12:5078706313490977808",
+          "name": "acknowledgedAt",
+          "type": 10
+        },
+        {
+          "id": "13:1291844508104615153",
+          "name": "firstSourceDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "14:8839332377437751870",
+          "name": "firstSourceAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "15:2747298375525282504",
+          "name": "secondSourceDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "16:9058105838959523580",
+          "name": "secondSourceAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "17:462310138941376942",
+          "name": "firstOccurredAt",
+          "type": 10
+        },
+        {
+          "id": "18:1236180253311922845",
+          "name": "secondOccurredAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "22:726620420635227580",
+      "lastPropertyId": "14:6694026984114670249",
+      "name": "SyncResolutionStateEntity",
+      "properties": [
+        {
+          "id": "1:6253592840435418368",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:381402495935170746",
+          "name": "stateKey",
+          "indexId": "43:6370283269464034466",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:1177187291277731728",
+          "name": "familySpaceId",
+          "indexId": "44:3397495716226715148",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:358621819444869144",
+          "name": "entityType",
+          "type": 9
+        },
+        {
+          "id": "5:8303399404949676302",
+          "name": "entityId",
+          "indexId": "45:4136476120428159213",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "6:3767677658085494665",
+          "name": "winningChangeId",
+          "type": 9
+        },
+        {
+          "id": "7:7218032365555858809",
+          "name": "winningServerSequence",
+          "type": 6
+        },
+        {
+          "id": "8:2055872713200798212",
+          "name": "effectiveRevision",
+          "type": 6
+        },
+        {
+          "id": "9:1209275343660342249",
+          "name": "operation",
+          "type": 9
+        },
+        {
+          "id": "10:6716084286072960515",
+          "name": "payloadJson",
+          "type": 9
+        },
+        {
+          "id": "11:2667628872158501461",
+          "name": "sourceDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "12:5185118104454859830",
+          "name": "sourceAuthorProfileId",
+          "type": 9
+        },
+        {
+          "id": "13:1775789334774320513",
+          "name": "occurredAt",
+          "type": 10
+        },
+        {
+          "id": "14:6694026984114670249",
+          "name": "resolutionGroupId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "23:5931212895407473642",
+      "lastPropertyId": "9:7236820584028331236",
+      "name": "SyncResolutionAcknowledgementEntity",
+      "properties": [
+        {
+          "id": "1:7850261851372197181",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:148416099637133596",
+          "name": "acknowledgementId",
+          "indexId": "46:6597034619026321263",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:7021570168479031755",
+          "name": "familySpaceId",
+          "indexId": "47:8272777081655902880",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:7906492460185268095",
+          "name": "noticeId",
+          "indexId": "48:664289692986752317",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "5:5978551076027563495",
+          "name": "winningChangeId",
+          "type": 9
+        },
+        {
+          "id": "6:2114291691842359652",
+          "name": "authorProfileId",
+          "indexId": "49:1784242907008018229",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "7:6162132872777154520",
+          "name": "sourceDeviceProfileId",
+          "type": 9
+        },
+        {
+          "id": "8:5947713873200986397",
+          "name": "sourceChangeId",
+          "type": 9
+        },
+        {
+          "id": "9:7236820584028331236",
+          "name": "acknowledgedAt",
+          "type": 10
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "20:462491011859536736",
-  "lastIndexId": "39:5118464589099621665",
+  "lastEntityId": "23:5931212895407473642",
+  "lastIndexId": "49:1784242907008018229",
   "lastRelationId": "1:6838825628405302824",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

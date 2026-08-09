@@ -24,6 +24,7 @@
 !**/firebase_options.example.dart
 .buildlog/
 .history
+.tmp/
 
 
 

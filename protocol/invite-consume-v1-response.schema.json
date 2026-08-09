@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/invite-consume-v1-response.schema.json",
+  "title": "MLMD Invite Consume v1 Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "deviceId",
+    "familySpaceId",
+    "role",
+    "displayName",
+    "createdAt"
+  ],
+  "properties": {
+    "deviceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "familySpaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "role": {
+      "type": "string",
+      "enum": ["owner", "member"]
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

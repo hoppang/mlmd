@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/invite-consume-v1-request.schema.json",
+  "title": "MLMD Invite Consume v1 Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "inviteToken",
+    "deviceId",
+    "deviceDisplayName",
+    "deviceSecret"
+  ],
+  "properties": {
+    "inviteToken": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F-]{36}\\.[A-Za-z0-9_-]{43}$",
+      "minLength": 80,
+      "maxLength": 80
+    },
+    "deviceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "deviceDisplayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "deviceSecret": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$",
+      "minLength": 43,
+      "maxLength": 43
+    }
+  }
+}

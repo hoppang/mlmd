@@ -2038,6 +2038,240 @@ abstract class AppLocalizations {
   /// **'인터넷에 연결되면 자동으로 반영됩니다.'**
   String get familySharingOfflineNotice;
 
+  /// No description provided for @homeServerConnectTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'홈서버 연결'**
+  String get homeServerConnectTitle;
+
+  /// No description provided for @homeServerConnectDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'같은 네트워크에 있는 홈서버의 주소와 서버 콘솔에 표시된 초기 설정 토큰을 입력하세요.'**
+  String get homeServerConnectDescription;
+
+  /// No description provided for @homeServerUrlLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'홈서버 주소'**
+  String get homeServerUrlLabel;
+
+  /// No description provided for @homeServerInvalidUrl.
+  ///
+  /// In ko, this message translates to:
+  /// **'http 또는 https로 시작하는 홈서버 주소를 입력하세요.'**
+  String get homeServerInvalidUrl;
+
+  /// No description provided for @homeServerBootstrapTokenLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'초기 설정 토큰'**
+  String get homeServerBootstrapTokenLabel;
+
+  /// No description provided for @homeServerFamilyNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'가족 공간 이름'**
+  String get homeServerFamilyNameLabel;
+
+  /// No description provided for @homeServerDeviceNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기기의 이름'**
+  String get homeServerDeviceNameLabel;
+
+  /// No description provided for @homeServerRequiredField.
+  ///
+  /// In ko, this message translates to:
+  /// **'필수 항목입니다.'**
+  String get homeServerRequiredField;
+
+  /// No description provided for @homeServerConnectAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 홈서버 연결'**
+  String get homeServerConnectAction;
+
+  /// No description provided for @homeServerJoinTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'가족 공간 참여'**
+  String get homeServerJoinTitle;
+
+  /// No description provided for @homeServerJoinDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기기의 이름을 입력한 뒤, 이미 연결된 기기에 표시된 QR 코드를 스캔하세요.'**
+  String get homeServerJoinDescription;
+
+  /// No description provided for @homeServerCameraError.
+  ///
+  /// In ko, this message translates to:
+  /// **'카메라를 사용할 수 없습니다. 카메라 권한을 확인하세요.'**
+  String get homeServerCameraError;
+
+  /// No description provided for @homeServerQrSecurityNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 QR에는 가족 기록을 여는 암호화 키가 들어 있습니다. 캡처하거나 다른 사람에게 보내지 마세요.'**
+  String get homeServerQrSecurityNotice;
+
+  /// No description provided for @homeServerJoinConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'{host} 서버의 이 가족 공간에 참여할까요?'**
+  String homeServerJoinConfirm(String host);
+
+  /// No description provided for @homeServerJoinAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'QR로 가족 참여'**
+  String get homeServerJoinAction;
+
+  /// No description provided for @homeServerInvalidQr.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 앱에서 만든 유효한 초대 QR이 아닙니다.'**
+  String get homeServerInvalidQr;
+
+  /// No description provided for @homeServerInviteTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'기기 초대'**
+  String get homeServerInviteTitle;
+
+  /// No description provided for @homeServerInviteDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가할 기기에서 이 QR 코드를 직접 스캔하세요. 초대는 10분 뒤 만료됩니다.'**
+  String get homeServerInviteDescription;
+
+  /// No description provided for @homeServerInviteQrSemantics.
+  ///
+  /// In ko, this message translates to:
+  /// **'가족 공간 기기 초대 QR 코드'**
+  String get homeServerInviteQrSemantics;
+
+  /// No description provided for @homeServerInviteExpired.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 초대는 만료되었습니다. 기존 기기에서 새 초대를 만들어 주세요.'**
+  String get homeServerInviteExpired;
+
+  /// No description provided for @homeServerDeviceNameRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'QR을 스캔하기 전에 이 기기의 이름을 입력하세요.'**
+  String get homeServerDeviceNameRequired;
+
+  /// No description provided for @homeServerUnavailable.
+  ///
+  /// In ko, this message translates to:
+  /// **'홈서버에 연결할 수 없습니다. 같은 네트워크인지 확인하고 다시 시도하세요.'**
+  String get homeServerUnavailable;
+
+  /// No description provided for @homeServerPairingFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'홈서버 연결을 완료하지 못했습니다. 서버 주소와 초대 상태를 확인하세요.'**
+  String get homeServerPairingFailed;
+
+  /// No description provided for @homeServerCreateInviteAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 기기 초대'**
+  String get homeServerCreateInviteAction;
+
+  /// No description provided for @homeServerManageDevicesAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'연결된 기기 관리'**
+  String get homeServerManageDevicesAction;
+
+  /// No description provided for @homeServerDevicesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'연결된 기기'**
+  String get homeServerDevicesTitle;
+
+  /// No description provided for @homeServerDevicesRefresh.
+  ///
+  /// In ko, this message translates to:
+  /// **'새로고침'**
+  String get homeServerDevicesRefresh;
+
+  /// No description provided for @homeServerDevicesOwnerOnly.
+  ///
+  /// In ko, this message translates to:
+  /// **'기기 목록과 폐기는 가족 공간 owner만 관리할 수 있습니다.'**
+  String get homeServerDevicesOwnerOnly;
+
+  /// No description provided for @homeServerDevicesLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'기기 목록을 불러오지 못했습니다. 홈서버 연결을 확인하세요.'**
+  String get homeServerDevicesLoadFailed;
+
+  /// No description provided for @homeServerDeviceRevokeAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'기기 연결 해제'**
+  String get homeServerDeviceRevokeAction;
+
+  /// No description provided for @homeServerDeviceRoleOwner.
+  ///
+  /// In ko, this message translates to:
+  /// **'관리자'**
+  String get homeServerDeviceRoleOwner;
+
+  /// No description provided for @homeServerDeviceRoleMember.
+  ///
+  /// In ko, this message translates to:
+  /// **'가족 구성원'**
+  String get homeServerDeviceRoleMember;
+
+  /// No description provided for @homeServerDeviceRevoked.
+  ///
+  /// In ko, this message translates to:
+  /// **'연결 해제됨'**
+  String get homeServerDeviceRevoked;
+
+  /// No description provided for @homeServerDeviceCurrent.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 기기'**
+  String get homeServerDeviceCurrent;
+
+  /// No description provided for @homeServerDeviceNeverSeen.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 동기화한 적 없음'**
+  String get homeServerDeviceNeverSeen;
+
+  /// No description provided for @homeServerDeviceLastSeen.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 접속: {date} {time}'**
+  String homeServerDeviceLastSeen(String date, String time);
+
+  /// No description provided for @homeServerDeviceRevokeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기기의 연결을 해제할까요?'**
+  String get homeServerDeviceRevokeTitle;
+
+  /// No description provided for @homeServerDeviceRevokeConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name}에서는 더 이상 새 가족 기록을 주고받을 수 없습니다. 이미 받은 기록과 가족 키를 원격으로 지울 수는 없습니다.'**
+  String homeServerDeviceRevokeConfirm(String name);
+
+  /// No description provided for @homeServerDeviceRevokedSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'기기 연결을 해제했습니다.'**
+  String get homeServerDeviceRevokedSuccess;
+
   /// No description provided for @dataBackupTitle.
   ///
   /// In ko, this message translates to:
@@ -3656,6 +3890,135 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'리비전 {revision}'**
   String syncConflictRevision(int revision);
+
+  /// No description provided for @syncConflictMedicationTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'투약 기록 충돌'**
+  String get syncConflictMedicationTitle;
+
+  /// No description provided for @syncConflictMedicationWarning.
+  ///
+  /// In ko, this message translates to:
+  /// **'약 이름, 용량과 투약 시각이 서로 다릅니다. 실제 투약 여부를 가족에게 직접 확인한 뒤 내용을 선택하세요.'**
+  String get syncConflictMedicationWarning;
+
+  /// No description provided for @syncConflictMedicationNoticeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인이 필요한 투약 기록 {count}건'**
+  String syncConflictMedicationNoticeTitle(int count);
+
+  /// No description provided for @syncConflictMedicationComparison.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 기기: {localValue}\n다른 기기: {incomingValue}'**
+  String syncConflictMedicationComparison(
+    String localValue,
+    String incomingValue,
+  );
+
+  /// No description provided for @syncConflictMedicationReviewAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'투약 기록 자세히 비교'**
+  String get syncConflictMedicationReviewAction;
+
+  /// No description provided for @syncConflictMedicationName.
+  ///
+  /// In ko, this message translates to:
+  /// **'약 이름'**
+  String get syncConflictMedicationName;
+
+  /// No description provided for @syncConflictMedicationDose.
+  ///
+  /// In ko, this message translates to:
+  /// **'용량'**
+  String get syncConflictMedicationDose;
+
+  /// No description provided for @syncConflictMedicationTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'투약 시각'**
+  String get syncConflictMedicationTime;
+
+  /// No description provided for @syncConflictMedicationAuthor.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성자 ID'**
+  String get syncConflictMedicationAuthor;
+
+  /// No description provided for @syncConflictMedicationDevice.
+  ///
+  /// In ko, this message translates to:
+  /// **'기기 ID'**
+  String get syncConflictMedicationDevice;
+
+  /// No description provided for @syncConflictMedicationModifiedAt.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정 시각'**
+  String get syncConflictMedicationModifiedAt;
+
+  /// No description provided for @syncConflictValueUnknown.
+  ///
+  /// In ko, this message translates to:
+  /// **'정보 없음'**
+  String get syncConflictValueUnknown;
+
+  /// No description provided for @syncResolutionNoticeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'동시 수정 결과를 자동으로 정리했습니다'**
+  String get syncResolutionNoticeTitle;
+
+  /// No description provided for @syncResolutionNoticeDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'두 기기에서 충돌을 동시에 해결해 서버 순서에 따라 최종 결과를 적용했습니다. 다시 선택할 필요는 없습니다.'**
+  String get syncResolutionNoticeDescription;
+
+  /// No description provided for @syncResolutionNoticeMedicationTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'투약 충돌의 동시 해소 결과'**
+  String get syncResolutionNoticeMedicationTitle;
+
+  /// No description provided for @syncResolutionNoticeMedicationWarning.
+  ///
+  /// In ko, this message translates to:
+  /// **'두 기기에서 서로 다른 투약 내용을 동시에 선택했습니다. 최종 적용값을 가족에게 직접 확인하세요.'**
+  String get syncResolutionNoticeMedicationWarning;
+
+  /// No description provided for @syncResolutionNoticeFirstVersion.
+  ///
+  /// In ko, this message translates to:
+  /// **'첫 번째 해소'**
+  String get syncResolutionNoticeFirstVersion;
+
+  /// No description provided for @syncResolutionNoticeSecondVersion.
+  ///
+  /// In ko, this message translates to:
+  /// **'두 번째 해소'**
+  String get syncResolutionNoticeSecondVersion;
+
+  /// No description provided for @syncResolutionNoticeWinner.
+  ///
+  /// In ko, this message translates to:
+  /// **'최종 적용: {value}'**
+  String syncResolutionNoticeWinner(String value);
+
+  /// No description provided for @syncResolutionNoticeAcknowledge.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인했습니다'**
+  String get syncResolutionNoticeAcknowledge;
+
+  /// No description provided for @syncResolutionNoticeAcknowledgedMembers.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인한 구성원 {count}명'**
+  String syncResolutionNoticeAcknowledgedMembers(int count);
 
   /// No description provided for @growthChartTitle.
   ///

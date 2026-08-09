@@ -9,6 +9,7 @@ import '../../../repositories/family_sync_repository.dart';
 import '../domain/family_sync_models.dart';
 import 'family_sync_remote_applier.dart';
 import 'family_sync_transport.dart';
+import 'family_sync_transport_provider.dart';
 
 /// Platform/provider integrations may override this with their connectivity
 /// stream. The default emits once so a configured transport synchronizes at
@@ -37,7 +38,6 @@ class FamilySyncRetryController {
     final repository = _ref.read(familySyncRepositoryProvider);
     if (!repository.getSnapshot().isConnected) return null;
     final transport = _ref.read(familySyncTransportProvider);
-    if (transport is UnconfiguredFamilySyncTransport) return null;
     final applier = FamilySyncRemoteApplier(
       _ref.read(objectBoxProvider),
       _ref.read(customEventRepositoryProvider),

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/exchange-v1-response.schema.json",
+  "title": "MLMD Sync Exchange v1 Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "acknowledgedChangeIds",
+    "incoming",
+    "nextCursor",
+    "hasMore"
+  ],
+  "properties": {
+    "acknowledgedChangeIds": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "incoming": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "$ref": "./incoming-envelope-v1.schema.json"
+      }
+    },
+    "nextCursor": {
+      "type": "string",
+      "description": "Opaque cursor represented as a decimal server sequence string",
+      "pattern": "^[0-9]+$",
+      "minLength": 1,
+      "maxLength": 20
+    },
+    "hasMore": {
+      "type": "boolean"
+    }
+  }
+}

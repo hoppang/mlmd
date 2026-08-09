@@ -1,0 +1,12 @@
+{
+  "protocolVersion": 1,
+  "serverUrl": "http://192.168.0.10:8080",
+  "familySpaceId": "550e8400-e29b-41d4-a716-446655440000",
+  "familyDisplayName": "Our family",
+  "inviteId": "550e8400-e29b-41d4-a716-446655440100",
+  "inviteToken": "550e8400-e29b-41d4-a716-446655440100.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "inviterDeviceId": "11111111-2222-4333-8444-555555555555",
+  "role": "member",
+  "expiresAt": "2026-08-03T12:10:00Z",
+  "familyKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+}

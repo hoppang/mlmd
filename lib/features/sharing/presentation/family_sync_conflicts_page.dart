@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../repositories/family_sync_repository.dart';
 import '../application/family_sync_coordinator.dart';
+import '../domain/family_sync_conflict_policy.dart';
 import '../domain/family_sync_models.dart';
 
 class FamilySyncConflictsPage extends ConsumerWidget {
@@ -58,15 +59,29 @@ class _ConflictTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final importance = FamilySyncConflictPolicy.importanceOf(conflict);
     return Card(
       child: ListTile(
         key: Key('sync-conflict-${conflict.conflictId}'),
         leading: Icon(
           conflict.isResolved
               ? Icons.check_circle_outline
+              : importance == FamilySyncConflictImportance.critical
+              ? Icons.medication_outlined
+              : importance == FamilySyncConflictImportance.caution
+              ? Icons.warning_amber_outlined
               : Icons.compare_arrows_outlined,
+          color:
+              !conflict.isResolved &&
+                  importance == FamilySyncConflictImportance.critical
+              ? Theme.of(context).colorScheme.error
+              : null,
         ),
-        title: Text(_humanize(conflict.entityType)),
+        title: Text(
+          importance == FamilySyncConflictImportance.critical
+              ? loc.syncConflictMedicationTitle
+              : _humanize(conflict.entityType),
+        ),
         subtitle: Text(
           conflict.isResolved
               ? _resolutionLabel(loc, conflict.resolution)
@@ -76,7 +91,7 @@ class _ConflictTile extends StatelessWidget {
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) =>
-                _ConflictDetailPage(conflictId: conflict.conflictId),
+                FamilySyncConflictDetailPage(conflictId: conflict.conflictId),
           ),
         ),
       ),
@@ -84,8 +99,8 @@ class _ConflictTile extends StatelessWidget {
   }
 }
 
-class _ConflictDetailPage extends ConsumerWidget {
-  const _ConflictDetailPage({required this.conflictId});
+class FamilySyncConflictDetailPage extends ConsumerWidget {
+  const FamilySyncConflictDetailPage({required this.conflictId, super.key});
 
   final String conflictId;
 
@@ -102,6 +117,7 @@ class _ConflictDetailPage extends ConsumerWidget {
         body: Center(child: Text(loc.syncConflictEmpty)),
       );
     }
+    final importance = FamilySyncConflictPolicy.importanceOf(conflict);
 
     return Scaffold(
       appBar: AppBar(title: Text(_humanize(conflict.entityType))),
@@ -120,6 +136,15 @@ class _ConflictDetailPage extends ConsumerWidget {
                       : Text(_formatMoment(context, conflict.resolvedAt!)),
                 ),
               )
+            else if (importance == FamilySyncConflictImportance.critical)
+              Card(
+                color: Theme.of(context).colorScheme.errorContainer,
+                child: ListTile(
+                  leading: const Icon(Icons.medication_outlined),
+                  title: Text(loc.syncConflictMedicationTitle),
+                  subtitle: Text(loc.syncConflictMedicationWarning),
+                ),
+              )
             else
               Card(
                 color: Theme.of(context).colorScheme.errorContainer,
@@ -130,6 +155,29 @@ class _ConflictDetailPage extends ConsumerWidget {
                 ),
               ),
             const SizedBox(height: AppSpacing.md),
+            if (importance == FamilySyncConflictImportance.critical) ...[
+              _MedicationVersionCard(
+                key: const Key('sync-conflict-medication-local'),
+                title: loc.syncConflictLocalVersion,
+                version: FamilySyncConflictPolicy.medicationVersion(
+                  conflict.localPayload,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _MedicationVersionCard(
+                key: const Key('sync-conflict-medication-incoming'),
+                title: loc.syncConflictIncomingVersion,
+                version: FamilySyncConflictPolicy.medicationVersion(
+                  conflict.incomingPayload,
+                  fallbackAuthorProfileId:
+                      conflict.incomingSourceAuthorProfileId,
+                  fallbackDeviceProfileId:
+                      conflict.incomingSourceDeviceProfileId,
+                  fallbackModifiedAt: conflict.incomingOccurredAt,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             LayoutBuilder(
               builder: (context, constraints) {
                 final local = _VersionCard(
@@ -229,6 +277,84 @@ class _ConflictDetailPage extends ConsumerWidget {
       ).showSnackBar(SnackBar(content: Text(loc.syncConflictResolveFailed)));
     }
   }
+}
+
+class _MedicationVersionCard extends StatelessWidget {
+  const _MedicationVersionCard({
+    super.key,
+    required this.title,
+    required this.version,
+  });
+
+  final String title;
+  final MedicationConflictVersion version;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return Card(
+      child: Padding(
+        padding: AppInsets.card,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            _DetailRow(
+              label: loc.syncConflictMedicationName,
+              value: version.medicationName ?? loc.syncConflictValueUnknown,
+            ),
+            _DetailRow(
+              label: loc.syncConflictMedicationDose,
+              value: version.dose ?? loc.syncConflictValueUnknown,
+            ),
+            _DetailRow(
+              label: loc.syncConflictMedicationTime,
+              value: version.administeredAt == null
+                  ? loc.syncConflictValueUnknown
+                  : _formatMoment(context, version.administeredAt!.toLocal()),
+            ),
+            _DetailRow(
+              label: loc.syncConflictMedicationAuthor,
+              value: version.authorProfileId ?? loc.syncConflictValueUnknown,
+            ),
+            _DetailRow(
+              label: loc.syncConflictMedicationDevice,
+              value: version.deviceProfileId ?? loc.syncConflictValueUnknown,
+            ),
+            _DetailRow(
+              label: loc.syncConflictMedicationModifiedAt,
+              value: version.modifiedAt == null
+                  ? loc.syncConflictValueUnknown
+                  : _formatMoment(context, version.modifiedAt!.toLocal()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 104,
+          child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+        ),
+        Expanded(child: SelectableText(value)),
+      ],
+    ),
+  );
 }
 
 class _VersionCard extends StatelessWidget {

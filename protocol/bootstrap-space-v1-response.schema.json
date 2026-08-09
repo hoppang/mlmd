@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/bootstrap-space-v1-response.schema.json",
+  "title": "MLMD Bootstrap Space v1 Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["familySpaceId", "deviceId", "role"],
+  "properties": {
+    "familySpaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "deviceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "role": {
+      "type": "string",
+      "const": "owner"
+    }
+  }
+}

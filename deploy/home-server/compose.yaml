@@ -1,0 +1,69 @@
+services:
+  mlmd-sync-server:
+    image: mlmd-sync-server:local
+    build:
+      context: ../../server
+    restart: unless-stopped
+    environment:
+      MLMD_LISTEN_ADDR: 0.0.0.0:8080
+      MLMD_DATABASE_PATH: /data/mlmd.db
+      MLMD_BOOTSTRAP_TOKEN: ${MLMD_BOOTSTRAP_TOKEN:?set MLMD_BOOTSTRAP_TOKEN}
+    ports:
+      - "${MLMD_LAN_ADDRESS:?set MLMD_LAN_ADDRESS}:8080:8080"
+    volumes:
+      - mlmd-sync-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "/mlmd-server", "healthcheck"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  mlmd-backup:
+    image: mlmd-sync-server:local
+    build:
+      context: ../../server
+    restart: unless-stopped
+    command:
+      - backup-scheduler
+      - --directory
+      - /backups
+      - --key-file
+      - /run/secrets/mlmd_backup_key
+      - --interval
+      - ${MLMD_BACKUP_CHECK_INTERVAL:-1h}
+    environment:
+      MLMD_DATABASE_PATH: /data/mlmd.db
+    depends_on:
+      mlmd-sync-server:
+        condition: service_healthy
+    volumes:
+      - mlmd-sync-data:/data
+      - type: bind
+        source: ${MLMD_BACKUP_DIRECTORY:?set MLMD_BACKUP_DIRECTORY}
+        target: /backups
+    secrets:
+      - mlmd_backup_key
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 15s
+
+volumes:
+  mlmd-sync-data:
+
+secrets:
+  mlmd_backup_key:
+    file: ${MLMD_BACKUP_KEY_FILE:?set MLMD_BACKUP_KEY_FILE}

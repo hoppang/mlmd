@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/invite-create-v1-response.schema.json",
+  "title": "MLMD Invite Create v1 Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "inviteId",
+    "familySpaceId",
+    "inviteToken",
+    "role",
+    "expiresAt",
+    "createdByDeviceId"
+  ],
+  "properties": {
+    "inviteId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "familySpaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "inviteToken": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F-]{36}\\.[A-Za-z0-9_-]{43}$",
+      "minLength": 80,
+      "maxLength": 80
+    },
+    "role": {
+      "type": "string",
+      "enum": ["owner", "member"]
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdByDeviceId": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}
