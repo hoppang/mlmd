@@ -488,6 +488,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
   Future<void> _showQuickLaunchEditor([int initialSlotIndex = 0]) {
     return showAdaptiveDetail<void>(
       context: context,
+      expandedDialog: true,
       builder: (_) =>
           QuickLaunchEditorSheet(initialSlotIndex: initialSlotIndex),
     );

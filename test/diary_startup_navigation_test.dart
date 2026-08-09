@@ -803,6 +803,89 @@ void main() {
     expect(find.byKey(const Key('elimination-record-form')), findsNothing);
   });
 
+  testWidgets('퀵런치 편집은 좁은 화면에서도 자리와 저장 동작을 항상 보여준다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('edit-quick-launch')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('quick-launch-editor-scrollbar')),
+      findsOneWidget,
+    );
+    for (final category in const [
+      'basicCare',
+      'healthMedical',
+      'activityPlay',
+      'growthMemory',
+    ]) {
+      expect(
+        find.byKey(Key('quick-launch-category-$category')),
+        findsOneWidget,
+      );
+    }
+
+    final editorBounds = tester.getRect(
+      find.byKey(const Key('quick-launch-editor')),
+    );
+    final slotSelectorBounds = tester.getRect(
+      find.byType(SegmentedButton<int>),
+    );
+    expect(slotSelectorBounds.left, greaterThanOrEqualTo(editorBounds.left));
+    expect(slotSelectorBounds.right, lessThanOrEqualTo(editorBounds.right));
+    expect(
+      find.byKey(const Key('save-quick-launch-slot')).hitTestable(),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('move-quick-launch-right')));
+    await tester.pump();
+    var movedSelector = tester.widget<SegmentedButton<int>>(
+      find.byType(SegmentedButton<int>),
+    );
+    expect(movedSelector.selected, {1});
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('move-quick-launch-left')));
+    await tester.pump();
+    movedSelector = tester.widget<SegmentedButton<int>>(
+      find.byType(SegmentedButton<int>),
+    );
+    expect(movedSelector.selected, {0});
+  });
+
+  testWidgets('Windows 퀵런치 편집은 화면 전체 대화상자를 사용한다', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('edit-quick-launch')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('expanded-adaptive-detail-dialog')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('expanded-adaptive-detail-surface')),
+      findsOneWidget,
+    );
+
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('diaper subtypes can each be assigned to the quick bar', (
     tester,
   ) async {
