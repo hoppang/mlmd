@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
+import '../../../core/presentation/picker_pages.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/child_profile_repository.dart';
@@ -75,106 +76,116 @@ class ChildProfilesPage extends ConsumerWidget {
     var birthDate = child?.birthDate;
     var clearBirthDate = false;
     try {
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: Text(
-              child == null ? loc.addChildProfile : loc.editChildProfile,
-            ),
-            content: SizedBox(
-              width: 420,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    key: const Key('child-name-field'),
-                    controller: controller,
-                    autofocus: true,
-                    decoration: InputDecoration(labelText: loc.childNameLabel),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final chosen = await showDatePicker(
-                        context: dialogContext,
-                        initialDate: birthDate ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime.now(),
-                      );
-                      if (chosen != null) {
-                        setDialogState(() {
-                          birthDate = chosen;
-                          clearBirthDate = false;
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.cake_outlined),
-                    label: Text(
-                      birthDate == null
-                          ? loc.childBirthDateLabel
-                          : MaterialLocalizations.of(
-                              context,
-                            ).formatMediumDate(birthDate!),
-                    ),
-                  ),
-                  if (birthDate != null)
-                    TextButton(
-                      onPressed: () => setDialogState(() {
-                        birthDate = null;
-                        clearBirthDate = true;
-                      }),
-                      child: Text(loc.childBirthDateUnknown),
-                    ),
-                ],
-              ),
-            ),
-            actions: [
-              if (child != null)
-                TextButton(
-                  onPressed: () {
-                    final deleted = ref
-                        .read(childProfileListProvider.notifier)
-                        .delete(child.childId);
-                    if (!deleted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(loc.lastChildCannotDelete)),
-                      );
-                      return;
-                    }
-                    Navigator.pop(dialogContext);
-                  },
-                  child: Text(loc.deleteChildProfile),
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          fullscreenDialog: true,
+          builder: (pageContext) => StatefulBuilder(
+            builder: (context, setDialogState) => Scaffold(
+              appBar: AppBar(
+                title: Text(
+                  child == null ? loc.addChildProfile : loc.editChildProfile,
                 ),
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(loc.cancel),
               ),
-              FilledButton(
-                key: const Key('save-child-profile'),
-                onPressed: () {
-                  final name = controller.text.trim();
-                  if (name.isEmpty) return;
-                  if (child == null) {
-                    ref
-                        .read(childProfileListProvider.notifier)
-                        .create(name: name, birthDate: birthDate);
-                  } else {
-                    ref
-                        .read(childProfileListProvider.notifier)
-                        .update(
-                          childId: child.childId,
-                          name: name,
-                          birthDate: birthDate,
-                          clearBirthDate: clearBirthDate,
+              body: SafeArea(
+                minimum: AppInsets.page,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      key: const Key('child-name-field'),
+                      controller: controller,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: loc.childNameLabel,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final chosen = await showDatePickerPage(
+                          context: pageContext,
+                          initialDate: birthDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now(),
                         );
-                  }
-                  Navigator.pop(dialogContext);
-                },
-                child: Text(loc.saveRecord),
+                        if (chosen != null) {
+                          setDialogState(() {
+                            birthDate = chosen;
+                            clearBirthDate = false;
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.cake_outlined),
+                      label: Text(
+                        birthDate == null
+                            ? loc.childBirthDateLabel
+                            : MaterialLocalizations.of(
+                                context,
+                              ).formatMediumDate(birthDate!),
+                      ),
+                    ),
+                    if (birthDate != null)
+                      TextButton(
+                        onPressed: () => setDialogState(() {
+                          birthDate = null;
+                          clearBirthDate = true;
+                        }),
+                        child: Text(loc.childBirthDateUnknown),
+                      ),
+                  ],
+                ),
               ),
-            ],
+              bottomNavigationBar: SafeArea(
+                minimum: AppInsets.page,
+                child: Row(
+                  children: [
+                    if (child != null)
+                      TextButton(
+                        onPressed: () {
+                          final deleted = ref
+                              .read(childProfileListProvider.notifier)
+                              .delete(child.childId);
+                          if (!deleted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(loc.lastChildCannotDelete),
+                              ),
+                            );
+                            return;
+                          }
+                          Navigator.pop(pageContext);
+                        },
+                        child: Text(loc.deleteChildProfile),
+                      ),
+                    const Spacer(),
+                    FilledButton(
+                      key: const Key('save-child-profile'),
+                      onPressed: () {
+                        final name = controller.text.trim();
+                        if (name.isEmpty) return;
+                        if (child == null) {
+                          ref
+                              .read(childProfileListProvider.notifier)
+                              .create(name: name, birthDate: birthDate);
+                        } else {
+                          ref
+                              .read(childProfileListProvider.notifier)
+                              .update(
+                                childId: child.childId,
+                                name: name,
+                                birthDate: birthDate,
+                                clearBirthDate: clearBirthDate,
+                              );
+                        }
+                        Navigator.pop(pageContext);
+                      },
+                      child: Text(loc.saveRecord),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       );

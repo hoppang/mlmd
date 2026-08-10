@@ -1,6 +1,3 @@
-import 'dart:math' as math;
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
@@ -27,141 +24,47 @@ class QuickLaunchDock extends StatelessWidget {
   final VoidCallback onOpenAll;
   final int? busySlotIndex;
 
-  static const double _wideBreakpoint = 960;
-  static const double _narrowBreakpoint = 480;
   static const double _desktopMaxWidth = 1080;
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final desktop = defaultTargetPlatform == TargetPlatform.windows;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final dockWidth = desktop
-            ? math.min(constraints.maxWidth, _desktopMaxWidth)
-            : constraints.maxWidth;
-        final visibleSlotCount = !desktop
-            ? quickLaunchCoreSlotCount
-            : dockWidth >= _wideBreakpoint
-            ? quickLaunchSlotCount
-            : dockWidth < _narrowBreakpoint
-            ? quickLaunchCoreSlotCount - 1
-            : quickLaunchCoreSlotCount;
-        final visibleSlots = layout.slots.take(visibleSlotCount);
-        final hiddenSlots = desktop
-            ? layout.slots.skip(visibleSlotCount).toList(growable: false)
-            : const <QuickLaunchSlot>[];
-        return Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _desktopMaxWidth),
-            child: Padding(
-              key: const Key('quick-launch-dock'),
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.xs,
-                AppSpacing.md,
-                AppSpacing.sm,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final slot in visibleSlots)
-                    Expanded(
-                      child: _QuickLaunchTile(
-                        slot: slot,
-                        busy: busySlotIndex == slot.slotIndex,
-                        onPressed: slot.hasEventType
-                            ? (anchorContext) =>
-                                  onSlotPressed(slot, anchorContext)
-                            : (_) => onEditSlot(slot.slotIndex),
-                      ),
-                    ),
-                  if (hiddenSlots.isNotEmpty)
-                    Expanded(
-                      child: _QuickLaunchOverflowTile(
-                        slots: hiddenSlots,
-                        busySlotIndex: busySlotIndex,
-                        onSlotPressed: onSlotPressed,
-                        onEditSlot: onEditSlot,
-                      ),
-                    ),
-                  Expanded(
-                    child: _SystemTile(
-                      key: const Key('quick-launch-all'),
-                      label: loc.quickLaunchAll,
-                      icon: Icons.apps,
-                      onPressed: onOpenAll,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    final visibleSlots = layout.slots.take(quickLaunchCoreSlotCount);
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _desktopMaxWidth),
+        child: Padding(
+          key: const Key('quick-launch-dock'),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.xs,
+            AppSpacing.md,
+            AppSpacing.sm,
           ),
-        );
-      },
-    );
-  }
-}
-
-class _QuickLaunchOverflowTile extends StatelessWidget {
-  const _QuickLaunchOverflowTile({
-    required this.slots,
-    required this.busySlotIndex,
-    required this.onSlotPressed,
-    required this.onEditSlot,
-  });
-
-  final List<QuickLaunchSlot> slots;
-  final int? busySlotIndex;
-  final QuickLaunchSlotCallback onSlotPressed;
-  final ValueChanged<int> onEditSlot;
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    return Builder(
-      builder: (anchorContext) => PopupMenuButton<int>(
-        key: const Key('quick-launch-more'),
-        tooltip: loc.quickLaunchMore,
-        onSelected: (index) {
-          final slot = slots.firstWhere((item) => item.slotIndex == index);
-          if (!slot.hasEventType) {
-            onEditSlot(index);
-            return;
-          }
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => onSlotPressed(slot, anchorContext),
-          );
-        },
-        itemBuilder: (context) => [
-          for (final slot in slots)
-            PopupMenuItem<int>(
-              key: Key('quick-launch-overflow-slot-${slot.slotIndex}'),
-              value: slot.slotIndex,
-              enabled: busySlotIndex != slot.slotIndex,
-              child: Row(
-                children: [
-                  Icon(
-                    slot.eventTypeId == null
-                        ? Icons.add
-                        : quickLaunchCatalogItem(slot.eventTypeId!).icon,
-                    size: 20,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final slot in visibleSlots)
+                Expanded(
+                  child: _QuickLaunchTile(
+                    slot: slot,
+                    busy: busySlotIndex == slot.slotIndex,
+                    onPressed: slot.hasEventType
+                        ? (anchorContext) => onSlotPressed(slot, anchorContext)
+                        : (_) => onEditSlot(slot.slotIndex),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      '${slot.slotIndex + 1}. '
-                      '${quickLaunchSlotLabel(slot, loc)}',
-                    ),
-                  ),
-                ],
+                ),
+              Expanded(
+                child: _SystemTile(
+                  key: const Key('quick-launch-all'),
+                  label: loc.quickLaunchAll,
+                  icon: Icons.apps,
+                  onPressed: onOpenAll,
+                ),
               ),
-            ),
-        ],
-        child: _SystemTileContent(
-          label: loc.quickLaunchMore,
-          icon: Icons.more_horiz,
+            ],
+          ),
         ),
       ),
     );

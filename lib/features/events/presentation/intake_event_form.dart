@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,6 +28,8 @@ class IntakeEventForm extends ConsumerStatefulWidget {
     required this.onOccurredAtChanged,
     required this.onSave,
     this.initialStructuredDataJson,
+    this.showHeader = true,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -41,6 +42,8 @@ class IntakeEventForm extends ConsumerStatefulWidget {
   final VoidCallback onChangeTime;
   final ValueChanged<DateTime> onOccurredAtChanged;
   final ValueChanged<IntakeFormResult> onSave;
+  final bool showHeader;
+  final bool showBackButton;
 
   @override
   ConsumerState<IntakeEventForm> createState() => _IntakeEventFormState();
@@ -56,7 +59,6 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
   FeedingMethod? _feedingMethod = FeedingMethod.bottle;
   BreastSide _breastSide = BreastSide.left;
   BottleContents _bottleContents = BottleContents.formula;
-  MealType _mealType = MealType.other;
   IntakeReaction? _reaction;
   AmountExpressionKind _amountKind = AmountExpressionKind.qualitative;
   QualitativeLevel _qualitativeLevel = QualitativeLevel.little;
@@ -86,7 +88,6 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
   @override
   void initState() {
     super.initState();
-    _mealType = _suggestedMealType(widget.occurredAt.hour);
     if (widget.item.id == EventTypeId.feeding) {
       _amountKind = AmountExpressionKind.exact;
     }
@@ -102,13 +103,6 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
     super.dispose();
   }
 
-  MealType _suggestedMealType(int hour) {
-    if (hour < 11) return MealType.breakfast;
-    if (hour < 16) return MealType.lunch;
-    if (hour < 22) return MealType.dinner;
-    return MealType.other;
-  }
-
   void _restore(IntakeRecord? record) {
     if (record == null || record.kind != _recordKind) return;
     _feedingMethod = record.method == FeedingMethod.timeOnly
@@ -118,7 +112,6 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
     _bottleContents = record.bottleContents == BottleContents.other
         ? BottleContents.formula
         : record.bottleContents ?? _bottleContents;
-    _mealType = record.mealType ?? _mealType;
     _reaction = record.reaction;
     _foodController.text = record.foodName ?? '';
     _memoController.text = record.memo ?? '';
@@ -232,7 +225,7 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
       bottleContents: _feedingMethod == FeedingMethod.bottle
           ? _bottleContents
           : null,
-      mealType: widget.item.id == EventTypeId.meal ? _mealType : null,
+      mealType: null,
       foodName: _isFood ? _foodController.text.trim() : null,
       reaction: _isFood ? _reaction : null,
       memo: _memoController.text.trim(),
@@ -263,26 +256,30 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Icon(item.icon),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  item.label(loc),
-                  style: Theme.of(context).textTheme.titleLarge,
+          if (widget.showHeader) ...[
+            Row(
+              children: [
+                if (widget.showBackButton) ...[
+                  IconButton(
+                    key: const Key('back-to-record-types'),
+                    tooltip: loc.backToRecordTypes,
+                    onPressed: widget.saving ? null : widget.onBack,
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+                Icon(item.icon),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    item.label(loc),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (item.id == EventTypeId.feeding) ...[
             _feedingTimeEditor(loc),
             const SizedBox(height: AppSpacing.md),
@@ -310,7 +307,18 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
             decoration: InputDecoration(labelText: loc.memoOptionalLabel),
           ),
           const SizedBox(height: AppSpacing.md),
-          if (item.id != EventTypeId.feeding)
+          if (item.id == EventTypeId.meal)
+            InlineDateTimeEditor(
+              value: widget.occurredAt,
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              onChanged: widget.onOccurredAtChanged,
+              keyPrefix: 'meal',
+              label: loc.recordTimeLabel,
+              displayKey: const Key('quick-record-time'),
+              enabled: !widget.saving,
+            )
+          else if (item.id != EventTypeId.feeding)
             OutlinedButton.icon(
               key: const Key('quick-record-time'),
               onPressed: widget.saving ? null : widget.onChangeTime,
@@ -422,8 +430,6 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
           lastDate: DateTime.now(),
           onChanged: widget.onOccurredAtChanged,
           keyPrefix: 'feeding',
-          showSpinner: defaultTargetPlatform != TargetPlatform.windows,
-          showDirectInput: defaultTargetPlatform == TargetPlatform.windows,
           rollFutureTimeToPreviousDay: true,
         ),
       ],
@@ -432,19 +438,27 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
 
   Widget _feedingAmountAdjustments() {
     final current = num.tryParse(_exactController.text.trim()) ?? 0;
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: AppSpacing.xs,
-      runSpacing: AppSpacing.xs,
+    return Row(
       children: [
         for (final delta in const [-100, -10, 10, 100])
-          OutlinedButton(
-            key: Key('adjust-feeding-amount-$delta'),
-            onPressed: widget.saving || (delta < 0 && current <= 0)
-                ? null
-                : () => _adjustFeedingAmount(delta),
-            child: Text(
-              '${delta > 0 ? '+' : '−'}${delta.abs()} ${_displayUnit(_unit)}',
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: delta == 100 ? 0 : AppSpacing.xxs,
+              ),
+              child: OutlinedButton(
+                key: Key('adjust-feeding-amount-$delta'),
+                onPressed: widget.saving || (delta < 0 && current <= 0)
+                    ? null
+                    : () => _adjustFeedingAmount(delta),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  textStyle: Theme.of(context).textTheme.labelMedium,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: Text('${delta > 0 ? '+' : '−'}${delta.abs()}'),
+              ),
             ),
           ),
       ],
@@ -453,15 +467,6 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
 
   List<Widget> _mealFields(AppLocalizations loc) {
     return [
-      _FieldLabel(loc.mealTypeLabel),
-      _ChoiceWrap<MealType>(
-        values: MealType.values,
-        selected: _mealType,
-        label: (value) => _mealTypeLabel(value, loc),
-        onSelected: (value) => setState(() => _mealType = value),
-        keyPrefix: 'meal-type',
-      ),
-      const SizedBox(height: AppSpacing.md),
       TextField(
         key: const Key('intake-food-name'),
         controller: _foodController,
@@ -677,9 +682,6 @@ String intakeRecordDetails(IntakeRecord record, AppLocalizations loc) {
       );
     }
   }
-  if (record.mealType != null) {
-    values.add(_mealTypeLabel(record.mealType!, loc));
-  }
   if ((record.foodName ?? '').isNotEmpty) values.add(record.foodName!);
   if (record.amountExpression != null) {
     values.add(_amountLabel(record.amountExpression!, loc));
@@ -697,13 +699,6 @@ String _feedingTypeLabel(_FeedingType type, AppLocalizations loc) =>
       _FeedingType.breast => loc.breastFeedingOption,
       _FeedingType.expressedMilk => loc.expressedMilkFeedingOption,
     };
-
-String _mealTypeLabel(MealType value, AppLocalizations loc) => switch (value) {
-  MealType.breakfast => loc.breakfastOption,
-  MealType.lunch => loc.lunchOption,
-  MealType.dinner => loc.dinnerOption,
-  MealType.other => loc.otherOption,
-};
 
 String _reactionLabel(IntakeReaction value, AppLocalizations loc) =>
     switch (value) {

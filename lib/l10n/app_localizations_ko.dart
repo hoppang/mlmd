@@ -103,7 +103,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get feedingEvent => '수유';
 
   @override
-  String get mealEvent => '이유식·식사';
+  String get mealEvent => '이유식';
 
   @override
   String get waterSnackEvent => '물·간식';
@@ -646,6 +646,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get todayStatusTitle => '오늘 현황';
+
+  @override
+  String todayStatusSleepTotal(String duration) {
+    return '총 $duration';
+  }
+
+  @override
+  String todayStatusLastDoseElapsed(String ingredient, String duration) {
+    return '$ingredient 마지막 투약 · $duration 전';
+  }
 
   @override
   String get startupLoading => '앱을 준비하는 중...';
@@ -1787,6 +1797,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get temperatureValueRequired => '체온을 숫자로 입력해 주세요.';
 
   @override
+  String get temperatureValueTooHigh => '체온은 43.0℃ 이하로 입력해 주세요.';
+
+  @override
   String get temperatureSiteLabel => '측정 부위 (선택)';
 
   @override
@@ -1838,10 +1851,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get medicationCategoryAntipyretic => '해열제';
 
   @override
-  String get medicationCategoryCoughCold => '기침약·감기약';
+  String get medicationCategoryCoughCold => '감기약';
 
   @override
   String get medicationCategoryAntibiotic => '항생제';
+
+  @override
+  String get medicationCategoryAntiviral => '항바이러스제';
 
   @override
   String get medicationCategoryOintment => '연고·크림';
@@ -1851,6 +1867,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get medicationCategoryOther => '기타';
+
+  @override
+  String get recentMedicationNotesTitle => '최근 입력 메모';
 
   @override
   String get antipyreticIngredientTitle => '해열제 성분';

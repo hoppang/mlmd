@@ -25,6 +25,7 @@ class GrowthMeasurementEventForm extends StatefulWidget {
     required this.onChangeTime,
     required this.onSave,
     this.initialRecord,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -35,6 +36,7 @@ class GrowthMeasurementEventForm extends StatefulWidget {
   final VoidCallback onChangeTime;
   final ValueChanged<GrowthMeasurementFormResult> onSave;
   final GrowthMeasurementRecord? initialRecord;
+  final bool showBackButton;
 
   @override
   State<GrowthMeasurementEventForm> createState() =>
@@ -160,13 +162,15 @@ class _GrowthMeasurementEventFormState
           // Header row with back button and title.
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (widget.showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               const Icon(Icons.straighten_outlined),
               const SizedBox(width: AppSpacing.xs),
               Expanded(

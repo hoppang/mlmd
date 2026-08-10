@@ -115,10 +115,13 @@ class HybridSearchQueryParser {
     _EventKeywordRule(SearchEventKind.feeding, [
       '수유',
       '분유',
+      '이유식',
       '식사',
+      'baby food',
       'feeding',
       'feed',
       '授乳',
+      '離乳食',
       'ミルク',
       '哺乳',
     ]),

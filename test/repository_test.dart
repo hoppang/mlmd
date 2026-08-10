@@ -400,6 +400,40 @@ void main() {
       );
     });
 
+    test('Changing a point event date moves it to that date container', () {
+      final originalTime = DateTime(2026, 7, 23, 9, 10);
+      final activityId = diaryRepo.addActivityRecord(
+        ActivityEntity(
+          type: '기저귀·배변',
+          time: originalTime,
+          details: '대변',
+          lastModified: originalTime,
+        ),
+      );
+      final activity = activityRepo.getActivity(activityId)!;
+      final movedTime = DateTime(2026, 7, 24, 8, 40);
+      activity.time = movedTime;
+
+      diaryRepo.updateActivityRecord(activity);
+
+      final diaries = diaryRepo.getDiaries();
+      final source = diaries.singleWhere(
+        (diary) =>
+            diary.date.year == originalTime.year &&
+            diary.date.month == originalTime.month &&
+            diary.date.day == originalTime.day,
+      );
+      final destination = diaries.singleWhere(
+        (diary) =>
+            diary.date.year == movedTime.year &&
+            diary.date.month == movedTime.month &&
+            diary.date.day == movedTime.day,
+      );
+      expect(source.activities, isEmpty);
+      expect(destination.activities.single.id, activityId);
+      expect(destination.activities.single.time, movedTime);
+    });
+
     test(
       'Deleting an Activity should update parent Diary lastModified',
       () async {

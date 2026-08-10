@@ -102,9 +102,9 @@ void main() {
       await tester.tap(find.byKey(const Key('stt_typo_correction_btn')));
       await tester.pumpAndSettle();
 
-      // Verify correction preview sheet is shown
+      // Verify correction preview page is shown
       expect(find.text('맞춤법·오탈자 교정 결과'), findsOneWidget);
-      expect(find.text('어재 분유 180미리 먹었슴'), findsNWidgets(2));
+      expect(find.text('어재 분유 180미리 먹었슴'), findsOneWidget);
       expect(find.text('어제 분유 180ml 먹었음'), findsOneWidget);
 
       // Tap [적용]

@@ -106,7 +106,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedingEvent => 'Feeding';
 
   @override
-  String get mealEvent => 'Meal';
+  String get mealEvent => 'Baby food';
 
   @override
   String get waterSnackEvent => 'Water · snack';
@@ -660,6 +660,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayStatusTitle => 'Today\'s Status';
+
+  @override
+  String todayStatusSleepTotal(String duration) {
+    return 'Total $duration';
+  }
+
+  @override
+  String todayStatusLastDoseElapsed(String ingredient, String duration) {
+    return 'Last $ingredient dose · $duration ago';
+  }
 
   @override
   String get startupLoading => 'Preparing app...';
@@ -1843,6 +1853,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get temperatureValueRequired => 'Enter a numeric temperature.';
 
   @override
+  String get temperatureValueTooHigh =>
+      'Enter a temperature of 43.0℃ or lower.';
+
+  @override
   String get temperatureSiteLabel => 'Measurement site (optional)';
 
   @override
@@ -1895,10 +1909,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get medicationCategoryAntipyretic => 'Antipyretic';
 
   @override
-  String get medicationCategoryCoughCold => 'Cough & Cold';
+  String get medicationCategoryCoughCold => 'Cold medicine';
 
   @override
   String get medicationCategoryAntibiotic => 'Antibiotic';
+
+  @override
+  String get medicationCategoryAntiviral => 'Antiviral';
 
   @override
   String get medicationCategoryOintment => 'Ointment / Cream';
@@ -1908,6 +1925,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get medicationCategoryOther => 'Other';
+
+  @override
+  String get recentMedicationNotesTitle => 'Recent entries';
 
   @override
   String get antipyreticIngredientTitle => 'Active ingredient';

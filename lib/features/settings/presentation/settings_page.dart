@@ -177,27 +177,28 @@ class TrackingPreferencesPage extends ConsumerWidget {
     final current =
         ref.read(trackingPreferencesProvider)[item.id.name] ??
         TrackingMode.detailed;
-    final selected = await showDialog<TrackingMode>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text(loc.trackingModeFor(item.label(loc))),
-        children: [
-          RadioGroup<TrackingMode>(
-            groupValue: current,
-            onChanged: (value) => Navigator.pop(context, value),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final mode in TrackingMode.values)
-                  RadioListTile<TrackingMode>(
-                    value: mode,
-                    title: Text(_modeLabel(loc, mode)),
-                    subtitle: Text(_modeDescription(loc, mode)),
-                  ),
-              ],
+    final selected = await Navigator.of(context).push<TrackingMode>(
+      MaterialPageRoute<TrackingMode>(
+        fullscreenDialog: true,
+        builder: (pageContext) => Scaffold(
+          appBar: AppBar(title: Text(loc.trackingModeFor(item.label(loc)))),
+          body: SafeArea(
+            child: RadioGroup<TrackingMode>(
+              groupValue: current,
+              onChanged: (value) => Navigator.pop(pageContext, value),
+              child: ListView(
+                children: [
+                  for (final mode in TrackingMode.values)
+                    RadioListTile<TrackingMode>(
+                      value: mode,
+                      title: Text(_modeLabel(loc, mode)),
+                      subtitle: Text(_modeDescription(loc, mode)),
+                    ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
     if (selected != null) {

@@ -289,7 +289,7 @@ abstract class AppLocalizations {
   /// No description provided for @mealEvent.
   ///
   /// In ko, this message translates to:
-  /// **'이유식·식사'**
+  /// **'이유식'**
   String get mealEvent;
 
   /// No description provided for @waterSnackEvent.
@@ -1299,6 +1299,18 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'오늘 현황'**
   String get todayStatusTitle;
+
+  /// No description provided for @todayStatusSleepTotal.
+  ///
+  /// In ko, this message translates to:
+  /// **'총 {duration}'**
+  String todayStatusSleepTotal(String duration);
+
+  /// No description provided for @todayStatusLastDoseElapsed.
+  ///
+  /// In ko, this message translates to:
+  /// **'{ingredient} 마지막 투약 · {duration} 전'**
+  String todayStatusLastDoseElapsed(String ingredient, String duration);
 
   /// No description provided for @startupLoading.
   ///
@@ -3363,6 +3375,12 @@ abstract class AppLocalizations {
   /// **'체온을 숫자로 입력해 주세요.'**
   String get temperatureValueRequired;
 
+  /// No description provided for @temperatureValueTooHigh.
+  ///
+  /// In ko, this message translates to:
+  /// **'체온은 43.0℃ 이하로 입력해 주세요.'**
+  String get temperatureValueTooHigh;
+
   /// No description provided for @temperatureSiteLabel.
   ///
   /// In ko, this message translates to:
@@ -3462,7 +3480,7 @@ abstract class AppLocalizations {
   /// No description provided for @medicationCategoryCoughCold.
   ///
   /// In ko, this message translates to:
-  /// **'기침약·감기약'**
+  /// **'감기약'**
   String get medicationCategoryCoughCold;
 
   /// No description provided for @medicationCategoryAntibiotic.
@@ -3470,6 +3488,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'항생제'**
   String get medicationCategoryAntibiotic;
+
+  /// No description provided for @medicationCategoryAntiviral.
+  ///
+  /// In ko, this message translates to:
+  /// **'항바이러스제'**
+  String get medicationCategoryAntiviral;
 
   /// No description provided for @medicationCategoryOintment.
   ///
@@ -3488,6 +3512,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'기타'**
   String get medicationCategoryOther;
+
+  /// No description provided for @recentMedicationNotesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 입력 메모'**
+  String get recentMedicationNotesTitle;
 
   /// No description provided for @antipyreticIngredientTitle.
   ///

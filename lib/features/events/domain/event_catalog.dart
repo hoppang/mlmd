@@ -96,7 +96,7 @@ const eventCatalog = <EventCatalogItem>[
     id: EventTypeId.meal,
     category: EventCategoryId.basicCare,
     icon: Icons.restaurant_outlined,
-    aliases: {'이유식·식사', 'Meal', '離乳食・食事'},
+    aliases: {'이유식', '이유식·식사', 'Baby food', 'Meal', '離乳食', '離乳食・食事'},
   ),
   EventCatalogItem(
     id: EventTypeId.water,
@@ -217,9 +217,6 @@ const eventCatalog = <EventCatalogItem>[
 
 const defaultQuickEventIds = <EventTypeId>[
   EventTypeId.feeding,
-  EventTypeId.meal,
-  EventTypeId.water,
-  EventTypeId.snack,
   EventTypeId.sleep,
   EventTypeId.diaper,
   EventTypeId.temperature,
@@ -316,69 +313,10 @@ class RecentEventPreset {
 
   String label(AppLocalizations loc) {
     final typeLabel = item.label(loc);
-    final normalizedDetails = details.trim();
-    if (item.id == EventTypeId.diaper) {
-      final elimination = EliminationRecord.decode(structuredDataJson ?? '');
-      if (elimination != null) {
-        final presetLabel = switch (elimination.kind) {
-          EliminationKind.urine => loc.eliminationUrinePreset,
-          EliminationKind.stool => loc.eliminationStoolPreset,
-          EliminationKind.both => loc.eliminationBothPreset,
-        };
-        final separator = normalizedDetails.indexOf(' · ');
-        return separator < 0
-            ? presetLabel
-            : '$presetLabel${normalizedDetails.substring(separator)}';
-      }
+    if (item.id == EventTypeId.meal) {
+      return typeLabel.split(RegExp(r'[·・]')).first.trim();
     }
-    if (item.id == EventTypeId.pumping) {
-      final record = PumpingRecord.decode(structuredDataJson ?? '');
-      if (record != null) {
-        final formattedDetails = record.buildDetails(loc);
-        return formattedDetails.isEmpty
-            ? typeLabel
-            : '$typeLabel · $formattedDetails';
-      }
-    }
-    if (item.id == EventTypeId.bath) {
-      final record = BathRecord.decode(structuredDataJson ?? '');
-      if (record != null) {
-        final formattedDetails = record.buildDetails(loc);
-        return formattedDetails.isEmpty
-            ? typeLabel
-            : '$typeLabel · $formattedDetails';
-      }
-    }
-    if (item.id == EventTypeId.tummyTime) {
-      final record = TummyTimeRecord.decode(structuredDataJson ?? '');
-      if (record != null) {
-        final formattedDetails = record.buildDetails(loc);
-        return formattedDetails.isEmpty
-            ? typeLabel
-            : '$typeLabel · $formattedDetails';
-      }
-    }
-    if (item.id == EventTypeId.growthMeasurement) {
-      final record = GrowthMeasurementRecord.decode(structuredDataJson ?? '');
-      if (record != null) {
-        final formattedDetails = record.buildDetails(loc);
-        return formattedDetails.isEmpty
-            ? typeLabel
-            : '$typeLabel · $formattedDetails';
-      }
-    }
-    if (item.id == EventTypeId.careProcedure) {
-      final record = CareProcedureRecord.decode(structuredDataJson ?? '');
-      if (record != null) {
-        final formattedDetails = record.buildDetails(loc);
-        return formattedDetails.isEmpty
-            ? typeLabel
-            : '$typeLabel · $formattedDetails';
-      }
-    }
-    return normalizedDetails.isEmpty
-        ? typeLabel
-        : '$typeLabel · $normalizedDetails';
+    return typeLabel;
   }
 }
 

@@ -102,7 +102,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get feedingEvent => '授乳';
 
   @override
-  String get mealEvent => '離乳食・食事';
+  String get mealEvent => '離乳食';
 
   @override
   String get waterSnackEvent => '水分・おやつ';
@@ -644,6 +644,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get todayStatusTitle => '今日の状況';
+
+  @override
+  String todayStatusSleepTotal(String duration) {
+    return '合計 $duration';
+  }
+
+  @override
+  String todayStatusLastDoseElapsed(String ingredient, String duration) {
+    return '$ingredient 最終投与・$duration前';
+  }
 
   @override
   String get startupLoading => 'アプリを準備しています...';
@@ -1779,6 +1789,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get temperatureValueRequired => '体温を数値で入力してください。';
 
   @override
+  String get temperatureValueTooHigh => '体温は43.0℃以下で入力してください。';
+
+  @override
   String get temperatureSiteLabel => '測定部位（任意）';
 
   @override
@@ -1830,10 +1843,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get medicationCategoryAntipyretic => '解熱剤';
 
   @override
-  String get medicationCategoryCoughCold => '咳止め・風邪薬';
+  String get medicationCategoryCoughCold => '風邪薬';
 
   @override
   String get medicationCategoryAntibiotic => '抗生剤';
+
+  @override
+  String get medicationCategoryAntiviral => '抗ウイルス薬';
 
   @override
   String get medicationCategoryOintment => '軟膏・クリーム';
@@ -1843,6 +1859,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get medicationCategoryOther => 'その他';
+
+  @override
+  String get recentMedicationNotesTitle => '最近の入力';
 
   @override
   String get antipyreticIngredientTitle => '解熱剤の成分';

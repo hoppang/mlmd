@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../domain/elimination_record.dart';
+import 'date_time_adjustment_controls.dart';
 
 class EliminationEventForm extends StatefulWidget {
   const EliminationEventForm({
@@ -15,6 +16,7 @@ class EliminationEventForm extends StatefulWidget {
     required this.onUndo,
     required this.onDone,
     this.allowUndo = true,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -27,6 +29,7 @@ class EliminationEventForm extends StatefulWidget {
   final VoidCallback onUndo;
   final VoidCallback onDone;
   final bool allowUndo;
+  final bool showBackButton;
 
   @override
   State<EliminationEventForm> createState() => _EliminationEventFormState();
@@ -107,25 +110,6 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
     );
   }
 
-  Future<void> _changeTime() async {
-    final occurredAt = _occurredAt;
-    if (occurredAt == null || widget.saving) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(occurredAt),
-    );
-    if (time == null || !mounted) return;
-    setState(() {
-      _occurredAt = DateTime(
-        occurredAt.year,
-        occurredAt.month,
-        occurredAt.day,
-        time.hour,
-        time.minute,
-      );
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -144,17 +128,19 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: saved == null ? loc.backToRecordTypes : loc.close,
-                onPressed: widget.saving
-                    ? null
-                    : saved == null
-                    ? widget.onBack
-                    : widget.onDone,
-                icon: Icon(saved == null ? Icons.arrow_back : Icons.close),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (saved != null || widget.showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: saved == null ? loc.backToRecordTypes : loc.close,
+                  onPressed: widget.saving
+                      ? null
+                      : saved == null
+                      ? widget.onBack
+                      : widget.onDone,
+                  icon: Icon(saved == null ? Icons.arrow_back : Icons.close),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               const Icon(Icons.child_friendly_outlined),
               const SizedBox(width: AppSpacing.xs),
               Expanded(
@@ -180,14 +166,16 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            OutlinedButton.icon(
-              key: const Key('elimination-record-time'),
-              onPressed: widget.saving ? null : _changeTime,
-              icon: const Icon(Icons.schedule),
-              label: Text(
-                '${loc.recordTimeLabel} · '
-                '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_occurredAt!))}',
-              ),
+            InlineDateTimeEditor(
+              key: ValueKey(widget.savedRecord),
+              value: _occurredAt!,
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              onChanged: (value) => setState(() => _occurredAt = value),
+              keyPrefix: 'elimination',
+              label: loc.recordTimeLabel,
+              displayKey: const Key('elimination-record-time'),
+              enabled: !widget.saving,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(

@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/layout/adaptive_content_frame.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/presentation/picker_pages.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
 import '../../../repositories/record_draft_repository.dart';
@@ -462,14 +463,14 @@ class _DiaryFormPageState extends ConsumerState<DiaryFormPage>
   }
 
   Future<DateTime?> _selectDateTime(DateTime initial) async {
-    final date = await showDatePicker(
+    final date = await showDatePickerPage(
       context: context,
       initialDate: initial,
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
     );
     if (date == null || !mounted) return null;
-    final time = await showTimePicker(
+    final time = await showTimePickerPage(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
     );

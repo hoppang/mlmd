@@ -55,6 +55,12 @@ String _feedingQuickTargetLabel(
   _ => loc.feedingEvent,
 };
 
+bool _isIntakeEventType(EventTypeId? id) =>
+    id == EventTypeId.feeding ||
+    id == EventTypeId.meal ||
+    id == EventTypeId.water ||
+    id == EventTypeId.snack;
+
 class DiaryDemoPage extends ConsumerStatefulWidget {
   const DiaryDemoPage({super.key});
 
@@ -348,6 +354,11 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
     final result = await showAdaptiveDetail<RecordEntryResult>(
       context: context,
       expandedDialog: editActivity != null,
+      title: editActivity != null && _isIntakeEventType(initialItem?.id)
+          ? initialItem!.label(AppLocalizations.of(context)!)
+          : editActivity == null && initialItem == null
+          ? AppLocalizations.of(context)!.recordSheetTitle
+          : null,
       builder: (sheetContext) => RecordEntrySheet(
         recentPresets: buildRecentEventPresets(
           diaries,
@@ -488,6 +499,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
   Future<void> _showQuickLaunchEditor([int initialSlotIndex = 0]) {
     return showAdaptiveDetail<void>(
       context: context,
+      expandedDialog: true,
       builder: (_) =>
           QuickLaunchEditorSheet(initialSlotIndex: initialSlotIndex),
     );

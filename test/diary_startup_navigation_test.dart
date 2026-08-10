@@ -30,6 +30,7 @@ import 'package:mlmd/features/events/domain/elimination_record.dart';
 import 'package:mlmd/features/events/domain/intake_record.dart';
 import 'package:mlmd/features/events/domain/medication_record.dart';
 import 'package:mlmd/features/events/domain/sleep_record.dart';
+import 'package:mlmd/features/events/domain/symptom_record.dart';
 import 'package:mlmd/features/events/domain/temperature_record.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'package:mlmd/repositories/duplicate_review_repository.dart';
@@ -605,7 +606,15 @@ void main() {
       ActivityEntity(
         type: '이유식·식사',
         time: now.subtract(const Duration(hours: 1)),
-        details: '120g',
+        details: '저녁 · 보통 · 잘 먹음',
+        structuredDataJson: const IntakeRecord(
+          kind: IntakeRecordKind.meal,
+          mealType: MealType.dinner,
+          amountExpression: AmountExpression.qualitative(
+            QualitativeLevel.normal,
+          ),
+          reaction: IntakeReaction.ateWell,
+        ).encode(),
         lastModified: now,
       ),
       ActivityEntity(
@@ -624,23 +633,99 @@ void main() {
     await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(find.byKey(const Key('adaptive-detail-page')), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('무엇을 기록할까요?'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('무엇을 기록할까요?'), findsOneWidget);
     expect(find.text('빠른 기록'), findsOneWidget);
+    for (final key in [
+      'quick-record-feeding',
+      'quick-record-sleep',
+      'quick-record-diaper',
+      'quick-record-temperature',
+      'quick-record-memo',
+    ]) {
+      expect(find.byKey(Key(key)), findsOneWidget);
+    }
+    expect(find.byKey(const Key('quick-record-meal')), findsNothing);
+    expect(find.byKey(const Key('quick-record-water')), findsNothing);
+    expect(find.byKey(const Key('quick-record-snack')), findsNothing);
     expect(find.text('최근 사용'), findsOneWidget);
-    expect(find.text('이유식·식사 · 120g'), findsOneWidget);
-    expect(find.text('수유 · 180mL'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recent-record-meal')),
+        matching: find.text('이유식'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('이유식·식사 · 저녁 · 보통 · 잘 먹음'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recent-record-feeding')),
+        matching: find.text('수유'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('수유 · 180mL'), findsNothing);
+    expect(find.text('전체 카테고리'), findsNothing);
 
     final healthMedicalCategory = find.byKey(
       const Key('event-category-healthMedical'),
     );
     await tester.ensureVisible(healthMedicalCategory);
-    await tester.tap(healthMedicalCategory);
-    await tester.pumpAndSettle();
     expect(find.byKey(const Key('category-event-medication')), findsOneWidget);
     expect(
       find.byKey(const Key('category-event-careProcedure')),
       findsOneWidget,
     );
+    final feedingPosition = tester.getTopLeft(
+      find.byKey(const Key('category-event-feeding')),
+    );
+    final mealPosition = tester.getTopLeft(
+      find.byKey(const Key('category-event-meal')),
+    );
+    expect(feedingPosition.dy, mealPosition.dy);
+    expect(feedingPosition.dx, lessThan(mealPosition.dx));
+
+    final recentMeal = find.byKey(const Key('recent-record-meal'));
+    await tester.ensureVisible(recentMeal);
+    await tester.tap(recentMeal);
+    await tester.pumpAndSettle();
+    expect(find.text('식사 구분'), findsNothing);
+    expect(find.byKey(const Key('meal-type-MealType.dinner')), findsNothing);
+    expect(
+      tester
+          .widget<ChoiceChip>(
+            find.byKey(const Key('qualitative-amount-QualitativeLevel.normal')),
+          )
+          .selected,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<FilterChip>(find.byKey(const Key('intake-reaction-ateWell')))
+          .selected,
+      isTrue,
+    );
+    await tester.tap(find.byKey(const Key('intake-reaction-refused')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<FilterChip>(find.byKey(const Key('intake-reaction-refused')))
+          .selected,
+      isTrue,
+    );
+    expect(find.byKey(const Key('back-to-record-types')), findsNothing);
+    await tester.tap(find.byType(CloseButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
 
     final quickRecordFeeding = find.byKey(const Key('quick-record-feeding'));
     await tester.ensureVisible(quickRecordFeeding);
@@ -672,8 +757,6 @@ void main() {
 
     await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('event-category-healthMedical')));
-    await tester.pumpAndSettle();
     await tester.ensureVisible(
       find.byKey(const Key('category-event-careProcedure')),
     );
@@ -681,6 +764,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('care-procedure-event-form')), findsOneWidget);
+    expect(find.byType(CloseButton), findsOneWidget);
+    expect(find.byKey(const Key('back-to-record-types')), findsNothing);
     await tester.tap(find.byKey(const Key('care-procedure-type-nasalCare')));
     await tester.pump();
     await tester.ensureVisible(
@@ -699,7 +784,41 @@ void main() {
     expect(find.text('코 세척·흡인 기록을 저장했어요.'), findsOneWidget);
   });
 
-  testWidgets('기저귀 빠른 프리셋은 즉시 저장하고 종류 정정·상세 추가·실행 취소를 지원한다', (tester) async {
+  testWidgets('이유식은 인라인 시간 변경 후 상위 저장으로 변경 시각을 저장한다', (tester) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
+    final meal = find.byKey(const Key('category-event-meal'));
+    await tester.ensureVisible(meal);
+    await tester.tap(meal);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('quick-record-time')));
+    await tester.tap(find.byKey(const Key('quick-record-time')));
+    await tester.pumpAndSettle();
+    final yesterdayChip = find.byKey(const Key('meal-date-yesterday'));
+    await tester.ensureVisible(yesterdayChip);
+    await tester.tap(yesterdayChip);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('save-meal-date-time')), findsNothing);
+
+    final save = find.byKey(const Key('save-quick-record'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    final savedAt = notifier.addedActivityOccurredAt!;
+    final yesterday = DateUtils.dateOnly(
+      DateTime.now(),
+    ).subtract(const Duration(days: 1));
+    expect(DateUtils.isSameDay(savedAt, yesterday), isTrue);
+    expect(notifier.addedActivityType, '이유식');
+  });
+
+  testWidgets('기저귀 빠른 기록은 종류 선택 후 정정·상세 추가·실행 취소를 지원한다', (tester) async {
     final notifier = _TestDiaryListNotifier(const []);
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
@@ -707,12 +826,14 @@ void main() {
     await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('quick-record-diaper-urine')), findsOneWidget);
-    expect(find.byKey(const Key('quick-record-diaper-stool')), findsOneWidget);
-    expect(find.byKey(const Key('quick-record-diaper-both')), findsOneWidget);
-    expect(find.byKey(const Key('quick-record-diaper')), findsNothing);
+    expect(find.byKey(const Key('quick-record-diaper-urine')), findsNothing);
+    expect(find.byKey(const Key('quick-record-diaper-stool')), findsNothing);
+    expect(find.byKey(const Key('quick-record-diaper-both')), findsNothing);
+    expect(find.byKey(const Key('quick-record-diaper')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('quick-record-diaper-urine')));
+    await tester.tap(find.byKey(const Key('quick-record-diaper')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('save-elimination-urine')));
     await tester.pumpAndSettle();
 
     final initial = EliminationRecord.decode(
@@ -727,17 +848,50 @@ void main() {
 
     await tester.tap(find.byKey(const Key('elimination-record-time')));
     await tester.pumpAndSettle();
-    expect(find.byType(TimePickerDialog), findsOneWidget);
-    final cancelLabel = MaterialLocalizations.of(
-      tester.element(find.byType(TimePickerDialog)),
-    ).cancelButtonLabel;
-    await tester.tap(find.text(cancelLabel));
+    expect(find.byKey(const Key('apply-time-picker-page')), findsNothing);
+    expect(
+      find.byKey(const Key('elimination-date-time-editor')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('elimination-record-time')), findsNothing);
+    expect(find.byKey(const Key('elimination-hour-wheel')), findsOneWidget);
+    expect(find.byKey(const Key('elimination-minute-wheel')), findsOneWidget);
+    expect(
+      tester
+          .getSize(find.byKey(const Key('elimination-hour-wheel-viewport')))
+          .height,
+      180,
+    );
+    await tester.tap(find.byKey(const Key('elimination-date-yesterday')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('save-elimination-date-time')), findsNothing);
+    expect(
+      find.byKey(const Key('elimination-date-time-editor')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('elimination-record-time')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('elimination-kind-both')));
+    final yesterday = DateUtils.dateOnly(
+      DateTime.now(),
+    ).subtract(const Duration(days: 1));
+    final expectedOccurredAt = DateTime(
+      yesterday.year,
+      yesterday.month,
+      yesterday.day,
+      initial!.occurredAt.hour,
+      initial.occurredAt.minute,
+    );
+
+    final bothKind = find.byKey(const Key('elimination-kind-both'));
+    await tester.ensureVisible(bothKind);
+    await tester.tap(bothKind);
     await tester.pump();
-    await tester.tap(find.byKey(const Key('elimination-amount-normal')));
-    await tester.tap(find.byKey(const Key('stool-consistency-hard')));
+    final normalAmount = find.byKey(const Key('elimination-amount-normal'));
+    await tester.ensureVisible(normalAmount);
+    await tester.tap(normalAmount);
+    final hardConsistency = find.byKey(const Key('stool-consistency-hard'));
+    await tester.ensureVisible(hardConsistency);
+    await tester.tap(hardConsistency);
     final stoolColor = find.byKey(const Key('stool-color-brown'));
     await tester.ensureVisible(stoolColor);
     await tester.tap(stoolColor);
@@ -746,6 +900,8 @@ void main() {
     await tester.ensureVisible(saveChanges);
     await tester.tap(saveChanges);
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('elimination-date-time-editor')), findsNothing);
+    expect(find.byKey(const Key('elimination-record-time')), findsOneWidget);
 
     final updated = EliminationRecord.decode(
       notifier.updatedActivityStructuredDataJson!,
@@ -756,9 +912,13 @@ void main() {
     expect(updated?.stoolConsistency, StoolConsistency.hard);
     expect(updated?.stoolColor, StoolColor.brown);
     expect(updated?.note, '저녁 관찰');
+    expect(updated?.occurredAt, expectedOccurredAt);
+    expect(notifier.updatedActivityOccurredAt, expectedOccurredAt);
     expect(notifier.updatedActivityDetails, contains('갈색'));
 
-    await tester.tap(find.byKey(const Key('finish-elimination-record')));
+    final closeElimination = find.byKey(const Key('back-to-record-types'));
+    await tester.ensureVisible(closeElimination);
+    await tester.tap(closeElimination);
     await tester.pumpAndSettle();
     expect(find.text('기저귀·배변 기록을 저장했어요.'), findsOneWidget);
 
@@ -767,14 +927,12 @@ void main() {
     expect(notifier.deletedActivityRecordId, 'activity-record');
   });
 
-  testWidgets('전체 카테고리 기저귀는 소변·대변·둘 다를 넓은 버튼으로 명시한다', (tester) async {
+  testWidgets('기본 돌봄의 기저귀는 소변·대변·둘 다를 넓은 버튼으로 명시한다', (tester) async {
     final notifier = _TestDiaryListNotifier(const []);
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('quick-launch-all')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('event-category-basicCare')));
     await tester.pumpAndSettle();
     final diaper = find.byKey(const Key('category-event-diaper'));
     await tester.ensureVisible(diaper);
@@ -801,6 +959,83 @@ void main() {
     await tester.pumpAndSettle();
     expect(notifier.deletedActivityRecordId, 'activity-record');
     expect(find.byKey(const Key('elimination-record-form')), findsNothing);
+  });
+
+  testWidgets('퀵런치 편집은 좁은 화면에서도 자리와 저장 동작을 항상 보여준다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('edit-quick-launch')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('quick-launch-editor-scrollbar')),
+      findsOneWidget,
+    );
+    for (final category in const [
+      'basicCare',
+      'healthMedical',
+      'activityPlay',
+      'growthMemory',
+    ]) {
+      expect(
+        find.byKey(Key('quick-launch-category-$category')),
+        findsOneWidget,
+      );
+    }
+
+    final editorBounds = tester.getRect(
+      find.byKey(const Key('quick-launch-editor')),
+    );
+    final slotSelectorBounds = tester.getRect(
+      find.byType(SegmentedButton<int>),
+    );
+    expect(slotSelectorBounds.left, greaterThanOrEqualTo(editorBounds.left));
+    expect(slotSelectorBounds.right, lessThanOrEqualTo(editorBounds.right));
+    expect(
+      find.byKey(const Key('save-quick-launch-slot')).hitTestable(),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('move-quick-launch-right')));
+    await tester.pump();
+    var movedSelector = tester.widget<SegmentedButton<int>>(
+      find.byType(SegmentedButton<int>),
+    );
+    expect(movedSelector.selected, {1});
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('move-quick-launch-left')));
+    await tester.pump();
+    movedSelector = tester.widget<SegmentedButton<int>>(
+      find.byType(SegmentedButton<int>),
+    );
+    expect(movedSelector.selected, {0});
+  });
+
+  testWidgets('Windows 퀵런치 편집은 독립 페이지를 사용한다', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('edit-quick-launch')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('adaptive-detail-page')), findsOneWidget);
+    expect(find.byType(Dialog), findsNothing);
+
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('diaper subtypes can each be assigned to the quick bar', (
@@ -912,14 +1147,12 @@ void main() {
     expect(find.text('이미 진행 중인 수면이 있어요.'), findsOneWidget);
   });
 
-  testWidgets('전체 카테고리의 수면은 끝난 구간과 관찰 표지를 직접 저장한다', (tester) async {
+  testWidgets('기본 돌봄의 수면은 끝난 구간과 관찰 표지를 직접 저장한다', (tester) async {
     final notifier = _TestDiaryListNotifier(const []);
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('quick-launch-all')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('event-category-basicCare')));
     await tester.pumpAndSettle();
     final sleepItem = find.byKey(const Key('category-event-sleep'));
     await tester.ensureVisible(sleepItem);
@@ -954,7 +1187,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('temperature-value')), '38.2');
     await tester.enterText(find.byKey(const Key('temperature-note')), '저녁 측정');
-    await tester.tap(find.byKey(const Key('save-quick-record')));
+    final failedSave = find.byKey(const Key('save-quick-record'));
+    await tester.ensureVisible(failedSave);
+    await tester.tap(failedSave);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('temperature-event-form')), findsOneWidget);
@@ -969,7 +1204,7 @@ void main() {
     );
   });
 
-  testWidgets('Windows에서도 같은 기록 선택 내용을 중앙 대화상자로 연다', (tester) async {
+  testWidgets('Windows에서도 같은 기록 선택 내용을 페이지로 연다', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.pumpWidget(_buildApp());
@@ -978,10 +1213,13 @@ void main() {
     await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byKey(const Key('adaptive-detail-page')), findsOneWidget);
+    expect(find.byType(Dialog), findsNothing);
     expect(find.byType(BottomSheet), findsNothing);
     expect(find.text('빠른 기록'), findsOneWidget);
-    expect(find.text('전체 카테고리'), findsOneWidget);
+    expect(find.text('전체 카테고리'), findsNothing);
+    expect(find.text('기본 돌봄'), findsOneWidget);
+    expect(find.byKey(const Key('category-event-meal')), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -1056,8 +1294,15 @@ void main() {
     await tester.tap(find.byKey(const Key('edit-active-sleep-start')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('sleep-hour-wheel')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('adjust-sleep-time--1')));
+    final editedMinute = (startedAt.minute + 1) % 60;
+    await tester.tap(find.byKey(const Key('sleep-minute-wheel-selected')));
     await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('sleep-minute-wheel-input')),
+      editedMinute.toString().padLeft(2, '0'),
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('apply-sleep-date-time')));
     await tester.pumpAndSettle();
     expect(
@@ -1067,7 +1312,7 @@ void main() {
         startedAt.month,
         startedAt.day,
         startedAt.hour,
-        startedAt.minute - 1,
+        editedMinute,
       ),
     );
 
@@ -1086,7 +1331,7 @@ void main() {
     expect(find.byKey(const Key('top-undo-button')), findsNothing);
   });
 
-  testWidgets('종료된 수면의 관찰 표지는 타임라인에서 나중에 추가한다', (tester) async {
+  testWidgets('종료된 수면은 상태 추가 링크 없이 기록 전체를 눌러 수정한다', (tester) async {
     final now = DateTime.now();
     final startedAt = now.subtract(const Duration(hours: 2));
     final diary = DiaryEntity(
@@ -1123,16 +1368,20 @@ void main() {
       const Offset(0, -240),
     );
     await tester.pumpAndSettle();
-    await tester.tap(
+    expect(find.text('상태 추가'), findsNothing);
+    expect(
       find.byKey(const Key('add-sleep-markers-completed-sleep-record')),
+      findsNothing,
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('edit-sleep-marker-frequentWaking')));
-    await tester.tap(find.byKey(const Key('save-sleep-markers')));
+
+    await tester.tap(find.byKey(const ValueKey('today-activity:89')));
     await tester.pumpAndSettle();
 
-    expect(notifier.updatedSleepMarkers, [SleepRecordMarker.frequentWaking]);
-    expect(find.text('수면 상태를 저장했어요.'), findsOneWidget);
+    expect(find.byKey(const Key('sleep-record-form')), findsOneWidget);
+    expect(
+      find.byKey(const Key('sleep-marker-frequentWaking')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('저장된 초안은 홈 카드에 표시하고 명시적으로 이어서 작성한다', (tester) async {
@@ -1414,11 +1663,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('검색 결과 상세'), findsNothing);
-    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(find.byKey(const Key('adaptive-detail-page')), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
     expect(find.byKey(const ValueKey('medication')), findsOneWidget);
     expect(find.byKey(const Key('medication-time-btn')), findsOneWidget);
     expect(find.text('09:30'), findsOneWidget);
-    expect(find.text('해열제 복용'), findsAtLeastNWidgets(1));
+    expect(find.byKey(const Key('medication-cat-antipyretic')), findsOneWidget);
     await tester.tap(find.byKey(const Key('record-edit-search-context')));
     await tester.pumpAndSettle();
     expect(find.text('같은 날의 다른 기록'), findsOneWidget);
@@ -1501,8 +1751,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('오늘 현황'), findsOneWidget);
-    expect(find.text('수유 · 1'), findsOneWidget);
-    expect(find.text('투약 · 1'), findsOneWidget);
+    expect(find.text('수유 1'), findsOneWidget);
+    expect(find.text('투약 1'), findsOneWidget);
     await tester.drag(
       find.byKey(const Key('today-scroll-view')),
       const Offset(0, -240),
@@ -1533,6 +1783,192 @@ void main() {
       matching: find.byType(TextField),
     );
     expect(tester.widget<TextField>(detailsField).controller!.text, '해열제');
+  });
+
+  testWidgets('오늘 현황은 같은 유형을 합치고 서로 다른 하위 종류를 작게 표시한다', (tester) async {
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 59,
+      recordId: 'today-status-groups',
+      date: now,
+      title: '',
+      summary: '',
+      content: '',
+      lastModified: now,
+    );
+    diary.activities.addAll([
+      ActivityEntity(
+        id: 591,
+        type: '타미플루',
+        time: now,
+        details: '',
+        structuredDataJson: MedicationRecord(
+          medicationId: 'med-antiviral',
+          category: MedicationCategory.antiviral,
+          medicationName: '타미플루',
+          route: MedicationRoute.oral,
+          administeredAt: now,
+        ).encode(),
+        lastModified: now,
+      ),
+      for (var index = 0; index < 2; index++)
+        ActivityEntity(
+          id: 592 + index,
+          type: index == 0 ? '부루펜' : '타이레놀',
+          time: now.subtract(Duration(minutes: index + 1)),
+          details: '',
+          structuredDataJson: MedicationRecord(
+            medicationId: 'med-antipyretic-$index',
+            category: MedicationCategory.antipyretic,
+            medicationName: index == 0 ? '부루펜' : '타이레놀',
+            route: MedicationRoute.oral,
+            administeredAt: now.subtract(Duration(minutes: index + 1)),
+          ).encode(),
+          lastModified: now,
+        ),
+      for (final (index, symptomName) in ['기침', '콧물'].indexed)
+        ActivityEntity(
+          id: 594 + index,
+          type: symptomName,
+          time: now.subtract(Duration(minutes: index + 3)),
+          details: '',
+          structuredDataJson: SymptomRecord(
+            symptomId: 'symptom-$index',
+            symptomName: symptomName,
+            kind: SymptomKind.episodic,
+            occurredAt: now.subtract(Duration(minutes: index + 3)),
+          ).encode(),
+          lastModified: now,
+        ),
+    ]);
+
+    final notifier = _TestDiaryListNotifier([diary]);
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], diaryNotifier: notifier),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('투약 3'), findsOneWidget);
+    expect(find.text('항바이러스제 1   해열제 2'), findsOneWidget);
+    expect(find.text('증상·컨디션 2'), findsOneWidget);
+    expect(find.text('기침 1   콧물 1'), findsOneWidget);
+  });
+
+  testWidgets('오늘 현황은 수면 총시간과 성분별 마지막 해열제 경과시간을 표시한다', (tester) async {
+    final now = DateTime.now();
+    final todayDiary = DiaryEntity(
+      id: 597,
+      recordId: 'today-status-details',
+      date: now,
+      title: '',
+      summary: '',
+      content: '',
+      lastModified: now,
+    );
+    todayDiary.activities.addAll([
+      ActivityEntity(
+        id: 5971,
+        type: '수면',
+        time: now.subtract(const Duration(hours: 4)),
+        details: '',
+        structuredDataJson: SleepRecord(
+          status: SleepRecordStatus.completed,
+          kind: SleepRecordKind.night,
+          source: SleepRecordSource.user,
+          startedAt: now.subtract(const Duration(hours: 6)),
+          endedAt: now.subtract(const Duration(hours: 4)),
+        ).encode(),
+        lastModified: now,
+      ),
+      ActivityEntity(
+        id: 5972,
+        type: '수면',
+        time: now.subtract(const Duration(hours: 1)),
+        details: '',
+        structuredDataJson: SleepRecord(
+          status: SleepRecordStatus.completed,
+          kind: SleepRecordKind.nap,
+          source: SleepRecordSource.user,
+          startedAt: now.subtract(const Duration(hours: 1, minutes: 45)),
+          endedAt: now.subtract(const Duration(hours: 1)),
+        ).encode(),
+        lastModified: now,
+      ),
+      ActivityEntity(
+        id: 5973,
+        type: '해열제',
+        time: now.subtract(const Duration(hours: 3, minutes: 30)),
+        details: '',
+        structuredDataJson: MedicationRecord(
+          medicationId: 'today-ibuprofen',
+          category: MedicationCategory.antipyretic,
+          medicationName: '부루펜',
+          route: MedicationRoute.oral,
+          ingredient: AntipyreticIngredient.ibuprofen,
+          administeredAt: now.subtract(const Duration(hours: 3, minutes: 30)),
+        ).encode(),
+        lastModified: now,
+      ),
+    ]);
+
+    final previousDiary = DiaryEntity(
+      id: 598,
+      recordId: 'previous-antipyretics',
+      date: now.subtract(const Duration(days: 1)),
+      title: '',
+      summary: '',
+      content: '',
+      lastModified: now,
+    );
+    previousDiary.activities.addAll([
+      for (final (index, elapsed) in [
+        const Duration(hours: 9),
+        const Duration(hours: 7),
+      ].indexed)
+        ActivityEntity(
+          id: 5980 + index,
+          type: '해열제',
+          time: now.subtract(elapsed),
+          details: '',
+          structuredDataJson: MedicationRecord(
+            medicationId: 'previous-acetaminophen-$index',
+            category: MedicationCategory.antipyretic,
+            medicationName: '타이레놀',
+            route: MedicationRoute.oral,
+            ingredient: AntipyreticIngredient.acetaminophen,
+            administeredAt: now.subtract(elapsed),
+          ).encode(),
+          lastModified: now,
+        ),
+      ActivityEntity(
+        id: 5982,
+        type: '해열제',
+        time: now.add(const Duration(hours: 1)),
+        details: '',
+        structuredDataJson: MedicationRecord(
+          medicationId: 'future-acetaminophen',
+          category: MedicationCategory.antipyretic,
+          medicationName: '미래 기록',
+          route: MedicationRoute.oral,
+          ingredient: AntipyreticIngredient.acetaminophen,
+          administeredAt: now.add(const Duration(hours: 1)),
+        ).encode(),
+        lastModified: now,
+      ),
+    ]);
+
+    final diaries = [todayDiary, previousDiary];
+    final notifier = _TestDiaryListNotifier(diaries);
+    await tester.pumpWidget(
+      _buildApp(diaries: diaries, diaryNotifier: notifier),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('수면 2'), findsOneWidget);
+    expect(find.text('총 2시간 45분'), findsOneWidget);
+    expect(find.text('투약 1'), findsOneWidget);
+    expect(find.text('아세트아미노펜 마지막 투약 · 7시간 전'), findsOneWidget);
+    expect(find.text('이부프로펜 마지막 투약 · 3시간 30분 전'), findsOneWidget);
   });
 
   testWidgets('38도 이상 체온은 목록에 주의 문구를, 수정 화면에 공식 자료를 표시한다', (tester) async {
@@ -1593,6 +2029,15 @@ void main() {
     await tester.tap(find.byKey(const Key('record-edit-medical-guidance')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('temperature-value')), '38.3');
+    await tester.ensureVisible(find.byKey(const Key('quick-record-time')));
+    await tester.tap(find.byKey(const Key('quick-record-time')));
+    await tester.pumpAndSettle();
+    final temperatureYesterday = find.byKey(
+      const Key('temperature-date-yesterday'),
+    );
+    await tester.ensureVisible(temperatureYesterday);
+    await tester.tap(temperatureYesterday);
+    await tester.pumpAndSettle();
     final saveButton = tester.widget<FilledButton>(
       find.byKey(const Key('save-quick-record')),
     );
@@ -1607,6 +2052,20 @@ void main() {
         notifier.updatedActivityStructuredDataJson!,
       )?.celsius,
       38.3,
+    );
+    final yesterday = DateUtils.dateOnly(now).subtract(const Duration(days: 1));
+    expect(
+      DateUtils.isSameDay(notifier.updatedActivityOccurredAt, yesterday),
+      isTrue,
+    );
+    expect(
+      DateUtils.isSameDay(
+        TemperatureRecord.decode(
+          notifier.updatedActivityStructuredDataJson!,
+        )?.occurredAt,
+        yesterday,
+      ),
+      isTrue,
     );
   });
 
@@ -1955,7 +2414,53 @@ void main() {
     expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
   });
 
-  testWidgets('Windows에서는 이벤트 수정 화면을 중앙 대화상자로 연다', (tester) async {
+  testWidgets(
+    'meal edit uses the page title and keeps its content at the top',
+    (tester) async {
+      final now = DateTime.now();
+      final diary = DiaryEntity(
+        id: 90,
+        recordId: 'meal-edit-header',
+        date: now,
+        title: '',
+        content: '',
+        lastModified: now,
+      );
+      diary.activities.add(
+        ActivityEntity(
+          id: 901,
+          type: '\uC774\uC720\uC2DD\u00B7\uC2DD\uC0AC',
+          time: now,
+          details: '',
+          structuredDataJson: IntakeRecord(
+            kind: IntakeRecordKind.meal,
+            mealType: MealType.lunch,
+            amountExpression: const AmountExpression.qualitative(
+              QualitativeLevel.normal,
+            ),
+          ).encode(),
+          lastModified: now,
+        ),
+      );
+
+      await tester.pumpWidget(_buildApp(diaries: [diary]));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('today-activity:901')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CloseButton), findsOneWidget);
+      expect(find.text('이유식'), findsOneWidget);
+      expect(find.byKey(const Key('back-to-record-types')), findsNothing);
+
+      final appBarBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+      final formTop = tester
+          .getTopLeft(find.byKey(const Key('intake-record-form')))
+          .dy;
+      expect(formTop, lessThanOrEqualTo(appBarBottom + 1));
+    },
+  );
+
+  testWidgets('Windows에서는 이벤트 수정 화면을 독립 페이지로 연다', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     final now = DateTime.now();
@@ -1986,12 +2491,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('today-activity:911')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byKey(const Key('adaptive-detail-page')), findsOneWidget);
+    expect(find.byType(Dialog), findsNothing);
     expect(find.byType(BottomSheet), findsNothing);
-    expect(
-      find.byKey(const Key('expanded-adaptive-detail-dialog')),
-      findsOneWidget,
-    );
     expect(find.byKey(const Key('temperature-event-form')), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
@@ -2080,5 +2582,65 @@ void main() {
     expect(node.label, isNot(contains('읽기 전용')));
     expect(node.flagsCollection.isButton, isTrue);
     semantics.dispose();
+  });
+
+  testWidgets('해열제를 별도로 투약한 기록은 중복 저장소 오류 없이 저장한다', (tester) async {
+    final now = DateTime.now();
+    final existingRecord = MedicationRecord(
+      medicationId: 'existing-antipyretic',
+      category: MedicationCategory.antipyretic,
+      medicationName: '해열제',
+      route: MedicationRoute.unknown,
+      administeredAt: now.subtract(const Duration(hours: 1)),
+      ingredient: AntipyreticIngredient.acetaminophen,
+    );
+    final diary =
+        DiaryEntity(
+            id: 95,
+            recordId: 'antipyretic-diary',
+            date: now,
+            title: '해열제 기록',
+            content: '',
+            lastModified: now,
+          )
+          ..activities.add(
+            ActivityEntity(
+              recordId: 'existing-antipyretic-record',
+              type: '해열제',
+              time: existingRecord.administeredAt,
+              details: '아세트아미노펜',
+              structuredDataJson: existingRecord.encode(),
+              lastModified: now,
+            ),
+          );
+    final notifier = _TestDiaryListNotifier([diary]);
+
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], diaryNotifier: notifier),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
+    final medication = find.byKey(const Key('category-event-medication'));
+    await tester.ensureVisible(medication);
+    await tester.tap(medication);
+    await tester.pumpAndSettle();
+
+    final save = find.byKey(const Key('save-medication-btn'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('antipyretic-dup-distinct-btn')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('antipyretic-dup-distinct-btn')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.addedActivityType, '해열제');
+    expect(notifier.deletedActivityRecordId, isNull);
+    expect(find.text('해열제 기록을 저장했어요.'), findsOneWidget);
+    expect(find.text('기록을 저장하지 못했어요. 입력 내용은 그대로 유지됩니다.'), findsNothing);
   });
 }

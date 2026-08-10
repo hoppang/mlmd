@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/presentation/app_section_header.dart';
+import '../../../core/presentation/picker_pages.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/activity_entity.dart';
 import '../../../models/shared_custom_event_definition_entity.dart';
 import '../../diary/application/diary_list_notifier.dart';
-import '../../duplicate_review/application/duplicate_review_notifier.dart';
 import '../application/custom_event_notifier.dart';
 import '../domain/antipyretic_duplicate_check.dart';
 import '../domain/elimination_record.dart';
@@ -172,6 +172,24 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
 
   bool get _isEditing => widget.editActivity != null;
 
+  List<String> _recentMedicationNotes() {
+    final activities = [
+      for (final diary in ref.watch(diaryListProvider)) ...diary.activities,
+    ]..sort((a, b) => b.time.compareTo(a.time));
+    final seen = <String>{};
+    final notes = <String>[];
+    for (final activity in activities) {
+      final record = MedicationRecord.decode(activity.structuredDataJson ?? '');
+      final note = record?.note?.trim();
+      if (record == null || note == null || note.isEmpty || !seen.add(note)) {
+        continue;
+      }
+      notes.add(note);
+      if (notes.length == 5) break;
+    }
+    return notes;
+  }
+
   Future<String> _persistEvent({
     required String type,
     required String details,
@@ -280,7 +298,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   }
 
   Future<void> _changeTime() async {
-    final time = await showTimePicker(
+    final time = await showTimePickerPage(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_occurredAt),
     );
@@ -454,7 +472,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = result.medicationName;
-      final recordId = await _persistEvent(
+      String? recordId = await _persistEvent(
         type: savedName,
         details: result.details,
         occurredAt: result.record.administeredAt,
@@ -481,20 +499,9 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                 ),
               );
 
-          if (decision == AntipyreticDuplicateDecision.distinctEvent &&
-              mounted) {
-            final pairKey = '${candidate.existingActivity.recordId}|$recordId';
-            ref
-                .read(duplicateReviewListProvider.notifier)
-                .markDistinct(pairKey);
-          } else if (decision == AntipyreticDuplicateDecision.sameEvent &&
-              mounted) {
-            final pairKey = '${candidate.existingActivity.recordId}|$recordId';
-            if (candidate.existingActivity.recordId != null) {
-              ref
-                  .read(duplicateReviewListProvider.notifier)
-                  .useRepresentative(pairKey, recordId);
-            }
+          if (decision == AntipyreticDuplicateDecision.sameEvent && mounted) {
+            await widget.onDelete(recordId);
+            recordId = null;
           }
         }
       }
@@ -1033,9 +1040,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   }
 
   Future<String?> _requestCustomEventName({String initialName = ''}) {
-    return showDialog<String>(
-      context: context,
-      builder: (_) => _CustomEventNameDialog(initialName: initialName),
+    return Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        fullscreenDialog: true,
+        builder: (_) => _CustomEventNameDialog(initialName: initialName),
+      ),
     );
   }
 
@@ -1101,14 +1110,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
         if (!didPop) _finishElimination();
       },
       child: SafeArea(
-        child: ConstrainedBox(
-          constraints: _isEditing
-              ? BoxConstraints.tightFor(
-                  height: MediaQuery.sizeOf(context).height * 0.9,
-                )
-              : BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
-                ),
+        child: SizedBox.expand(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1126,6 +1128,10 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                 fit: _isEditing ? FlexFit.tight : FlexFit.loose,
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 180),
+                  layoutBuilder: (currentChild, previousChildren) => Stack(
+                    alignment: Alignment.topCenter,
+                    children: [...previousChildren, ?currentChild],
+                  ),
                   child: selected == null && custom == null && !_isEditing
                       ? _EventPicker(
                           key: const ValueKey('event-picker'),
@@ -1171,6 +1177,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                             _selectedItem = null;
                             _error = null;
                           }),
+                          showBackButton: false,
                           onSave: (relativeState, memo) =>
                               _saveDailyCheckIn(selected, relativeState, memo),
                         )
@@ -1182,6 +1189,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           error: _error,
                           allowUndo: !_isEditing,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onQuickSave: (kind) =>
                               _saveElimination(selected!, kind),
                           onUpdate: _updateElimination,
@@ -1197,6 +1205,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? null
                               : SleepRecord.decode(_structuredDataJson!),
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onSave: _saveSleep,
                         )
                       : custom == null && selectedId == EventTypeId.temperature
@@ -1209,7 +1218,9 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? null
                               : TemperatureRecord.decode(_structuredDataJson!),
                           onBack: _closeOrReturnToPicker,
-                          onChangeTime: _changeTime,
+                          showBackButton: false,
+                          onOccurredAtChanged: (value) =>
+                              setState(() => _occurredAt = value),
                           onSave: _saveTemperature,
                         )
                       : custom == null && selectedId == EventTypeId.symptom
@@ -1222,6 +1233,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? null
                               : SymptomRecord.decode(_structuredDataJson!),
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveSymptom,
                         )
@@ -1234,7 +1246,9 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           initialRecord: _structuredDataJson == null
                               ? null
                               : MedicationRecord.decode(_structuredDataJson!),
+                          recentMedicationNotes: _recentMedicationNotes(),
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveMedication,
                         )
@@ -1251,6 +1265,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                                 ),
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveHospital,
                         )
@@ -1265,6 +1280,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               : VaccinationRecord.decode(_structuredDataJson!),
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveVaccination,
                         )
@@ -1282,6 +1298,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                                 ),
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveAccident,
                         )
@@ -1297,6 +1314,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               : null,
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveCareProcedure,
                         )
@@ -1310,6 +1328,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? PumpingRecord.decode(_structuredDataJson!)
                               : null,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onOccurredAtChanged: (value) =>
                               setState(() => _occurredAt = value),
@@ -1325,6 +1344,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? TummyTimeRecord.decode(_structuredDataJson!)
                               : null,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveTummyTime,
                         )
@@ -1339,6 +1359,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               : null,
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveBath,
                         )
@@ -1355,6 +1376,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                                 )
                               : null,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveGrowthMeasurement,
                         )
@@ -1368,6 +1390,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? MemoRecord.decode(_structuredDataJson!)
                               : null,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveMemo,
                         )
@@ -1382,10 +1405,12 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           error: _error,
                           initialStructuredDataJson: _structuredDataJson,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onOccurredAtChanged: (value) =>
                               setState(() => _occurredAt = value),
                           onSave: _saveIntake,
+                          showHeader: !_isEditing,
                         )
                       : _EventForm(
                           key: ValueKey(
@@ -1406,6 +1431,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           saving: _saving,
                           error: _error,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _save,
                         ),
@@ -1426,6 +1452,7 @@ class _DailyCheckInForm extends StatefulWidget {
     required this.error,
     required this.onBack,
     required this.onSave,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -1433,6 +1460,7 @@ class _DailyCheckInForm extends StatefulWidget {
   final bool saving;
   final String? error;
   final VoidCallback onBack;
+  final bool showBackButton;
   final void Function(TrackingRelativeState relativeState, String memo) onSave;
 
   @override
@@ -1460,12 +1488,14 @@ class _DailyCheckInFormState extends State<_DailyCheckInForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (widget.showBackButton) ...[
+                IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               Expanded(
                 child: Text(
                   loc.dailyTrackingCheckInTitle(widget.item.label(loc)),
@@ -1588,10 +1618,6 @@ class _EventPicker extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            loc.recordSheetTitle,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
           if (onEditQuickLaunch != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Align(
@@ -1611,41 +1637,15 @@ class _EventPicker extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             children: [
               for (final item in quickItems)
-                if (item.id == EventTypeId.diaper) ...[
-                  _EliminationPresetChip(
-                    key: const Key('quick-record-diaper-urine'),
-                    label: loc.eliminationUrinePreset,
-                    icon: Icons.water_drop_outlined,
-                    onTap: saving
-                        ? null
-                        : () => onQuickElimination(item, EliminationKind.urine),
-                  ),
-                  _EliminationPresetChip(
-                    key: const Key('quick-record-diaper-stool'),
-                    label: loc.eliminationStoolPreset,
-                    icon: Icons.circle_outlined,
-                    onTap: saving
-                        ? null
-                        : () => onQuickElimination(item, EliminationKind.stool),
-                  ),
-                  _EliminationPresetChip(
-                    key: const Key('quick-record-diaper-both'),
-                    label: loc.eliminationBothPreset,
-                    icon: Icons.done_all,
-                    onTap: saving
-                        ? null
-                        : () => onQuickElimination(item, EliminationKind.both),
-                  ),
-                ] else
-                  _EventChoiceChip(
-                    key: Key('quick-record-${item.id.name}'),
-                    item: item,
-                    onTap: saving
-                        ? null
-                        : () => item.id == EventTypeId.sleep
-                              ? onStartSleep(item)
-                              : onSelect(item),
-                  ),
+                _EventChoiceChip(
+                  key: Key('quick-record-${item.id.name}'),
+                  item: item,
+                  onTap: saving
+                      ? null
+                      : () => item.id == EventTypeId.sleep
+                            ? onStartSleep(item)
+                            : onSelect(item),
+                ),
               for (final definition in customState.pinnedDefinitions)
                 ActionChip(
                   key: Key('quick-custom-${definition.customEventTypeId}'),
@@ -1700,27 +1700,14 @@ class _EventPicker extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          AppSectionHeader(title: loc.allCategoriesTitle),
           for (final category in EventCategoryId.values)
-            ExpansionTile(
+            _ExpandedEventCategory(
               key: Key('event-category-${category.name}'),
-              tilePadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xs,
-              ),
-              childrenPadding: const EdgeInsets.only(bottom: AppSpacing.xs),
-              title: Text(eventCategoryLabel(category, loc)),
-              children: [
-                for (final item in eventCatalog.where(
-                  (item) => item.category == category,
-                ))
-                  ListTile(
-                    key: Key('category-event-${item.id.name}'),
-                    leading: Icon(item.icon),
-                    title: Text(item.label(loc)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => onSelect(item),
-                  ),
-              ],
+              title: eventCategoryLabel(category, loc),
+              items: eventCatalog
+                  .where((item) => item.category == category)
+                  .toList(growable: false),
+              onSelect: onSelect,
             ),
           const SizedBox(height: AppSpacing.md),
           AppSectionHeader(title: loc.myRecordsTitle),
@@ -1791,6 +1778,70 @@ class _EventPicker extends StatelessWidget {
   }
 }
 
+class _ExpandedEventCategory extends StatelessWidget {
+  const _ExpandedEventCategory({
+    required this.title,
+    required this.items,
+    required this.onSelect,
+    super.key,
+  });
+
+  final String title;
+  final List<EventCatalogItem> items;
+  final ValueChanged<EventCatalogItem> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppSectionHeader(title: title),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columnCount = constraints.maxWidth >= 680
+                  ? 4
+                  : constraints.maxWidth >= 480
+                  ? 3
+                  : 2;
+              final spacing = AppSpacing.xs * (columnCount - 1);
+              final itemWidth = (constraints.maxWidth - spacing) / columnCount;
+              return Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  for (final item in items)
+                    SizedBox(
+                      width: itemWidth,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        key: Key('category-event-${item.id.name}'),
+                        onPressed: () => onSelect(item),
+                        style: OutlinedButton.styleFrom(
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                          ),
+                        ),
+                        icon: Icon(item.icon, size: 19),
+                        label: Text(
+                          item.label(AppLocalizations.of(context)!),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EventChoiceChip extends StatelessWidget {
   const _EventChoiceChip({required this.item, required this.onTap, super.key});
 
@@ -1802,28 +1853,6 @@ class _EventChoiceChip extends StatelessWidget {
     return ActionChip(
       avatar: Icon(item.icon, size: 18),
       label: Text(item.label(AppLocalizations.of(context)!)),
-      onPressed: onTap,
-    );
-  }
-}
-
-class _EliminationPresetChip extends StatelessWidget {
-  const _EliminationPresetChip({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: Icon(icon, size: 18),
-      label: Text(label),
       onPressed: onTap,
     );
   }
@@ -1841,6 +1870,7 @@ class _EventForm extends StatelessWidget {
     required this.onBack,
     required this.onChangeTime,
     required this.onSave,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -1854,6 +1884,7 @@ class _EventForm extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onChangeTime;
   final VoidCallback onSave;
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context) {
@@ -1872,13 +1903,15 @@ class _EventForm extends StatelessWidget {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: saving ? null : onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: saving ? null : onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               Icon(icon),
               const SizedBox(width: AppSpacing.xs),
               Expanded(
@@ -1998,14 +2031,16 @@ class _CustomEventNameDialogState extends State<_CustomEventNameDialog> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(
-        widget.initialName.isEmpty
-            ? loc.createCustomEvent
-            : loc.renameCustomEvent,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.initialName.isEmpty
+              ? loc.createCustomEvent
+              : loc.renameCustomEvent,
+        ),
       ),
-      content: SizedBox(
-        width: 360,
+      body: SafeArea(
+        minimum: AppInsets.page,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2037,17 +2072,15 @@ class _CustomEventNameDialogState extends State<_CustomEventNameDialog> {
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(loc.cancel),
-        ),
-        FilledButton(
+      bottomNavigationBar: SafeArea(
+        minimum: AppInsets.page,
+        child: FilledButton.icon(
           key: const Key('save-custom-event-name'),
           onPressed: _submit,
-          child: Text(loc.saveRecord),
+          icon: const Icon(Icons.check),
+          label: Text(loc.saveRecord),
         ),
-      ],
+      ),
     );
   }
 }

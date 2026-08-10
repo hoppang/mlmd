@@ -317,7 +317,7 @@ bool _validateKind({
       }
       return true;
     case IntakeRecordKind.meal:
-      return mealType != null && amountExpression != null;
+      return amountExpression != null;
     case IntakeRecordKind.water:
       return amountExpression != null && foodName == null;
     case IntakeRecordKind.snack:

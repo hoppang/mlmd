@@ -24,7 +24,9 @@ class MedicationEventForm extends StatefulWidget {
     required this.onBack,
     required this.onChangeTime,
     required this.onSave,
+    this.showBackButton = true,
     this.initialRecord,
+    this.recentMedicationNotes = const [],
     super.key,
   });
 
@@ -32,9 +34,11 @@ class MedicationEventForm extends StatefulWidget {
   final bool saving;
   final String? error;
   final VoidCallback onBack;
+  final bool showBackButton;
   final VoidCallback onChangeTime;
   final ValueChanged<MedicationFormResult> onSave;
   final MedicationRecord? initialRecord;
+  final List<String> recentMedicationNotes;
 
   @override
   State<MedicationEventForm> createState() => _MedicationEventFormState();
@@ -43,27 +47,26 @@ class MedicationEventForm extends StatefulWidget {
 class _MedicationEventFormState extends State<MedicationEventForm> {
   late MedicationCategory _category;
   late AntipyreticIngredient _ingredient;
-  late MedicationRoute _route;
 
   late final TextEditingController _amountController;
   late final TextEditingController _unitController;
-  late final TextEditingController _siteController;
   late final TextEditingController _noteController;
 
   @override
   void initState() {
     super.initState();
     final initial = widget.initialRecord;
-    _category = initial?.category ?? MedicationCategory.antipyretic;
+    _category = switch (initial?.category) {
+      MedicationCategory.ointment ||
+      MedicationCategory.eyeEarNose => MedicationCategory.other,
+      final category? => category,
+      null => MedicationCategory.antipyretic,
+    };
     _ingredient = initial?.ingredient ?? AntipyreticIngredient.acetaminophen;
-    _route = initial?.route ?? MedicationRoute.oral;
     _amountController = TextEditingController(
       text: initial?.amount?.toString() ?? '',
     );
     _unitController = TextEditingController(text: initial?.unit ?? 'mL');
-    _siteController = TextEditingController(
-      text: initial?.administrationSite ?? '',
-    );
     _noteController = TextEditingController(text: initial?.note ?? '');
   }
 
@@ -71,7 +74,6 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
   void dispose() {
     _amountController.dispose();
     _unitController.dispose();
-    _siteController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -80,12 +82,7 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
     setState(() {
       _category = cat;
       if (cat == MedicationCategory.antipyretic) {
-        _route = MedicationRoute.oral;
         _ingredient = AntipyreticIngredient.acetaminophen;
-      } else if (cat == MedicationCategory.ointment) {
-        _route = MedicationRoute.topical;
-      } else {
-        _route = MedicationRoute.oral;
       }
     });
   }
@@ -98,9 +95,6 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
     final amountVal = double.tryParse(amountText);
     final unitVal = amountVal != null ? _unitController.text.trim() : null;
 
-    final siteText = _siteController.text.trim();
-    final siteVal = siteText.isNotEmpty ? siteText : null;
-
     final noteText = _noteController.text.trim();
     final noteVal = noteText.isNotEmpty ? noteText : null;
 
@@ -110,14 +104,13 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
           'med_${DateTime.now().microsecondsSinceEpoch}',
       category: _category,
       medicationName: medicationName,
-      route: _route,
+      route: MedicationRoute.unknown,
       administeredAt: widget.occurredAt,
       ingredient: _category == MedicationCategory.antipyretic
           ? _ingredient
           : null,
       amount: amountVal,
       unit: unitVal,
-      administrationSite: siteVal,
       note: noteVal,
     );
 
@@ -147,11 +140,12 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
           // Header
           Row(
             children: [
-              IconButton(
-                key: const Key('medication-back-btn'),
-                icon: const Icon(Icons.arrow_back),
-                onPressed: widget.onBack,
-              ),
+              if (widget.showBackButton)
+                IconButton(
+                  key: const Key('medication-back-btn'),
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: widget.onBack,
+                ),
               Expanded(
                 child: Text(
                   loc.medicationEvent,
@@ -187,7 +181,7 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
             spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
             children: [
-              for (final cat in MedicationCategory.values)
+              for (final cat in selectableMedicationCategories)
                 ChoiceChip(
                   key: Key('medication-cat-${cat.name}'),
                   label: Text(medicationCategoryLabel(loc, cat)),
@@ -246,56 +240,6 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Route selection
-          Text(
-            loc.medicationRouteTitle,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              ChoiceChip(
-                key: const Key('route-oral-chip'),
-                label: Text(loc.medicationRouteOral),
-                selected: _route == MedicationRoute.oral,
-                onSelected: (_) =>
-                    setState(() => _route = MedicationRoute.oral),
-              ),
-              ChoiceChip(
-                key: const Key('route-suppository-chip'),
-                label: Text(loc.medicationRouteSuppository),
-                selected: _route == MedicationRoute.suppository,
-                onSelected: (_) =>
-                    setState(() => _route = MedicationRoute.suppository),
-              ),
-              ChoiceChip(
-                key: const Key('route-topical-chip'),
-                label: Text(loc.medicationRouteTopical),
-                selected: _route == MedicationRoute.topical,
-                onSelected: (_) =>
-                    setState(() => _route = MedicationRoute.topical),
-              ),
-              ChoiceChip(
-                key: const Key('route-inhaled-chip'),
-                label: Text(loc.medicationRouteInhaled),
-                selected: _route == MedicationRoute.inhaled,
-                onSelected: (_) =>
-                    setState(() => _route = MedicationRoute.inhaled),
-              ),
-              ChoiceChip(
-                key: const Key('route-other-chip'),
-                label: Text(loc.medicationRouteOther),
-                selected: _route == MedicationRoute.other,
-                onSelected: (_) =>
-                    setState(() => _route = MedicationRoute.other),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
           // Optional Dose & Unit
           Row(
             children: [
@@ -330,21 +274,6 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
             ],
           ),
 
-          // Optional Administration Site for Topical / Non-oral
-          if (_route == MedicationRoute.topical ||
-              _route == MedicationRoute.other) ...[
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              key: const Key('medication-site-input'),
-              controller: _siteController,
-              decoration: InputDecoration(
-                labelText: loc.medicationSiteLabel,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-          ],
-
           const SizedBox(height: AppSpacing.sm),
 
           // Optional Note
@@ -357,6 +286,32 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
               isDense: true,
             ),
           ),
+
+          if (widget.recentMedicationNotes.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              loc.recentMedicationNotesTitle,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                for (final note in widget.recentMedicationNotes)
+                  ActionChip(
+                    key: Key('recent-medication-note-$note'),
+                    label: Text(note),
+                    onPressed: () {
+                      _noteController.text = note;
+                      _noteController.selection = TextSelection.collapsed(
+                        offset: note.length,
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ],
 
           const SizedBox(height: AppSpacing.md),
 

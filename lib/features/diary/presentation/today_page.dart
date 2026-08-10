@@ -15,8 +15,14 @@ import '../../../repositories/record_draft_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../drafts/presentation/draft_resume_card.dart';
 import '../../duplicate_review/application/duplicate_review_notifier.dart';
+import '../../events/domain/accident_injury_record.dart';
+import '../../events/domain/care_procedure_record.dart';
+import '../../events/domain/elimination_record.dart';
+import '../../events/domain/event_catalog.dart';
 import '../../events/domain/medical_guidance.dart';
+import '../../events/domain/medication_record.dart';
 import '../../events/domain/sleep_record.dart';
+import '../../events/domain/symptom_record.dart';
 import '../../events/presentation/medical_guidance_widgets.dart';
 import '../../events/presentation/sleep_date_time_picker.dart';
 import '../../events/presentation/sleep_event_form.dart';
@@ -146,21 +152,121 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     return entries;
   }
 
-  Map<String, int> _activityCounts(List<DiaryEntity> todayDiaries) {
-    final counts = <String, int>{};
+  List<_TodayStatusGroup> _activityCounts(
+    List<DiaryEntity> todayDiaries,
+    List<DiaryEntity> allDiaries,
+    AppLocalizations loc,
+  ) {
+    final now = DateTime.now();
+    final latestAntipyreticDoses = <AntipyreticIngredient, DateTime>{};
+    for (final diary in allDiaries) {
+      for (final activity in diary.activities) {
+        final medication = MedicationRecord.decode(
+          activity.structuredDataJson ?? '',
+        );
+        final ingredient = medication?.ingredient;
+        if (medication?.category != MedicationCategory.antipyretic ||
+            (ingredient != AntipyreticIngredient.acetaminophen &&
+                ingredient != AntipyreticIngredient.ibuprofen) ||
+            medication!.administeredAt.isAfter(now)) {
+          continue;
+        }
+        final previous = latestAntipyreticDoses[ingredient];
+        if (previous == null || medication.administeredAt.isAfter(previous)) {
+          latestAntipyreticDoses[ingredient!] = medication.administeredAt;
+        }
+      }
+    }
+
+    final counts = <String, _TodayStatusGroupBuilder>{};
     for (final diary in todayDiaries) {
       for (final activity in diary.activities) {
         final sleep = SleepRecord.decode(activity.structuredDataJson ?? '');
         if (sleep?.status == SleepRecordStatus.active) continue;
         final type = activity.type.trim();
-        if (type.isNotEmpty) {
-          counts.update(type, (count) => count + 1, ifAbsent: () => 1);
+        if (type.isEmpty) continue;
+
+        final catalogItem =
+            eventCatalogItemForActivity(activity) ??
+            eventCatalog.where((item) => item.matches(type)).firstOrNull;
+        final key = catalogItem == null ? 'legacy:$type' : catalogItem.id.name;
+        final builder = counts.putIfAbsent(
+          key,
+          () => _TodayStatusGroupBuilder(
+            key: key,
+            label: catalogItem?.label(loc) ?? type,
+            icon: catalogItem?.icon ?? Icons.check_circle_outline,
+          ),
+        );
+        builder.total += 1;
+        final endedAt = sleep?.endedAt;
+        if (sleep?.status == SleepRecordStatus.completed && endedAt != null) {
+          final duration = endedAt.difference(sleep!.startedAt);
+          if (!duration.isNegative) {
+            builder.hasCompletedSleep = true;
+            builder.completedSleepDuration += duration;
+          }
+        }
+
+        final subtype = _activitySubtype(activity, catalogItem, loc);
+        if (subtype != null) {
+          builder.subtypeCounts.update(
+            subtype,
+            (count) => count + 1,
+            ifAbsent: () => 1,
+          );
         }
       }
     }
-    return Map.fromEntries(
-      counts.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    counts[EventTypeId.medication.name]?.latestAntipyreticDoses.addAll(
+      latestAntipyreticDoses,
     );
+    return counts.values.map((builder) => builder.build(loc, now)).toList()
+      ..sort((a, b) => a.label.compareTo(b.label));
+  }
+
+  String? _activitySubtype(
+    ActivityEntity activity,
+    EventCatalogItem? catalogItem,
+    AppLocalizations loc,
+  ) {
+    if (catalogItem == null) return null;
+    final encoded = activity.structuredDataJson ?? '';
+
+    final medication = MedicationRecord.decode(encoded);
+    if (medication != null) {
+      return medicationCategoryLabel(loc, medication.category);
+    }
+    final symptom = SymptomRecord.decode(encoded);
+    if (symptom != null && symptom.symptomName.trim().isNotEmpty) {
+      return symptom.symptomName.trim();
+    }
+    final procedure = CareProcedureRecord.decode(encoded);
+    if (procedure != null) {
+      return procedure.procedureType.label(loc);
+    }
+    final accident = AccidentInjuryRecord.decode(encoded);
+    if (accident != null) {
+      final customType = accident.customType?.trim();
+      return customType?.isNotEmpty == true
+          ? customType
+          : accident.injuryType.label(loc);
+    }
+    final elimination = EliminationRecord.decode(encoded);
+    if (elimination != null) {
+      return switch (elimination.kind) {
+        EliminationKind.urine => loc.eliminationUrinePreset,
+        EliminationKind.stool => loc.eliminationStoolPreset,
+        EliminationKind.both => loc.eliminationBothPreset,
+      };
+    }
+
+    final storedType = activity.type.trim();
+    if (!catalogItem.matches(storedType) &&
+        storedType != catalogItem.label(loc)) {
+      return storedType;
+    }
+    return null;
   }
 
   void _openEntry(_TodayTimelineEntry entry) {
@@ -253,93 +359,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         .editActiveSleepStart(recordId, value);
   }
 
-  Future<void> _editSleepMarkers(ActivityEntity activity) async {
-    final record = SleepRecord.decode(activity.structuredDataJson ?? '');
-    final recordId = activity.recordId;
-    if (record == null ||
-        record.status != SleepRecordStatus.completed ||
-        recordId == null) {
-      return;
-    }
-    final selected = record.markers.toSet();
-    final result = await showDialog<List<SleepRecordMarker>>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final loc = AppLocalizations.of(context)!;
-          return AlertDialog(
-            title: Text(loc.sleepMarkersTitle),
-            content: SizedBox(
-              width: 420,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(loc.sleepMarkersHint),
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
-                    children: [
-                      for (final marker in SleepRecordMarker.values)
-                        FilterChip(
-                          key: Key('edit-sleep-marker-${marker.name}'),
-                          label: Text(sleepMarkerLabel(loc, marker)),
-                          selected: selected.contains(marker),
-                          onSelected: (value) => setDialogState(() {
-                            value
-                                ? selected.add(marker)
-                                : selected.remove(marker);
-                          }),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(loc.cancel),
-              ),
-              FilledButton(
-                key: const Key('save-sleep-markers'),
-                onPressed: () => Navigator.pop(
-                  dialogContext,
-                  selected.toList(growable: false),
-                ),
-                child: Text(loc.saveRecord),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-    if (result == null || !mounted) return;
-    final updated = SleepRecord(
-      status: record.status,
-      kind: record.kind,
-      source: record.source,
-      startedAt: record.startedAt,
-      endedAt: record.endedAt,
-      markers: result,
-      endedByAuthorProfileId: record.endedByAuthorProfileId,
-      endedByDeviceProfileId: record.endedByDeviceProfileId,
-      note: record.note,
-    );
-    await ref
-        .read(diaryListProvider.notifier)
-        .updateSleepMarkers(
-          recordId,
-          result,
-          details: sleepRecordDetails(AppLocalizations.of(context)!, updated),
-        );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.sleepMarkersSaved)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final diaries = ref.watch(diaryListProvider);
@@ -357,7 +376,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         .where((diary) => _isToday(diary.date))
         .toList();
     final entries = _timelineEntries(todayDiaries);
-    final counts = _activityCounts(todayDiaries);
+    final counts = _activityCounts(todayDiaries, diaries, loc);
     final showAuthorTags = shouldShowAuthorTags(
       diaries,
       ref.watch(profileRepositoryProvider),
@@ -476,15 +495,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                 child: Wrap(
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
-                  children: counts.entries
+                  children: counts
                       .map(
-                        (entry) => Chip(
-                          avatar: const Icon(
-                            Icons.check_circle_outline,
-                            size: 16,
-                          ),
-                          label: Text('${entry.key} · ${entry.value}'),
-                          visualDensity: VisualDensity.compact,
+                        (group) => _TodayStatusBadge(
+                          key: ValueKey('today-status-${group.key}'),
+                          group: group,
                         ),
                       )
                       .toList(),
@@ -516,10 +531,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                   entry: entry,
                   showAuthorTag: showAuthorTags,
                   onTap: () => _openEntry(entry),
-                  onAddSleepMarkers:
-                      entry.sleepRecord?.status == SleepRecordStatus.completed
-                      ? () => _editSleepMarkers(entry.activity!)
-                      : null,
                 );
               },
             ),
@@ -562,6 +573,173 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       ),
     );
   }
+}
+
+class _TodayStatusBadge extends StatelessWidget {
+  const _TodayStatusBadge({required this.group, super.key});
+
+  final _TodayStatusGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 140, maxWidth: 260),
+      child: IntrinsicWidth(
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: colors.surface,
+            border: Border.all(color: colors.outlineVariant),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                color: colors.primaryContainer,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: 6,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      group.icon,
+                      size: 15,
+                      color: colors.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${group.label} ${group.total}',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colors.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (group.details.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: 7,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final detail in group.details)
+                        Text(
+                          detail.text,
+                          key: ValueKey(detail.key),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurface,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayStatusGroupBuilder {
+  _TodayStatusGroupBuilder({
+    required this.key,
+    required this.label,
+    required this.icon,
+  });
+
+  final String key;
+  final String label;
+  final IconData icon;
+  int total = 0;
+  final Map<String, int> subtypeCounts = {};
+  bool hasCompletedSleep = false;
+  Duration completedSleepDuration = Duration.zero;
+  final Map<AntipyreticIngredient, DateTime> latestAntipyreticDoses = {};
+
+  _TodayStatusGroup build(AppLocalizations loc, DateTime now) {
+    final sortedSubtypes = Map.fromEntries(
+      subtypeCounts.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+    final details = <_TodayStatusDetail>[];
+    if (sortedSubtypes.length > 1) {
+      details.add(
+        _TodayStatusDetail(
+          key: 'today-status-subtypes-$key',
+          text: sortedSubtypes.entries
+              .map((entry) => '${entry.key} ${entry.value}')
+              .join('   '),
+        ),
+      );
+    }
+    if (hasCompletedSleep) {
+      details.add(
+        _TodayStatusDetail(
+          key: 'today-status-sleep-total-$key',
+          text: loc.todayStatusSleepTotal(
+            formatSleepDuration(loc, completedSleepDuration),
+          ),
+        ),
+      );
+    }
+    for (final ingredient in const [
+      AntipyreticIngredient.acetaminophen,
+      AntipyreticIngredient.ibuprofen,
+    ]) {
+      final administeredAt = latestAntipyreticDoses[ingredient];
+      if (administeredAt == null) continue;
+      details.add(
+        _TodayStatusDetail(
+          key: 'today-status-last-dose-${ingredient.name}-$key',
+          text: loc.todayStatusLastDoseElapsed(
+            antipyreticIngredientLabel(loc, ingredient),
+            formatSleepDuration(loc, now.difference(administeredAt)),
+          ),
+        ),
+      );
+    }
+    return _TodayStatusGroup(
+      key: key,
+      label: label,
+      icon: icon,
+      total: total,
+      details: details,
+    );
+  }
+}
+
+class _TodayStatusDetail {
+  const _TodayStatusDetail({required this.key, required this.text});
+
+  final String key;
+  final String text;
+}
+
+class _TodayStatusGroup {
+  const _TodayStatusGroup({
+    required this.key,
+    required this.label,
+    required this.icon,
+    required this.total,
+    required this.details,
+  });
+
+  final String key;
+  final String label;
+  final IconData icon;
+  final int total;
+  final List<_TodayStatusDetail> details;
 }
 
 class _ActiveSleepCard extends StatelessWidget {
@@ -647,8 +825,6 @@ class _TodayTimelineEntry {
       : 'today-activity:${activity!.id}';
   String? get authorProfileId =>
       activity?.createdByAuthorProfileId ?? diary.createdByAuthorProfileId;
-  SleepRecord? get sleepRecord =>
-      SleepRecord.decode(activity?.structuredDataJson ?? '');
   bool get requiresMedicalAttention =>
       evaluateMedicalGuidance(activity).requiresAttention;
 }
@@ -658,14 +834,12 @@ class _TimelineItem extends StatelessWidget {
     required this.entry,
     required this.showAuthorTag,
     required this.onTap,
-    this.onAddSleepMarkers,
     super.key,
   });
 
   final _TodayTimelineEntry entry;
   final bool showAuthorTag;
   final VoidCallback onTap;
-  final VoidCallback? onAddSleepMarkers;
 
   @override
   Widget build(BuildContext context) {
@@ -736,20 +910,6 @@ class _TimelineItem extends StatelessWidget {
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: MedicalAttentionLabel(),
-                      ),
-                    ],
-                    if (onAddSleepMarkers != null) ...[
-                      const SizedBox(height: AppSpacing.xxs),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          key: Key(
-                            'add-sleep-markers-${entry.activity!.recordId ?? entry.activity!.id}',
-                          ),
-                          onPressed: onAddSleepMarkers,
-                          icon: const Icon(Icons.add, size: 16),
-                          label: Text(loc.addSleepMarkers),
-                        ),
                       ),
                     ],
                   ],

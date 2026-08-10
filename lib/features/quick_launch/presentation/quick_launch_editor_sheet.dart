@@ -28,11 +28,11 @@ class _QuickLaunchEditorSheetState
   QuickLaunchEventTarget? _target;
   QuickLaunchExecutionMode _mode = QuickLaunchExecutionMode.instant;
   EliminationPreset _eliminationPreset = EliminationPreset.urine;
+  bool _movingSlot = false;
   final _labelController = TextEditingController();
+  final _scrollController = ScrollController();
 
-  int get _editableSlotCount => defaultTargetPlatform == TargetPlatform.windows
-      ? quickLaunchSlotCount
-      : quickLaunchCoreSlotCount;
+  int get _editableSlotCount => quickLaunchCoreSlotCount;
 
   @override
   void initState() {
@@ -48,6 +48,7 @@ class _QuickLaunchEditorSheetState
   @override
   void dispose() {
     _labelController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -102,14 +103,26 @@ class _QuickLaunchEditorSheetState
   }
 
   Future<void> _moveSelectedSlot(int offset) async {
+    if (_movingSlot) return;
+    final sourceIndex = _slotIndex;
     final targetIndex = _slotIndex + offset;
     if (targetIndex < 0 || targetIndex >= _editableSlotCount) return;
-    await ref
-        .read(quickLaunchProvider.notifier)
-        .moveSlot(_slotIndex, targetIndex);
-    if (!mounted) return;
-    _slotIndex = targetIndex;
-    _restoreCurrentSlot();
+    setState(() {
+      _slotIndex = targetIndex;
+      _movingSlot = true;
+    });
+    try {
+      await ref
+          .read(quickLaunchProvider.notifier)
+          .moveSlot(sourceIndex, targetIndex);
+      if (mounted) _restoreCurrentSlot();
+    } catch (_) {
+      if (!mounted) return;
+      _slotIndex = sourceIndex;
+      _restoreCurrentSlot();
+    } finally {
+      if (mounted) setState(() => _movingSlot = false);
+    }
   }
 
   Future<void> _save() async {
@@ -176,163 +189,248 @@ class _QuickLaunchEditorSheetState
     final layout = ref.watch(quickLaunchProvider).layout;
     final target = _target;
     return SafeArea(
-      child: SingleChildScrollView(
+      child: SizedBox(
         key: const Key('quick-launch-editor'),
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
-        ),
+        height: MediaQuery.sizeOf(context).height,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    loc.quickLaunchEditTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
+            Expanded(
+              child: Scrollbar(
+                key: const Key('quick-launch-editor-scrollbar'),
+                controller: _scrollController,
+                thumbVisibility: true,
+                trackVisibility: true,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              loc.quickLaunchEditTitle,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close),
+                            tooltip: loc.close,
+                          ),
+                        ],
+                      ),
+                      Text(loc.quickLaunchEditDescription),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        loc.quickLaunchChooseSlot,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final selector = SegmentedButton<int>(
+                            expandedInsets:
+                                defaultTargetPlatform == TargetPlatform.windows
+                                ? null
+                                : EdgeInsets.zero,
+                            segments: [
+                              for (
+                                var index = 0;
+                                index < _editableSlotCount;
+                                index++
+                              )
+                                ButtonSegment(
+                                  value: index,
+                                  label: Text('${index + 1}'),
+                                  tooltip: quickLaunchSlotLabel(
+                                    layout.slotAt(index),
+                                    loc,
+                                  ),
+                                ),
+                            ],
+                            selected: {_slotIndex},
+                            onSelectionChanged: (values) =>
+                                _selectSlot(values.first),
+                          );
+                          if (defaultTargetPlatform != TargetPlatform.windows) {
+                            return SizedBox(
+                              width: constraints.maxWidth,
+                              child: selector,
+                            );
+                          }
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: selector,
+                          );
+                        },
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            key: const Key('move-quick-launch-left'),
+                            onPressed: _movingSlot || _slotIndex == 0
+                                ? null
+                                : () => _moveSelectedSlot(-1),
+                            tooltip: loc.quickLaunchMoveLeft,
+                            icon: const Icon(Icons.arrow_back),
+                          ),
+                          IconButton(
+                            key: const Key('move-quick-launch-right'),
+                            onPressed:
+                                _movingSlot ||
+                                    _slotIndex == _editableSlotCount - 1
+                                ? null
+                                : () => _moveSelectedSlot(1),
+                            tooltip: loc.quickLaunchMoveRight,
+                            icon: const Icon(Icons.arrow_forward),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        loc.quickLaunchChooseEvent,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      for (final category in EventCategoryId.values) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.sm,
+                            bottom: AppSpacing.xs,
+                          ),
+                          child: Text(
+                            eventCategoryLabel(category, loc),
+                            key: Key('quick-launch-category-${category.name}'),
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                          ),
+                        ),
+                        Wrap(
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xs,
+                          children: [
+                            for (final item in eventCatalog.where(
+                              (item) => item.category == category,
+                            )) ...[
+                              if (item.id == EventTypeId.feeding) ...[
+                                for (final feedingTarget in const [
+                                  QuickLaunchEventTarget.feeding,
+                                  QuickLaunchEventTarget.formulaFeeding,
+                                  QuickLaunchEventTarget.breastFeeding,
+                                  QuickLaunchEventTarget.expressedMilkFeeding,
+                                ])
+                                  ChoiceChip(
+                                    key: Key(
+                                      'quick-launch-event-${feedingTarget.name}',
+                                    ),
+                                    avatar: Icon(item.icon, size: 18),
+                                    label: Text(
+                                      _quickLaunchTargetLabel(
+                                        feedingTarget,
+                                        loc,
+                                      ),
+                                    ),
+                                    selected: target == feedingTarget,
+                                    onSelected: (_) =>
+                                        _selectTarget(feedingTarget),
+                                  ),
+                              ] else if (item.id == EventTypeId.diaper) ...[
+                                for (final preset in EliminationPreset.values)
+                                  ChoiceChip(
+                                    key: Key(
+                                      'quick-launch-event-diaper${_presetKeySuffix(preset)}',
+                                    ),
+                                    avatar: Icon(_presetIcon(preset), size: 18),
+                                    label: Text(
+                                      _eliminationPresetLabel(preset, loc),
+                                    ),
+                                    selected:
+                                        target ==
+                                            QuickLaunchEventTarget.diaper &&
+                                        _eliminationPreset == preset,
+                                    onSelected: (_) =>
+                                        _selectEliminationPreset(preset),
+                                  ),
+                              ] else
+                                ChoiceChip(
+                                  key: Key(
+                                    'quick-launch-event-${item.id.name}',
+                                  ),
+                                  avatar: Icon(item.icon, size: 18),
+                                  label: Text(item.label(loc)),
+                                  selected: target?.name == item.id.name,
+                                  onSelected: (_) =>
+                                      _selectTarget(quickLaunchTarget(item.id)),
+                                ),
+                            ],
+                          ],
+                        ),
+                      ],
+                      if (target != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        _ExecutionPreview(
+                          mode: _mode,
+                          label: target == QuickLaunchEventTarget.diaper
+                              ? _eliminationPresetLabel(_eliminationPreset, loc)
+                              : _quickLaunchTargetLabel(target, loc),
+                          category: quickLaunchOpensCategory(target),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        TextField(
+                          key: const Key('quick-launch-display-label'),
+                          controller: _labelController,
+                          maxLength: 20,
+                          decoration: InputDecoration(
+                            labelText: loc.quickLaunchDisplayLabel,
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                  tooltip: loc.close,
-                ),
-              ],
+              ),
             ),
-            Text(loc.quickLaunchEditDescription),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              loc.quickLaunchChooseSlot,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SegmentedButton<int>(
-                segments: [
-                  for (var index = 0; index < _editableSlotCount; index++)
-                    ButtonSegment(
-                      value: index,
-                      label: Text('${index + 1}'),
-                      tooltip: quickLaunchSlotLabel(layout.slotAt(index), loc),
+            const Divider(height: 1),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.sm + MediaQuery.viewInsetsOf(context).bottom,
+              ),
+              child: Row(
+                children: [
+                  if (layout.slotAt(_slotIndex).hasEventType) ...[
+                    TextButton.icon(
+                      key: const Key('clear-quick-launch-slot'),
+                      onPressed: _clear,
+                      icon: const Icon(Icons.remove_circle_outline),
+                      label: Text(loc.quickLaunchClearSlot),
                     ),
-                ],
-                selected: {_slotIndex},
-                onSelectionChanged: (values) => _selectSlot(values.first),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  key: const Key('move-quick-launch-left'),
-                  onPressed: _slotIndex == 0
-                      ? null
-                      : () => _moveSelectedSlot(-1),
-                  tooltip: loc.quickLaunchMoveLeft,
-                  icon: const Icon(Icons.arrow_back),
-                ),
-                IconButton(
-                  key: const Key('move-quick-launch-right'),
-                  onPressed: _slotIndex == _editableSlotCount - 1
-                      ? null
-                      : () => _moveSelectedSlot(1),
-                  tooltip: loc.quickLaunchMoveRight,
-                  icon: const Icon(Icons.arrow_forward),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              loc.quickLaunchChooseEvent,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: [
-                for (final item in eventCatalog) ...[
-                  if (item.id == EventTypeId.feeding) ...[
-                    for (final feedingTarget in const [
-                      QuickLaunchEventTarget.feeding,
-                      QuickLaunchEventTarget.formulaFeeding,
-                      QuickLaunchEventTarget.breastFeeding,
-                      QuickLaunchEventTarget.expressedMilkFeeding,
-                    ])
-                      ChoiceChip(
-                        key: Key('quick-launch-event-${feedingTarget.name}'),
-                        avatar: Icon(item.icon, size: 18),
-                        label: Text(
-                          _quickLaunchTargetLabel(feedingTarget, loc),
-                        ),
-                        selected: target == feedingTarget,
-                        onSelected: (_) => _selectTarget(feedingTarget),
-                      ),
-                  ] else if (item.id == EventTypeId.diaper) ...[
-                    for (final preset in EliminationPreset.values)
-                      ChoiceChip(
-                        key: Key(
-                          'quick-launch-event-diaper${_presetKeySuffix(preset)}',
-                        ),
-                        avatar: Icon(_presetIcon(preset), size: 18),
-                        label: Text(_eliminationPresetLabel(preset, loc)),
-                        selected:
-                            target == QuickLaunchEventTarget.diaper &&
-                            _eliminationPreset == preset,
-                        onSelected: (_) => _selectEliminationPreset(preset),
-                      ),
-                  ] else
-                    ChoiceChip(
-                      key: Key('quick-launch-event-${item.id.name}'),
-                      avatar: Icon(item.icon, size: 18),
-                      label: Text(item.label(loc)),
-                      selected: target?.name == item.id.name,
-                      onSelected: (_) =>
-                          _selectTarget(quickLaunchTarget(item.id)),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  Expanded(
+                    child: FilledButton.icon(
+                      key: const Key('save-quick-launch-slot'),
+                      onPressed: target == null ? null : _save,
+                      icon: const Icon(Icons.check),
+                      label: Text(loc.quickLaunchSaveSlot),
                     ),
+                  ),
                 ],
-              ],
+              ),
             ),
-            if (target != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              _ExecutionPreview(
-                mode: _mode,
-                label: target == QuickLaunchEventTarget.diaper
-                    ? _eliminationPresetLabel(_eliminationPreset, loc)
-                    : _quickLaunchTargetLabel(target, loc),
-                category: quickLaunchOpensCategory(target),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                key: const Key('quick-launch-display-label'),
-                controller: _labelController,
-                maxLength: 20,
-                decoration: InputDecoration(
-                  labelText: loc.quickLaunchDisplayLabel,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              FilledButton.icon(
-                key: const Key('save-quick-launch-slot'),
-                onPressed: _save,
-                icon: const Icon(Icons.check),
-                label: Text(loc.quickLaunchSaveSlot),
-              ),
-            ],
-            if (layout.slotAt(_slotIndex).hasEventType) ...[
-              const SizedBox(height: AppSpacing.xs),
-              TextButton.icon(
-                key: const Key('clear-quick-launch-slot'),
-                onPressed: _clear,
-                icon: const Icon(Icons.remove_circle_outline),
-                label: Text(loc.quickLaunchClearSlot),
-              ),
-            ],
           ],
         ),
       ),

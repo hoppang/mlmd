@@ -29,6 +29,7 @@ class BathEventForm extends StatefulWidget {
     required this.onSave,
     this.initialRecord,
     this.initialAttachments = const [],
+    this.showBackButton = true,
     super.key,
   });
 
@@ -40,6 +41,7 @@ class BathEventForm extends StatefulWidget {
   final ValueChanged<BathFormResult> onSave;
   final BathRecord? initialRecord;
   final List<EventAttachment> initialAttachments;
+  final bool showBackButton;
 
   @override
   State<BathEventForm> createState() => _BathEventFormState();
@@ -136,13 +138,15 @@ class _BathEventFormState extends State<BathEventForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (widget.showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               const Icon(Icons.bathtub_outlined),
               const SizedBox(width: AppSpacing.xs),
               Expanded(

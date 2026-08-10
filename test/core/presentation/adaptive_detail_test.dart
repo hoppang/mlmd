@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/core/presentation/adaptive_detail.dart';
@@ -43,59 +42,48 @@ void main() {
     );
   }
 
-  testWidgets('Android에서는 공통 내용을 하단 시트로 열고 결과를 반환한다', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+  testWidgets('공통 상세를 독립 페이지로 열고 결과를 반환한다', (tester) async {
     String? result;
     await pumpLauncher(tester, onResult: (value) => result = value);
 
     await tester.tap(find.text('열기'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(find.byKey(const Key('adaptive-detail-page')), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
     expect(find.byType(Dialog), findsNothing);
     expect(find.text('공통 상세 내용'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('complete-detail')));
     await tester.pumpAndSettle();
     expect(result, 'completed');
-    debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Windows에서는 같은 내용과 결과를 중앙 대화상자로 유지한다', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+  testWidgets('페이지 전환은 팝업 표면을 만들지 않는다', (tester) async {
     String? result;
     await pumpLauncher(tester, onResult: (value) => result = value);
 
     await tester.tap(find.text('열기'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byKey(const Key('adaptive-detail-page')), findsOneWidget);
+    expect(find.byType(Dialog), findsNothing);
     expect(find.byType(BottomSheet), findsNothing);
     expect(find.text('공통 상세 내용'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('complete-detail')));
     await tester.pumpAndSettle();
     expect(result, 'completed');
-    debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Windows expanded detail fills the window with a safe inset', (
-    tester,
-  ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+  testWidgets('expanded detail also uses the full page route', (tester) async {
     await pumpLauncher(tester, onResult: (_) {}, expandedDialog: true);
 
     await tester.tap(find.byType(FilledButton).first);
     await tester.pumpAndSettle();
 
-    final dialog = find.byKey(const Key('expanded-adaptive-detail-dialog'));
-    expect(dialog, findsOneWidget);
-    final surface = find.byKey(const Key('expanded-adaptive-detail-surface'));
-    expect(surface, findsOneWidget);
-    expect(tester.getSize(surface), const Size(752, 552));
-    debugDefaultTargetPlatformOverride = null;
+    final page = find.byKey(const Key('adaptive-detail-page'));
+    expect(page, findsOneWidget);
+    expect(tester.getSize(page), const Size(800, 600));
   });
 }
