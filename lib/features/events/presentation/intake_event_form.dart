@@ -438,19 +438,27 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
 
   Widget _feedingAmountAdjustments() {
     final current = num.tryParse(_exactController.text.trim()) ?? 0;
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: AppSpacing.xs,
-      runSpacing: AppSpacing.xs,
+    return Row(
       children: [
         for (final delta in const [-100, -10, 10, 100])
-          OutlinedButton(
-            key: Key('adjust-feeding-amount-$delta'),
-            onPressed: widget.saving || (delta < 0 && current <= 0)
-                ? null
-                : () => _adjustFeedingAmount(delta),
-            child: Text(
-              '${delta > 0 ? '+' : '−'}${delta.abs()} ${_displayUnit(_unit)}',
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: delta == 100 ? 0 : AppSpacing.xxs,
+              ),
+              child: OutlinedButton(
+                key: Key('adjust-feeding-amount-$delta'),
+                onPressed: widget.saving || (delta < 0 && current <= 0)
+                    ? null
+                    : () => _adjustFeedingAmount(delta),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  textStyle: Theme.of(context).textTheme.labelMedium,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: Text('${delta > 0 ? '+' : '−'}${delta.abs()}'),
+              ),
             ),
           ),
       ],

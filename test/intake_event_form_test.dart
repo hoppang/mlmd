@@ -77,6 +77,8 @@ void main() {
   testWidgets('feeding requires amount and adjusts amount and time inline', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final now = DateTime.now();
     var occurredAt = DateTime(
       now.year,
@@ -120,6 +122,19 @@ void main() {
     await tester.tap(find.byKey(const Key('feeding-type-expressedMilk')));
     final addHundred = find.byKey(const Key('adjust-feeding-amount-100'));
     await tester.ensureVisible(addHundred);
+    final adjustmentButtons = [
+      for (final delta in const [-100, -10, 10, 100])
+        find.byKey(Key('adjust-feeding-amount-$delta')),
+    ];
+    final firstButtonTop = tester.getTopLeft(adjustmentButtons.first).dy;
+    for (final button in adjustmentButtons.skip(1)) {
+      expect(tester.getTopLeft(button).dy, firstButtonTop);
+    }
+    expect(find.text('+100 mL'), findsNothing);
+    expect(
+      find.descendant(of: addHundred, matching: find.text('+100')),
+      findsOneWidget,
+    );
     await tester.tap(addHundred);
     final addTen = find.byKey(const Key('adjust-feeding-amount-10'));
     await tester.ensureVisible(addTen);
