@@ -15,8 +15,14 @@ import '../../../repositories/record_draft_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../drafts/presentation/draft_resume_card.dart';
 import '../../duplicate_review/application/duplicate_review_notifier.dart';
+import '../../events/domain/accident_injury_record.dart';
+import '../../events/domain/care_procedure_record.dart';
+import '../../events/domain/elimination_record.dart';
+import '../../events/domain/event_catalog.dart';
 import '../../events/domain/medical_guidance.dart';
+import '../../events/domain/medication_record.dart';
 import '../../events/domain/sleep_record.dart';
+import '../../events/domain/symptom_record.dart';
 import '../../events/presentation/medical_guidance_widgets.dart';
 import '../../events/presentation/sleep_date_time_picker.dart';
 import '../../events/presentation/sleep_event_form.dart';
@@ -146,21 +152,88 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     return entries;
   }
 
-  Map<String, int> _activityCounts(List<DiaryEntity> todayDiaries) {
-    final counts = <String, int>{};
+  List<_TodayStatusGroup> _activityCounts(
+    List<DiaryEntity> todayDiaries,
+    AppLocalizations loc,
+  ) {
+    final counts = <String, _TodayStatusGroupBuilder>{};
     for (final diary in todayDiaries) {
       for (final activity in diary.activities) {
         final sleep = SleepRecord.decode(activity.structuredDataJson ?? '');
         if (sleep?.status == SleepRecordStatus.active) continue;
         final type = activity.type.trim();
-        if (type.isNotEmpty) {
-          counts.update(type, (count) => count + 1, ifAbsent: () => 1);
+        if (type.isEmpty) continue;
+
+        final catalogItem =
+            eventCatalogItemForActivity(activity) ??
+            eventCatalog.where((item) => item.matches(type)).firstOrNull;
+        final key = catalogItem == null ? 'legacy:$type' : catalogItem.id.name;
+        final builder = counts.putIfAbsent(
+          key,
+          () => _TodayStatusGroupBuilder(
+            key: key,
+            label: catalogItem?.label(loc) ?? type,
+            icon: catalogItem?.icon ?? Icons.check_circle_outline,
+          ),
+        );
+        builder.total += 1;
+
+        final subtype = _activitySubtype(activity, catalogItem, loc);
+        if (subtype != null) {
+          builder.subtypeCounts.update(
+            subtype,
+            (count) => count + 1,
+            ifAbsent: () => 1,
+          );
         }
       }
     }
-    return Map.fromEntries(
-      counts.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
-    );
+    return counts.values.map((builder) => builder.build()).toList()
+      ..sort((a, b) => a.label.compareTo(b.label));
+  }
+
+  String? _activitySubtype(
+    ActivityEntity activity,
+    EventCatalogItem? catalogItem,
+    AppLocalizations loc,
+  ) {
+    if (catalogItem == null) return null;
+    final encoded = activity.structuredDataJson ?? '';
+
+    final medication = MedicationRecord.decode(encoded);
+    if (medication != null) {
+      return medicationCategoryLabel(loc, medication.category);
+    }
+    final symptom = SymptomRecord.decode(encoded);
+    if (symptom != null && symptom.symptomName.trim().isNotEmpty) {
+      return symptom.symptomName.trim();
+    }
+    final procedure = CareProcedureRecord.decode(encoded);
+    if (procedure != null) {
+      return procedure.procedureType.label(loc);
+    }
+    final accident = AccidentInjuryRecord.decode(encoded);
+    if (accident != null) {
+      final customType = accident.customType?.trim();
+      return customType?.isNotEmpty == true
+          ? customType
+          : accident.injuryType.label(loc);
+    }
+    final elimination = EliminationRecord.decode(encoded);
+    if (elimination != null) {
+      return switch (elimination.kind) {
+        EliminationKind.urine => loc.eliminationUrinePreset,
+        EliminationKind.stool => loc.eliminationStoolPreset,
+        EliminationKind.both => loc.eliminationBothPreset,
+      };
+    }
+
+    final storedType = activity.type.trim();
+    if (!catalogItem.matches(storedType) &&
+        storedType != catalogItem.label(loc)) {
+      return storedType;
+    }
+    return null;
   }
 
   void _openEntry(_TodayTimelineEntry entry) {
@@ -357,7 +430,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         .where((diary) => _isToday(diary.date))
         .toList();
     final entries = _timelineEntries(todayDiaries);
-    final counts = _activityCounts(todayDiaries);
+    final counts = _activityCounts(todayDiaries, loc);
     final showAuthorTags = shouldShowAuthorTags(
       diaries,
       ref.watch(profileRepositoryProvider),
@@ -476,15 +549,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                 child: Wrap(
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
-                  children: counts.entries
+                  children: counts
                       .map(
-                        (entry) => Chip(
-                          avatar: const Icon(
-                            Icons.check_circle_outline,
-                            size: 16,
-                          ),
-                          label: Text('${entry.key} · ${entry.value}'),
-                          visualDensity: VisualDensity.compact,
+                        (group) => _TodayStatusBadge(
+                          key: ValueKey('today-status-${group.key}'),
+                          group: group,
                         ),
                       )
                       .toList(),
@@ -562,6 +631,126 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       ),
     );
   }
+}
+
+class _TodayStatusBadge extends StatelessWidget {
+  const _TodayStatusBadge({required this.group, super.key});
+
+  final _TodayStatusGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 140, maxWidth: 260),
+      child: IntrinsicWidth(
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: colors.surface,
+            border: Border.all(color: colors.outlineVariant),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                color: colors.primaryContainer,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: 6,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      group.icon,
+                      size: 15,
+                      color: colors.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${group.label} ${group.total}',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colors.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (group.hasMultipleSubtypes)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: 7,
+                  ),
+                  child: Text(
+                    group.subtypeSummary,
+                    key: ValueKey('today-status-subtypes-${group.key}'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colors.onSurface,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayStatusGroupBuilder {
+  _TodayStatusGroupBuilder({
+    required this.key,
+    required this.label,
+    required this.icon,
+  });
+
+  final String key;
+  final String label;
+  final IconData icon;
+  int total = 0;
+  final Map<String, int> subtypeCounts = {};
+
+  _TodayStatusGroup build() {
+    final sortedSubtypes = Map.fromEntries(
+      subtypeCounts.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+    return _TodayStatusGroup(
+      key: key,
+      label: label,
+      icon: icon,
+      total: total,
+      subtypeCounts: sortedSubtypes,
+    );
+  }
+}
+
+class _TodayStatusGroup {
+  const _TodayStatusGroup({
+    required this.key,
+    required this.label,
+    required this.icon,
+    required this.total,
+    required this.subtypeCounts,
+  });
+
+  final String key;
+  final String label;
+  final IconData icon;
+  final int total;
+  final Map<String, int> subtypeCounts;
+
+  bool get hasMultipleSubtypes => subtypeCounts.length > 1;
+
+  String get subtypeSummary => subtypeCounts.entries
+      .map((entry) => '${entry.key} ${entry.value}')
+      .join('   ');
 }
 
 class _ActiveSleepCard extends StatelessWidget {

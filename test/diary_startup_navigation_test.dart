@@ -30,6 +30,7 @@ import 'package:mlmd/features/events/domain/elimination_record.dart';
 import 'package:mlmd/features/events/domain/intake_record.dart';
 import 'package:mlmd/features/events/domain/medication_record.dart';
 import 'package:mlmd/features/events/domain/sleep_record.dart';
+import 'package:mlmd/features/events/domain/symptom_record.dart';
 import 'package:mlmd/features/events/domain/temperature_record.dart';
 import 'package:mlmd/repositories/ai_summary_repository.dart';
 import 'package:mlmd/repositories/duplicate_review_repository.dart';
@@ -1687,8 +1688,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('오늘 현황'), findsOneWidget);
-    expect(find.text('수유 · 1'), findsOneWidget);
-    expect(find.text('투약 · 1'), findsOneWidget);
+    expect(find.text('수유 1'), findsOneWidget);
+    expect(find.text('투약 1'), findsOneWidget);
     await tester.drag(
       find.byKey(const Key('today-scroll-view')),
       const Offset(0, -240),
@@ -1719,6 +1720,75 @@ void main() {
       matching: find.byType(TextField),
     );
     expect(tester.widget<TextField>(detailsField).controller!.text, '해열제');
+  });
+
+  testWidgets('오늘 현황은 같은 유형을 합치고 서로 다른 하위 종류를 작게 표시한다', (tester) async {
+    final now = DateTime.now();
+    final diary = DiaryEntity(
+      id: 59,
+      recordId: 'today-status-groups',
+      date: now,
+      title: '',
+      summary: '',
+      content: '',
+      lastModified: now,
+    );
+    diary.activities.addAll([
+      ActivityEntity(
+        id: 591,
+        type: '타미플루',
+        time: now,
+        details: '',
+        structuredDataJson: MedicationRecord(
+          medicationId: 'med-antiviral',
+          category: MedicationCategory.antiviral,
+          medicationName: '타미플루',
+          route: MedicationRoute.oral,
+          administeredAt: now,
+        ).encode(),
+        lastModified: now,
+      ),
+      for (var index = 0; index < 2; index++)
+        ActivityEntity(
+          id: 592 + index,
+          type: index == 0 ? '부루펜' : '타이레놀',
+          time: now.subtract(Duration(minutes: index + 1)),
+          details: '',
+          structuredDataJson: MedicationRecord(
+            medicationId: 'med-antipyretic-$index',
+            category: MedicationCategory.antipyretic,
+            medicationName: index == 0 ? '부루펜' : '타이레놀',
+            route: MedicationRoute.oral,
+            administeredAt: now.subtract(Duration(minutes: index + 1)),
+          ).encode(),
+          lastModified: now,
+        ),
+      for (final (index, symptomName) in ['기침', '콧물'].indexed)
+        ActivityEntity(
+          id: 594 + index,
+          type: symptomName,
+          time: now.subtract(Duration(minutes: index + 3)),
+          details: '',
+          structuredDataJson: SymptomRecord(
+            symptomId: 'symptom-$index',
+            symptomName: symptomName,
+            kind: SymptomKind.episodic,
+            occurredAt: now.subtract(Duration(minutes: index + 3)),
+          ).encode(),
+          lastModified: now,
+        ),
+    ]);
+
+    final notifier = _TestDiaryListNotifier([diary]);
+    await tester.pumpWidget(
+      _buildApp(diaries: [diary], diaryNotifier: notifier),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('투약 3'), findsOneWidget);
+    expect(find.text('항바이러스제 1   해열제 2'), findsOneWidget);
+    expect(find.text('증상·컨디션 2'), findsOneWidget);
+    expect(find.text('기침 1   콧물 1'), findsOneWidget);
   });
 
   testWidgets('38도 이상 체온은 목록에 주의 문구를, 수정 화면에 공식 자료를 표시한다', (tester) async {
