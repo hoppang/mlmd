@@ -1838,10 +1838,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get medicationCategoryAntipyretic => '해열제';
 
   @override
-  String get medicationCategoryCoughCold => '기침약·감기약';
+  String get medicationCategoryCoughCold => '감기약';
 
   @override
   String get medicationCategoryAntibiotic => '항생제';
+
+  @override
+  String get medicationCategoryAntiviral => '항바이러스제';
 
   @override
   String get medicationCategoryOintment => '연고·크림';
@@ -1851,6 +1854,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get medicationCategoryOther => '기타';
+
+  @override
+  String get recentMedicationNotesTitle => '최근 입력 메모';
 
   @override
   String get antipyreticIngredientTitle => '해열제 성분';

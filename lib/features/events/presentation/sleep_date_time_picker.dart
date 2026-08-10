@@ -19,29 +19,13 @@ Future<DateTime?> showSleepDateTimePicker({
     lastDate: lastDate,
   );
 
-  if (defaultTargetPlatform == TargetPlatform.windows) {
-    return showDialog<DateTime>(
-      context: context,
-      builder: (dialogContext) => Dialog(
-        key: const Key('sleep-date-time-dialog'),
-        clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760, maxHeight: 620),
-          child: content(dialogContext),
-        ),
+  return Navigator.of(context).push<DateTime>(
+    MaterialPageRoute<DateTime>(
+      fullscreenDialog: true,
+      builder: (pageContext) => Scaffold(
+        key: const Key('sleep-date-time-page'),
+        body: content(pageContext),
       ),
-    );
-  }
-
-  return showModalBottomSheet<DateTime>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (sheetContext) => ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.92,
-      ),
-      child: content(sheetContext),
     ),
   );
 }
@@ -112,7 +96,7 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
       child: SafeArea(
         top: false,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(

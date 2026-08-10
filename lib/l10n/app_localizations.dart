@@ -3462,7 +3462,7 @@ abstract class AppLocalizations {
   /// No description provided for @medicationCategoryCoughCold.
   ///
   /// In ko, this message translates to:
-  /// **'기침약·감기약'**
+  /// **'감기약'**
   String get medicationCategoryCoughCold;
 
   /// No description provided for @medicationCategoryAntibiotic.
@@ -3470,6 +3470,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'항생제'**
   String get medicationCategoryAntibiotic;
+
+  /// No description provided for @medicationCategoryAntiviral.
+  ///
+  /// In ko, this message translates to:
+  /// **'항바이러스제'**
+  String get medicationCategoryAntiviral;
 
   /// No description provided for @medicationCategoryOintment.
   ///
@@ -3488,6 +3494,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'기타'**
   String get medicationCategoryOther;
+
+  /// No description provided for @recentMedicationNotesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 입력 메모'**
+  String get recentMedicationNotesTitle;
 
   /// No description provided for @antipyreticIngredientTitle.
   ///

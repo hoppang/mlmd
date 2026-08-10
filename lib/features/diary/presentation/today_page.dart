@@ -262,57 +262,57 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       return;
     }
     final selected = record.markers.toSet();
-    final result = await showDialog<List<SleepRecordMarker>>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final loc = AppLocalizations.of(context)!;
-          return AlertDialog(
-            title: Text(loc.sleepMarkersTitle),
-            content: SizedBox(
-              width: 420,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(loc.sleepMarkersHint),
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
-                    children: [
-                      for (final marker in SleepRecordMarker.values)
-                        FilterChip(
-                          key: Key('edit-sleep-marker-${marker.name}'),
-                          label: Text(sleepMarkerLabel(loc, marker)),
-                          selected: selected.contains(marker),
-                          onSelected: (value) => setDialogState(() {
-                            value
-                                ? selected.add(marker)
-                                : selected.remove(marker);
-                          }),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(loc.cancel),
-              ),
-              FilledButton(
-                key: const Key('save-sleep-markers'),
-                onPressed: () => Navigator.pop(
-                  dialogContext,
-                  selected.toList(growable: false),
+    final result = await Navigator.of(context).push<List<SleepRecordMarker>>(
+      MaterialPageRoute<List<SleepRecordMarker>>(
+        fullscreenDialog: true,
+        builder: (pageContext) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            final loc = AppLocalizations.of(context)!;
+            return Scaffold(
+              appBar: AppBar(title: Text(loc.sleepMarkersTitle)),
+              body: SafeArea(
+                minimum: AppInsets.page,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(loc.sleepMarkersHint),
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        for (final marker in SleepRecordMarker.values)
+                          FilterChip(
+                            key: Key('edit-sleep-marker-${marker.name}'),
+                            label: Text(sleepMarkerLabel(loc, marker)),
+                            selected: selected.contains(marker),
+                            onSelected: (value) => setDialogState(() {
+                              value
+                                  ? selected.add(marker)
+                                  : selected.remove(marker);
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-                child: Text(loc.saveRecord),
               ),
-            ],
-          );
-        },
+              bottomNavigationBar: SafeArea(
+                minimum: AppInsets.page,
+                child: FilledButton.icon(
+                  key: const Key('save-sleep-markers'),
+                  onPressed: () => Navigator.pop(
+                    pageContext,
+                    selected.toList(growable: false),
+                  ),
+                  icon: const Icon(Icons.check),
+                  label: Text(loc.saveRecord),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
     if (result == null || !mounted) return;

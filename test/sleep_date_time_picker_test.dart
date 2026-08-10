@@ -58,7 +58,8 @@ void main() {
     await tester.tap(find.text('열기'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(find.byKey(const Key('sleep-date-time-page')), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
     expect(find.byKey(const Key('adjust-sleep-hour--1')), findsOneWidget);
     expect(find.byKey(const Key('adjust-sleep-hour-1')), findsOneWidget);
     expect(find.text('−10분'), findsOneWidget);
@@ -104,7 +105,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Windows에서는 달력과 직접 입력을 중앙 대화상자에 표시한다', (tester) async {
+  testWidgets('Windows에서는 달력과 직접 입력을 페이지에 표시한다', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     tester.view.devicePixelRatio = 1;
@@ -123,7 +124,7 @@ void main() {
     await tester.tap(find.text('열기'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('sleep-date-time-dialog')), findsOneWidget);
+    expect(find.byKey(const Key('sleep-date-time-page')), findsOneWidget);
     expect(find.byKey(const Key('sleep-date-calendar')), findsOneWidget);
     expect(find.byKey(const Key('sleep-hour-input')), findsOneWidget);
     expect(find.byKey(const Key('sleep-minute-input')), findsOneWidget);
@@ -154,6 +155,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final addTen = find.byKey(const Key('adjust-sleep-time-10'));
+    await tester.ensureVisible(addTen);
     await tester.tap(addTen);
     await tester.pump();
     expect(tester.widget<OutlinedButton>(addTen).onPressed, isNull);

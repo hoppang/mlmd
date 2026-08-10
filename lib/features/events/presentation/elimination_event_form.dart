@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/presentation/picker_pages.dart';
 import '../../../l10n/app_localizations.dart';
 import '../domain/elimination_record.dart';
 
@@ -110,7 +111,7 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
   Future<void> _changeTime() async {
     final occurredAt = _occurredAt;
     if (occurredAt == null || widget.saving) return;
-    final time = await showTimePicker(
+    final time = await showTimePickerPage(
       context: context,
       initialTime: TimeOfDay.fromDateTime(occurredAt),
     );

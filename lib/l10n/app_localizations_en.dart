@@ -1895,10 +1895,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get medicationCategoryAntipyretic => 'Antipyretic';
 
   @override
-  String get medicationCategoryCoughCold => 'Cough & Cold';
+  String get medicationCategoryCoughCold => 'Cold medicine';
 
   @override
   String get medicationCategoryAntibiotic => 'Antibiotic';
+
+  @override
+  String get medicationCategoryAntiviral => 'Antiviral';
 
   @override
   String get medicationCategoryOintment => 'Ointment / Cream';
@@ -1908,6 +1911,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get medicationCategoryOther => 'Other';
+
+  @override
+  String get recentMedicationNotesTitle => 'Recent entries';
 
   @override
   String get antipyreticIngredientTitle => 'Active ingredient';

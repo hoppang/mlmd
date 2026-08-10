@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/presentation/app_section_header.dart';
+import '../../../core/presentation/picker_pages.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/activity_entity.dart';
 import '../../../models/shared_custom_event_definition_entity.dart';
 import '../../diary/application/diary_list_notifier.dart';
-import '../../duplicate_review/application/duplicate_review_notifier.dart';
 import '../application/custom_event_notifier.dart';
 import '../domain/antipyretic_duplicate_check.dart';
 import '../domain/elimination_record.dart';
@@ -172,6 +172,24 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
 
   bool get _isEditing => widget.editActivity != null;
 
+  List<String> _recentMedicationNotes() {
+    final activities = [
+      for (final diary in ref.watch(diaryListProvider)) ...diary.activities,
+    ]..sort((a, b) => b.time.compareTo(a.time));
+    final seen = <String>{};
+    final notes = <String>[];
+    for (final activity in activities) {
+      final record = MedicationRecord.decode(activity.structuredDataJson ?? '');
+      final note = record?.note?.trim();
+      if (record == null || note == null || note.isEmpty || !seen.add(note)) {
+        continue;
+      }
+      notes.add(note);
+      if (notes.length == 5) break;
+    }
+    return notes;
+  }
+
   Future<String> _persistEvent({
     required String type,
     required String details,
@@ -280,7 +298,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   }
 
   Future<void> _changeTime() async {
-    final time = await showTimePicker(
+    final time = await showTimePickerPage(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_occurredAt),
     );
@@ -454,7 +472,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
     });
     try {
       final savedName = result.medicationName;
-      final recordId = await _persistEvent(
+      String? recordId = await _persistEvent(
         type: savedName,
         details: result.details,
         occurredAt: result.record.administeredAt,
@@ -481,20 +499,9 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                 ),
               );
 
-          if (decision == AntipyreticDuplicateDecision.distinctEvent &&
-              mounted) {
-            final pairKey = '${candidate.existingActivity.recordId}|$recordId';
-            ref
-                .read(duplicateReviewListProvider.notifier)
-                .markDistinct(pairKey);
-          } else if (decision == AntipyreticDuplicateDecision.sameEvent &&
-              mounted) {
-            final pairKey = '${candidate.existingActivity.recordId}|$recordId';
-            if (candidate.existingActivity.recordId != null) {
-              ref
-                  .read(duplicateReviewListProvider.notifier)
-                  .useRepresentative(pairKey, recordId);
-            }
+          if (decision == AntipyreticDuplicateDecision.sameEvent && mounted) {
+            await widget.onDelete(recordId);
+            recordId = null;
           }
         }
       }
@@ -1033,9 +1040,11 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
   }
 
   Future<String?> _requestCustomEventName({String initialName = ''}) {
-    return showDialog<String>(
-      context: context,
-      builder: (_) => _CustomEventNameDialog(initialName: initialName),
+    return Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        fullscreenDialog: true,
+        builder: (_) => _CustomEventNameDialog(initialName: initialName),
+      ),
     );
   }
 
@@ -1101,14 +1110,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
         if (!didPop) _finishElimination();
       },
       child: SafeArea(
-        child: ConstrainedBox(
-          constraints: _isEditing
-              ? BoxConstraints.tightFor(
-                  height: MediaQuery.sizeOf(context).height * 0.9,
-                )
-              : BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
-                ),
+        child: SizedBox.expand(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1234,6 +1236,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           initialRecord: _structuredDataJson == null
                               ? null
                               : MedicationRecord.decode(_structuredDataJson!),
+                          recentMedicationNotes: _recentMedicationNotes(),
                           onBack: _closeOrReturnToPicker,
                           onChangeTime: _changeTime,
                           onSave: _saveMedication,
@@ -1998,14 +2001,16 @@ class _CustomEventNameDialogState extends State<_CustomEventNameDialog> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(
-        widget.initialName.isEmpty
-            ? loc.createCustomEvent
-            : loc.renameCustomEvent,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.initialName.isEmpty
+              ? loc.createCustomEvent
+              : loc.renameCustomEvent,
+        ),
       ),
-      content: SizedBox(
-        width: 360,
+      body: SafeArea(
+        minimum: AppInsets.page,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2037,17 +2042,15 @@ class _CustomEventNameDialogState extends State<_CustomEventNameDialog> {
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(loc.cancel),
-        ),
-        FilledButton(
+      bottomNavigationBar: SafeArea(
+        minimum: AppInsets.page,
+        child: FilledButton.icon(
           key: const Key('save-custom-event-name'),
           onPressed: _submit,
-          child: Text(loc.saveRecord),
+          icon: const Icon(Icons.check),
+          label: Text(loc.saveRecord),
         ),
-      ],
+      ),
     );
   }
 }

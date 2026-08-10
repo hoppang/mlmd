@@ -6,10 +6,20 @@ enum MedicationCategory {
   antipyretic,
   coughCold,
   antibiotic,
+  antiviral,
+  // Legacy categories are kept so existing records remain decodable.
   ointment,
   eyeEarNose,
   other,
 }
+
+const selectableMedicationCategories = <MedicationCategory>[
+  MedicationCategory.antipyretic,
+  MedicationCategory.coughCold,
+  MedicationCategory.antibiotic,
+  MedicationCategory.antiviral,
+  MedicationCategory.other,
+];
 
 enum MedicationRoute { oral, suppository, topical, inhaled, other, unknown }
 
@@ -141,6 +151,7 @@ String medicationCategoryLabel(
   MedicationCategory.antipyretic => loc.medicationCategoryAntipyretic,
   MedicationCategory.coughCold => loc.medicationCategoryCoughCold,
   MedicationCategory.antibiotic => loc.medicationCategoryAntibiotic,
+  MedicationCategory.antiviral => loc.medicationCategoryAntiviral,
   MedicationCategory.ointment => loc.medicationCategoryOintment,
   MedicationCategory.eyeEarNose => loc.medicationCategoryEyeEarNose,
   MedicationCategory.other => loc.medicationCategoryOther,

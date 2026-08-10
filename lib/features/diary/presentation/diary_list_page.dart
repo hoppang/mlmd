@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/layout/adaptive_content_frame.dart';
 import '../../../core/presentation/adaptive_detail.dart';
 import '../../../core/presentation/app_empty_state.dart';
+import '../../../core/presentation/picker_pages.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/diary_entity.dart';
@@ -39,7 +40,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final picked = await showDatePickerPage(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(1900),
@@ -145,29 +146,35 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
   Future<void> _editSummary(AiSummaryEntity summary) async {
     final controller = TextEditingController(text: summary.displayText);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.summaryEditTitle),
-        content: TextField(
-          key: const Key('ai-summary-edit-field'),
-          controller: controller,
-          minLines: 4,
-          maxLines: 10,
+    final value = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        fullscreenDialog: true,
+        builder: (pageContext) => Scaffold(
+          appBar: AppBar(
+            title: Text(AppLocalizations.of(pageContext)!.summaryEditTitle),
+          ),
+          body: SafeArea(
+            minimum: AppInsets.page,
+            child: TextField(
+              key: const Key('ai-summary-edit-field'),
+              controller: controller,
+              autofocus: true,
+              minLines: 8,
+              maxLines: null,
+            ),
+          ),
+          bottomNavigationBar: SafeArea(
+            minimum: AppInsets.page,
+            child: FilledButton.icon(
+              onPressed: () {
+                final text = controller.text.trim();
+                if (text.isNotEmpty) Navigator.pop(pageContext, text);
+              },
+              icon: const Icon(Icons.check),
+              label: Text(AppLocalizations.of(pageContext)!.saveRecord),
+            ),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) Navigator.pop(context, text);
-            },
-            child: Text(AppLocalizations.of(context)!.saveRecord),
-          ),
-        ],
       ),
     );
     controller.dispose();
