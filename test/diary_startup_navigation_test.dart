@@ -1854,6 +1854,81 @@ void main() {
     expect(find.text('기침 1   콧물 1'), findsOneWidget);
   });
 
+  testWidgets('오늘 현황 카드는 모바일 2열과 PC 최대 4열에 맞춰 폭을 정돈한다', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.reset);
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    final now = DateTime.now();
+    const longType = '아주 긴 사용자 정의 현황 항목 이름으로 두 칸을 사용하는 기록';
+    final diary = DiaryEntity(
+      id: 596,
+      recordId: 'today-status-responsive-widths',
+      date: now,
+      title: '',
+      summary: '',
+      content: '',
+      lastModified: now,
+    );
+    diary.activities.addAll([
+      ActivityEntity(
+        id: 5961,
+        type: '수유',
+        time: now,
+        details: '',
+        lastModified: now,
+      ),
+      ActivityEntity(
+        id: 5962,
+        type: '체온',
+        time: now,
+        details: '38.2°C',
+        structuredDataJson: TemperatureRecord(
+          celsius: 38.2,
+          occurredAt: now,
+        ).encode(),
+        lastModified: now,
+      ),
+      ActivityEntity(
+        id: 5963,
+        type: longType,
+        time: now,
+        details: '',
+        lastModified: now,
+      ),
+    ]);
+
+    await tester.pumpWidget(
+      _buildApp(
+        diaries: [diary],
+        diaryNotifier: _TestDiaryListNotifier([diary]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final feedingCard = find.byKey(const ValueKey('today-status-feeding'));
+    final temperatureCard = find.byKey(
+      const ValueKey('today-status-temperature'),
+    );
+    final longCard = find.byKey(
+      const ValueKey('today-status-legacy:$longType'),
+    );
+    expect(tester.getSize(feedingCard).width, 160);
+    expect(tester.getSize(temperatureCard).width, 328);
+    expect(tester.getSize(longCard).width, 328);
+
+    tester.view.physicalSize = const Size(1000, 800);
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(feedingCard).width, 236);
+    expect(tester.getSize(temperatureCard).width, 480);
+    expect(tester.getSize(longCard).width, 724);
+    debugDefaultTargetPlatformOverride = null;
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('오늘 현황은 수면·투약·기저귀·체온 세부 정보를 표시한다', (tester) async {
     final now = DateTime.now();
     final todayDiary = DiaryEntity(

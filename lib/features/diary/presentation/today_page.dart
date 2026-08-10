@@ -524,18 +524,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                   AppSpacing.md,
                   AppSpacing.xs,
                 ),
-                child: Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: counts
-                      .map(
-                        (group) => _TodayStatusBadge(
-                          key: ValueKey('today-status-${group.key}'),
-                          group: group,
-                        ),
-                      )
-                      .toList(),
-                ),
+                child: _TodayStatusGrid(groups: counts),
               ),
             ),
           ],
@@ -607,85 +596,179 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   }
 }
 
+class _TodayStatusGrid extends StatelessWidget {
+  const _TodayStatusGrid({required this.groups});
+
+  static const _desktopMinimumColumnWidth = 180.0;
+
+  final List<_TodayStatusGroup> groups;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = AppSpacing.xs;
+        final availableWidth = constraints.maxWidth;
+        final isPortraitMobile =
+            MediaQuery.orientationOf(context) == Orientation.portrait &&
+            availableWidth < AppSizes.compactFormBreakpoint;
+        final columnCount = isPortraitMobile
+            ? 2
+            : ((availableWidth + spacing) /
+                      (_desktopMinimumColumnWidth + spacing))
+                  .floor()
+                  .clamp(1, 4);
+        final columnWidth =
+            (availableWidth - spacing * (columnCount - 1)) / columnCount;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final group in groups)
+              Builder(
+                builder: (context) {
+                  final preferredWidth = _TodayStatusBadge.preferredWidth(
+                    context,
+                    group,
+                  );
+                  final span = isPortraitMobile
+                      ? (preferredWidth <= columnWidth ? 1 : 2)
+                      : ((preferredWidth + spacing) / (columnWidth + spacing))
+                            .ceil()
+                            .clamp(1, columnCount);
+                  final width = columnWidth * span + spacing * (span - 1);
+                  return SizedBox(
+                    width: width,
+                    child: _TodayStatusBadge(
+                      key: ValueKey('today-status-${group.key}'),
+                      group: group,
+                    ),
+                  );
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _TodayStatusBadge extends StatelessWidget {
   const _TodayStatusBadge({required this.group, super.key});
 
   final _TodayStatusGroup group;
+
+  static double preferredWidth(BuildContext context, _TodayStatusGroup group) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textDirection = Directionality.of(context);
+    final textScaler = MediaQuery.textScalerOf(context);
+
+    double measure(String text, TextStyle? style) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        maxLines: 1,
+        textDirection: textDirection,
+        textScaler: textScaler,
+      )..layout();
+      return painter.width;
+    }
+
+    final headerText = group.total > 0
+        ? '${group.label} ${group.total}'
+        : group.label;
+    var width =
+        AppSpacing.xs * 2 +
+        15 +
+        6 +
+        measure(
+          headerText,
+          theme.textTheme.labelLarge?.copyWith(
+            color: colors.onPrimaryContainer,
+            fontWeight: FontWeight.w700,
+          ),
+        );
+    for (final detail in group.details) {
+      final detailWidth =
+          AppSpacing.xs * 2 +
+          measure(
+            detail.text,
+            theme.textTheme.bodySmall?.copyWith(
+              color: detail.emphasized ? colors.primary : colors.onSurface,
+              fontWeight: detail.emphasized ? FontWeight.w700 : null,
+            ),
+          );
+      if (detailWidth > width) width = detailWidth;
+    }
+    return width + 2;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 140, maxWidth: 260),
-      child: IntrinsicWidth(
-        child: Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: colors.surface,
-            border: Border.all(color: colors.outlineVariant),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                color: colors.primaryContainer,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xs,
-                  vertical: 6,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      group.icon,
-                      size: 15,
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border.all(color: colors.outlineVariant),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            color: colors.primaryContainer,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: 6,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(group.icon, size: 15, color: colors.onPrimaryContainer),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    group.total > 0
+                        ? '${group.label} ${group.total}'
+                        : group.label,
+                    style: theme.textTheme.labelLarge?.copyWith(
                       color: colors.onPrimaryContainer,
+                      fontWeight: FontWeight.w700,
                     ),
-                    const SizedBox(width: 6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (group.details.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs,
+                vertical: 7,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final detail in group.details)
                     Text(
-                      group.total > 0
-                          ? '${group.label} ${group.total}'
-                          : group.label,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: colors.onPrimaryContainer,
-                        fontWeight: FontWeight.w700,
+                      detail.text,
+                      key: ValueKey(detail.key),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: detail.emphasized
+                            ? colors.primary
+                            : colors.onSurface,
+                        fontWeight: detail.emphasized ? FontWeight.w700 : null,
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
-              if (group.details.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xs,
-                    vertical: 7,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final detail in group.details)
-                        Text(
-                          detail.text,
-                          key: ValueKey(detail.key),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: detail.emphasized
-                                ? colors.primary
-                                : colors.onSurface,
-                            fontWeight: detail.emphasized
-                                ? FontWeight.w700
-                                : null,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }
