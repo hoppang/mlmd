@@ -326,93 +326,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         .editActiveSleepStart(recordId, value);
   }
 
-  Future<void> _editSleepMarkers(ActivityEntity activity) async {
-    final record = SleepRecord.decode(activity.structuredDataJson ?? '');
-    final recordId = activity.recordId;
-    if (record == null ||
-        record.status != SleepRecordStatus.completed ||
-        recordId == null) {
-      return;
-    }
-    final selected = record.markers.toSet();
-    final result = await Navigator.of(context).push<List<SleepRecordMarker>>(
-      MaterialPageRoute<List<SleepRecordMarker>>(
-        fullscreenDialog: true,
-        builder: (pageContext) => StatefulBuilder(
-          builder: (context, setDialogState) {
-            final loc = AppLocalizations.of(context)!;
-            return Scaffold(
-              appBar: AppBar(title: Text(loc.sleepMarkersTitle)),
-              body: SafeArea(
-                minimum: AppInsets.page,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(loc.sleepMarkersHint),
-                    const SizedBox(height: AppSpacing.sm),
-                    Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
-                      children: [
-                        for (final marker in SleepRecordMarker.values)
-                          FilterChip(
-                            key: Key('edit-sleep-marker-${marker.name}'),
-                            label: Text(sleepMarkerLabel(loc, marker)),
-                            selected: selected.contains(marker),
-                            onSelected: (value) => setDialogState(() {
-                              value
-                                  ? selected.add(marker)
-                                  : selected.remove(marker);
-                            }),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              bottomNavigationBar: SafeArea(
-                minimum: AppInsets.page,
-                child: FilledButton.icon(
-                  key: const Key('save-sleep-markers'),
-                  onPressed: () => Navigator.pop(
-                    pageContext,
-                    selected.toList(growable: false),
-                  ),
-                  icon: const Icon(Icons.check),
-                  label: Text(loc.saveRecord),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-    if (result == null || !mounted) return;
-    final updated = SleepRecord(
-      status: record.status,
-      kind: record.kind,
-      source: record.source,
-      startedAt: record.startedAt,
-      endedAt: record.endedAt,
-      markers: result,
-      endedByAuthorProfileId: record.endedByAuthorProfileId,
-      endedByDeviceProfileId: record.endedByDeviceProfileId,
-      note: record.note,
-    );
-    await ref
-        .read(diaryListProvider.notifier)
-        .updateSleepMarkers(
-          recordId,
-          result,
-          details: sleepRecordDetails(AppLocalizations.of(context)!, updated),
-        );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.sleepMarkersSaved)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final diaries = ref.watch(diaryListProvider);
@@ -585,10 +498,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                   entry: entry,
                   showAuthorTag: showAuthorTags,
                   onTap: () => _openEntry(entry),
-                  onAddSleepMarkers:
-                      entry.sleepRecord?.status == SleepRecordStatus.completed
-                      ? () => _editSleepMarkers(entry.activity!)
-                      : null,
                 );
               },
             ),
@@ -836,8 +745,6 @@ class _TodayTimelineEntry {
       : 'today-activity:${activity!.id}';
   String? get authorProfileId =>
       activity?.createdByAuthorProfileId ?? diary.createdByAuthorProfileId;
-  SleepRecord? get sleepRecord =>
-      SleepRecord.decode(activity?.structuredDataJson ?? '');
   bool get requiresMedicalAttention =>
       evaluateMedicalGuidance(activity).requiresAttention;
 }
@@ -847,14 +754,12 @@ class _TimelineItem extends StatelessWidget {
     required this.entry,
     required this.showAuthorTag,
     required this.onTap,
-    this.onAddSleepMarkers,
     super.key,
   });
 
   final _TodayTimelineEntry entry;
   final bool showAuthorTag;
   final VoidCallback onTap;
-  final VoidCallback? onAddSleepMarkers;
 
   @override
   Widget build(BuildContext context) {
@@ -925,20 +830,6 @@ class _TimelineItem extends StatelessWidget {
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: MedicalAttentionLabel(),
-                      ),
-                    ],
-                    if (onAddSleepMarkers != null) ...[
-                      const SizedBox(height: AppSpacing.xxs),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          key: Key(
-                            'add-sleep-markers-${entry.activity!.recordId ?? entry.activity!.id}',
-                          ),
-                          onPressed: onAddSleepMarkers,
-                          icon: const Icon(Icons.add, size: 16),
-                          label: Text(loc.addSleepMarkers),
-                        ),
                       ),
                     ],
                   ],

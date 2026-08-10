@@ -1272,7 +1272,7 @@ void main() {
     expect(find.byKey(const Key('top-undo-button')), findsNothing);
   });
 
-  testWidgets('종료된 수면의 관찰 표지는 타임라인에서 나중에 추가한다', (tester) async {
+  testWidgets('종료된 수면은 상태 추가 링크 없이 기록 전체를 눌러 수정한다', (tester) async {
     final now = DateTime.now();
     final startedAt = now.subtract(const Duration(hours: 2));
     final diary = DiaryEntity(
@@ -1309,16 +1309,20 @@ void main() {
       const Offset(0, -240),
     );
     await tester.pumpAndSettle();
-    await tester.tap(
+    expect(find.text('상태 추가'), findsNothing);
+    expect(
       find.byKey(const Key('add-sleep-markers-completed-sleep-record')),
+      findsNothing,
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('edit-sleep-marker-frequentWaking')));
-    await tester.tap(find.byKey(const Key('save-sleep-markers')));
+
+    await tester.tap(find.byKey(const ValueKey('today-activity:89')));
     await tester.pumpAndSettle();
 
-    expect(notifier.updatedSleepMarkers, [SleepRecordMarker.frequentWaking]);
-    expect(find.text('수면 상태를 저장했어요.'), findsOneWidget);
+    expect(find.byKey(const Key('sleep-record-form')), findsOneWidget);
+    expect(
+      find.byKey(const Key('sleep-marker-frequentWaking')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('저장된 초안은 홈 카드에 표시하고 명시적으로 이어서 작성한다', (tester) async {
