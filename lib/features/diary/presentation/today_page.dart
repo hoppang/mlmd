@@ -154,8 +154,30 @@ class _TodayPageState extends ConsumerState<TodayPage> {
 
   List<_TodayStatusGroup> _activityCounts(
     List<DiaryEntity> todayDiaries,
+    List<DiaryEntity> allDiaries,
     AppLocalizations loc,
   ) {
+    final now = DateTime.now();
+    final latestAntipyreticDoses = <AntipyreticIngredient, DateTime>{};
+    for (final diary in allDiaries) {
+      for (final activity in diary.activities) {
+        final medication = MedicationRecord.decode(
+          activity.structuredDataJson ?? '',
+        );
+        final ingredient = medication?.ingredient;
+        if (medication?.category != MedicationCategory.antipyretic ||
+            (ingredient != AntipyreticIngredient.acetaminophen &&
+                ingredient != AntipyreticIngredient.ibuprofen) ||
+            medication!.administeredAt.isAfter(now)) {
+          continue;
+        }
+        final previous = latestAntipyreticDoses[ingredient];
+        if (previous == null || medication.administeredAt.isAfter(previous)) {
+          latestAntipyreticDoses[ingredient!] = medication.administeredAt;
+        }
+      }
+    }
+
     final counts = <String, _TodayStatusGroupBuilder>{};
     for (final diary in todayDiaries) {
       for (final activity in diary.activities) {
@@ -177,6 +199,14 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           ),
         );
         builder.total += 1;
+        final endedAt = sleep?.endedAt;
+        if (sleep?.status == SleepRecordStatus.completed && endedAt != null) {
+          final duration = endedAt.difference(sleep!.startedAt);
+          if (!duration.isNegative) {
+            builder.hasCompletedSleep = true;
+            builder.completedSleepDuration += duration;
+          }
+        }
 
         final subtype = _activitySubtype(activity, catalogItem, loc);
         if (subtype != null) {
@@ -188,7 +218,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         }
       }
     }
-    return counts.values.map((builder) => builder.build()).toList()
+    counts[EventTypeId.medication.name]?.latestAntipyreticDoses.addAll(
+      latestAntipyreticDoses,
+    );
+    return counts.values.map((builder) => builder.build(loc, now)).toList()
       ..sort((a, b) => a.label.compareTo(b.label));
   }
 
@@ -343,7 +376,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         .where((diary) => _isToday(diary.date))
         .toList();
     final entries = _timelineEntries(todayDiaries);
-    final counts = _activityCounts(todayDiaries, loc);
+    final counts = _activityCounts(todayDiaries, diaries, loc);
     final showAuthorTags = shouldShowAuthorTags(
       diaries,
       ref.watch(profileRepositoryProvider),
@@ -591,18 +624,24 @@ class _TodayStatusBadge extends StatelessWidget {
                   ],
                 ),
               ),
-              if (group.hasMultipleSubtypes)
+              if (group.details.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.xs,
                     vertical: 7,
                   ),
-                  child: Text(
-                    group.subtypeSummary,
-                    key: ValueKey('today-status-subtypes-${group.key}'),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colors.onSurface,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final detail in group.details)
+                        Text(
+                          detail.text,
+                          key: ValueKey(detail.key),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurface,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
             ],
@@ -625,19 +664,66 @@ class _TodayStatusGroupBuilder {
   final IconData icon;
   int total = 0;
   final Map<String, int> subtypeCounts = {};
+  bool hasCompletedSleep = false;
+  Duration completedSleepDuration = Duration.zero;
+  final Map<AntipyreticIngredient, DateTime> latestAntipyreticDoses = {};
 
-  _TodayStatusGroup build() {
+  _TodayStatusGroup build(AppLocalizations loc, DateTime now) {
     final sortedSubtypes = Map.fromEntries(
       subtypeCounts.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
     );
+    final details = <_TodayStatusDetail>[];
+    if (sortedSubtypes.length > 1) {
+      details.add(
+        _TodayStatusDetail(
+          key: 'today-status-subtypes-$key',
+          text: sortedSubtypes.entries
+              .map((entry) => '${entry.key} ${entry.value}')
+              .join('   '),
+        ),
+      );
+    }
+    if (hasCompletedSleep) {
+      details.add(
+        _TodayStatusDetail(
+          key: 'today-status-sleep-total-$key',
+          text: loc.todayStatusSleepTotal(
+            formatSleepDuration(loc, completedSleepDuration),
+          ),
+        ),
+      );
+    }
+    for (final ingredient in const [
+      AntipyreticIngredient.acetaminophen,
+      AntipyreticIngredient.ibuprofen,
+    ]) {
+      final administeredAt = latestAntipyreticDoses[ingredient];
+      if (administeredAt == null) continue;
+      details.add(
+        _TodayStatusDetail(
+          key: 'today-status-last-dose-${ingredient.name}-$key',
+          text: loc.todayStatusLastDoseElapsed(
+            antipyreticIngredientLabel(loc, ingredient),
+            formatSleepDuration(loc, now.difference(administeredAt)),
+          ),
+        ),
+      );
+    }
     return _TodayStatusGroup(
       key: key,
       label: label,
       icon: icon,
       total: total,
-      subtypeCounts: sortedSubtypes,
+      details: details,
     );
   }
+}
+
+class _TodayStatusDetail {
+  const _TodayStatusDetail({required this.key, required this.text});
+
+  final String key;
+  final String text;
 }
 
 class _TodayStatusGroup {
@@ -646,20 +732,14 @@ class _TodayStatusGroup {
     required this.label,
     required this.icon,
     required this.total,
-    required this.subtypeCounts,
+    required this.details,
   });
 
   final String key;
   final String label;
   final IconData icon;
   final int total;
-  final Map<String, int> subtypeCounts;
-
-  bool get hasMultipleSubtypes => subtypeCounts.length > 1;
-
-  String get subtypeSummary => subtypeCounts.entries
-      .map((entry) => '${entry.key} ${entry.value}')
-      .join('   ');
+  final List<_TodayStatusDetail> details;
 }
 
 class _ActiveSleepCard extends StatelessWidget {

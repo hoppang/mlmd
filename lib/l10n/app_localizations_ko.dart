@@ -648,6 +648,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get todayStatusTitle => '오늘 현황';
 
   @override
+  String todayStatusSleepTotal(String duration) {
+    return '총 $duration';
+  }
+
+  @override
+  String todayStatusLastDoseElapsed(String ingredient, String duration) {
+    return '$ingredient 마지막 투약 · $duration 전';
+  }
+
+  @override
   String get startupLoading => '앱을 준비하는 중...';
 
   @override

@@ -1300,6 +1300,18 @@ abstract class AppLocalizations {
   /// **'오늘 현황'**
   String get todayStatusTitle;
 
+  /// No description provided for @todayStatusSleepTotal.
+  ///
+  /// In ko, this message translates to:
+  /// **'총 {duration}'**
+  String todayStatusSleepTotal(String duration);
+
+  /// No description provided for @todayStatusLastDoseElapsed.
+  ///
+  /// In ko, this message translates to:
+  /// **'{ingredient} 마지막 투약 · {duration} 전'**
+  String todayStatusLastDoseElapsed(String ingredient, String duration);
+
   /// No description provided for @startupLoading.
   ///
   /// In ko, this message translates to:

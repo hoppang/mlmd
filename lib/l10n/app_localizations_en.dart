@@ -662,6 +662,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayStatusTitle => 'Today\'s Status';
 
   @override
+  String todayStatusSleepTotal(String duration) {
+    return 'Total $duration';
+  }
+
+  @override
+  String todayStatusLastDoseElapsed(String ingredient, String duration) {
+    return 'Last $ingredient dose · $duration ago';
+  }
+
+  @override
   String get startupLoading => 'Preparing app...';
 
   @override
