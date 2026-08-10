@@ -3363,6 +3363,12 @@ abstract class AppLocalizations {
   /// **'체온을 숫자로 입력해 주세요.'**
   String get temperatureValueRequired;
 
+  /// No description provided for @temperatureValueTooHigh.
+  ///
+  /// In ko, this message translates to:
+  /// **'체온은 43.0℃ 이하로 입력해 주세요.'**
+  String get temperatureValueTooHigh;
+
   /// No description provided for @temperatureSiteLabel.
   ///
   /// In ko, this message translates to:

@@ -10,6 +10,7 @@ Future<T?> showAdaptiveDetail<T>({
   double maxDialogWidth = 560,
   bool expandedDialog = false,
   double maxExpandedContentWidth = 960,
+  String? title,
 }) {
   return Navigator.of(context).push<T>(
     MaterialPageRoute<T>(
@@ -20,6 +21,7 @@ Future<T?> showAdaptiveDetail<T>({
           leading: CloseButton(
             onPressed: () => Navigator.maybePop(pageContext),
           ),
+          title: title == null ? null : Text(title),
         ),
         body: builder(pageContext),
       ),

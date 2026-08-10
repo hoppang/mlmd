@@ -619,6 +619,7 @@
   "eliminationChangesSaved": "Diaper and bowel details saved.",
   "temperatureValueLabel": "Temperature",
   "temperatureValueRequired": "Enter a numeric temperature.",
+  "temperatureValueTooHigh": "Enter a temperature of 43.0℃ or lower.",
   "temperatureSiteLabel": "Measurement site (optional)",
   "temperatureSiteAxillary": "Armpit",
   "temperatureSiteEar": "Ear",

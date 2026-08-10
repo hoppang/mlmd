@@ -1843,6 +1843,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get temperatureValueRequired => 'Enter a numeric temperature.';
 
   @override
+  String get temperatureValueTooHigh =>
+      'Enter a temperature of 43.0℃ or lower.';
+
+  @override
   String get temperatureSiteLabel => 'Measurement site (optional)';
 
   @override

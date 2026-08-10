@@ -1787,6 +1787,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get temperatureValueRequired => '체온을 숫자로 입력해 주세요.';
 
   @override
+  String get temperatureValueTooHigh => '체온은 43.0℃ 이하로 입력해 주세요.';
+
+  @override
   String get temperatureSiteLabel => '측정 부위 (선택)';
 
   @override

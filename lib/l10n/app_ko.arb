@@ -619,6 +619,7 @@
   "eliminationChangesSaved": "기저귀·배변 정보를 저장했어요.",
   "temperatureValueLabel": "체온",
   "temperatureValueRequired": "체온을 숫자로 입력해 주세요.",
+  "temperatureValueTooHigh": "체온은 43.0℃ 이하로 입력해 주세요.",
   "temperatureSiteLabel": "측정 부위 (선택)",
   "temperatureSiteAxillary": "겨드랑이",
   "temperatureSiteEar": "귀",

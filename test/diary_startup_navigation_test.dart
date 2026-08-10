@@ -700,6 +700,38 @@ void main() {
     expect(find.text('코 세척·흡인 기록을 저장했어요.'), findsOneWidget);
   });
 
+  testWidgets('이유식은 인라인 시간 변경 후 상위 저장으로 변경 시각을 저장한다', (tester) async {
+    final notifier = _TestDiaryListNotifier(const []);
+    await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-record-meal')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('quick-record-time')));
+    await tester.tap(find.byKey(const Key('quick-record-time')));
+    await tester.pumpAndSettle();
+    final yesterdayChip = find.byKey(const Key('meal-date-yesterday'));
+    await tester.ensureVisible(yesterdayChip);
+    await tester.tap(yesterdayChip);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('save-meal-date-time')), findsNothing);
+
+    final save = find.byKey(const Key('save-quick-record'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    final savedAt = notifier.addedActivityOccurredAt!;
+    final yesterday = DateUtils.dateOnly(
+      DateTime.now(),
+    ).subtract(const Duration(days: 1));
+    expect(DateUtils.isSameDay(savedAt, yesterday), isTrue);
+    expect(notifier.addedActivityType, '이유식·식사');
+  });
+
   testWidgets('기저귀 빠른 프리셋은 즉시 저장하고 종류 정정·상세 추가·실행 취소를 지원한다', (tester) async {
     final notifier = _TestDiaryListNotifier(const []);
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
@@ -743,13 +775,13 @@ void main() {
       180,
     );
     await tester.tap(find.byKey(const Key('elimination-date-yesterday')));
-    await tester.pump();
-    final saveDateTime = find.byKey(const Key('save-elimination-date-time'));
-    await tester.ensureVisible(saveDateTime);
-    await tester.tap(saveDateTime);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('elimination-date-time-editor')), findsNothing);
-    expect(find.byKey(const Key('elimination-record-time')), findsOneWidget);
+    expect(find.byKey(const Key('save-elimination-date-time')), findsNothing);
+    expect(
+      find.byKey(const Key('elimination-date-time-editor')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('elimination-record-time')), findsNothing);
 
     final yesterday = DateUtils.dateOnly(
       DateTime.now(),
@@ -762,10 +794,16 @@ void main() {
       initial.occurredAt.minute,
     );
 
-    await tester.tap(find.byKey(const Key('elimination-kind-both')));
+    final bothKind = find.byKey(const Key('elimination-kind-both'));
+    await tester.ensureVisible(bothKind);
+    await tester.tap(bothKind);
     await tester.pump();
-    await tester.tap(find.byKey(const Key('elimination-amount-normal')));
-    await tester.tap(find.byKey(const Key('stool-consistency-hard')));
+    final normalAmount = find.byKey(const Key('elimination-amount-normal'));
+    await tester.ensureVisible(normalAmount);
+    await tester.tap(normalAmount);
+    final hardConsistency = find.byKey(const Key('stool-consistency-hard'));
+    await tester.ensureVisible(hardConsistency);
+    await tester.tap(hardConsistency);
     final stoolColor = find.byKey(const Key('stool-color-brown'));
     await tester.ensureVisible(stoolColor);
     await tester.tap(stoolColor);
@@ -774,6 +812,8 @@ void main() {
     await tester.ensureVisible(saveChanges);
     await tester.tap(saveChanges);
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('elimination-date-time-editor')), findsNothing);
+    expect(find.byKey(const Key('elimination-record-time')), findsOneWidget);
 
     final updated = EliminationRecord.decode(
       notifier.updatedActivityStructuredDataJson!,
@@ -1063,7 +1103,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('temperature-value')), '38.2');
     await tester.enterText(find.byKey(const Key('temperature-note')), '저녁 측정');
-    await tester.tap(find.byKey(const Key('save-quick-record')));
+    final failedSave = find.byKey(const Key('save-quick-record'));
+    await tester.ensureVisible(failedSave);
+    await tester.tap(failedSave);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('temperature-event-form')), findsOneWidget);
@@ -1711,6 +1753,15 @@ void main() {
     await tester.tap(find.byKey(const Key('record-edit-medical-guidance')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('temperature-value')), '38.3');
+    await tester.ensureVisible(find.byKey(const Key('quick-record-time')));
+    await tester.tap(find.byKey(const Key('quick-record-time')));
+    await tester.pumpAndSettle();
+    final temperatureYesterday = find.byKey(
+      const Key('temperature-date-yesterday'),
+    );
+    await tester.ensureVisible(temperatureYesterday);
+    await tester.tap(temperatureYesterday);
+    await tester.pumpAndSettle();
     final saveButton = tester.widget<FilledButton>(
       find.byKey(const Key('save-quick-record')),
     );
@@ -1725,6 +1776,20 @@ void main() {
         notifier.updatedActivityStructuredDataJson!,
       )?.celsius,
       38.3,
+    );
+    final yesterday = DateUtils.dateOnly(now).subtract(const Duration(days: 1));
+    expect(
+      DateUtils.isSameDay(notifier.updatedActivityOccurredAt, yesterday),
+      isTrue,
+    );
+    expect(
+      DateUtils.isSameDay(
+        TemperatureRecord.decode(
+          notifier.updatedActivityStructuredDataJson!,
+        )?.occurredAt,
+        yesterday,
+      ),
+      isTrue,
     );
   });
 
@@ -2072,6 +2137,52 @@ void main() {
     expect(field, findsOneWidget);
     expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
   });
+
+  testWidgets(
+    'meal edit uses the page title and keeps its content at the top',
+    (tester) async {
+      final now = DateTime.now();
+      final diary = DiaryEntity(
+        id: 90,
+        recordId: 'meal-edit-header',
+        date: now,
+        title: '',
+        content: '',
+        lastModified: now,
+      );
+      diary.activities.add(
+        ActivityEntity(
+          id: 901,
+          type: '\uC774\uC720\uC2DD\u00B7\uC2DD\uC0AC',
+          time: now,
+          details: '',
+          structuredDataJson: IntakeRecord(
+            kind: IntakeRecordKind.meal,
+            mealType: MealType.lunch,
+            amountExpression: const AmountExpression.qualitative(
+              QualitativeLevel.normal,
+            ),
+          ).encode(),
+          lastModified: now,
+        ),
+      );
+
+      await tester.pumpWidget(_buildApp(diaries: [diary]));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('today-activity:901')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CloseButton), findsOneWidget);
+      expect(find.text('\uC774\uC720\uC2DD\u00B7\uC2DD\uC0AC'), findsOneWidget);
+      expect(find.byKey(const Key('back-to-record-types')), findsNothing);
+
+      final appBarBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+      final formTop = tester
+          .getTopLeft(find.byKey(const Key('intake-record-form')))
+          .dy;
+      expect(formTop, lessThanOrEqualTo(appBarBottom + 1));
+    },
+  );
 
   testWidgets('Windows에서는 이벤트 수정 화면을 독립 페이지로 연다', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;

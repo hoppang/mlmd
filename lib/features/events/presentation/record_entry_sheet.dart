@@ -1128,6 +1128,10 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                 fit: _isEditing ? FlexFit.tight : FlexFit.loose,
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 180),
+                  layoutBuilder: (currentChild, previousChildren) => Stack(
+                    alignment: Alignment.topCenter,
+                    children: [...previousChildren, ?currentChild],
+                  ),
                   child: selected == null && custom == null && !_isEditing
                       ? _EventPicker(
                           key: const ValueKey('event-picker'),
@@ -1211,7 +1215,8 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? null
                               : TemperatureRecord.decode(_structuredDataJson!),
                           onBack: _closeOrReturnToPicker,
-                          onChangeTime: _changeTime,
+                          onOccurredAtChanged: (value) =>
+                              setState(() => _occurredAt = value),
                           onSave: _saveTemperature,
                         )
                       : custom == null && selectedId == EventTypeId.symptom
@@ -1389,6 +1394,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           onOccurredAtChanged: (value) =>
                               setState(() => _occurredAt = value),
                           onSave: _saveIntake,
+                          showHeader: !_isEditing,
                         )
                       : _EventForm(
                           key: ValueKey(

@@ -146,4 +146,99 @@ void main() {
     expect(occurredAt, expectedOccurredAt);
     expect(find.byKey(const Key('cancel-quick-record')), findsOneWidget);
   });
+
+  testWidgets('이유식 식사시간은 페이지 안에서 날짜와 시간을 변경한다', (tester) async {
+    final now = DateTime.now();
+    var occurredAt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      now.hour,
+      now.minute,
+    ).subtract(const Duration(hours: 1));
+    final initialOccurredAt = occurredAt;
+    IntakeFormResult? result;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          locale: const Locale('ko'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setHarnessState) => IntakeEventForm(
+                item: eventCatalogItem(EventTypeId.meal),
+                occurredAt: occurredAt,
+                saving: false,
+                error: null,
+                onBack: () {},
+                onChangeTime: () => fail('별도 시간 페이지를 열면 안 됩니다.'),
+                onOccurredAtChanged: (value) =>
+                    setHarnessState(() => occurredAt = value),
+                onSave: (value) => result = value,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('quick-record-time')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('quick-record-time')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('meal-date-time-editor')), findsOneWidget);
+    expect(find.byKey(const Key('quick-record-time')), findsNothing);
+    expect(find.byKey(const Key('meal-hour-wheel')), findsOneWidget);
+    expect(find.byKey(const Key('meal-minute-wheel')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('meal-hour-wheel-viewport'))).height,
+      180,
+    );
+
+    final yesterdayChip = find.byKey(const Key('meal-date-yesterday'));
+    await tester.ensureVisible(yesterdayChip);
+    await tester.tap(yesterdayChip);
+    await tester.pumpAndSettle();
+
+    final yesterday = DateUtils.dateOnly(now).subtract(const Duration(days: 1));
+    final expectedOccurredAt = DateTime(
+      yesterday.year,
+      yesterday.month,
+      yesterday.day,
+      initialOccurredAt.hour,
+      initialOccurredAt.minute,
+    );
+    expect(occurredAt, expectedOccurredAt);
+    expect(find.byKey(const Key('save-meal-date-time')), findsNothing);
+    expect(find.byKey(const Key('meal-date-time-editor')), findsOneWidget);
+    expect(find.byKey(const Key('quick-record-time')), findsNothing);
+
+    final cancelDateTime = find.byKey(const Key('cancel-meal-date-time'));
+    await tester.ensureVisible(cancelDateTime);
+    await tester.tap(cancelDateTime);
+    await tester.pumpAndSettle();
+    expect(occurredAt, initialOccurredAt);
+    expect(find.byKey(const Key('quick-record-time')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('quick-record-time')));
+    await tester.pumpAndSettle();
+    final yesterdayAgain = find.byKey(const Key('meal-date-yesterday'));
+    await tester.ensureVisible(yesterdayAgain);
+    await tester.tap(yesterdayAgain);
+    await tester.pumpAndSettle();
+    expect(occurredAt, expectedOccurredAt);
+
+    await tester.ensureVisible(find.byKey(const Key('save-quick-record')));
+    await tester.tap(find.byKey(const Key('save-quick-record')));
+    await tester.pump();
+    expect(result?.record.kind, IntakeRecordKind.meal);
+    expect(occurredAt, expectedOccurredAt);
+  });
 }

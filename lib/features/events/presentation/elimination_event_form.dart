@@ -40,9 +40,6 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
   EliminationAmount? _stoolAmount;
   StoolConsistency? _stoolConsistency;
   StoolColor? _stoolColor;
-  DateTime? _draftOccurredAt;
-  bool _editingDateTime = false;
-  bool _showDateCalendar = false;
 
   @override
   void initState() {
@@ -71,9 +68,6 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
     _stoolConsistency = record?.stoolConsistency;
     _stoolColor = record?.stoolColor;
     _noteController.text = record?.note ?? '';
-    _draftOccurredAt = record?.occurredAt;
-    _editingDateTime = false;
-    _showDateCalendar = false;
   }
 
   void _changeKind(EliminationKind kind) {
@@ -112,48 +106,6 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
         clearNote: note.isEmpty,
       ),
     );
-  }
-
-  void _startDateTimeEditing() {
-    final occurredAt = _occurredAt;
-    if (occurredAt == null || widget.saving) return;
-    setState(() {
-      _draftOccurredAt = occurredAt;
-      _editingDateTime = true;
-      _showDateCalendar = false;
-    });
-  }
-
-  void _setDraftDate(DateTime date) {
-    final draft = _draftOccurredAt;
-    if (draft == null) return;
-    setState(() {
-      _draftOccurredAt = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        draft.hour,
-        draft.minute,
-      );
-    });
-  }
-
-  void _saveDateTime() {
-    final draft = _draftOccurredAt;
-    if (draft == null || draft.isAfter(DateTime.now())) return;
-    setState(() {
-      _occurredAt = draft;
-      _editingDateTime = false;
-      _showDateCalendar = false;
-    });
-  }
-
-  void _cancelDateTimeEditing() {
-    setState(() {
-      _draftOccurredAt = _occurredAt;
-      _editingDateTime = false;
-      _showDateCalendar = false;
-    });
   }
 
   @override
@@ -210,19 +162,17 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            if (_editingDateTime)
-              _buildDateTimeEditor(context, loc)
-            else
-              OutlinedButton.icon(
-                key: const Key('elimination-record-time'),
-                onPressed: widget.saving ? null : _startDateTimeEditing,
-                icon: const Icon(Icons.schedule),
-                label: Text(
-                  '${loc.recordTimeLabel} · '
-                  '${MaterialLocalizations.of(context).formatMediumDate(_occurredAt!)} · '
-                  '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_occurredAt!))}',
-                ),
-              ),
+            InlineDateTimeEditor(
+              key: ValueKey(widget.savedRecord),
+              value: _occurredAt!,
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              onChanged: (value) => setState(() => _occurredAt = value),
+              keyPrefix: 'elimination',
+              label: loc.recordTimeLabel,
+              displayKey: const Key('elimination-record-time'),
+              enabled: !widget.saving,
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
               loc.eliminationKindTitle,
@@ -354,114 +304,6 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
             ),
           ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildDateTimeEditor(BuildContext context, AppLocalizations loc) {
-    final draft = _draftOccurredAt!;
-    final material = MaterialLocalizations.of(context);
-    final today = DateUtils.dateOnly(DateTime.now());
-    final yesterday = today.subtract(const Duration(days: 1));
-    final selectedDate = DateUtils.dateOnly(draft);
-    final isToday = selectedDate == today;
-    final isYesterday = selectedDate == yesterday;
-    final firstDate = DateTime(2000);
-    final lastDate = DateTime.now();
-
-    return Card(
-      key: const Key('elimination-date-time-editor'),
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          children: [
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: [
-                ChoiceChip(
-                  key: const Key('elimination-date-today'),
-                  label: Text(loc.searchToday),
-                  selected: isToday,
-                  onSelected: widget.saving
-                      ? null
-                      : (_) {
-                          _setDraftDate(today);
-                          setState(() => _showDateCalendar = false);
-                        },
-                ),
-                ChoiceChip(
-                  key: const Key('elimination-date-yesterday'),
-                  label: Text(loc.sleepDateYesterday),
-                  selected: isYesterday,
-                  onSelected: widget.saving
-                      ? null
-                      : (_) {
-                          _setDraftDate(yesterday);
-                          setState(() => _showDateCalendar = false);
-                        },
-                ),
-                ChoiceChip(
-                  key: const Key('elimination-date-other'),
-                  avatar: const Icon(Icons.calendar_month_outlined),
-                  label: Text(loc.sleepDateOther),
-                  selected: !isToday && !isYesterday,
-                  onSelected: widget.saving
-                      ? null
-                      : (_) => setState(
-                          () => _showDateCalendar = !_showDateCalendar,
-                        ),
-                ),
-              ],
-            ),
-            if (_showDateCalendar) ...[
-              const SizedBox(height: AppSpacing.sm),
-              CalendarDatePicker(
-                key: const Key('elimination-date-calendar'),
-                initialDate: selectedDate,
-                firstDate: firstDate,
-                lastDate: DateUtils.dateOnly(lastDate),
-                currentDate: DateTime.now(),
-                onDateChanged: _setDraftDate,
-              ),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              material.formatMediumDate(draft),
-              key: const Key('elimination-selected-date'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            DateTimeAdjustmentControls(
-              key: const Key('elimination-date-time-controls'),
-              value: draft,
-              firstDate: firstDate,
-              lastDate: lastDate,
-              onChanged: (value) => setState(() => _draftOccurredAt = value),
-              keyPrefix: 'elimination',
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  key: const Key('cancel-elimination-date-time'),
-                  onPressed: widget.saving ? null : _cancelDateTimeEditing,
-                  child: Text(loc.cancel),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                FilledButton(
-                  key: const Key('save-elimination-date-time'),
-                  onPressed: widget.saving || draft.isAfter(lastDate)
-                      ? null
-                      : _saveDateTime,
-                  child: Text(loc.saveRecord),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

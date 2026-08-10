@@ -28,6 +28,7 @@ class IntakeEventForm extends ConsumerStatefulWidget {
     required this.onOccurredAtChanged,
     required this.onSave,
     this.initialStructuredDataJson,
+    this.showHeader = true,
     super.key,
   });
 
@@ -40,6 +41,7 @@ class IntakeEventForm extends ConsumerStatefulWidget {
   final VoidCallback onChangeTime;
   final ValueChanged<DateTime> onOccurredAtChanged;
   final ValueChanged<IntakeFormResult> onSave;
+  final bool showHeader;
 
   @override
   ConsumerState<IntakeEventForm> createState() => _IntakeEventFormState();
@@ -262,26 +264,28 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Icon(item.icon),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  item.label(loc),
-                  style: Theme.of(context).textTheme.titleLarge,
+          if (widget.showHeader) ...[
+            Row(
+              children: [
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
+                const SizedBox(width: AppSpacing.xs),
+                Icon(item.icon),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    item.label(loc),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (item.id == EventTypeId.feeding) ...[
             _feedingTimeEditor(loc),
             const SizedBox(height: AppSpacing.md),
@@ -309,7 +313,18 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
             decoration: InputDecoration(labelText: loc.memoOptionalLabel),
           ),
           const SizedBox(height: AppSpacing.md),
-          if (item.id != EventTypeId.feeding)
+          if (item.id == EventTypeId.meal)
+            InlineDateTimeEditor(
+              value: widget.occurredAt,
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              onChanged: widget.onOccurredAtChanged,
+              keyPrefix: 'meal',
+              label: loc.recordTimeLabel,
+              displayKey: const Key('quick-record-time'),
+              enabled: !widget.saving,
+            )
+          else if (item.id != EventTypeId.feeding)
             OutlinedButton.icon(
               key: const Key('quick-record-time'),
               onPressed: widget.saving ? null : widget.onChangeTime,

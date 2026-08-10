@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../domain/temperature_record.dart';
+import 'date_time_adjustment_controls.dart';
 
 class TemperatureFormResult {
   const TemperatureFormResult({required this.record, required this.details});
@@ -18,7 +19,7 @@ class TemperatureEventForm extends StatefulWidget {
     required this.saving,
     required this.error,
     required this.onBack,
-    required this.onChangeTime,
+    required this.onOccurredAtChanged,
     required this.onSave,
     this.initialRecord,
     super.key,
@@ -28,7 +29,7 @@ class TemperatureEventForm extends StatefulWidget {
   final bool saving;
   final String? error;
   final VoidCallback onBack;
-  final VoidCallback onChangeTime;
+  final ValueChanged<DateTime> onOccurredAtChanged;
   final ValueChanged<TemperatureFormResult> onSave;
   final TemperatureRecord? initialRecord;
 
@@ -37,8 +38,11 @@ class TemperatureEventForm extends StatefulWidget {
 }
 
 class _TemperatureEventFormState extends State<TemperatureEventForm> {
+  static const _maximumCelsius = 43.0;
+
   late final TextEditingController _temperatureController;
   late final TextEditingController _noteController;
+  late double _temperatureValue;
   TemperatureMeasurementSite? _measurementSite;
   String? _validationError;
 
@@ -46,8 +50,9 @@ class _TemperatureEventFormState extends State<TemperatureEventForm> {
   void initState() {
     super.initState();
     final initial = widget.initialRecord;
+    _temperatureValue = initial?.celsius ?? 36.5;
     _temperatureController = TextEditingController(
-      text: initial?.celsius.toStringAsFixed(1) ?? '',
+      text: _temperatureValue.toStringAsFixed(1),
     );
     _noteController = TextEditingController(text: initial?.note ?? '');
     _measurementSite = initial?.measurementSite;
@@ -69,6 +74,10 @@ class _TemperatureEventFormState extends State<TemperatureEventForm> {
       setState(() => _validationError = loc.temperatureValueRequired);
       return;
     }
+    if (celsius > _maximumCelsius) {
+      setState(() => _validationError = loc.temperatureValueTooHigh);
+      return;
+    }
     final record = TemperatureRecord(
       celsius: double.parse(celsius.toStringAsFixed(1)),
       occurredAt: widget.occurredAt,
@@ -81,6 +90,30 @@ class _TemperatureEventFormState extends State<TemperatureEventForm> {
         details: temperatureRecordDetails(loc, record),
       ),
     );
+  }
+
+  void _setTemperatureFromWheel(double value) {
+    final normalized = value.clamp(0.0, _maximumCelsius).toDouble();
+    setState(() {
+      _temperatureValue = normalized;
+      _validationError = null;
+      _temperatureController.text = normalized.toStringAsFixed(1);
+      _temperatureController.selection = TextSelection.collapsed(
+        offset: _temperatureController.text.length,
+      );
+    });
+  }
+
+  void _syncWheelFromText(String text) {
+    final value = double.tryParse(text.trim().replaceAll(',', '.'));
+    if (value == null || value < 30 || value > _maximumCelsius) {
+      setState(() => _validationError = null);
+      return;
+    }
+    setState(() {
+      _temperatureValue = double.parse(value.toStringAsFixed(1));
+      _validationError = null;
+    });
   }
 
   @override
@@ -122,7 +155,7 @@ class _TemperatureEventFormState extends State<TemperatureEventForm> {
             key: const Key('temperature-value'),
             controller: _temperatureController,
             enabled: !widget.saving,
-            autofocus: true,
+            autofocus: false,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               TextInputFormatter.withFunction((oldValue, newValue) {
@@ -134,12 +167,20 @@ class _TemperatureEventFormState extends State<TemperatureEventForm> {
                 return oldValue;
               }),
             ],
-            onChanged: (_) => setState(() => _validationError = null),
+            onChanged: _syncWheelFromText,
             decoration: InputDecoration(
               labelText: loc.temperatureValueLabel,
               suffixText: '°C',
               errorText: _validationError,
             ),
+          ),
+          SplitDecimalWheel(
+            value: _temperatureValue,
+            minWhole: 30,
+            maxWhole: _maximumCelsius.toInt(),
+            onChanged: _setTemperatureFromWheel,
+            keyPrefix: 'temperature',
+            enabled: !widget.saving,
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -174,14 +215,15 @@ class _TemperatureEventFormState extends State<TemperatureEventForm> {
             decoration: InputDecoration(labelText: loc.temperatureNoteLabel),
           ),
           const SizedBox(height: AppSpacing.md),
-          OutlinedButton.icon(
-            key: const Key('quick-record-time'),
-            onPressed: widget.saving ? null : widget.onChangeTime,
-            icon: const Icon(Icons.schedule),
-            label: Text(
-              '${loc.recordTimeLabel} · '
-              '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(widget.occurredAt))}',
-            ),
+          InlineDateTimeEditor(
+            value: widget.occurredAt,
+            firstDate: DateTime(2000),
+            lastDate: DateTime.now(),
+            onChanged: widget.onOccurredAtChanged,
+            keyPrefix: 'temperature',
+            label: loc.recordTimeLabel,
+            displayKey: const Key('quick-record-time'),
+            enabled: !widget.saving,
           ),
           if (widget.error case final error?) ...[
             const SizedBox(height: AppSpacing.sm),

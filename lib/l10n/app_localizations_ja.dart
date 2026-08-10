@@ -1779,6 +1779,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get temperatureValueRequired => '体温を数値で入力してください。';
 
   @override
+  String get temperatureValueTooHigh => '体温は43.0℃以下で入力してください。';
+
+  @override
   String get temperatureSiteLabel => '測定部位（任意）';
 
   @override
