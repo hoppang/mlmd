@@ -1,8 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_tokens.dart';
-import '../../../l10n/app_localizations.dart';
 
 class DateTimeAdjustmentControls extends StatefulWidget {
   const DateTimeAdjustmentControls({
@@ -11,8 +11,6 @@ class DateTimeAdjustmentControls extends StatefulWidget {
     required this.lastDate,
     required this.onChanged,
     required this.keyPrefix,
-    required this.showSpinner,
-    required this.showDirectInput,
     this.rollFutureTimeToPreviousDay = false,
     super.key,
   });
@@ -22,8 +20,6 @@ class DateTimeAdjustmentControls extends StatefulWidget {
   final DateTime lastDate;
   final ValueChanged<DateTime> onChanged;
   final String keyPrefix;
-  final bool showSpinner;
-  final bool showDirectInput;
   final bool rollFutureTimeToPreviousDay;
 
   @override
@@ -35,8 +31,8 @@ class _DateTimeAdjustmentControlsState
     extends State<DateTimeAdjustmentControls> {
   late final FixedExtentScrollController _hourController;
   late final FixedExtentScrollController _minuteController;
-  late final TextEditingController _hourTextController;
-  late final TextEditingController _minuteTextController;
+  final _hourWheelKey = GlobalKey<_TimeWheelState>();
+  final _minuteWheelKey = GlobalKey<_TimeWheelState>();
 
   DateTime get _value => truncateToMinute(widget.value);
   DateTime get _earliestValue => earliestSelectableMinute(widget.firstDate);
@@ -47,10 +43,6 @@ class _DateTimeAdjustmentControlsState
     super.initState();
     _hourController = FixedExtentScrollController(initialItem: _value.hour);
     _minuteController = FixedExtentScrollController(initialItem: _value.minute);
-    _hourTextController = TextEditingController(text: _twoDigits(_value.hour));
-    _minuteTextController = TextEditingController(
-      text: _twoDigits(_value.minute),
-    );
   }
 
   @override
@@ -64,14 +56,10 @@ class _DateTimeAdjustmentControlsState
   void dispose() {
     _hourController.dispose();
     _minuteController.dispose();
-    _hourTextController.dispose();
-    _minuteTextController.dispose();
     super.dispose();
   }
 
   void _syncInputs(DateTime value) {
-    _hourTextController.text = _twoDigits(value.hour);
-    _minuteTextController.text = _twoDigits(value.minute);
     if (_hourController.hasClients &&
         _hourController.selectedItem != value.hour) {
       _hourController.jumpToItem(value.hour);
@@ -98,204 +86,272 @@ class _DateTimeAdjustmentControlsState
     widget.onChanged(next);
   }
 
-  void _adjust(Duration adjustment) {
-    final next = _value.add(adjustment);
-    widget.onChanged(
-      next.isBefore(_earliestValue)
-          ? _earliestValue
-          : next.isAfter(_latestValue)
-          ? _latestValue
-          : next,
-    );
+  void _startHourEditing() {
+    _minuteWheelKey.currentState?._finishEditing();
   }
 
-  bool _canAdjust(Duration adjustment) => adjustment.isNegative
-      ? _value.isAfter(_earliestValue)
-      : _value.isBefore(_latestValue);
+  void _startMinuteEditing() {
+    _hourWheelKey.currentState?._finishEditing();
+  }
 
-  void _applyTypedTime() {
-    final hour = int.tryParse(_hourTextController.text);
-    final minute = int.tryParse(_minuteTextController.text);
-    if (hour == null || hour > 23 || minute == null || minute > 59) {
-      _syncInputs(_value);
-      return;
-    }
-    _setTime(hour: hour, minute: minute);
+  void _moveToMinuteInput() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _minuteWheelKey.currentState?._startEditing();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
     final material = MaterialLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (widget.showSpinner)
-          SizedBox(
-            height: 132,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _TimeWheel(
-                  key: Key('${widget.keyPrefix}-hour-wheel'),
-                  controller: _hourController,
-                  count: 24,
-                  label: material.timePickerHourLabel,
-                  onChanged: (value) => _setTime(hour: value),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                  child: Text(
-                    ':',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                ),
-                _TimeWheel(
-                  key: Key('${widget.keyPrefix}-minute-wheel'),
-                  controller: _minuteController,
-                  count: 60,
-                  label: material.timePickerMinuteLabel,
-                  onChanged: (value) => _setTime(minute: value),
-                ),
-              ],
-            ),
-          ),
-        if (widget.showDirectInput)
-          Row(
+        SizedBox(
+          height: _TimeWheel.viewportHeight + 20,
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildTimeTextField(
-                key: Key('${widget.keyPrefix}-hour-input'),
-                controller: _hourTextController,
-                label: material.timePickerHourLabel,
+              KeyedSubtree(
+                key: Key('${widget.keyPrefix}-hour-wheel'),
+                child: _TimeWheel(
+                  key: _hourWheelKey,
+                  controller: _hourController,
+                  count: 24,
+                  value: _value.hour,
+                  label: material.timePickerHourLabel,
+                  inputKey: Key('${widget.keyPrefix}-hour-wheel-input'),
+                  selectedKey: Key('${widget.keyPrefix}-hour-wheel-selected'),
+                  viewportKey: Key('${widget.keyPrefix}-hour-wheel-viewport'),
+                  onEditingStarted: _startHourEditing,
+                  onTab: _moveToMinuteInput,
+                  onChanged: (value) => _setTime(hour: value),
+                ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                child: Text(':'),
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                child: Text(
+                  ':',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
               ),
-              _buildTimeTextField(
-                key: Key('${widget.keyPrefix}-minute-input'),
-                controller: _minuteTextController,
-                label: material.timePickerMinuteLabel,
+              KeyedSubtree(
+                key: Key('${widget.keyPrefix}-minute-wheel'),
+                child: _TimeWheel(
+                  key: _minuteWheelKey,
+                  controller: _minuteController,
+                  count: 60,
+                  value: _value.minute,
+                  label: material.timePickerMinuteLabel,
+                  inputKey: Key('${widget.keyPrefix}-minute-wheel-input'),
+                  selectedKey: Key('${widget.keyPrefix}-minute-wheel-selected'),
+                  viewportKey: Key('${widget.keyPrefix}-minute-wheel-viewport'),
+                  onEditingStarted: _startMinuteEditing,
+                  onChanged: (value) => _setTime(minute: value),
+                ),
               ),
             ],
           ),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: [
-            for (final hours in const [-1, 1])
-              OutlinedButton(
-                key: Key('adjust-${widget.keyPrefix}-hour-$hours'),
-                onPressed: _canAdjust(Duration(hours: hours))
-                    ? () => _adjust(Duration(hours: hours))
-                    : null,
-                child: Text(
-                  '${hours > 0 ? '+' : '−'}'
-                  '${loc.sleepDurationHours(hours.abs())}',
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: [
-            for (final minutes in const [-10, -1, 1, 10])
-              Tooltip(
-                message: minutes < 0
-                    ? loc.sleepAdjustEarlier(-minutes)
-                    : loc.sleepAdjustLater(minutes),
-                child: OutlinedButton(
-                  key: Key('adjust-${widget.keyPrefix}-time-$minutes'),
-                  onPressed: _canAdjust(Duration(minutes: minutes))
-                      ? () => _adjust(Duration(minutes: minutes))
-                      : null,
-                  child: Text(
-                    '${minutes > 0 ? '+' : '−'}'
-                    '${loc.sleepDurationMinutes(minutes.abs())}',
-                  ),
-                ),
-              ),
-          ],
         ),
       ],
     );
   }
-
-  Widget _buildTimeTextField({
-    required Key key,
-    required TextEditingController controller,
-    required String label,
-  }) => SizedBox(
-    width: 76,
-    child: TextField(
-      key: key,
-      controller: controller,
-      keyboardType: TextInputType.number,
-      textAlign: TextAlign.center,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(2),
-      ],
-      decoration: InputDecoration(labelText: label),
-      onSubmitted: (_) => _applyTypedTime(),
-      onTapOutside: (_) => _applyTypedTime(),
-    ),
-  );
 }
 
-class _TimeWheel extends StatelessWidget {
+class _TimeWheel extends StatefulWidget {
   const _TimeWheel({
     required super.key,
     required this.controller,
     required this.count,
+    required this.value,
     required this.label,
+    required this.inputKey,
+    required this.selectedKey,
+    required this.viewportKey,
+    required this.onEditingStarted,
     required this.onChanged,
+    this.onTab,
   });
+
+  static const itemExtent = 36.0;
+  static const viewportHeight = itemExtent * 5;
 
   final FixedExtentScrollController controller;
   final int count;
+  final int value;
   final String label;
+  final Key inputKey;
+  final Key selectedKey;
+  final Key viewportKey;
+  final VoidCallback onEditingStarted;
   final ValueChanged<int> onChanged;
+  final VoidCallback? onTab;
+
+  @override
+  State<_TimeWheel> createState() => _TimeWheelState();
+}
+
+class _TimeWheelState extends State<_TimeWheel> {
+  late final TextEditingController _inputController;
+  late final FocusNode _inputFocusNode;
+  bool _editing = false;
+  int? _pendingPointerTarget;
+
+  @override
+  void initState() {
+    super.initState();
+    _inputController = TextEditingController();
+    _inputFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _inputController.dispose();
+    _inputFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _startEditing() {
+    widget.onEditingStarted();
+    setState(() {
+      _editing = true;
+      _inputController.text = _twoDigits(widget.value);
+      _inputController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _inputController.text.length,
+      );
+    });
+    _inputFocusNode.requestFocus();
+  }
+
+  void _finishEditing() {
+    if (!_editing) return;
+    final value = int.tryParse(_inputController.text);
+    if (value != null && value >= 0 && value < widget.count) {
+      widget.controller.jumpToItem(value);
+      widget.onChanged(value);
+    }
+    setState(() => _editing = false);
+  }
+
+  KeyEventResult _handleInputKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent ||
+        event.logicalKey != LogicalKeyboardKey.tab ||
+        HardwareKeyboard.instance.isShiftPressed) {
+      return KeyEventResult.ignored;
+    }
+    _finishEditing();
+    widget.onTab?.call();
+    return KeyEventResult.handled;
+  }
+
+  void _handlePointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent ||
+        event.scrollDelta.dy == 0 ||
+        !widget.controller.hasClients ||
+        _pendingPointerTarget != null) {
+      return;
+    }
+    final direction = event.scrollDelta.dy > 0 ? 1 : -1;
+    _pendingPointerTarget = (widget.controller.selectedItem + direction).clamp(
+      0,
+      widget.count - 1,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.controller.hasClients) return;
+      final target = _pendingPointerTarget;
+      _pendingPointerTarget = null;
+      if (target == null) return;
+      widget.controller.animateToItem(
+        target,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeOut,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: label,
+    label: widget.label,
     child: SizedBox(
       width: 88,
       child: Column(
         children: [
-          Expanded(
+          SizedBox(
+            key: widget.viewportKey,
+            height: _TimeWheel.viewportHeight,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 IgnorePointer(
                   child: Container(
-                    height: 40,
+                    height: _TimeWheel.itemExtent,
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.secondaryContainer,
                       borderRadius: BorderRadius.circular(AppRadii.control),
                     ),
                   ),
                 ),
-                ListWheelScrollView.useDelegate(
-                  controller: controller,
-                  itemExtent: 40,
-                  physics: const FixedExtentScrollPhysics(),
-                  diameterRatio: 1.5,
-                  perspective: 0.004,
-                  onSelectedItemChanged: onChanged,
-                  childDelegate: ListWheelChildBuilderDelegate(
-                    childCount: count,
-                    builder: (context, index) => Center(
-                      child: Text(
-                        _twoDigits(index),
-                        style: Theme.of(context).textTheme.titleLarge,
+                Listener(
+                  onPointerSignal: _handlePointerSignal,
+                  child: ListWheelScrollView.useDelegate(
+                    controller: widget.controller,
+                    itemExtent: _TimeWheel.itemExtent,
+                    physics: const FixedExtentScrollPhysics(),
+                    diameterRatio: 1.5,
+                    perspective: 0.004,
+                    onSelectedItemChanged: widget.onChanged,
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      childCount: widget.count,
+                      builder: (context, index) => Center(
+                        child: index == widget.value && _editing
+                            ? Focus(
+                                onKeyEvent: _handleInputKey,
+                                child: SizedBox(
+                                  width: 64,
+                                  child: TextField(
+                                    key: widget.inputKey,
+                                    controller: _inputController,
+                                    focusNode: _inputFocusNode,
+                                    autofocus: true,
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                      LengthLimitingTextInputFormatter(2),
+                                    ],
+                                    decoration: const InputDecoration(
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
+                                    ),
+                                    onSubmitted: (_) => _finishEditing(),
+                                    onTapOutside: (_) => _finishEditing(),
+                                  ),
+                                ),
+                              )
+                            : GestureDetector(
+                                key: index == widget.value
+                                    ? widget.selectedKey
+                                    : null,
+                                behavior: HitTestBehavior.opaque,
+                                onTap: index == widget.value
+                                    ? _startEditing
+                                    : null,
+                                child: SizedBox(
+                                  width: 64,
+                                  height: _TimeWheel.itemExtent,
+                                  child: Center(
+                                    child: Text(
+                                      _twoDigits(index),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge,
+                                    ),
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -303,7 +359,7 @@ class _TimeWheel extends StatelessWidget {
               ],
             ),
           ),
-          Text(label, style: Theme.of(context).textTheme.labelSmall),
+          Text(widget.label, style: Theme.of(context).textTheme.labelSmall),
         ],
       ),
     ),

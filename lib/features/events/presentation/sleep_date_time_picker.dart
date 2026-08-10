@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
@@ -51,7 +50,6 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
   late DateTime _value;
   late bool _showCalendar;
 
-  bool get _isWindows => defaultTargetPlatform == TargetPlatform.windows;
   DateTime get _earliestValue => earliestSelectableMinute(widget.firstDate);
 
   DateTime get _latestValue => truncateToMinute(widget.lastDate);
@@ -62,13 +60,7 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
   void initState() {
     super.initState();
     _value = truncateToMinute(widget.initialValue);
-    _showCalendar = _isWindows || !_isTodayOrYesterday(_value);
-  }
-
-  bool _isTodayOrYesterday(DateTime value) {
-    final today = DateUtils.dateOnly(DateTime.now());
-    final date = DateUtils.dateOnly(value);
-    return date == today || date == today.subtract(const Duration(days: 1));
+    _showCalendar = false;
   }
 
   void _setDate(DateTime date) {
@@ -90,6 +82,8 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
     final selectedDate = DateUtils.dateOnly(_value);
     final isToday = selectedDate == today;
     final isYesterday = selectedDate == yesterday;
+    final isLandscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
 
     return Material(
       color: Theme.of(context).colorScheme.surface,
@@ -142,7 +136,7 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
                           selected: isToday,
                           onSelected: (_) {
                             _setDate(today);
-                            if (!_isWindows) {
+                            if (!isLandscape) {
                               setState(() => _showCalendar = false);
                             }
                           },
@@ -153,7 +147,7 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
                           selected: isYesterday,
                           onSelected: (_) {
                             _setDate(yesterday);
-                            if (!_isWindows) {
+                            if (!isLandscape) {
                               setState(() => _showCalendar = false);
                             }
                           },
@@ -169,7 +163,7 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    if (_isWindows)
+                    if (isLandscape)
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -263,8 +257,6 @@ class _SleepDateTimePickerState extends State<_SleepDateTimePicker> {
       lastDate: widget.lastDate,
       onChanged: _setValue,
       keyPrefix: 'sleep',
-      showSpinner: !_isWindows,
-      showDirectInput: _isWindows,
     );
   }
 }

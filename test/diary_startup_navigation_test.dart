@@ -728,9 +728,39 @@ void main() {
 
     await tester.tap(find.byKey(const Key('elimination-record-time')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('apply-time-picker-page')), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.close).last);
+    expect(find.byKey(const Key('apply-time-picker-page')), findsNothing);
+    expect(
+      find.byKey(const Key('elimination-date-time-editor')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('elimination-record-time')), findsNothing);
+    expect(find.byKey(const Key('elimination-hour-wheel')), findsOneWidget);
+    expect(find.byKey(const Key('elimination-minute-wheel')), findsOneWidget);
+    expect(
+      tester
+          .getSize(find.byKey(const Key('elimination-hour-wheel-viewport')))
+          .height,
+      180,
+    );
+    await tester.tap(find.byKey(const Key('elimination-date-yesterday')));
+    await tester.pump();
+    final saveDateTime = find.byKey(const Key('save-elimination-date-time'));
+    await tester.ensureVisible(saveDateTime);
+    await tester.tap(saveDateTime);
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('elimination-date-time-editor')), findsNothing);
+    expect(find.byKey(const Key('elimination-record-time')), findsOneWidget);
+
+    final yesterday = DateUtils.dateOnly(
+      DateTime.now(),
+    ).subtract(const Duration(days: 1));
+    final expectedOccurredAt = DateTime(
+      yesterday.year,
+      yesterday.month,
+      yesterday.day,
+      initial!.occurredAt.hour,
+      initial.occurredAt.minute,
+    );
 
     await tester.tap(find.byKey(const Key('elimination-kind-both')));
     await tester.pump();
@@ -754,6 +784,8 @@ void main() {
     expect(updated?.stoolConsistency, StoolConsistency.hard);
     expect(updated?.stoolColor, StoolColor.brown);
     expect(updated?.note, '저녁 관찰');
+    expect(updated?.occurredAt, expectedOccurredAt);
+    expect(notifier.updatedActivityOccurredAt, expectedOccurredAt);
     expect(notifier.updatedActivityDetails, contains('갈색'));
 
     final closeElimination = find.byKey(const Key('back-to-record-types'));
@@ -1134,8 +1166,15 @@ void main() {
     await tester.tap(find.byKey(const Key('edit-active-sleep-start')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('sleep-hour-wheel')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('adjust-sleep-time--1')));
+    final editedMinute = (startedAt.minute + 1) % 60;
+    await tester.tap(find.byKey(const Key('sleep-minute-wheel-selected')));
     await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('sleep-minute-wheel-input')),
+      editedMinute.toString().padLeft(2, '0'),
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('apply-sleep-date-time')));
     await tester.pumpAndSettle();
     expect(
@@ -1145,7 +1184,7 @@ void main() {
         startedAt.month,
         startedAt.day,
         startedAt.hour,
-        startedAt.minute - 1,
+        editedMinute,
       ),
     );
 
@@ -2172,10 +2211,10 @@ void main() {
         DiaryEntity(
             id: 95,
             recordId: 'antipyretic-diary',
-      date: now,
-      title: '해열제 기록',
-      content: '',
-      lastModified: now,
+            date: now,
+            title: '해열제 기록',
+            content: '',
+            lastModified: now,
           )
           ..activities.add(
             ActivityEntity(

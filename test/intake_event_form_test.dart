@@ -124,9 +124,18 @@ void main() {
     final addTen = find.byKey(const Key('adjust-feeding-amount-10'));
     await tester.ensureVisible(addTen);
     await tester.tap(addTen);
-    await tester.ensureVisible(find.byKey(const Key('adjust-feeding-hour--1')));
-    await tester.tap(find.byKey(const Key('adjust-feeding-hour--1')));
+    final expectedOccurredAt = occurredAt.subtract(const Duration(hours: 1));
+    await tester.ensureVisible(
+      find.byKey(const Key('feeding-hour-wheel-selected')),
+    );
+    await tester.tap(find.byKey(const Key('feeding-hour-wheel-selected')));
     await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('feeding-hour-wheel-input')),
+      expectedOccurredAt.hour.toString().padLeft(2, '0'),
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('save-quick-record')));
     await tester.tap(find.byKey(const Key('save-quick-record')));
     await tester.pump();
@@ -134,16 +143,7 @@ void main() {
     expect(result?.record.method, FeedingMethod.bottle);
     expect(result?.record.bottleContents, BottleContents.expressedMilk);
     expect(result?.record.amountExpression?.exactValue, 110);
-    expect(
-      occurredAt,
-      DateTime(
-        now.year,
-        now.month,
-        now.day,
-        now.hour,
-        now.minute,
-      ).subtract(const Duration(hours: 1, minutes: 30)),
-    );
+    expect(occurredAt, expectedOccurredAt);
     expect(find.byKey(const Key('cancel-quick-record')), findsOneWidget);
   });
 }

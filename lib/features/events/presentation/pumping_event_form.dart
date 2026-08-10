@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -300,8 +299,6 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
           lastDate: DateTime.now(),
           onChanged: widget.onOccurredAtChanged,
           keyPrefix: 'pumping',
-          showSpinner: defaultTargetPlatform != TargetPlatform.windows,
-          showDirectInput: defaultTargetPlatform == TargetPlatform.windows,
           rollFutureTimeToPreviousDay: true,
         ),
       ],

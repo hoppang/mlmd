@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -422,8 +421,6 @@ class _IntakeEventFormState extends ConsumerState<IntakeEventForm> {
           lastDate: DateTime.now(),
           onChanged: widget.onOccurredAtChanged,
           keyPrefix: 'feeding',
-          showSpinner: defaultTargetPlatform != TargetPlatform.windows,
-          showDirectInput: defaultTargetPlatform == TargetPlatform.windows,
           rollFutureTimeToPreviousDay: true,
         ),
       ],
