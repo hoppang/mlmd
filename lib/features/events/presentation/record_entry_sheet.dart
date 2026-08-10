@@ -1679,27 +1679,14 @@ class _EventPicker extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          AppSectionHeader(title: loc.allCategoriesTitle),
           for (final category in EventCategoryId.values)
-            ExpansionTile(
+            _ExpandedEventCategory(
               key: Key('event-category-${category.name}'),
-              tilePadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xs,
-              ),
-              childrenPadding: const EdgeInsets.only(bottom: AppSpacing.xs),
-              title: Text(eventCategoryLabel(category, loc)),
-              children: [
-                for (final item in eventCatalog.where(
-                  (item) => item.category == category,
-                ))
-                  ListTile(
-                    key: Key('category-event-${item.id.name}'),
-                    leading: Icon(item.icon),
-                    title: Text(item.label(loc)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => onSelect(item),
-                  ),
-              ],
+              title: eventCategoryLabel(category, loc),
+              items: eventCatalog
+                  .where((item) => item.category == category)
+                  .toList(growable: false),
+              onSelect: onSelect,
             ),
           const SizedBox(height: AppSpacing.md),
           AppSectionHeader(title: loc.myRecordsTitle),
@@ -1763,6 +1750,70 @@ class _EventPicker extends StatelessWidget {
             onPressed: onOpenDetailedRecord,
             icon: const Icon(Icons.edit_note_outlined),
             label: Text(loc.writeDetailedRecord),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpandedEventCategory extends StatelessWidget {
+  const _ExpandedEventCategory({
+    required this.title,
+    required this.items,
+    required this.onSelect,
+    super.key,
+  });
+
+  final String title;
+  final List<EventCatalogItem> items;
+  final ValueChanged<EventCatalogItem> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppSectionHeader(title: title),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columnCount = constraints.maxWidth >= 680
+                  ? 4
+                  : constraints.maxWidth >= 480
+                  ? 3
+                  : 2;
+              final spacing = AppSpacing.xs * (columnCount - 1);
+              final itemWidth = (constraints.maxWidth - spacing) / columnCount;
+              return Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  for (final item in items)
+                    SizedBox(
+                      width: itemWidth,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        key: Key('category-event-${item.id.name}'),
+                        onPressed: () => onSelect(item),
+                        style: OutlinedButton.styleFrom(
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                          ),
+                        ),
+                        icon: Icon(item.icon, size: 19),
+                        label: Text(
+                          item.label(AppLocalizations.of(context)!),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),

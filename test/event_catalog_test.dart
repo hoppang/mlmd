@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/features/events/domain/event_catalog.dart';
+import 'package:mlmd/features/events/domain/intake_record.dart';
+import 'package:mlmd/l10n/app_localizations_ko.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 
@@ -76,5 +78,44 @@ void main() {
       EventTypeId.medication,
     ]);
     expect(presets.first.details, '120g');
+    expect(presets.map((preset) => preset.label(AppLocalizationsKo())), [
+      '이유식',
+      '투약',
+    ]);
+  });
+
+  test('recent meal shows a compact label and keeps editable defaults', () {
+    final previousMeal = const IntakeRecord(
+      kind: IntakeRecordKind.meal,
+      mealType: MealType.dinner,
+      amountExpression: AmountExpression.qualitative(QualitativeLevel.normal),
+      reaction: IntakeReaction.ateWell,
+    );
+    final diary = DiaryEntity(
+      date: DateTime(2026, 8, 10),
+      title: '',
+      content: '',
+      lastModified: DateTime(2026, 8, 10),
+    );
+    diary.activities.add(
+      ActivityEntity(
+        type: '이유식·식사',
+        time: DateTime(2026, 8, 10, 18),
+        details: '저녁 · 보통 · 잘 먹음',
+        structuredDataJson: previousMeal.encode(),
+        lastModified: DateTime(2026, 8, 10, 18),
+      ),
+    );
+
+    final preset = buildRecentEventPresets([diary]).single;
+    final restored = IntakeRecord.decode(preset.structuredDataJson!);
+
+    expect(preset.label(AppLocalizationsKo()), '이유식');
+    expect(restored?.mealType, MealType.dinner);
+    expect(
+      restored?.amountExpression?.qualitativeLevel,
+      QualitativeLevel.normal,
+    );
+    expect(restored?.reaction, IntakeReaction.ateWell);
   });
 }

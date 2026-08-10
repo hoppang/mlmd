@@ -606,7 +606,15 @@ void main() {
       ActivityEntity(
         type: '이유식·식사',
         time: now.subtract(const Duration(hours: 1)),
-        details: '120g',
+        details: '저녁 · 보통 · 잘 먹음',
+        structuredDataJson: const IntakeRecord(
+          kind: IntakeRecordKind.meal,
+          mealType: MealType.dinner,
+          amountExpression: AmountExpression.qualitative(
+            QualitativeLevel.normal,
+          ),
+          reaction: IntakeReaction.ateWell,
+        ).encode(),
         lastModified: now,
       ),
       ActivityEntity(
@@ -649,20 +657,74 @@ void main() {
     expect(find.byKey(const Key('quick-record-water')), findsNothing);
     expect(find.byKey(const Key('quick-record-snack')), findsNothing);
     expect(find.text('최근 사용'), findsOneWidget);
-    expect(find.text('이유식·식사 · 120g'), findsOneWidget);
-    expect(find.text('수유 · 180mL'), findsOneWidget);
+    expect(find.text('이유식'), findsOneWidget);
+    expect(find.text('이유식·식사 · 저녁 · 보통 · 잘 먹음'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recent-record-feeding')),
+        matching: find.text('수유'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('수유 · 180mL'), findsNothing);
+    expect(find.text('전체 카테고리'), findsNothing);
 
     final healthMedicalCategory = find.byKey(
       const Key('event-category-healthMedical'),
     );
     await tester.ensureVisible(healthMedicalCategory);
-    await tester.tap(healthMedicalCategory);
-    await tester.pumpAndSettle();
     expect(find.byKey(const Key('category-event-medication')), findsOneWidget);
     expect(
       find.byKey(const Key('category-event-careProcedure')),
       findsOneWidget,
     );
+    final feedingPosition = tester.getTopLeft(
+      find.byKey(const Key('category-event-feeding')),
+    );
+    final mealPosition = tester.getTopLeft(
+      find.byKey(const Key('category-event-meal')),
+    );
+    expect(feedingPosition.dy, mealPosition.dy);
+    expect(feedingPosition.dx, lessThan(mealPosition.dx));
+
+    final recentMeal = find.byKey(const Key('recent-record-meal'));
+    await tester.ensureVisible(recentMeal);
+    await tester.tap(recentMeal);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<ChoiceChip>(
+            find.byKey(const Key('meal-type-MealType.dinner')),
+          )
+          .selected,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<ChoiceChip>(
+            find.byKey(const Key('qualitative-amount-QualitativeLevel.normal')),
+          )
+          .selected,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<FilterChip>(find.byKey(const Key('intake-reaction-ateWell')))
+          .selected,
+      isTrue,
+    );
+    await tester.tap(find.byKey(const Key('meal-type-MealType.breakfast')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChoiceChip>(
+            find.byKey(const Key('meal-type-MealType.breakfast')),
+          )
+          .selected,
+      isTrue,
+    );
+    await tester.tap(find.byKey(const Key('back-to-record-types')));
+    await tester.pumpAndSettle();
 
     final quickRecordFeeding = find.byKey(const Key('quick-record-feeding'));
     await tester.ensureVisible(quickRecordFeeding);
@@ -693,8 +755,6 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('quick-launch-all')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('event-category-healthMedical')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(
       find.byKey(const Key('category-event-careProcedure')),
@@ -727,8 +787,6 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('quick-launch-all')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('event-category-basicCare')));
     await tester.pumpAndSettle();
     final meal = find.byKey(const Key('category-event-meal'));
     await tester.ensureVisible(meal);
@@ -866,14 +924,12 @@ void main() {
     expect(notifier.deletedActivityRecordId, 'activity-record');
   });
 
-  testWidgets('전체 카테고리 기저귀는 소변·대변·둘 다를 넓은 버튼으로 명시한다', (tester) async {
+  testWidgets('기본 돌봄의 기저귀는 소변·대변·둘 다를 넓은 버튼으로 명시한다', (tester) async {
     final notifier = _TestDiaryListNotifier(const []);
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('quick-launch-all')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('event-category-basicCare')));
     await tester.pumpAndSettle();
     final diaper = find.byKey(const Key('category-event-diaper'));
     await tester.ensureVisible(diaper);
@@ -1088,14 +1144,12 @@ void main() {
     expect(find.text('이미 진행 중인 수면이 있어요.'), findsOneWidget);
   });
 
-  testWidgets('전체 카테고리의 수면은 끝난 구간과 관찰 표지를 직접 저장한다', (tester) async {
+  testWidgets('기본 돌봄의 수면은 끝난 구간과 관찰 표지를 직접 저장한다', (tester) async {
     final notifier = _TestDiaryListNotifier(const []);
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('quick-launch-all')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('event-category-basicCare')));
     await tester.pumpAndSettle();
     final sleepItem = find.byKey(const Key('category-event-sleep'));
     await tester.ensureVisible(sleepItem);
@@ -1160,7 +1214,9 @@ void main() {
     expect(find.byType(Dialog), findsNothing);
     expect(find.byType(BottomSheet), findsNothing);
     expect(find.text('빠른 기록'), findsOneWidget);
-    expect(find.text('전체 카테고리'), findsOneWidget);
+    expect(find.text('전체 카테고리'), findsNothing);
+    expect(find.text('기본 돌봄'), findsOneWidget);
+    expect(find.byKey(const Key('category-event-meal')), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -2444,8 +2500,6 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('quick-launch-all')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('event-category-healthMedical')));
     await tester.pumpAndSettle();
     final medication = find.byKey(const Key('category-event-medication'));
     await tester.ensureVisible(medication);
