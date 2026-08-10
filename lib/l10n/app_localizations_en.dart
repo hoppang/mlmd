@@ -667,8 +667,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String todayStatusLastDoseElapsed(String ingredient, String duration) {
-    return 'Last $ingredient dose · $duration ago';
+  String todayStatusLastDoseElapsedTime(String ingredient, String elapsed) {
+    return '$ingredient - $elapsed ago';
+  }
+
+  @override
+  String todayStatusTemperatureSummary(String maximum, String latest) {
+    return 'High $maximum°C   Latest $latest°C';
   }
 
   @override

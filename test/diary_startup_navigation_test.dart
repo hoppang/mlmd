@@ -1854,7 +1854,7 @@ void main() {
     expect(find.text('기침 1   콧물 1'), findsOneWidget);
   });
 
-  testWidgets('오늘 현황은 수면 총시간과 성분별 마지막 해열제 경과시간을 표시한다', (tester) async {
+  testWidgets('오늘 현황은 수면·투약·기저귀·체온 세부 정보를 표시한다', (tester) async {
     final now = DateTime.now();
     final todayDiary = DiaryEntity(
       id: 597,
@@ -1897,7 +1897,7 @@ void main() {
       ActivityEntity(
         id: 5973,
         type: '해열제',
-        time: now.subtract(const Duration(hours: 3, minutes: 30)),
+        time: now,
         details: '',
         structuredDataJson: MedicationRecord(
           medicationId: 'today-ibuprofen',
@@ -1905,10 +1905,38 @@ void main() {
           medicationName: '부루펜',
           route: MedicationRoute.oral,
           ingredient: AntipyreticIngredient.ibuprofen,
-          administeredAt: now.subtract(const Duration(hours: 3, minutes: 30)),
+          administeredAt: now,
         ).encode(),
         lastModified: now,
       ),
+      for (final (index, kind) in [
+        EliminationKind.urine,
+        EliminationKind.stool,
+        EliminationKind.both,
+      ].indexed)
+        ActivityEntity(
+          id: 5974 + index,
+          type: '기저귀·배변',
+          time: now.subtract(Duration(minutes: 10 + index)),
+          details: '',
+          structuredDataJson: EliminationRecord(
+            kind: kind,
+            occurredAt: now.subtract(Duration(minutes: 10 + index)),
+          ).encode(),
+          lastModified: now,
+        ),
+      for (final (index, celsius) in [37.1, 38.3, 37.6].indexed)
+        ActivityEntity(
+          id: 5977 + index,
+          type: '체온',
+          time: now.subtract(Duration(minutes: 20 + index)),
+          details: '${celsius.toStringAsFixed(1)}°C',
+          structuredDataJson: TemperatureRecord(
+            celsius: celsius,
+            occurredAt: now.subtract(Duration(minutes: 20 + index)),
+          ).encode(),
+          lastModified: now,
+        ),
     ]);
 
     final previousDiary = DiaryEntity(
@@ -1923,7 +1951,7 @@ void main() {
     previousDiary.activities.addAll([
       for (final (index, elapsed) in [
         const Duration(hours: 9),
-        const Duration(hours: 7),
+        const Duration(hours: 5),
       ].indexed)
         ActivityEntity(
           id: 5980 + index,
@@ -1967,8 +1995,90 @@ void main() {
     expect(find.text('수면 2'), findsOneWidget);
     expect(find.text('총 2시간 45분'), findsOneWidget);
     expect(find.text('투약 1'), findsOneWidget);
-    expect(find.text('아세트아미노펜 마지막 투약 · 7시간 전'), findsOneWidget);
-    expect(find.text('이부프로펜 마지막 투약 · 3시간 30분 전'), findsOneWidget);
+    expect(find.text('아세트아미노펜 - 05:00 전'), findsOneWidget);
+    expect(find.text('아세트아미노펜 - 09:00 전'), findsNothing);
+    final immediateDose = find.text('이부프로펜 - 00:00 전');
+    expect(immediateDose, findsOneWidget);
+    final immediateDoseText = tester.widget<Text>(immediateDose);
+    expect(immediateDoseText.style?.fontWeight, FontWeight.w700);
+    expect(
+      immediateDoseText.style?.color,
+      Theme.of(tester.element(immediateDose)).colorScheme.primary,
+    );
+    expect(find.text('기저귀 3'), findsOneWidget);
+    expect(find.text('대변 2   소변 2'), findsOneWidget);
+    expect(find.text('체온 3'), findsOneWidget);
+    expect(find.text('최고 38.3°C   가장 최근 37.1°C'), findsOneWidget);
+  });
+
+  testWidgets('오늘 투약이 없어도 6시간 이내 전날 투약만 현황에 표시한다', (tester) async {
+    final now = DateTime.now();
+    final recentDoseAt = now.subtract(const Duration(hours: 5, minutes: 58));
+    final expiredDoseAt = now.subtract(const Duration(hours: 6, minutes: 1));
+    final todayDiary = DiaryEntity(
+      id: 599,
+      recordId: 'today-without-medication',
+      date: now,
+      title: '',
+      summary: '',
+      content: '',
+      lastModified: now,
+    );
+    final previousDiary = DiaryEntity(
+      id: 600,
+      recordId: 'previous-recent-medication',
+      date: now.subtract(const Duration(days: 1)),
+      title: '',
+      summary: '',
+      content: '',
+      lastModified: now,
+    );
+    previousDiary.activities.addAll([
+      ActivityEntity(
+        id: 6001,
+        type: '해열제',
+        time: recentDoseAt,
+        details: '',
+        structuredDataJson: MedicationRecord(
+          medicationId: 'recent-previous-acetaminophen',
+          category: MedicationCategory.antipyretic,
+          medicationName: '타이레놀',
+          route: MedicationRoute.oral,
+          ingredient: AntipyreticIngredient.acetaminophen,
+          administeredAt: recentDoseAt,
+        ).encode(),
+        lastModified: now,
+      ),
+      ActivityEntity(
+        id: 6002,
+        type: '해열제',
+        time: expiredDoseAt,
+        details: '',
+        structuredDataJson: MedicationRecord(
+          medicationId: 'expired-previous-ibuprofen',
+          category: MedicationCategory.antipyretic,
+          medicationName: '부루펜',
+          route: MedicationRoute.oral,
+          ingredient: AntipyreticIngredient.ibuprofen,
+          administeredAt: expiredDoseAt,
+        ).encode(),
+        lastModified: now,
+      ),
+    ]);
+
+    final diaries = [todayDiary, previousDiary];
+    await tester.pumpWidget(
+      _buildApp(
+        diaries: diaries,
+        diaryNotifier: _TestDiaryListNotifier(diaries),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('투약'), findsOneWidget);
+    expect(find.text('투약 0'), findsNothing);
+    expect(find.text('아세트아미노펜 - 05:58 전'), findsOneWidget);
+    expect(find.text('이부프로펜 - 06:01 전'), findsNothing);
   });
 
   testWidgets('38도 이상 체온은 목록에 주의 문구를, 수정 화면에 공식 자료를 표시한다', (tester) async {

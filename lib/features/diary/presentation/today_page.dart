@@ -23,6 +23,7 @@ import '../../events/domain/medical_guidance.dart';
 import '../../events/domain/medication_record.dart';
 import '../../events/domain/sleep_record.dart';
 import '../../events/domain/symptom_record.dart';
+import '../../events/domain/temperature_record.dart';
 import '../../events/presentation/medical_guidance_widgets.dart';
 import '../../events/presentation/sleep_date_time_picker.dart';
 import '../../events/presentation/sleep_event_form.dart';
@@ -158,6 +159,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     AppLocalizations loc,
   ) {
     final now = DateTime.now();
+    const recentDoseWindow = Duration(hours: 6);
     final latestAntipyreticDoses = <AntipyreticIngredient, DateTime>{};
     for (final diary in allDiaries) {
       for (final activity in diary.activities) {
@@ -168,7 +170,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         if (medication?.category != MedicationCategory.antipyretic ||
             (ingredient != AntipyreticIngredient.acetaminophen &&
                 ingredient != AntipyreticIngredient.ibuprofen) ||
-            medication!.administeredAt.isAfter(now)) {
+            medication!.administeredAt.isAfter(now) ||
+            now.difference(medication.administeredAt) > recentDoseWindow) {
           continue;
         }
         final previous = latestAntipyreticDoses[ingredient];
@@ -194,11 +197,29 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           key,
           () => _TodayStatusGroupBuilder(
             key: key,
-            label: catalogItem?.label(loc) ?? type,
+            label: catalogItem?.id == EventTypeId.diaper
+                ? loc.searchEventDiaper
+                : catalogItem?.label(loc) ?? type,
             icon: catalogItem?.icon ?? Icons.check_circle_outline,
           ),
         );
         builder.total += 1;
+
+        final elimination = EliminationRecord.decode(
+          activity.structuredDataJson ?? '',
+        );
+        if (elimination != null) {
+          if (elimination.hasStool) builder.stoolCount += 1;
+          if (elimination.hasUrine) builder.urineCount += 1;
+        }
+
+        if (catalogItem?.id == EventTypeId.temperature) {
+          final temperature = temperatureRecordForActivity(activity);
+          if (temperature != null) {
+            builder.temperatureRecords.add(temperature);
+          }
+        }
+
         final endedAt = sleep?.endedAt;
         if (sleep?.status == SleepRecordStatus.completed && endedAt != null) {
           final duration = endedAt.difference(sleep!.startedAt);
@@ -218,9 +239,20 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         }
       }
     }
-    counts[EventTypeId.medication.name]?.latestAntipyreticDoses.addAll(
-      latestAntipyreticDoses,
-    );
+    if (latestAntipyreticDoses.isNotEmpty) {
+      final medicationItem = eventCatalogItem(EventTypeId.medication);
+      counts
+          .putIfAbsent(
+            EventTypeId.medication.name,
+            () => _TodayStatusGroupBuilder(
+              key: EventTypeId.medication.name,
+              label: medicationItem.label(loc),
+              icon: medicationItem.icon,
+            ),
+          )
+          .latestAntipyreticDoses
+          .addAll(latestAntipyreticDoses);
+    }
     return counts.values.map((builder) => builder.build(loc, now)).toList()
       ..sort((a, b) => a.label.compareTo(b.label));
   }
@@ -615,7 +647,9 @@ class _TodayStatusBadge extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '${group.label} ${group.total}',
+                      group.total > 0
+                          ? '${group.label} ${group.total}'
+                          : group.label,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: colors.onPrimaryContainer,
                         fontWeight: FontWeight.w700,
@@ -638,7 +672,12 @@ class _TodayStatusBadge extends StatelessWidget {
                           detail.text,
                           key: ValueKey(detail.key),
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurface,
+                            color: detail.emphasized
+                                ? colors.primary
+                                : colors.onSurface,
+                            fontWeight: detail.emphasized
+                                ? FontWeight.w700
+                                : null,
                           ),
                         ),
                     ],
@@ -667,19 +706,49 @@ class _TodayStatusGroupBuilder {
   bool hasCompletedSleep = false;
   Duration completedSleepDuration = Duration.zero;
   final Map<AntipyreticIngredient, DateTime> latestAntipyreticDoses = {};
+  int stoolCount = 0;
+  int urineCount = 0;
+  final List<TemperatureRecord> temperatureRecords = [];
 
   _TodayStatusGroup build(AppLocalizations loc, DateTime now) {
     final sortedSubtypes = Map.fromEntries(
       subtypeCounts.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
     );
     final details = <_TodayStatusDetail>[];
-    if (sortedSubtypes.length > 1) {
+    if (key == EventTypeId.diaper.name && (stoolCount > 0 || urineCount > 0)) {
+      details.add(
+        _TodayStatusDetail(
+          key: 'today-status-diaper-counts-$key',
+          text:
+              '${loc.eliminationStoolDetail} $stoolCount   '
+              '${loc.eliminationUrineDetail} $urineCount',
+        ),
+      );
+    } else if (sortedSubtypes.length > 1) {
       details.add(
         _TodayStatusDetail(
           key: 'today-status-subtypes-$key',
           text: sortedSubtypes.entries
               .map((entry) => '${entry.key} ${entry.value}')
               .join('   '),
+        ),
+      );
+    }
+    if (temperatureRecords.isNotEmpty) {
+      final maximum = temperatureRecords
+          .map((record) => record.celsius)
+          .reduce((current, value) => value > current ? value : current);
+      final latest = temperatureRecords.reduce(
+        (current, record) =>
+            record.occurredAt.isAfter(current.occurredAt) ? record : current,
+      );
+      details.add(
+        _TodayStatusDetail(
+          key: 'today-status-temperature-summary-$key',
+          text: loc.todayStatusTemperatureSummary(
+            maximum.toStringAsFixed(1),
+            latest.celsius.toStringAsFixed(1),
+          ),
         ),
       );
     }
@@ -702,10 +771,11 @@ class _TodayStatusGroupBuilder {
       details.add(
         _TodayStatusDetail(
           key: 'today-status-last-dose-${ingredient.name}-$key',
-          text: loc.todayStatusLastDoseElapsed(
+          text: loc.todayStatusLastDoseElapsedTime(
             antipyreticIngredientLabel(loc, ingredient),
-            formatSleepDuration(loc, now.difference(administeredAt)),
+            _formatElapsedClock(now.difference(administeredAt)),
           ),
+          emphasized: true,
         ),
       );
     }
@@ -719,11 +789,24 @@ class _TodayStatusGroupBuilder {
   }
 }
 
+String _formatElapsedClock(Duration elapsed) {
+  final nonNegative = elapsed.isNegative ? Duration.zero : elapsed;
+  final hours = nonNegative.inHours;
+  final minutes = nonNegative.inMinutes.remainder(60);
+  return '${hours.toString().padLeft(2, '0')}:'
+      '${minutes.toString().padLeft(2, '0')}';
+}
+
 class _TodayStatusDetail {
-  const _TodayStatusDetail({required this.key, required this.text});
+  const _TodayStatusDetail({
+    required this.key,
+    required this.text,
+    this.emphasized = false,
+  });
 
   final String key;
   final String text;
+  final bool emphasized;
 }
 
 class _TodayStatusGroup {

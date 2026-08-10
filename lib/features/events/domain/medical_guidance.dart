@@ -114,9 +114,7 @@ MedicalGuidanceEvaluation evaluateMedicalGuidance(ActivityEntity? activity) {
   }
 
   if (_isTemperatureEvent(activity.type)) {
-    final record =
-        TemperatureRecord.decode(activity.structuredDataJson ?? '') ??
-        _legacyTemperatureRecord(activity);
+    final record = temperatureRecordForActivity(activity);
     if (record != null && record.celsius >= 38) {
       final links =
           guidanceLinkRules.where((rule) => rule.matches(record)).toList()
@@ -199,12 +197,3 @@ bool isApprovedGuidanceUri(Uri uri) {
 
 bool _isTemperatureEvent(String storedType) =>
     eventCatalogItem(EventTypeId.temperature).matches(storedType);
-
-TemperatureRecord? _legacyTemperatureRecord(ActivityEntity activity) {
-  final match = RegExp(
-    r'(?<!\d)(\d{2}(?:[.,]\d)?)\s*(?:°\s*)?[cC℃]?',
-  ).firstMatch(activity.details);
-  final celsius = double.tryParse(match?.group(1)?.replaceAll(',', '.') ?? '');
-  if (celsius == null) return null;
-  return TemperatureRecord(celsius: celsius, occurredAt: activity.time);
-}

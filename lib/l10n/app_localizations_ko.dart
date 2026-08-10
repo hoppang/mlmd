@@ -653,8 +653,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String todayStatusLastDoseElapsed(String ingredient, String duration) {
-    return '$ingredient 마지막 투약 · $duration 전';
+  String todayStatusLastDoseElapsedTime(String ingredient, String elapsed) {
+    return '$ingredient - $elapsed 전';
+  }
+
+  @override
+  String todayStatusTemperatureSummary(String maximum, String latest) {
+    return '최고 $maximum°C   가장 최근 $latest°C';
   }
 
   @override

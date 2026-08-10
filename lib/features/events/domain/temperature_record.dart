@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../models/activity_entity.dart';
 
 enum TemperatureMeasurementSite { axillary, ear, forehead, rectal, other }
 
@@ -69,6 +70,20 @@ class TemperatureRecord {
       return null;
     }
   }
+}
+
+TemperatureRecord? temperatureRecordForActivity(ActivityEntity activity) {
+  final structured = TemperatureRecord.decode(
+    activity.structuredDataJson ?? '',
+  );
+  if (structured != null) return structured;
+
+  final match = RegExp(
+    r'(?<!\d)(\d{2}(?:[.,]\d)?)\s*(?:°\s*)?[cC℃]?',
+  ).firstMatch(activity.details);
+  final celsius = double.tryParse(match?.group(1)?.replaceAll(',', '.') ?? '');
+  if (celsius == null || !celsius.isFinite || celsius <= 0) return null;
+  return TemperatureRecord(celsius: celsius, occurredAt: activity.time);
 }
 
 String temperatureMeasurementSiteLabel(

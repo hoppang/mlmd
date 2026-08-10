@@ -1306,11 +1306,17 @@ abstract class AppLocalizations {
   /// **'총 {duration}'**
   String todayStatusSleepTotal(String duration);
 
-  /// No description provided for @todayStatusLastDoseElapsed.
+  /// No description provided for @todayStatusLastDoseElapsedTime.
   ///
   /// In ko, this message translates to:
-  /// **'{ingredient} 마지막 투약 · {duration} 전'**
-  String todayStatusLastDoseElapsed(String ingredient, String duration);
+  /// **'{ingredient} - {elapsed} 전'**
+  String todayStatusLastDoseElapsedTime(String ingredient, String elapsed);
+
+  /// No description provided for @todayStatusTemperatureSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'최고 {maximum}°C   가장 최근 {latest}°C'**
+  String todayStatusTemperatureSummary(String maximum, String latest);
 
   /// No description provided for @startupLoading.
   ///
