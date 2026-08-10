@@ -1,0 +1,6 @@
+*.dart text eol=lf
+*.go text eol=lf
+
+# These files are verified byte-for-byte in CI.
+android/gradlew text eol=lf
+android/gradlew.bat text eol=lf
