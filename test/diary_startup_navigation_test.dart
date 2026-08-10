@@ -626,7 +626,27 @@ void main() {
 
     expect(find.byKey(const Key('adaptive-detail-page')), findsOneWidget);
     expect(find.byType(BottomSheet), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('무엇을 기록할까요?'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('무엇을 기록할까요?'), findsOneWidget);
     expect(find.text('빠른 기록'), findsOneWidget);
+    for (final key in [
+      'quick-record-feeding',
+      'quick-record-sleep',
+      'quick-record-diaper',
+      'quick-record-temperature',
+      'quick-record-memo',
+    ]) {
+      expect(find.byKey(Key(key)), findsOneWidget);
+    }
+    expect(find.byKey(const Key('quick-record-meal')), findsNothing);
+    expect(find.byKey(const Key('quick-record-water')), findsNothing);
+    expect(find.byKey(const Key('quick-record-snack')), findsNothing);
     expect(find.text('최근 사용'), findsOneWidget);
     expect(find.text('이유식·식사 · 120g'), findsOneWidget);
     expect(find.text('수유 · 180mL'), findsOneWidget);
@@ -707,7 +727,11 @@ void main() {
 
     await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('quick-record-meal')));
+    await tester.tap(find.byKey(const Key('event-category-basicCare')));
+    await tester.pumpAndSettle();
+    final meal = find.byKey(const Key('category-event-meal'));
+    await tester.ensureVisible(meal);
+    await tester.tap(meal);
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(const Key('quick-record-time')));
@@ -732,7 +756,7 @@ void main() {
     expect(notifier.addedActivityType, '이유식·식사');
   });
 
-  testWidgets('기저귀 빠른 프리셋은 즉시 저장하고 종류 정정·상세 추가·실행 취소를 지원한다', (tester) async {
+  testWidgets('기저귀 빠른 기록은 종류 선택 후 정정·상세 추가·실행 취소를 지원한다', (tester) async {
     final notifier = _TestDiaryListNotifier(const []);
     await tester.pumpWidget(_buildApp(diaryNotifier: notifier));
     await tester.pumpAndSettle();
@@ -740,12 +764,14 @@ void main() {
     await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('quick-record-diaper-urine')), findsOneWidget);
-    expect(find.byKey(const Key('quick-record-diaper-stool')), findsOneWidget);
-    expect(find.byKey(const Key('quick-record-diaper-both')), findsOneWidget);
-    expect(find.byKey(const Key('quick-record-diaper')), findsNothing);
+    expect(find.byKey(const Key('quick-record-diaper-urine')), findsNothing);
+    expect(find.byKey(const Key('quick-record-diaper-stool')), findsNothing);
+    expect(find.byKey(const Key('quick-record-diaper-both')), findsNothing);
+    expect(find.byKey(const Key('quick-record-diaper')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('quick-record-diaper-urine')));
+    await tester.tap(find.byKey(const Key('quick-record-diaper')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('save-elimination-urine')));
     await tester.pumpAndSettle();
 
     final initial = EliminationRecord.decode(

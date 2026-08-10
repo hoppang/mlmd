@@ -1597,10 +1597,6 @@ class _EventPicker extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            loc.recordSheetTitle,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
           if (onEditQuickLaunch != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Align(
@@ -1620,41 +1616,15 @@ class _EventPicker extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             children: [
               for (final item in quickItems)
-                if (item.id == EventTypeId.diaper) ...[
-                  _EliminationPresetChip(
-                    key: const Key('quick-record-diaper-urine'),
-                    label: loc.eliminationUrinePreset,
-                    icon: Icons.water_drop_outlined,
-                    onTap: saving
-                        ? null
-                        : () => onQuickElimination(item, EliminationKind.urine),
-                  ),
-                  _EliminationPresetChip(
-                    key: const Key('quick-record-diaper-stool'),
-                    label: loc.eliminationStoolPreset,
-                    icon: Icons.circle_outlined,
-                    onTap: saving
-                        ? null
-                        : () => onQuickElimination(item, EliminationKind.stool),
-                  ),
-                  _EliminationPresetChip(
-                    key: const Key('quick-record-diaper-both'),
-                    label: loc.eliminationBothPreset,
-                    icon: Icons.done_all,
-                    onTap: saving
-                        ? null
-                        : () => onQuickElimination(item, EliminationKind.both),
-                  ),
-                ] else
-                  _EventChoiceChip(
-                    key: Key('quick-record-${item.id.name}'),
-                    item: item,
-                    onTap: saving
-                        ? null
-                        : () => item.id == EventTypeId.sleep
-                              ? onStartSleep(item)
-                              : onSelect(item),
-                  ),
+                _EventChoiceChip(
+                  key: Key('quick-record-${item.id.name}'),
+                  item: item,
+                  onTap: saving
+                      ? null
+                      : () => item.id == EventTypeId.sleep
+                            ? onStartSleep(item)
+                            : onSelect(item),
+                ),
               for (final definition in customState.pinnedDefinitions)
                 ActionChip(
                   key: Key('quick-custom-${definition.customEventTypeId}'),
@@ -1811,28 +1781,6 @@ class _EventChoiceChip extends StatelessWidget {
     return ActionChip(
       avatar: Icon(item.icon, size: 18),
       label: Text(item.label(AppLocalizations.of(context)!)),
-      onPressed: onTap,
-    );
-  }
-}
-
-class _EliminationPresetChip extends StatelessWidget {
-  const _EliminationPresetChip({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: Icon(icon, size: 18),
-      label: Text(label),
       onPressed: onTap,
     );
   }

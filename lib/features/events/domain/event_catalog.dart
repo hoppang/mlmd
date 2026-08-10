@@ -217,9 +217,6 @@ const eventCatalog = <EventCatalogItem>[
 
 const defaultQuickEventIds = <EventTypeId>[
   EventTypeId.feeding,
-  EventTypeId.meal,
-  EventTypeId.water,
-  EventTypeId.snack,
   EventTypeId.sleep,
   EventTypeId.diaper,
   EventTypeId.temperature,

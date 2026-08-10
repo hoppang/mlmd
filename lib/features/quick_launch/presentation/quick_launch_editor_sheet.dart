@@ -32,9 +32,7 @@ class _QuickLaunchEditorSheetState
   final _labelController = TextEditingController();
   final _scrollController = ScrollController();
 
-  int get _editableSlotCount => defaultTargetPlatform == TargetPlatform.windows
-      ? quickLaunchSlotCount
-      : quickLaunchCoreSlotCount;
+  int get _editableSlotCount => quickLaunchCoreSlotCount;
 
   @override
   void initState() {

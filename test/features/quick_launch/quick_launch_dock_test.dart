@@ -8,7 +8,7 @@ import 'package:mlmd/features/quick_launch/presentation/quick_launch_dock.dart';
 import 'package:mlmd/l10n/app_localizations.dart';
 
 void main() {
-  testWidgets('mobile shows five fixed user slots and a fixed all button', (
+  testWidgets('mobile shows four fixed user slots and a fixed all button', (
     tester,
   ) async {
     QuickLaunchSlot? pressed;
@@ -63,7 +63,7 @@ void main() {
     for (var index = 0; index < quickLaunchCoreSlotCount; index++) {
       expect(find.byKey(Key('quick-launch-slot-$index')), findsOneWidget);
     }
-    expect(find.byKey(const Key('quick-launch-slot-5')), findsNothing);
+    expect(find.byKey(const Key('quick-launch-slot-4')), findsNothing);
     expect(find.byKey(const Key('quick-launch-more')), findsNothing);
     expect(find.byKey(const Key('quick-launch-all')), findsOneWidget);
     expect(find.byType(Scrollable), findsNothing);
@@ -126,7 +126,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('mobile fits all six buttons at 320 logical pixels', (
+  testWidgets('mobile fits all five buttons at 320 logical pixels', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -167,7 +167,7 @@ void main() {
     );
   });
 
-  testWidgets('wide Windows dock shows eight slots without overflow', (
+  testWidgets('wide Windows dock also shows four slots and All', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
@@ -178,9 +178,10 @@ void main() {
 
     await tester.pumpWidget(_testApp(layout: QuickLaunchLayout.empty()));
 
-    for (var index = 0; index < quickLaunchSlotCount; index++) {
+    for (var index = 0; index < quickLaunchCoreSlotCount; index++) {
       expect(find.byKey(Key('quick-launch-slot-$index')), findsOneWidget);
     }
+    expect(find.byKey(const Key('quick-launch-slot-4')), findsNothing);
     expect(find.byKey(const Key('quick-launch-more')), findsNothing);
     expect(find.byKey(const Key('quick-launch-all')), findsOneWidget);
     expect(
@@ -190,7 +191,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('medium Windows dock exposes hidden slots from More', (
+  testWidgets('medium Windows dock also keeps five total buttons', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
@@ -198,57 +199,18 @@ void main() {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(700, 800);
     addTearDown(tester.view.reset);
-    QuickLaunchSlot? pressed;
-    int? edited;
-    final layout = QuickLaunchLayout.empty().copyWithSlot(
-      6,
-      const QuickLaunchSlot(
-        slotIndex: 6,
-        eventTypeId: QuickLaunchEventTarget.medication,
-        executionMode: QuickLaunchExecutionMode.prefilledForm,
-      ),
-    );
-
-    await tester.pumpWidget(
-      _testApp(
-        layout: layout,
-        onSlotPressed: (slot, _) => pressed = slot,
-        onEditSlot: (index) => edited = index,
-      ),
-    );
+    await tester.pumpWidget(_testApp(layout: QuickLaunchLayout.empty()));
 
     for (var index = 0; index < quickLaunchCoreSlotCount; index++) {
       expect(find.byKey(Key('quick-launch-slot-$index')), findsOneWidget);
     }
-    expect(find.byKey(const Key('quick-launch-slot-5')), findsNothing);
-    expect(find.byKey(const Key('quick-launch-more')), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('quick-launch-more')));
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('quick-launch-overflow-slot-5')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('quick-launch-overflow-slot-7')),
-      findsOneWidget,
-    );
-
-    await tester.tap(find.byKey(const Key('quick-launch-overflow-slot-6')));
-    await tester.pumpAndSettle();
-    expect(pressed?.slotIndex, 6);
-
-    await tester.tap(find.byKey(const Key('quick-launch-more')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('quick-launch-overflow-slot-5')));
-    await tester.pumpAndSettle();
-    expect(edited, 5);
+    expect(find.byKey(const Key('quick-launch-slot-4')), findsNothing);
+    expect(find.byKey(const Key('quick-launch-more')), findsNothing);
+    expect(find.byKey(const Key('quick-launch-all')), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('narrow Windows dock keeps four slots plus More and All', (
-    tester,
-  ) async {
+  testWidgets('narrow Windows dock keeps four slots plus All', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     tester.view.devicePixelRatio = 1;
@@ -265,7 +227,7 @@ void main() {
       );
     }
     expect(find.byKey(const Key('quick-launch-slot-4')), findsNothing);
-    expect(find.byKey(const Key('quick-launch-more')), findsOneWidget);
+    expect(find.byKey(const Key('quick-launch-more')), findsNothing);
     expect(find.byKey(const Key('quick-launch-all')), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });

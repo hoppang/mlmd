@@ -251,7 +251,8 @@ class QuickLaunchSlot {
   );
 }
 
-const quickLaunchCoreSlotCount = 5;
+const quickLaunchCoreSlotCount = 4;
+const _legacyQuickLaunchCoreSlotCount = 5;
 const quickLaunchSlotCount = 8;
 
 class QuickLaunchLayout {
@@ -291,9 +292,11 @@ class QuickLaunchLayout {
         .map((value) => QuickLaunchSlot.fromJson(value as Map<String, dynamic>))
         .toList(growable: false);
     if (decodedSlots.length != quickLaunchCoreSlotCount &&
+        decodedSlots.length != _legacyQuickLaunchCoreSlotCount &&
         decodedSlots.length != quickLaunchSlotCount) {
       throw FormatException(
-        'Expected $quickLaunchCoreSlotCount or $quickLaunchSlotCount '
+        'Expected $quickLaunchCoreSlotCount, '
+        '$_legacyQuickLaunchCoreSlotCount, or $quickLaunchSlotCount '
         'quick launch slots, got ${decodedSlots.length}',
       );
     }

@@ -81,6 +81,26 @@ void main() {
       expect(decoded, equals(layout));
     });
 
+    test('migrates an original four-slot layout without losing settings', () {
+      final original = QuickLaunchLayout.empty().copyWithSlot(
+        3,
+        const QuickLaunchSlot(
+          slotIndex: 3,
+          eventTypeId: QuickLaunchEventTarget.sleep,
+          displayLabel: 'sleep',
+        ),
+      );
+      final json = original.toJson();
+      json['slots'] = (json['slots']! as List<dynamic>).take(4).toList();
+
+      final migrated = QuickLaunchLayout.fromJson(json);
+
+      expect(migrated.slots, hasLength(8));
+      expect(migrated.slotAt(3).eventTypeId, QuickLaunchEventTarget.sleep);
+      expect(migrated.slotAt(3).displayLabel, 'sleep');
+      expect(migrated.slotAt(4).eventTypeId, isNull);
+    });
+
     test('migrates a legacy five-slot layout without losing settings', () {
       final legacy =
           QuickLaunchLayout.empty(
@@ -167,7 +187,7 @@ void main() {
   group('QuickLaunchRecommendationBuilder', () {
     const builder = QuickLaunchRecommendationBuilder();
 
-    test('builds an eight slot template with five recommendation slots', () {
+    test('builds an eight slot template with four recommendation slots', () {
       final layout = builder.buildForMilestone(
         milestone: GrowthMilestone.newborn,
         childId: 'child-a',

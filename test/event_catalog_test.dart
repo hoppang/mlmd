@@ -4,6 +4,16 @@ import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 
 void main() {
+  test('default quick choices contain the planned five event types', () {
+    expect(buildQuickEventItems().map((item) => item.id), [
+      EventTypeId.feeding,
+      EventTypeId.sleep,
+      EventTypeId.diaper,
+      EventTypeId.temperature,
+      EventTypeId.memo,
+    ]);
+  });
+
   test('care procedure aliases keep concrete types in the health category', () {
     final item = eventCatalogItem(EventTypeId.careProcedure);
 
@@ -61,7 +71,10 @@ void main() {
       diary,
     ], excludedIds: defaultQuickEventIds.toSet());
 
-    expect(presets.map((preset) => preset.item.id), [EventTypeId.medication]);
-    expect(presets.first.details, '2.5mL');
+    expect(presets.map((preset) => preset.item.id), [
+      EventTypeId.meal,
+      EventTypeId.medication,
+    ]);
+    expect(presets.first.details, '120g');
   });
 }
