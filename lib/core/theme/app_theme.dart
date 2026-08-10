@@ -97,6 +97,10 @@ ThemeData buildAppTheme() {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.12),
+        disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
         minimumSize: const Size(
           AppSizes.minimumInteractiveDimension,
           AppSizes.minimumInteractiveDimension,

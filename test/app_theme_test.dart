@@ -50,6 +50,20 @@ void main() {
         );
       }
     });
+
+    test('uses accent colors for elevated save actions', () {
+      final theme = buildAppTheme();
+      final style = theme.elevatedButtonTheme.style!;
+
+      expect(
+        style.backgroundColor!.resolve(<WidgetState>{}),
+        theme.colorScheme.primary,
+      );
+      expect(
+        style.foregroundColor!.resolve(<WidgetState>{}),
+        theme.colorScheme.onPrimary,
+      );
+    });
   });
 
   testWidgets('shared presentation components follow the app theme', (
