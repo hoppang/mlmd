@@ -102,7 +102,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get feedingEvent => '授乳';
 
   @override
-  String get mealEvent => '離乳食・食事';
+  String get mealEvent => '離乳食';
 
   @override
   String get waterSnackEvent => '水分・おやつ';

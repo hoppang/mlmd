@@ -103,7 +103,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get feedingEvent => '수유';
 
   @override
-  String get mealEvent => '이유식·식사';
+  String get mealEvent => '이유식';
 
   @override
   String get waterSnackEvent => '물·간식';

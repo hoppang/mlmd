@@ -23,6 +23,7 @@ class MemoEventForm extends ConsumerStatefulWidget {
     required this.onChangeTime,
     required this.onSave,
     this.initialRecord,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -33,6 +34,7 @@ class MemoEventForm extends ConsumerStatefulWidget {
   final VoidCallback onChangeTime;
   final ValueChanged<MemoFormResult> onSave;
   final MemoRecord? initialRecord;
+  final bool showBackButton;
 
   @override
   ConsumerState<MemoEventForm> createState() => _MemoEventFormState();
@@ -241,11 +243,12 @@ class _MemoEventFormState extends ConsumerState<MemoEventForm> {
       children: [
         Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: widget.onBack,
-              tooltip: '뒤로 가기',
-            ),
+            if (widget.showBackButton)
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: widget.onBack,
+                tooltip: '뒤로 가기',
+              ),
             Icon(Icons.notes_outlined, color: theme.colorScheme.primary),
             const SizedBox(width: 8),
             Text(

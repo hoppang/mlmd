@@ -355,7 +355,7 @@ class _DiaryDemoPageState extends ConsumerState<DiaryDemoPage> {
       context: context,
       expandedDialog: editActivity != null,
       title: editActivity != null && _isIntakeEventType(initialItem?.id)
-          ? editActivity.type
+          ? initialItem!.label(AppLocalizations.of(context)!)
           : editActivity == null && initialItem == null
           ? AppLocalizations.of(context)!.recordSheetTitle
           : null,

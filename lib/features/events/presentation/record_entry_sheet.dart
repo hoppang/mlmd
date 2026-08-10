@@ -1177,6 +1177,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                             _selectedItem = null;
                             _error = null;
                           }),
+                          showBackButton: false,
                           onSave: (relativeState, memo) =>
                               _saveDailyCheckIn(selected, relativeState, memo),
                         )
@@ -1188,6 +1189,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           error: _error,
                           allowUndo: !_isEditing,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onQuickSave: (kind) =>
                               _saveElimination(selected!, kind),
                           onUpdate: _updateElimination,
@@ -1203,6 +1205,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? null
                               : SleepRecord.decode(_structuredDataJson!),
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onSave: _saveSleep,
                         )
                       : custom == null && selectedId == EventTypeId.temperature
@@ -1215,6 +1218,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? null
                               : TemperatureRecord.decode(_structuredDataJson!),
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onOccurredAtChanged: (value) =>
                               setState(() => _occurredAt = value),
                           onSave: _saveTemperature,
@@ -1229,6 +1233,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? null
                               : SymptomRecord.decode(_structuredDataJson!),
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveSymptom,
                         )
@@ -1243,6 +1248,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               : MedicationRecord.decode(_structuredDataJson!),
                           recentMedicationNotes: _recentMedicationNotes(),
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveMedication,
                         )
@@ -1259,6 +1265,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                                 ),
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveHospital,
                         )
@@ -1273,6 +1280,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               : VaccinationRecord.decode(_structuredDataJson!),
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveVaccination,
                         )
@@ -1290,6 +1298,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                                 ),
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveAccident,
                         )
@@ -1305,6 +1314,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               : null,
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveCareProcedure,
                         )
@@ -1318,6 +1328,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? PumpingRecord.decode(_structuredDataJson!)
                               : null,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onOccurredAtChanged: (value) =>
                               setState(() => _occurredAt = value),
@@ -1333,6 +1344,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? TummyTimeRecord.decode(_structuredDataJson!)
                               : null,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveTummyTime,
                         )
@@ -1347,6 +1359,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               : null,
                           initialAttachments: editAttachments,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveBath,
                         )
@@ -1363,6 +1376,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                                 )
                               : null,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveGrowthMeasurement,
                         )
@@ -1376,6 +1390,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                               ? MemoRecord.decode(_structuredDataJson!)
                               : null,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _saveMemo,
                         )
@@ -1390,6 +1405,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           error: _error,
                           initialStructuredDataJson: _structuredDataJson,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onOccurredAtChanged: (value) =>
                               setState(() => _occurredAt = value),
@@ -1415,6 +1431,7 @@ class _RecordEntrySheetState extends ConsumerState<RecordEntrySheet> {
                           saving: _saving,
                           error: _error,
                           onBack: _closeOrReturnToPicker,
+                          showBackButton: false,
                           onChangeTime: _changeTime,
                           onSave: _save,
                         ),
@@ -1435,6 +1452,7 @@ class _DailyCheckInForm extends StatefulWidget {
     required this.error,
     required this.onBack,
     required this.onSave,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -1442,6 +1460,7 @@ class _DailyCheckInForm extends StatefulWidget {
   final bool saving;
   final String? error;
   final VoidCallback onBack;
+  final bool showBackButton;
   final void Function(TrackingRelativeState relativeState, String memo) onSave;
 
   @override
@@ -1469,12 +1488,14 @@ class _DailyCheckInFormState extends State<_DailyCheckInForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (widget.showBackButton) ...[
+                IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               Expanded(
                 child: Text(
                   loc.dailyTrackingCheckInTitle(widget.item.label(loc)),
@@ -1849,6 +1870,7 @@ class _EventForm extends StatelessWidget {
     required this.onBack,
     required this.onChangeTime,
     required this.onSave,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -1862,6 +1884,7 @@ class _EventForm extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onChangeTime;
   final VoidCallback onSave;
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context) {
@@ -1880,13 +1903,15 @@ class _EventForm extends StatelessWidget {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: saving ? null : onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: saving ? null : onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               Icon(icon),
               const SizedBox(width: AppSpacing.xs),
               Expanded(

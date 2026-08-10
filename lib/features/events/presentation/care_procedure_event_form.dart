@@ -29,6 +29,7 @@ class CareProcedureEventForm extends StatefulWidget {
     required this.onBack,
     required this.onChangeTime,
     required this.onSave,
+    this.showBackButton = true,
     this.initialRecord,
     this.initialAttachments = const [],
     super.key,
@@ -38,6 +39,7 @@ class CareProcedureEventForm extends StatefulWidget {
   final bool saving;
   final String? error;
   final VoidCallback onBack;
+  final bool showBackButton;
   final VoidCallback onChangeTime;
   final ValueChanged<CareProcedureFormResult> onSave;
   final CareProcedureRecord? initialRecord;
@@ -175,13 +177,15 @@ class _CareProcedureEventFormState extends State<CareProcedureEventForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (widget.showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               const Icon(Icons.home_repair_service_outlined),
               const SizedBox(width: AppSpacing.xs),
               Expanded(

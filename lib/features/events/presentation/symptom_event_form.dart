@@ -121,6 +121,7 @@ class SymptomEventForm extends StatefulWidget {
     required this.onBack,
     required this.onChangeTime,
     required this.onSave,
+    this.showBackButton = true,
     this.activeEpisodes = const [],
     this.initialRecord,
     super.key,
@@ -130,6 +131,7 @@ class SymptomEventForm extends StatefulWidget {
   final bool saving;
   final String? error;
   final VoidCallback onBack;
+  final bool showBackButton;
   final VoidCallback onChangeTime;
   final ValueChanged<SymptomFormResult> onSave;
   final List<SymptomRecord> activeEpisodes;
@@ -351,10 +353,11 @@ class _SymptomEventFormState extends State<SymptomEventForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: widget.onBack,
-              ),
+              if (widget.showBackButton)
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: widget.onBack,
+                ),
               Expanded(
                 child: Text(
                   loc.symptomEvent,

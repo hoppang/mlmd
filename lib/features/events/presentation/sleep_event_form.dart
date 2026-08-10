@@ -19,6 +19,7 @@ class SleepEventForm extends StatefulWidget {
     required this.onBack,
     required this.onSave,
     this.initialRecord,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -27,6 +28,7 @@ class SleepEventForm extends StatefulWidget {
   final VoidCallback onBack;
   final Future<void> Function(SleepFormResult result) onSave;
   final SleepRecord? initialRecord;
+  final bool showBackButton;
 
   @override
   State<SleepEventForm> createState() => _SleepEventFormState();
@@ -143,13 +145,15 @@ class _SleepEventFormState extends State<SleepEventForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (widget.showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               const Icon(Icons.bedtime_outlined),
               const SizedBox(width: AppSpacing.xs),
               Expanded(

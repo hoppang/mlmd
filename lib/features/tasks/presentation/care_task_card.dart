@@ -216,7 +216,7 @@ class CareTaskCard extends ConsumerWidget {
       case 'bath':
         return '목욕했어요';
       case 'intake':
-        return '수유/식사 완료';
+        return '수유/이유식 완료';
       default:
         return '시행했어요';
     }

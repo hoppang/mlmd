@@ -154,6 +154,14 @@ void main() {
       );
 
       final restoredMeal = IntakeRecord.decode(meal.encode());
+      final restoredMealWithoutType = IntakeRecord.decode(
+        const IntakeRecord(
+          kind: IntakeRecordKind.meal,
+          amountExpression: AmountExpression.qualitative(
+            QualitativeLevel.normal,
+          ),
+        ).encode(),
+      );
       final restoredWater = IntakeRecord.decode(water.encode());
       final restoredSnack = IntakeRecord.decode(snack.encode());
 
@@ -161,6 +169,8 @@ void main() {
       expect(restoredMeal!.mealType, MealType.lunch);
       expect(restoredMeal.foodName, '???');
       expect(restoredMeal.reaction, IntakeReaction.ateWell);
+      expect(restoredMealWithoutType, isNotNull);
+      expect(restoredMealWithoutType?.mealType, isNull);
 
       expect(restoredWater, isNotNull);
       expect(restoredWater!.kind, IntakeRecordKind.water);

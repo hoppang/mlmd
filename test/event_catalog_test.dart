@@ -35,6 +35,15 @@ void main() {
     expect(eventCatalogItem(EventTypeId.feeding), isNotNull);
   });
 
+  test('meal keeps legacy aliases while using the infant-focused name', () {
+    final item = eventCatalogItem(EventTypeId.meal);
+
+    expect(item.label(AppLocalizationsKo()), '이유식');
+    expect(item.matches('이유식'), isTrue);
+    expect(item.matches('이유식·식사'), isTrue);
+    expect(item.matches('Meal'), isTrue);
+  });
+
   test('recent presets keep latest type and exclude quick records', () {
     final diary = DiaryEntity(
       date: DateTime(2026, 7, 23),

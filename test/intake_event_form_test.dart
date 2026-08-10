@@ -190,6 +190,8 @@ void main() {
     );
 
     expect(find.byKey(const Key('quick-record-time')), findsOneWidget);
+    expect(find.text('식사 구분'), findsNothing);
+    expect(find.byKey(const Key('meal-type-MealType.breakfast')), findsNothing);
     await tester.tap(find.byKey(const Key('quick-record-time')));
     await tester.pumpAndSettle();
 
@@ -239,6 +241,7 @@ void main() {
     await tester.tap(find.byKey(const Key('save-quick-record')));
     await tester.pump();
     expect(result?.record.kind, IntakeRecordKind.meal);
+    expect(result?.record.mealType, isNull);
     expect(occurredAt, expectedOccurredAt);
   });
 }

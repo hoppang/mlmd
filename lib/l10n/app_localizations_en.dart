@@ -106,7 +106,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedingEvent => 'Feeding';
 
   @override
-  String get mealEvent => 'Meal';
+  String get mealEvent => 'Baby food';
 
   @override
   String get waterSnackEvent => 'Water · snack';

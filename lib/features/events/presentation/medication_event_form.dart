@@ -24,6 +24,7 @@ class MedicationEventForm extends StatefulWidget {
     required this.onBack,
     required this.onChangeTime,
     required this.onSave,
+    this.showBackButton = true,
     this.initialRecord,
     this.recentMedicationNotes = const [],
     super.key,
@@ -33,6 +34,7 @@ class MedicationEventForm extends StatefulWidget {
   final bool saving;
   final String? error;
   final VoidCallback onBack;
+  final bool showBackButton;
   final VoidCallback onChangeTime;
   final ValueChanged<MedicationFormResult> onSave;
   final MedicationRecord? initialRecord;
@@ -138,11 +140,12 @@ class _MedicationEventFormState extends State<MedicationEventForm> {
           // Header
           Row(
             children: [
-              IconButton(
-                key: const Key('medication-back-btn'),
-                icon: const Icon(Icons.arrow_back),
-                onPressed: widget.onBack,
-              ),
+              if (widget.showBackButton)
+                IconButton(
+                  key: const Key('medication-back-btn'),
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: widget.onBack,
+                ),
               Expanded(
                 child: Text(
                   loc.medicationEvent,

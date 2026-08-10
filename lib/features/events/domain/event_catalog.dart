@@ -96,7 +96,7 @@ const eventCatalog = <EventCatalogItem>[
     id: EventTypeId.meal,
     category: EventCategoryId.basicCare,
     icon: Icons.restaurant_outlined,
-    aliases: {'이유식·식사', 'Meal', '離乳食・食事'},
+    aliases: {'이유식', '이유식·식사', 'Baby food', 'Meal', '離乳食', '離乳食・食事'},
   ),
   EventCatalogItem(
     id: EventTypeId.water,

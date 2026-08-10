@@ -16,6 +16,7 @@ class EliminationEventForm extends StatefulWidget {
     required this.onUndo,
     required this.onDone,
     this.allowUndo = true,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -28,6 +29,7 @@ class EliminationEventForm extends StatefulWidget {
   final VoidCallback onUndo;
   final VoidCallback onDone;
   final bool allowUndo;
+  final bool showBackButton;
 
   @override
   State<EliminationEventForm> createState() => _EliminationEventFormState();
@@ -126,17 +128,19 @@ class _EliminationEventFormState extends State<EliminationEventForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: saved == null ? loc.backToRecordTypes : loc.close,
-                onPressed: widget.saving
-                    ? null
-                    : saved == null
-                    ? widget.onBack
-                    : widget.onDone,
-                icon: Icon(saved == null ? Icons.arrow_back : Icons.close),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (saved != null || widget.showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: saved == null ? loc.backToRecordTypes : loc.close,
+                  onPressed: widget.saving
+                      ? null
+                      : saved == null
+                      ? widget.onBack
+                      : widget.onDone,
+                  icon: Icon(saved == null ? Icons.arrow_back : Icons.close),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               const Icon(Icons.child_friendly_outlined),
               const SizedBox(width: AppSpacing.xs),
               Expanded(

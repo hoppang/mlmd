@@ -24,6 +24,7 @@ class PumpingEventForm extends StatefulWidget {
     required this.onOccurredAtChanged,
     required this.onSave,
     this.initialRecord,
+    this.showBackButton = true,
     super.key,
   });
 
@@ -35,6 +36,7 @@ class PumpingEventForm extends StatefulWidget {
   final ValueChanged<DateTime> onOccurredAtChanged;
   final ValueChanged<PumpingFormResult> onSave;
   final PumpingRecord? initialRecord;
+  final bool showBackButton;
 
   @override
   State<PumpingEventForm> createState() => _PumpingEventFormState();
@@ -133,13 +135,15 @@ class _PumpingEventFormState extends State<PumpingEventForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (widget.showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               const Icon(Icons.water_drop_outlined),
               const SizedBox(width: AppSpacing.xs),
               Expanded(

@@ -657,7 +657,13 @@ void main() {
     expect(find.byKey(const Key('quick-record-water')), findsNothing);
     expect(find.byKey(const Key('quick-record-snack')), findsNothing);
     expect(find.text('최근 사용'), findsOneWidget);
-    expect(find.text('이유식'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recent-record-meal')),
+        matching: find.text('이유식'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('이유식·식사 · 저녁 · 보통 · 잘 먹음'), findsNothing);
     expect(
       find.descendant(
@@ -691,14 +697,8 @@ void main() {
     await tester.ensureVisible(recentMeal);
     await tester.tap(recentMeal);
     await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<ChoiceChip>(
-            find.byKey(const Key('meal-type-MealType.dinner')),
-          )
-          .selected,
-      isTrue,
-    );
+    expect(find.text('식사 구분'), findsNothing);
+    expect(find.byKey(const Key('meal-type-MealType.dinner')), findsNothing);
     expect(
       tester
           .widget<ChoiceChip>(
@@ -713,17 +713,18 @@ void main() {
           .selected,
       isTrue,
     );
-    await tester.tap(find.byKey(const Key('meal-type-MealType.breakfast')));
+    await tester.tap(find.byKey(const Key('intake-reaction-refused')));
     await tester.pump();
     expect(
       tester
-          .widget<ChoiceChip>(
-            find.byKey(const Key('meal-type-MealType.breakfast')),
-          )
+          .widget<FilterChip>(find.byKey(const Key('intake-reaction-refused')))
           .selected,
       isTrue,
     );
-    await tester.tap(find.byKey(const Key('back-to-record-types')));
+    expect(find.byKey(const Key('back-to-record-types')), findsNothing);
+    await tester.tap(find.byType(CloseButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-launch-all')));
     await tester.pumpAndSettle();
 
     final quickRecordFeeding = find.byKey(const Key('quick-record-feeding'));
@@ -763,6 +764,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('care-procedure-event-form')), findsOneWidget);
+    expect(find.byType(CloseButton), findsOneWidget);
+    expect(find.byKey(const Key('back-to-record-types')), findsNothing);
     await tester.tap(find.byKey(const Key('care-procedure-type-nasalCare')));
     await tester.pump();
     await tester.ensureVisible(
@@ -812,7 +815,7 @@ void main() {
       DateTime.now(),
     ).subtract(const Duration(days: 1));
     expect(DateUtils.isSameDay(savedAt, yesterday), isTrue);
-    expect(notifier.addedActivityType, '이유식·식사');
+    expect(notifier.addedActivityType, '이유식');
   });
 
   testWidgets('기저귀 빠른 기록은 종류 선택 후 정정·상세 추가·실행 취소를 지원한다', (tester) async {
@@ -2329,7 +2332,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(CloseButton), findsOneWidget);
-      expect(find.text('\uC774\uC720\uC2DD\u00B7\uC2DD\uC0AC'), findsOneWidget);
+      expect(find.text('이유식'), findsOneWidget);
       expect(find.byKey(const Key('back-to-record-types')), findsNothing);
 
       final appBarBottom = tester.getBottomLeft(find.byType(AppBar)).dy;

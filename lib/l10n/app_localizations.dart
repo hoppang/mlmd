@@ -289,7 +289,7 @@ abstract class AppLocalizations {
   /// No description provided for @mealEvent.
   ///
   /// In ko, this message translates to:
-  /// **'이유식·식사'**
+  /// **'이유식'**
   String get mealEvent;
 
   /// No description provided for @waterSnackEvent.

@@ -21,6 +21,7 @@ class TemperatureEventForm extends StatefulWidget {
     required this.onBack,
     required this.onOccurredAtChanged,
     required this.onSave,
+    this.showBackButton = true,
     this.initialRecord,
     super.key,
   });
@@ -29,6 +30,7 @@ class TemperatureEventForm extends StatefulWidget {
   final bool saving;
   final String? error;
   final VoidCallback onBack;
+  final bool showBackButton;
   final ValueChanged<DateTime> onOccurredAtChanged;
   final ValueChanged<TemperatureFormResult> onSave;
   final TemperatureRecord? initialRecord;
@@ -133,13 +135,15 @@ class _TemperatureEventFormState extends State<TemperatureEventForm> {
         children: [
           Row(
             children: [
-              IconButton(
-                key: const Key('back-to-record-types'),
-                tooltip: loc.backToRecordTypes,
-                onPressed: widget.saving ? null : widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: AppSpacing.xs),
+              if (widget.showBackButton) ...[
+                IconButton(
+                  key: const Key('back-to-record-types'),
+                  tooltip: loc.backToRecordTypes,
+                  onPressed: widget.saving ? null : widget.onBack,
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               const Icon(Icons.thermostat_outlined),
               const SizedBox(width: AppSpacing.xs),
               Expanded(
