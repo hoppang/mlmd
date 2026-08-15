@@ -88,6 +88,56 @@ func TestStateSurvivesStoreRestart(t *testing.T) {
 	}
 }
 
+func TestExchangeRetainsHistoryAfterDeviceCursorAdvances(t *testing.T) {
+	ctx := context.Background()
+	store, err := sqlite.Open(ctx, filepath.Join(t.TempDir(), "retention.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	_, tokenHash, err := auth.NewSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+	space, device, err := store.CreateSpace(
+		ctx,
+		"Family",
+		"550e8400-e29b-41d4-a716-446655440030",
+		"11111111-2222-4333-8444-555555555557",
+		"Phone",
+		tokenHash,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	envelope := model.OutgoingEnvelope{
+		EnvelopeVersion: 1,
+		ChangeID:        "550e8400-e29b-41d4-a716-446655440031",
+		SourceDeviceID:  device.ID,
+		Nonce:           base64.RawURLEncoding.EncodeToString(make([]byte, 24)),
+		Ciphertext:      base64.RawURLEncoding.EncodeToString(make([]byte, 16)),
+	}
+
+	first, err := store.Exchange(ctx, space.ID, device.ID, 0, []model.OutgoingEnvelope{envelope}, 200)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(first.Incoming) != 1 || first.NextCursor != 1 {
+		t.Fatalf("unexpected initial exchange: %#v", first)
+	}
+	if _, err := store.Exchange(ctx, space.ID, device.ID, first.NextCursor, nil, 200); err != nil {
+		t.Fatal(err)
+	}
+
+	replayed, err := store.Exchange(ctx, space.ID, device.ID, 0, nil, 200)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(replayed.Incoming) != 1 || replayed.Incoming[0].ChangeID != envelope.ChangeID {
+		t.Fatalf("cursor advancement pruned retained history: %#v", replayed.Incoming)
+	}
+}
+
 func TestBackupCapturesLiveWALSnapshot(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()

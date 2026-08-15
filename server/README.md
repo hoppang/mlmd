@@ -44,6 +44,18 @@ Implemented management endpoints:
 - `GET /v1/spaces/{spaceId}/devices`
 - `DELETE /v1/spaces/{spaceId}/devices/{deviceId}`
 
+## Change-log retention
+
+Version 1 retains every encrypted change envelope indefinitely, including
+activity deletion changes. Advancing a device cursor records progress but does
+not prune history, so a newly connected or long-offline device can replay from
+cursor zero. Diary title, content, and summary are local-only and therefore do
+not have server-side deletion markers.
+
+Do not add change-log compaction until the protocol has encrypted snapshots and
+tracks the applied cursor of every active device. Backup-file retention is a
+separate policy and never removes rows from the live `changes` table.
+
 ## Create an encrypted SQLite backup
 
 Generate a 256-bit backup key once and keep it outside the server data volume:
