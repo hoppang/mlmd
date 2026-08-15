@@ -318,6 +318,31 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     _ensureChildProfileBackfill(space);
     final cursor = _ensureCursor(space.familySpaceId);
     final pending = _pending(space.familySpaceId);
+    var restoredAppliedCount = 0;
+    var restoredConflictCount = 0;
+    var restoredResolutionCollisionCount = 0;
+    final snapshotTransport = transport is FamilySyncSnapshotTransport
+        ? transport as FamilySyncSnapshotTransport
+        : null;
+    if (cursor.lastAppliedChangeId == null && snapshotTransport != null) {
+      try {
+        final restored = await _restoreInitialSnapshot(
+          snapshotTransport,
+          space: space,
+          cursor: cursor,
+          applyRemoteChange: applyRemoteChange,
+        );
+        restoredAppliedCount = restored.appliedCount;
+        restoredConflictCount = restored.conflictCount;
+        restoredResolutionCollisionCount = restored.resolutionCollisionCount;
+      } on FamilySyncUnavailable catch (error) {
+        _recordFailure(cursor, pending, error.code);
+        rethrow;
+      } catch (_) {
+        _recordFailure(cursor, pending, 'snapshot_restore_failed');
+        throw const FamilySyncUnavailable('snapshot_restore_failed');
+      }
+    }
     late final SyncExchange exchange;
     try {
       exchange = await transport.exchange(
@@ -341,9 +366,9 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       _outbox.removeMany(acknowledged.map((item) => item.id).toList());
     }
 
-    var appliedCount = 0;
-    var conflictCount = 0;
-    var resolutionCollisionCount = 0;
+    var appliedCount = restoredAppliedCount;
+    var conflictCount = restoredConflictCount;
+    var resolutionCollisionCount = restoredResolutionCollisionCount;
     for (final incoming in exchange.incomingChanges) {
       if (incoming.familySpaceId != space.familySpaceId) continue;
       if (incoming.entityType ==
@@ -401,6 +426,91 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     _notifyChanged();
     return SyncRunResult(
       uploadedCount: acknowledged.length,
+      appliedCount: appliedCount,
+      conflictCount: conflictCount,
+      resolutionCollisionCount: resolutionCollisionCount,
+    );
+  }
+
+  Future<({int appliedCount, int conflictCount, int resolutionCollisionCount})>
+  _restoreInitialSnapshot(
+    FamilySyncSnapshotTransport transport, {
+    required FamilySpaceEntity space,
+    required SyncCursorEntity cursor,
+    required RemoteChangeApplier applyRemoteChange,
+  }) async {
+    final snapshot = await transport.downloadSnapshot(
+      familySpaceId: space.familySpaceId,
+      deviceProfileId: _profiles.currentDevice.deviceProfileId,
+    );
+    if (snapshot == null) {
+      return (appliedCount: 0, conflictCount: 0, resolutionCollisionCount: 0);
+    }
+    if (snapshot.baseServerSequence < 0 ||
+        snapshot.snapshotId.trim().isEmpty ||
+        snapshot.sourceDeviceProfileId.trim().isEmpty ||
+        snapshot.changes.any(
+          (change) =>
+              change.familySpaceId != space.familySpaceId ||
+              change.serverSequence != null,
+        )) {
+      throw const FamilySyncUnavailable('snapshot_content_invalid');
+    }
+
+    var appliedCount = 0;
+    var conflictCount = 0;
+    var resolutionCollisionCount = 0;
+    for (final incoming in snapshot.changes) {
+      if (incoming.entityType ==
+          FamilySyncPayloads.resolutionNoticeAcknowledgement) {
+        if (_applyResolutionAcknowledgement(incoming)) appliedCount++;
+        continue;
+      }
+      if (incoming.resolutionMetadata != null) {
+        final result = await _processResolutionChange(
+          incoming,
+          applyRemoteChange,
+        );
+        if (result.applied) appliedCount++;
+        if (result.collision) resolutionCollisionCount++;
+        continue;
+      }
+      final localPending = _pendingForEntity(
+        space.familySpaceId,
+        incoming.entityType,
+        incoming.entityId,
+      );
+      if (localPending != null &&
+          (localPending.entityRevision != incoming.entityRevision ||
+              localPending.payloadJson != incoming.payloadJson)) {
+        _saveConflict(
+          incoming,
+          localRevision: localPending.entityRevision,
+          localPayloadJson: localPending.payloadJson,
+          localChangeId: localPending.changeId,
+        );
+        conflictCount++;
+        continue;
+      }
+      final result = await applyRemoteChange(incoming);
+      switch (result.disposition) {
+        case RemoteApplyDisposition.applied:
+          appliedCount++;
+        case RemoteApplyDisposition.ignored:
+          break;
+        case RemoteApplyDisposition.conflict:
+          _saveConflict(
+            incoming,
+            localRevision: result.localRevision!,
+            localPayloadJson: jsonEncode(result.localPayload),
+          );
+          conflictCount++;
+      }
+    }
+
+    cursor.lastAppliedChangeId = snapshot.baseServerSequence.toString();
+    _cursorBox.put(cursor);
+    return (
       appliedCount: appliedCount,
       conflictCount: conflictCount,
       resolutionCollisionCount: resolutionCollisionCount,

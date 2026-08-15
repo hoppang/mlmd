@@ -151,6 +151,23 @@ class SyncExchange {
   final String? nextCursor;
 }
 
+/// An authenticated point-in-time view of the shareable family state.
+class FamilySyncStateSnapshot {
+  const FamilySyncStateSnapshot({
+    required this.snapshotId,
+    required this.baseServerSequence,
+    required this.sourceDeviceProfileId,
+    required this.changes,
+    this.createdAt,
+  });
+
+  final String snapshotId;
+  final int baseServerSequence;
+  final String sourceDeviceProfileId;
+  final List<SyncChange> changes;
+  final DateTime? createdAt;
+}
+
 class FamilySyncSnapshot {
   const FamilySyncSnapshot({
     this.familySpaceId,

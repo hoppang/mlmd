@@ -9,6 +9,21 @@ abstract interface class FamilySyncTransport {
   });
 }
 
+/// Optional snapshot capability used to bootstrap before incremental exchange.
+abstract interface class FamilySyncSnapshotTransport {
+  Future<FamilySyncStateSnapshot?> downloadSnapshot({
+    required String familySpaceId,
+    required String deviceProfileId,
+  });
+
+  Future<FamilySyncStateSnapshot> uploadSnapshot({
+    required String familySpaceId,
+    required String deviceProfileId,
+    required int baseServerSequence,
+    required List<SyncChange> changes,
+  });
+}
+
 class FamilySyncUnavailable implements Exception {
   const FamilySyncUnavailable(this.code);
 

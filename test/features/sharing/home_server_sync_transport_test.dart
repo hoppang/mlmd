@@ -43,6 +43,7 @@ class _LoopbackApi implements HomeServerSyncApi {
   final List<int> familyKey;
   final SyncChange remoteChange;
   List<OpaqueSyncEnvelope> receivedOutgoing = const [];
+  OpaqueSyncSnapshot? storedSnapshot;
 
   @override
   Future<OpaqueSyncExchange> exchange({
@@ -70,6 +71,30 @@ class _LoopbackApi implements HomeServerSyncApi {
       hasMore: false,
     );
   }
+
+  @override
+  Future<OpaqueSyncSnapshot> putSnapshot({
+    required FamilySyncCredentials credentials,
+    required String deviceProfileId,
+    required OpaqueSyncSnapshot snapshot,
+  }) async {
+    storedSnapshot = OpaqueSyncSnapshot(
+      snapshotId: snapshot.snapshotId,
+      baseServerSeq: snapshot.baseServerSeq,
+      sourceDeviceId: snapshot.sourceDeviceId,
+      snapshotVersion: snapshot.snapshotVersion,
+      nonce: snapshot.nonce,
+      ciphertext: snapshot.ciphertext,
+      createdAt: DateTime.utc(2026, 8, 15),
+    );
+    return storedSnapshot!;
+  }
+
+  @override
+  Future<OpaqueSyncSnapshot> getSnapshot({
+    required FamilySyncCredentials credentials,
+    required String deviceProfileId,
+  }) async => storedSnapshot!;
 }
 
 void main() {
@@ -239,6 +264,95 @@ void main() {
     },
   );
 
+  test('snapshot codec and transport keep state encrypted', () async {
+    final snapshotCodec = FamilySyncSnapshotCodec();
+    final envelopeCodec = FamilySyncEnvelopeCodec();
+    final credentials = FamilySyncCredentials(
+      serverUrl: Uri.parse('http://127.0.0.1:8080'),
+      familySpaceId: _spaceId,
+      deviceToken:
+          '$_deviceId.${base64UrlEncode(List.filled(32, 1)).replaceAll('=', '')}',
+      familyKey: familyKey,
+    );
+    final api = _LoopbackApi(
+      codec: envelopeCodec,
+      familyKey: familyKey,
+      remoteChange: _change(
+        changeId: '550e8400-e29b-41d4-a716-446655440015',
+        deviceId: _remoteDeviceId,
+        text: 'unused',
+      ),
+    );
+    final transport = HomeServerFamilySyncTransport(
+      credentialStore: _MemoryCredentialStore(credentials),
+      api: api,
+      snapshotCodec: snapshotCodec,
+    );
+    final privateChange = _change(
+      changeId: '550e8400-e29b-41d4-a716-446655440020',
+      deviceId: _deviceId,
+      text: 'private snapshot memo',
+    );
+
+    final stored = await transport.uploadSnapshot(
+      familySpaceId: _spaceId,
+      deviceProfileId: _deviceId,
+      baseServerSequence: 42,
+      changes: [privateChange],
+    );
+    expect(stored.createdAt, DateTime.utc(2026, 8, 15));
+    expect(
+      api.storedSnapshot!.ciphertext,
+      isNot(contains('private snapshot memo')),
+    );
+
+    final restored = await transport.downloadSnapshot(
+      familySpaceId: _spaceId,
+      deviceProfileId: _deviceId,
+    );
+    expect(restored!.snapshotId, stored.snapshotId);
+    expect(restored.baseServerSequence, 42);
+    expect(restored.changes.single.payload['text'], 'private snapshot memo');
+  });
+
+  test('snapshot AAD rejects base cursor tampering', () async {
+    final codec = FamilySyncSnapshotCodec();
+    final encrypted = await codec.encrypt(
+      _spaceId,
+      FamilySyncStateSnapshot(
+        snapshotId: '550e8400-e29b-41d4-a716-446655440021',
+        baseServerSequence: 7,
+        sourceDeviceProfileId: _deviceId,
+        changes: const [],
+      ),
+      familyKey,
+    );
+    final tampered = OpaqueSyncSnapshot(
+      snapshotId: encrypted.snapshotId,
+      baseServerSeq: 8,
+      sourceDeviceId: encrypted.sourceDeviceId,
+      snapshotVersion: encrypted.snapshotVersion,
+      nonce: encrypted.nonce,
+      ciphertext: encrypted.ciphertext,
+      createdAt: DateTime.utc(2026, 8, 15),
+    );
+
+    await expectLater(
+      codec.decrypt(
+        familySpaceId: _spaceId,
+        snapshot: tampered,
+        familyKey: familyKey,
+      ),
+      throwsA(
+        isA<FamilySyncUnavailable>().having(
+          (error) => error.code,
+          'code',
+          'snapshot_authentication_failed',
+        ),
+      ),
+    );
+  });
+
   test('IO API sends bearer auth and protocol v1 exchange JSON', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));
@@ -283,6 +397,64 @@ void main() {
     expect(requestJson['protocolVersion'], 1);
     expect(requestJson['afterCursor'], isNull);
     expect(requestJson['outgoing'], isEmpty);
+  });
+
+  test('IO API uploads and downloads the snapshot contract', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final requests = <String>[];
+    late Map<String, Object?> uploaded;
+    server.listen((request) async {
+      requests.add('${request.method} ${request.uri.path}');
+      if (request.method == 'PUT') {
+        uploaded = (jsonDecode(await utf8.decoder.bind(request).join()) as Map)
+            .cast<String, Object?>();
+      }
+      request.response
+        ..statusCode = request.method == 'PUT'
+            ? HttpStatus.created
+            : HttpStatus.ok
+        ..headers.contentType = ContentType.json
+        ..write(
+          jsonEncode({...uploaded, 'createdAt': '2026-08-15T00:00:00.000Z'}),
+        );
+      await request.response.close();
+    });
+    final secret = base64UrlEncode(List.filled(32, 2)).replaceAll('=', '');
+    final credentials = FamilySyncCredentials(
+      serverUrl: Uri.parse('http://${server.address.address}:${server.port}'),
+      familySpaceId: _spaceId,
+      deviceToken: '$_deviceId.$secret',
+      familyKey: familyKey,
+    );
+    final api = IoHomeServerSyncApi();
+    addTearDown(api.close);
+    const snapshot = OpaqueSyncSnapshot(
+      snapshotId: '550e8400-e29b-41d4-a716-446655440022',
+      baseServerSeq: 42,
+      sourceDeviceId: _deviceId,
+      snapshotVersion: 1,
+      nonce: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      ciphertext: 'AAAAAAAAAAAAAAAAAAAAAA',
+    );
+
+    final stored = await api.putSnapshot(
+      credentials: credentials,
+      deviceProfileId: _deviceId,
+      snapshot: snapshot,
+    );
+    final loaded = await api.getSnapshot(
+      credentials: credentials,
+      deviceProfileId: _deviceId,
+    );
+
+    expect(requests, [
+      'PUT /v1/spaces/$_spaceId/snapshot',
+      'GET /v1/spaces/$_spaceId/snapshot',
+    ]);
+    expect(uploaded, snapshot.toJson());
+    expect(stored.snapshotId, snapshot.snapshotId);
+    expect(loaded!.baseServerSeq, 42);
   });
 }
 

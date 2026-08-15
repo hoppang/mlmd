@@ -90,6 +90,47 @@ class _FakeTransport implements FamilySyncTransport {
   }
 }
 
+class _FakeSnapshotTransport
+    implements FamilySyncTransport, FamilySyncSnapshotTransport {
+  _FakeSnapshotTransport({
+    required this.snapshot,
+    required this.exchangeResult,
+  });
+
+  final FamilySyncStateSnapshot? snapshot;
+  final SyncExchange exchangeResult;
+  int downloadCount = 0;
+  String? receivedCursor;
+
+  @override
+  Future<FamilySyncStateSnapshot?> downloadSnapshot({
+    required String familySpaceId,
+    required String deviceProfileId,
+  }) async {
+    downloadCount++;
+    return snapshot;
+  }
+
+  @override
+  Future<SyncExchange> exchange({
+    required String familySpaceId,
+    required String deviceProfileId,
+    required String? afterCursor,
+    required List<SyncChange> outgoingChanges,
+  }) async {
+    receivedCursor = afterCursor;
+    return exchangeResult;
+  }
+
+  @override
+  Future<FamilySyncStateSnapshot> uploadSnapshot({
+    required String familySpaceId,
+    required String deviceProfileId,
+    required int baseServerSequence,
+    required List<SyncChange> changes,
+  }) => throw UnimplementedError();
+}
+
 void main() {
   late Directory tempDirectory;
   late Store store;
@@ -134,6 +175,58 @@ void main() {
       final snapshot = repository.getSnapshot();
       expect(snapshot.pendingChangeCount, 2);
       expect(snapshot.lastErrorCode, 'transport_not_configured');
+    },
+  );
+
+  test(
+    'initial sync restores an authenticated snapshot before incremental exchange',
+    () async {
+      final restoredChange = SyncChange(
+        changeId: 'snapshot-change-1',
+        familySpaceId: 'family-1',
+        sourceDeviceProfileId: 'remote-device',
+        sourceAuthorProfileId: 'remote-author',
+        entityType: FamilySyncPayloads.activity,
+        entityId: 'snapshot-activity',
+        entityRevision: 1,
+        operation: SyncOperation.create,
+        payload: const {'recordId': 'snapshot-activity'},
+        occurredAt: DateTime.utc(2026, 8, 15),
+      );
+      final transport = _FakeSnapshotTransport(
+        snapshot: FamilySyncStateSnapshot(
+          snapshotId: 'snapshot-1',
+          baseServerSequence: 42,
+          sourceDeviceProfileId: 'remote-device',
+          changes: [restoredChange],
+        ),
+        exchangeResult: const SyncExchange(
+          acknowledgedChangeIds: {},
+          incomingChanges: [],
+          nextCursor: '43',
+        ),
+      );
+      final applied = <SyncChange>[];
+
+      final first = await repository.synchronize(
+        transport,
+        applyRemoteChange: (change) {
+          applied.add(change);
+          return const RemoteApplyResult.applied();
+        },
+      );
+
+      expect(applied, [restoredChange]);
+      expect(first.appliedCount, 1);
+      expect(transport.receivedCursor, '42');
+      expect(transport.downloadCount, 1);
+
+      await repository.synchronize(
+        transport,
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      expect(transport.downloadCount, 1);
+      expect(transport.receivedCursor, '43');
     },
   );
 
