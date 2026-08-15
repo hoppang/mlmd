@@ -32,6 +32,10 @@ Content-Type: application/json
 ```
 
 The app keeps the generated secret and authenticates subsequent requests with `Bearer <deviceId>.<deviceSecret>`. The server stores only its SHA-256 hash.
+The first successful request consumes bootstrap permanently in SQLite. A retry
+with the same family-space ID, device ID, and device secret remains idempotent
+so a lost response can be recovered; every different bootstrap request is
+rejected with `bootstrap_consumed`.
 
 Implemented management endpoints:
 

@@ -1089,6 +1089,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeServerConnectAction => '새 홈서버 연결';
 
   @override
+  String get homeServerConnectedSuccess => '홈서버 최초 설정을 완료했어요. 첫 동기화를 시작합니다.';
+
+  @override
   String get homeServerJoinTitle => '가족 공간 참여';
 
   @override
@@ -1136,6 +1139,10 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get homeServerPairingFailed =>
       '홈서버 연결을 완료하지 못했습니다. 서버 주소와 초대 상태를 확인하세요.';
+
+  @override
+  String get homeServerBootstrapConsumed =>
+      '이 홈서버는 이미 최초 설정을 마쳤습니다. 연결된 기기에서 초대 QR을 만들어 참여하세요.';
 
   @override
   String get homeServerCreateInviteAction => '새 기기 초대';

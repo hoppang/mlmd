@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mlmd/features/sharing/application/family_sync_credentials.dart';
+import 'package:mlmd/features/sharing/application/family_sync_transport.dart';
 import 'package:mlmd/features/sharing/application/family_sync_transport_provider.dart';
 import 'package:mlmd/features/sharing/application/home_server_pairing_service.dart';
 import 'package:mlmd/features/sharing/presentation/home_server_pairing_pages.dart';
@@ -108,6 +109,19 @@ class _DeviceApi implements HomeServerPairingApi {
   }) => throw UnimplementedError();
 }
 
+class _BootstrapConsumedApi extends _DeviceApi {
+  @override
+  Future<BootstrapSpaceResult> bootstrapSpace({
+    required Uri serverUrl,
+    required String bootstrapToken,
+    required String displayName,
+    required String familySpaceId,
+    required String deviceId,
+    required String deviceDisplayName,
+    required String deviceSecret,
+  }) => throw FamilySyncUnavailable('server_bootstrap_consumed');
+}
+
 void main() {
   testWidgets('bootstrap page validates server and required pairing fields', (
     tester,
@@ -125,6 +139,55 @@ void main() {
     expect(find.text('필수 항목입니다.'), findsNWidgets(3));
     expect(find.text('http 또는 https로 시작하는 홈서버 주소를 입력하세요.'), findsOneWidget);
   });
+
+  testWidgets(
+    'bootstrap page explains that an initialized server needs QR join',
+    (tester) async {
+      final credentials = FamilySyncCredentials(
+        serverUrl: Uri.parse('http://192.168.0.10:8080'),
+        familySpaceId: _DeviceApi.spaceId,
+        deviceToken: '${_DeviceApi.currentId}.secret',
+        familyKey: List.filled(32, 1),
+      );
+      final service = HomeServerPairingService(
+        api: _BootstrapConsumedApi(),
+        credentialStore: _CredentialStore(credentials),
+        localState: _LocalState(),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            homeServerPairingServiceProvider.overrideWithValue(service),
+          ],
+          child: _localized(const HomeServerBootstrapPage()),
+        ),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('home-server-url')),
+        'http://192.168.0.10:8080',
+      );
+      await tester.enterText(
+        find.byKey(const Key('home-server-bootstrap-token')),
+        'bootstrap-token',
+      );
+      await tester.enterText(
+        find.byKey(const Key('home-server-family-name')),
+        '우리 가족',
+      );
+      await tester.enterText(
+        find.byKey(const Key('home-server-device-name')),
+        '마스터 휴대폰',
+      );
+      await tester.tap(find.byKey(const Key('home-server-connect')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('이 홈서버는 이미 최초 설정을 마쳤습니다. 연결된 기기에서 초대 QR을 만들어 참여하세요.'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('invite page renders the secret-bearing QR and warning', (
     tester,

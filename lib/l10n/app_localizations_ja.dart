@@ -1085,6 +1085,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get homeServerConnectAction => '新しいホームサーバーに接続';
 
   @override
+  String get homeServerConnectedSuccess => 'ホームサーバーの初期設定が完了しました。最初の同期を開始します。';
+
+  @override
   String get homeServerJoinTitle => '家族スペースに参加';
 
   @override
@@ -1132,6 +1135,10 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get homeServerPairingFailed =>
       'ホームサーバーへの接続を完了できませんでした。アドレスと招待の状態を確認してください。';
+
+  @override
+  String get homeServerBootstrapConsumed =>
+      'このホームサーバーは初期設定済みです。接続済みの端末で招待QRコードを作成して参加してください。';
 
   @override
   String get homeServerCreateInviteAction => '新しい端末を招待';

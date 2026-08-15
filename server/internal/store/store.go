@@ -9,15 +9,16 @@ import (
 )
 
 var (
-	ErrNotFound       = errors.New("not found")
-	ErrUnauthorized   = errors.New("unauthorized")
-	ErrForbidden      = errors.New("forbidden")
-	ErrChangeConflict = errors.New("change id already has different content")
-	ErrInviteExpired  = errors.New("invite expired")
-	ErrInviteConsumed = errors.New("invite already consumed")
-	ErrInviteRevoked  = errors.New("invite revoked")
-	ErrDeviceExists   = errors.New("device already exists")
-	ErrSpaceExists    = errors.New("family space already exists")
+	ErrNotFound          = errors.New("not found")
+	ErrUnauthorized      = errors.New("unauthorized")
+	ErrForbidden         = errors.New("forbidden")
+	ErrChangeConflict    = errors.New("change id already has different content")
+	ErrInviteExpired     = errors.New("invite expired")
+	ErrInviteConsumed    = errors.New("invite already consumed")
+	ErrInviteRevoked     = errors.New("invite revoked")
+	ErrDeviceExists      = errors.New("device already exists")
+	ErrSpaceExists       = errors.New("family space already exists")
+	ErrBootstrapConsumed = errors.New("bootstrap already consumed")
 )
 
 type Store interface {

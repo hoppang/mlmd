@@ -10,7 +10,10 @@ import (
 //go:embed 001_initial.sql
 var initialSchema string
 
-const CurrentVersion = 1
+//go:embed 002_bootstrap_state.sql
+var bootstrapStateSchema string
+
+const CurrentVersion = 2
 
 func Apply(ctx context.Context, db *sql.DB) error {
 	var version int
@@ -24,6 +27,9 @@ func Apply(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	if err := ensureInviteConsumedByDevice(ctx, db); err != nil {
+		return err
+	}
+	if _, err := db.ExecContext(ctx, bootstrapStateSchema); err != nil {
 		return err
 	}
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`PRAGMA user_version = %d`, CurrentVersion))

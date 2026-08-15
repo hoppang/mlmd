@@ -1119,6 +1119,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeServerConnectAction => 'Connect a new home server';
 
   @override
+  String get homeServerConnectedSuccess =>
+      'Home server setup is complete. Starting the first sync.';
+
+  @override
   String get homeServerJoinTitle => 'Join a family space';
 
   @override
@@ -1171,6 +1175,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get homeServerPairingFailed =>
       'The home server connection could not be completed. Check the address and invitation status.';
+
+  @override
+  String get homeServerBootstrapConsumed =>
+      'This home server has already been set up. Create an invitation QR on a connected device to join.';
 
   @override
   String get homeServerCreateInviteAction => 'Invite a new device';

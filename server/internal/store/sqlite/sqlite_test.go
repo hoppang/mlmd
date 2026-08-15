@@ -10,6 +10,7 @@ import (
 
 	"github.com/hoppang/mlmd/server/internal/auth"
 	"github.com/hoppang/mlmd/server/internal/model"
+	storepkg "github.com/hoppang/mlmd/server/internal/store"
 	"github.com/hoppang/mlmd/server/internal/store/sqlite"
 )
 
@@ -69,6 +70,21 @@ func TestStateSurvivesStoreRestart(t *testing.T) {
 	}
 	if len(result.AcknowledgedChangeIDs) != 1 || len(result.Incoming) != 1 || result.Incoming[0].ServerSeq != 1 {
 		t.Fatalf("state was not restored idempotently: %#v", result)
+	}
+	_, secondTokenHash, err := auth.NewSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = reopened.CreateSpace(
+		ctx,
+		"Another family",
+		"650e8400-e29b-41d4-a716-446655440000",
+		"21111111-2222-4333-8444-555555555555",
+		"Another phone",
+		secondTokenHash,
+	)
+	if !errors.Is(err, storepkg.ErrBootstrapConsumed) {
+		t.Fatalf("bootstrap consumption did not survive restart: %v", err)
 	}
 }
 

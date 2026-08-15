@@ -75,11 +75,24 @@ class FamilySharingPage extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.md),
                       FilledButton.icon(
                         key: const Key('family-sharing-connect-home-server'),
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const HomeServerBootstrapPage(),
-                          ),
-                        ),
+                        onPressed: () async {
+                          final connected = await Navigator.of(context)
+                              .push<bool>(
+                                MaterialPageRoute<bool>(
+                                  builder: (_) =>
+                                      const HomeServerBootstrapPage(),
+                                ),
+                              );
+                          if (connected == true && context.mounted) {
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                SnackBar(
+                                  content: Text(loc.homeServerConnectedSuccess),
+                                ),
+                              );
+                          }
+                        },
                         icon: const Icon(Icons.dns_outlined),
                         label: Text(loc.homeServerConnectAction),
                       ),

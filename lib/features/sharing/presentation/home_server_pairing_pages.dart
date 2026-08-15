@@ -10,6 +10,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/family_sync_transport.dart';
 import '../application/family_sync_transport_provider.dart';
+import '../application/family_sync_coordinator.dart';
 import '../application/home_server_pairing_service.dart';
 
 class HomeServerBootstrapPage extends ConsumerStatefulWidget {
@@ -144,7 +145,10 @@ class _HomeServerBootstrapPageState
             familyDisplayName: _familyName.text.trim(),
             deviceDisplayName: _deviceName.text.trim(),
           );
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) {
+        unawaited(ref.read(familySyncRetryControllerProvider).retry());
+        Navigator.of(context).pop(true);
+      }
     } on FamilySyncUnavailable catch (error) {
       if (mounted) _showPairingError(context, error);
     } finally {
@@ -516,6 +520,7 @@ void _showPairingError(BuildContext context, FamilySyncUnavailable error) {
   final loc = AppLocalizations.of(context)!;
   final message = switch (error.code) {
     'invite_expired' || 'server_invite_expired' => loc.homeServerInviteExpired,
+    'server_bootstrap_consumed' => loc.homeServerBootstrapConsumed,
     'device_name_required' => loc.homeServerDeviceNameRequired,
     'home_server_timeout' ||
     'home_server_unreachable' => loc.homeServerUnavailable,

@@ -61,6 +61,24 @@ func (s *Store) CreateSpace(ctx context.Context, displayName, spaceID, deviceID,
 		return model.Space{}, model.Device{}, err
 	}
 	defer tx.Rollback()
+	var bootstrapSpaceID, bootstrapDeviceID string
+	err = tx.QueryRowContext(ctx, `
+		SELECT family_space_id, device_id
+		FROM bootstrap_state WHERE singleton = 1`,
+	).Scan(&bootstrapSpaceID, &bootstrapDeviceID)
+	if err == nil {
+		if bootstrapSpaceID != spaceID || bootstrapDeviceID != deviceID {
+			return model.Space{}, model.Device{}, storepkg.ErrBootstrapConsumed
+		}
+		space, device, retryErr := bootstrapRetry(ctx, tx, spaceID, deviceID, tokenHash)
+		if retryErr != nil {
+			return model.Space{}, model.Device{}, storepkg.ErrBootstrapConsumed
+		}
+		return space, device, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return model.Space{}, model.Device{}, err
+	}
 	var existingDisplayName, existingCreatedAt string
 	err = tx.QueryRowContext(ctx, `
 		SELECT display_name, created_at FROM family_spaces WHERE id = ?`, spaceID,
@@ -97,12 +115,35 @@ func (s *Store) CreateSpace(ctx context.Context, displayName, spaceID, deviceID,
 		deviceID, spaceID, tokenHash, deviceDisplayName, formatTime(now)); err != nil {
 		return model.Space{}, model.Device{}, err
 	}
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO bootstrap_state(singleton, family_space_id, device_id, consumed_at)
+		VALUES (1, ?, ?, ?)`, spaceID, deviceID, formatTime(now)); err != nil {
+		return model.Space{}, model.Device{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return model.Space{}, model.Device{}, err
 	}
 	return model.Space{ID: spaceID, DisplayName: displayName, CreatedAt: now}, model.Device{
 		ID: deviceID, FamilySpaceID: spaceID, Role: "owner", DisplayName: deviceDisplayName, CreatedAt: now,
 	}, nil
+}
+
+func bootstrapRetry(ctx context.Context, tx *sql.Tx, spaceID, deviceID string, tokenHash []byte) (model.Space, model.Device, error) {
+	var displayName, createdAtText string
+	if err := tx.QueryRowContext(ctx, `
+		SELECT display_name, created_at FROM family_spaces WHERE id = ?`, spaceID,
+	).Scan(&displayName, &createdAtText); err != nil {
+		return model.Space{}, model.Device{}, err
+	}
+	device, storedTokenHash, err := deviceForInviteRetry(ctx, tx, spaceID, deviceID)
+	if err != nil || subtle.ConstantTimeCompare(storedTokenHash, tokenHash) != 1 {
+		return model.Space{}, model.Device{}, storepkg.ErrBootstrapConsumed
+	}
+	createdAt, err := time.Parse(time.RFC3339Nano, createdAtText)
+	if err != nil {
+		return model.Space{}, model.Device{}, err
+	}
+	return model.Space{ID: spaceID, DisplayName: displayName, CreatedAt: createdAt}, device, nil
 }
 
 func (s *Store) AuthenticateDevice(ctx context.Context, deviceID string, tokenHash []byte) (model.Device, error) {

@@ -177,6 +177,31 @@ func TestBootstrapRetryReturnsExistingSpace(t *testing.T) {
 	}
 }
 
+func TestBootstrapRejectsDifferentSpaceAfterFirstSuccess(t *testing.T) {
+	e := newTestEnvironment(t)
+	deviceSecret := base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{4}, 32))
+	response := e.request(t, http.MethodPost, "/v1/bootstrap/spaces", bootstrapToken, map[string]any{
+		"displayName":       "Another family",
+		"familySpaceId":     "650e8400-e29b-41d4-a716-446655440000",
+		"deviceId":          "21111111-2222-4333-8444-555555555555",
+		"deviceDisplayName": "Another owner",
+		"deviceSecret":      deviceSecret,
+	})
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusConflict {
+		t.Fatalf("second bootstrap status = %d, body = %s", response.StatusCode, readBody(t, response))
+	}
+	var payload struct {
+		Error struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	decodeResponse(t, response, &payload)
+	if payload.Error.Code != "bootstrap_consumed" {
+		t.Fatalf("second bootstrap error = %q", payload.Error.Code)
+	}
+}
+
 func TestGoldenExchangeRequestMatchesServerContract(t *testing.T) {
 	fixturePath := filepath.Join("..", "..", "..", "protocol", "fixtures", "exchange-v1-request.golden.json")
 	data, err := os.ReadFile(fixturePath)

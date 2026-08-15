@@ -31,3 +31,38 @@ func TestApplyRejectsNewerSchemaVersion(t *testing.T) {
 		t.Fatalf("newer schema version was modified: %d", version)
 	}
 }
+
+func TestApplyMarksExistingInstallationBootstrapConsumed(t *testing.T) {
+	databasePath := filepath.Join(t.TempDir(), "existing.db")
+	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(databasePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := migrations.Apply(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`
+		INSERT INTO family_spaces(id, display_name, created_at, next_seq)
+		VALUES ('space-id', 'Family', '2026-08-15T00:00:00Z', 0);
+		INSERT INTO devices(id, family_space_id, token_hash, role, display_name, created_at)
+		VALUES ('device-id', 'space-id', X'01', 'owner', 'Phone', '2026-08-15T00:00:00Z');
+		DROP TABLE bootstrap_state;
+		PRAGMA user_version = 1;
+	`); err != nil {
+		t.Fatal(err)
+	}
+	if err := migrations.Apply(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	var spaceID, deviceID string
+	if err := db.QueryRow(`
+		SELECT family_space_id, device_id
+		FROM bootstrap_state WHERE singleton = 1`,
+	).Scan(&spaceID, &deviceID); err != nil {
+		t.Fatal(err)
+	}
+	if spaceID != "space-id" || deviceID != "device-id" {
+		t.Fatalf("unexpected migrated bootstrap identity: %q %q", spaceID, deviceID)
+	}
+}

@@ -2110,6 +2110,12 @@ abstract class AppLocalizations {
   /// **'새 홈서버 연결'**
   String get homeServerConnectAction;
 
+  /// No description provided for @homeServerConnectedSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'홈서버 최초 설정을 완료했어요. 첫 동기화를 시작합니다.'**
+  String get homeServerConnectedSuccess;
+
   /// No description provided for @homeServerJoinTitle.
   ///
   /// In ko, this message translates to:
@@ -2193,6 +2199,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'홈서버 연결을 완료하지 못했습니다. 서버 주소와 초대 상태를 확인하세요.'**
   String get homeServerPairingFailed;
+
+  /// No description provided for @homeServerBootstrapConsumed.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 홈서버는 이미 최초 설정을 마쳤습니다. 연결된 기기에서 초대 QR을 만들어 참여하세요.'**
+  String get homeServerBootstrapConsumed;
 
   /// No description provided for @homeServerCreateInviteAction.
   ///

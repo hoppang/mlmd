@@ -335,6 +335,10 @@ func (s *Server) handleBootstrapSpace(w http.ResponseWriter, r *http.Request) {
 		r.Context(), request.DisplayName, request.FamilySpaceID,
 		request.DeviceID, request.DeviceDisplayName, tokenHash,
 	)
+	if errors.Is(err, store.ErrBootstrapConsumed) {
+		writeError(w, http.StatusConflict, "bootstrap_consumed")
+		return
+	}
 	if errors.Is(err, store.ErrSpaceExists) {
 		writeError(w, http.StatusConflict, "space_exists")
 		return
