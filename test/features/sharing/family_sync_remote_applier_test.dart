@@ -138,7 +138,13 @@ void main() {
     expect(objectBox.diaryBox.getAll(), hasLength(1));
     final activity = objectBox.activityBox.getAll().single;
     expect(activity.diary.target, isNotNull);
-    expect(activity.diary.target!.date.toUtc(), DateTime.utc(2026, 7, 29));
+    expect(activity.diary.target!.recordId, isNotNull);
+    final localOccurredAt = DateTime.parse(
+      '2026-07-29T10:15:00.000Z',
+    ).toLocal();
+    expect(activity.diary.target!.date.year, localOccurredAt.year);
+    expect(activity.diary.target!.date.month, localOccurredAt.month);
+    expect(activity.diary.target!.date.day, localOccurredAt.day);
     expect(activity.createdByAuthorProfileId, 'remote-author');
     expect(activity.lastModifiedByDeviceProfileId, 'remote-device');
 
@@ -193,6 +199,76 @@ void main() {
 
     expect(deleted.disposition, RemoteApplyDisposition.applied);
     expect(objectBox.activityBox.getAll(), isEmpty);
+    expect(objectBox.diaryBox.getAll(), isEmpty);
+  });
+
+  test('activity moves preserve diary body and clean structural diaries', () {
+    final originalDay = DateTime(2026, 7, 30, 8);
+    final bodyDiary = DiaryEntity(
+      recordId: '550e8400-e29b-41d4-a716-446655440000',
+      date: originalDay,
+      title: 'A day to remember',
+      summary: 'Kept locally',
+      content: 'Private diary body',
+      lastModified: originalDay,
+      createdAt: originalDay,
+    );
+    objectBox.diaryBox.put(bodyDiary);
+    final firstOccurredAt = DateTime(2026, 7, 30, 9);
+
+    expect(
+      applier(
+        _change(
+          entityType: FamilySyncPayloads.activity,
+          entityId: 'moving-record',
+          revision: 1,
+          payload: _activityPayload(
+            recordId: 'moving-record',
+            revision: 1,
+            occurredAt: firstOccurredAt,
+          ),
+        ),
+      ).disposition,
+      RemoteApplyDisposition.applied,
+    );
+    expect(objectBox.activityBox.getAll().single.diary.targetId, bodyDiary.id);
+
+    final secondOccurredAt = DateTime(2026, 7, 31, 9);
+    expect(
+      applier(
+        _change(
+          entityType: FamilySyncPayloads.activity,
+          entityId: 'moving-record',
+          revision: 2,
+          payload: _activityPayload(
+            recordId: 'moving-record',
+            revision: 2,
+            occurredAt: secondOccurredAt,
+          ),
+        ),
+      ).disposition,
+      RemoteApplyDisposition.applied,
+    );
+    expect(objectBox.diaryBox.getAll(), hasLength(2));
+    final preserved = objectBox.diaryBox.get(bodyDiary.id)!;
+    expect(preserved.title, 'A day to remember');
+    expect(preserved.summary, 'Kept locally');
+    expect(preserved.content, 'Private diary body');
+
+    expect(
+      applier(
+        _change(
+          entityType: FamilySyncPayloads.activity,
+          entityId: 'moving-record',
+          revision: 3,
+          operation: SyncOperation.delete,
+          payload: const {},
+        ),
+      ).disposition,
+      RemoteApplyDisposition.applied,
+    );
+    expect(objectBox.diaryBox.getAll(), hasLength(1));
+    expect(objectBox.diaryBox.getAll().single.id, bodyDiary.id);
   });
 
   test('returns ignored for unsupported entity types', () {
@@ -590,6 +666,7 @@ SyncChange _change({
   required String entityId,
   required int revision,
   required Map<String, Object?> payload,
+  SyncOperation operation = SyncOperation.create,
 }) {
   return SyncChange(
     changeId: 'change-$entityType',
@@ -599,8 +676,22 @@ SyncChange _change({
     entityType: entityType,
     entityId: entityId,
     entityRevision: revision,
-    operation: SyncOperation.create,
+    operation: operation,
     payload: payload,
     occurredAt: DateTime.utc(2026, 7, 29, 12),
   );
 }
+
+Map<String, Object?> _activityPayload({
+  required String recordId,
+  required int revision,
+  required DateTime occurredAt,
+}) => {
+  'recordId': recordId,
+  'revision': revision,
+  'type': 'memo',
+  'time': occurredAt.toUtc().toIso8601String(),
+  'timePrecision': ActivityEntity.timePrecisionExact,
+  'details': 'remote activity',
+  'lastModified': occurredAt.toUtc().toIso8601String(),
+};

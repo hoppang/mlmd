@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:objectbox/objectbox.dart' hide SyncChange;
+import 'package:uuid/uuid.dart';
 
 import '../../../data/objectbox_helper.dart';
 import '../../../models/activity_entity.dart';
@@ -28,6 +29,7 @@ class FamilySyncRemoteApplier {
   final ObjectBoxHelper _objectBox;
   final CustomEventRepository _customEvents;
   final ChildProfileRepository? _childProfiles;
+  static const _uuid = Uuid();
 
   RemoteApplyResult call(SyncChange change) {
     if (change.familySpaceId != _customEvents.familySpaceId ||
@@ -93,7 +95,7 @@ class FamilySyncRemoteApplier {
       }
       incoming.id = existing.id;
     }
-    _persistActivity(incoming);
+    _persistActivity(incoming, previous: existing);
     return const RemoteApplyResult.applied();
   }
 
@@ -298,40 +300,70 @@ class FamilySyncRemoteApplier {
       _objectBox.diaryBox.put(diary);
     }
     _objectBox.activityBox.remove(activity.id);
+    if (diary != null) _removeEmptyStructuralDiary(diary);
   }
 
-  void _persistActivity(ActivityEntity incoming) {
+  void _persistActivity(ActivityEntity incoming, {ActivityEntity? previous}) {
+    final previousDiary = previous?.diary.target;
     _objectBox.store.runInTransaction(TxMode.write, () {
-      final diary = _diaryForDate(incoming.time);
+      final diary = _diaryForActivity(incoming);
       incoming.diary.target = diary;
       _objectBox.activityBox.put(incoming);
       _objectBox.diaryBox.put(diary);
+      if (previousDiary != null && previousDiary.id != diary.id) {
+        _removeEmptyStructuralDiary(previousDiary);
+      }
     });
   }
 
-  DiaryEntity _diaryForDate(DateTime time) {
-    final day = time.isUtc
-        ? DateTime.utc(time.year, time.month, time.day)
-        : DateTime(time.year, time.month, time.day);
-    for (final diary in _objectBox.diaryBox.getAll()) {
-      if (diary.recordId != null &&
-          diary.date.year == day.year &&
-          diary.date.month == day.month &&
-          diary.date.day == day.day) {
-        return diary;
-      }
-    }
-    final diary = DiaryEntity(
-      recordId: null,
+  DiaryEntity _diaryForActivity(ActivityEntity activity) {
+    final time = activity.time.toLocal();
+    final day = DateTime(time.year, time.month, time.day);
+    final matches =
+        _objectBox.diaryBox
+            .getAll()
+            .where(
+              (diary) =>
+                  diary.date.year == day.year &&
+                  diary.date.month == day.month &&
+                  diary.date.day == day.day,
+            )
+            .toList()
+          ..sort((left, right) {
+            final leftHasBody = _hasDiaryBody(left);
+            final rightHasBody = _hasDiaryBody(right);
+            if (leftHasBody != rightHasBody) return leftHasBody ? -1 : 1;
+            return right.date.compareTo(left.date);
+          });
+    if (matches.isNotEmpty) return matches.first;
+    return DiaryEntity(
+      recordId: _uuid.v4(),
       date: day,
       title: '',
       content: '',
       summary: '',
-      lastModified: time,
-      createdAt: time,
+      lastModified: activity.lastModified,
+      createdAt: activity.createdAt ?? activity.lastModified,
+      createdByAuthorProfileId: activity.createdByAuthorProfileId,
+      createdByDeviceProfileId: activity.createdByDeviceProfileId,
+      lastModifiedByAuthorProfileId: activity.lastModifiedByAuthorProfileId,
+      lastModifiedByDeviceProfileId: activity.lastModifiedByDeviceProfileId,
     );
-    _objectBox.diaryBox.put(diary);
-    return diary;
+  }
+
+  bool _hasDiaryBody(DiaryEntity diary) =>
+      diary.title.trim().isNotEmpty ||
+      diary.content.trim().isNotEmpty ||
+      diary.summary.trim().isNotEmpty;
+
+  void _removeEmptyStructuralDiary(DiaryEntity diary) {
+    if (_hasDiaryBody(diary)) return;
+    final hasActivities = _objectBox.activityBox.getAll().any(
+      (activity) => activity.diary.targetId == diary.id,
+    );
+    if (!hasActivities) {
+      _objectBox.diaryBox.remove(diary.id);
+    }
   }
 
   CareTaskEntity? _findCareTask(String taskId) {
@@ -384,7 +416,7 @@ class FamilySyncRemoteApplier {
       recordId: payload['recordId'] as String?,
       revision: payload['revision'] as int? ?? change.entityRevision,
       type: payload['type']! as String,
-      time: DateTime.parse(payload['time']! as String),
+      time: DateTime.parse(payload['time']! as String).toLocal(),
       timePrecision: payload['timePrecision']! as int,
       details: payload['details']! as String,
       structuredDataJson: payload['structuredDataJson'] as String?,
