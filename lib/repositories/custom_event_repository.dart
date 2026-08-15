@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../data/objectbox_helper.dart';
 import '../models/shared_custom_event_definition_entity.dart';
 import '../objectbox.g.dart';
+import '../features/sharing/application/family_sync_payloads.dart';
 import '../features/sharing/domain/family_sync_models.dart';
 import 'family_sync_repository.dart';
 import 'profile_repository.dart';
@@ -303,22 +304,7 @@ class CustomEventRepositoryImpl implements CustomEventRepository {
       entityId: definition.customEventTypeId,
       entityRevision: definition.revision,
       operation: operation,
-      payload: {
-        'customEventTypeId': definition.customEventTypeId,
-        'familySpaceId': definition.familySpaceId,
-        'name': definition.name,
-        'revision': definition.revision,
-        'createdByAuthorProfileId': definition.createdByAuthorProfileId,
-        'createdByDeviceProfileId': definition.createdByDeviceProfileId,
-        'lastModifiedByAuthorProfileId':
-            definition.lastModifiedByAuthorProfileId,
-        'lastModifiedByDeviceProfileId':
-            definition.lastModifiedByDeviceProfileId,
-        'createdAt': definition.createdAt.toUtc().toIso8601String(),
-        'updatedAt': definition.updatedAt.toUtc().toIso8601String(),
-        if (definition.archivedAt != null)
-          'archivedAt': definition.archivedAt!.toUtc().toIso8601String(),
-      },
+      payload: FamilySyncPayloads.forCustomEventDefinition(definition),
       occurredAt: definition.updatedAt,
     );
   }

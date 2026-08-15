@@ -19,6 +19,9 @@ class FamilySpaceEntity {
   @Property(type: PropertyType.date)
   DateTime joinedAt;
 
+  @Property(type: PropertyType.date)
+  DateTime? initialBackfillCompletedAt;
+
   FamilySpaceEntity({
     this.id = 0,
     required this.familySpaceId,
@@ -26,6 +29,7 @@ class FamilySpaceEntity {
     required this.deviceProfileId,
     this.isActive = true,
     required this.joinedAt,
+    this.initialBackfillCompletedAt,
   });
 }
 

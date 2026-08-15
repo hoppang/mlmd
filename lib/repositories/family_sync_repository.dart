@@ -8,7 +8,10 @@ import '../data/objectbox_helper.dart';
 import '../features/sharing/application/family_sync_payloads.dart';
 import '../features/sharing/application/family_sync_transport.dart';
 import '../features/sharing/domain/family_sync_models.dart';
+import '../models/attachment_entity.dart';
+import '../models/duplicate_review_edge_entity.dart';
 import '../models/family_sync_entity.dart';
+import '../models/shared_custom_event_definition_entity.dart';
 import '../objectbox.g.dart' hide SyncChange;
 import 'profile_repository.dart';
 
@@ -161,21 +164,6 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       _ensureCursor(normalizedId);
     });
     _profiles.markSharedHistory();
-    final author = _profiles.currentAuthor;
-    if (author != null) {
-      enqueue(
-        entityType: 'authorProfile',
-        entityId: author.authorProfileId,
-        entityRevision: 1,
-        operation: SyncOperation.create,
-        payload: {
-          'authorProfileId': author.authorProfileId,
-          'nickname': author.nickname,
-          'colorValue': author.colorValue,
-          'createdAt': author.createdAt.toUtc().toIso8601String(),
-        },
-      );
-    }
     _notifyChanged();
   }
 
@@ -317,6 +305,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     if (space == null) {
       throw StateError('A family space must be connected before syncing.');
     }
+    _ensureInitialBackfill(space);
     final cursor = _ensureCursor(space.familySpaceId);
     final pending = _pending(space.familySpaceId);
     late final SyncExchange exchange;
@@ -406,6 +395,163 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       conflictCount: conflictCount,
       resolutionCollisionCount: resolutionCollisionCount,
     );
+  }
+
+  void _ensureInitialBackfill(FamilySpaceEntity space) {
+    if (space.initialBackfillCompletedAt != null) return;
+    final source = _profiles.requireCurrentSource();
+    final completedAt = DateTime.now();
+    final attachmentBox = Box<AttachmentEntity>(_objectBox.store);
+    final customEventBox = Box<SharedCustomEventDefinitionEntity>(
+      _objectBox.store,
+    );
+    final didBackfill = _objectBox.store.runInTransaction(TxMode.write, () {
+      final currentSpace = _spaceBox.get(space.id);
+      if (currentSpace == null ||
+          currentSpace.initialBackfillCompletedAt != null) {
+        return false;
+      }
+      final queuedEntityKeys = _outbox
+          .getAll()
+          .where((item) => item.familySpaceId == currentSpace.familySpaceId)
+          .map((item) => '${item.entityType}\u0000${item.entityId}')
+          .toSet();
+      final pending = <SyncOutboxEntity>[];
+
+      void queue({
+        required String entityType,
+        required String entityId,
+        required int entityRevision,
+        required SyncOperation operation,
+        required Map<String, Object?> payload,
+        required DateTime occurredAt,
+      }) {
+        final key = '$entityType\u0000$entityId';
+        if (entityId.trim().isEmpty ||
+            entityRevision < 1 ||
+            !queuedEntityKeys.add(key)) {
+          return;
+        }
+        pending.add(
+          SyncOutboxEntity(
+            changeId: _uuid.v4(),
+            familySpaceId: currentSpace.familySpaceId,
+            sourceDeviceProfileId: source.deviceProfileId,
+            sourceAuthorProfileId: source.authorProfileId,
+            entityType: entityType,
+            entityId: entityId,
+            entityRevision: entityRevision,
+            operation: operation.name,
+            payloadJson: jsonEncode(payload),
+            occurredAt: occurredAt,
+          ),
+        );
+      }
+
+      for (final author in _objectBox.authorProfileBox.getAll()) {
+        queue(
+          entityType: FamilySyncPayloads.authorProfile,
+          entityId: author.authorProfileId,
+          entityRevision: FamilySyncPayloads.revisionAt(author.createdAt),
+          operation: SyncOperation.create,
+          payload: FamilySyncPayloads.forAuthor(author),
+          occurredAt: author.createdAt,
+        );
+      }
+
+      final localFamilySpaceId =
+          'local:${_profiles.currentDevice.deviceProfileId}';
+      for (final definition in customEventBox.getAll()) {
+        if (definition.familySpaceId == localFamilySpaceId) {
+          definition.familySpaceId = currentSpace.familySpaceId;
+          customEventBox.put(definition);
+        }
+        if (definition.familySpaceId != currentSpace.familySpaceId) continue;
+        queue(
+          entityType: FamilySyncPayloads.customEventDefinition,
+          entityId: definition.customEventTypeId,
+          entityRevision: definition.revision,
+          operation: SyncOperation.create,
+          payload: FamilySyncPayloads.forCustomEventDefinition(definition),
+          occurredAt: definition.updatedAt,
+        );
+      }
+
+      for (final activity in _objectBox.activityBox.getAll()) {
+        final recordId = activity.recordId;
+        if (recordId == null || recordId.trim().isEmpty) continue;
+        queue(
+          entityType: FamilySyncPayloads.activity,
+          entityId: recordId,
+          entityRevision: activity.revision,
+          operation: SyncOperation.create,
+          payload: FamilySyncPayloads.forActivity(activity),
+          occurredAt: activity.lastModified,
+        );
+      }
+
+      for (final task in _objectBox.careTaskBox.getAll()) {
+        final occurredAt = task.archivedAt ?? task.createdAt;
+        queue(
+          entityType: FamilySyncPayloads.careTask,
+          entityId: task.taskId,
+          entityRevision: FamilySyncPayloads.revisionAt(occurredAt),
+          operation: SyncOperation.create,
+          payload: FamilySyncPayloads.forTask(task),
+          occurredAt: occurredAt,
+        );
+      }
+
+      for (final occurrence in _objectBox.careTaskOccurrenceBox.getAll()) {
+        final occurredAt = occurrence.completedAt ?? occurrence.scheduledAt;
+        queue(
+          entityType: FamilySyncPayloads.careTaskOccurrence,
+          entityId: occurrence.occurrenceId,
+          entityRevision: FamilySyncPayloads.revisionAt(occurredAt),
+          operation: SyncOperation.create,
+          payload: FamilySyncPayloads.forOccurrence(occurrence),
+          occurredAt: occurredAt,
+        );
+      }
+
+      for (final entity in attachmentBox.getAll()) {
+        final attachment = entity.toDomain();
+        if (attachment == null) continue;
+        final occurredAt = attachment.deletedAt ?? attachment.createdAt;
+        queue(
+          entityType: FamilySyncPayloads.attachmentMetadata,
+          entityId: attachment.attachmentId,
+          entityRevision: FamilySyncPayloads.revisionAt(occurredAt),
+          operation: SyncOperation.create,
+          payload: FamilySyncPayloads.forAttachment(attachment),
+          occurredAt: occurredAt,
+        );
+      }
+
+      for (final edge in _objectBox.duplicateReviewEdgeBox.getAll()) {
+        if (edge.status == DuplicateReviewEdgeEntity.statusPending &&
+            edge.deferredAt == null &&
+            edge.resolvedAt == null) {
+          continue;
+        }
+        final occurredAt =
+            edge.resolvedAt ?? edge.deferredAt ?? edge.detectedAt;
+        queue(
+          entityType: FamilySyncPayloads.duplicateDecision,
+          entityId: edge.pairKey,
+          entityRevision: FamilySyncPayloads.revisionAt(occurredAt),
+          operation: SyncOperation.update,
+          payload: FamilySyncPayloads.forDuplicateDecision(edge),
+          occurredAt: occurredAt,
+        );
+      }
+
+      if (pending.isNotEmpty) _outbox.putMany(pending);
+      currentSpace.initialBackfillCompletedAt = completedAt;
+      _spaceBox.put(currentSpace);
+      return true;
+    });
+    if (didBackfill) _notifyChanged();
   }
 
   @override

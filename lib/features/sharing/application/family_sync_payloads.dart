@@ -3,6 +3,7 @@ import '../../../models/author_profile_entity.dart';
 import '../../../models/care_task_entity.dart';
 import '../../../models/care_task_occurrence_entity.dart';
 import '../../../models/duplicate_review_edge_entity.dart';
+import '../../../models/shared_custom_event_definition_entity.dart';
 import '../../attachments/domain/event_attachment.dart';
 
 /// Stable entity names and JSON payloads used at the provider-independent sync
@@ -132,5 +133,22 @@ abstract final class FamilySyncPayloads {
       'resolvedByDeviceProfileId': value.resolvedByDeviceProfileId,
     if (value.resolvedAt != null)
       'resolvedAt': value.resolvedAt!.toUtc().toIso8601String(),
+  };
+
+  static Map<String, Object?> forCustomEventDefinition(
+    SharedCustomEventDefinitionEntity value,
+  ) => {
+    'customEventTypeId': value.customEventTypeId,
+    'familySpaceId': value.familySpaceId,
+    'name': value.name,
+    'revision': value.revision,
+    'createdByAuthorProfileId': value.createdByAuthorProfileId,
+    'createdByDeviceProfileId': value.createdByDeviceProfileId,
+    'lastModifiedByAuthorProfileId': value.lastModifiedByAuthorProfileId,
+    'lastModifiedByDeviceProfileId': value.lastModifiedByDeviceProfileId,
+    'createdAt': value.createdAt.toUtc().toIso8601String(),
+    'updatedAt': value.updatedAt.toUtc().toIso8601String(),
+    if (value.archivedAt != null)
+      'archivedAt': value.archivedAt!.toUtc().toIso8601String(),
   };
 }

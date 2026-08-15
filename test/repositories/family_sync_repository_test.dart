@@ -15,9 +15,11 @@ import 'package:mlmd/models/care_task_occurrence_entity.dart';
 import 'package:mlmd/models/device_profile_entity.dart';
 import 'package:mlmd/models/diary_entity.dart';
 import 'package:mlmd/models/duplicate_review_edge_entity.dart';
+import 'package:mlmd/models/family_sync_entity.dart';
 import 'package:mlmd/models/logical_event_group_entity.dart';
 import 'package:mlmd/models/record_draft_entity.dart';
 import 'package:mlmd/models/search_document_entity.dart';
+import 'package:mlmd/models/shared_custom_event_definition_entity.dart';
 import 'package:mlmd/objectbox.g.dart' hide SyncChange;
 import 'package:mlmd/repositories/family_sync_repository.dart';
 import 'package:mlmd/repositories/diary_repository.dart';
@@ -132,6 +134,162 @@ void main() {
       expect(snapshot.lastErrorCode, 'transport_not_configured');
     },
   );
+
+  test('first sync backfills existing shareable data exactly once', () async {
+    final author = profiles.currentAuthor!;
+    final device = profiles.currentDevice;
+    final createdAt = DateTime.utc(2026, 8, 15, 1);
+    objectBox.activityBox.put(
+      ActivityEntity(
+        recordId: 'existing-activity',
+        revision: 2,
+        type: '메모',
+        time: createdAt,
+        details: '연결 전 기록',
+        lastModified: createdAt,
+        createdAt: createdAt,
+        createdByAuthorProfileId: author.authorProfileId,
+        createdByDeviceProfileId: device.deviceProfileId,
+        lastModifiedByAuthorProfileId: author.authorProfileId,
+        lastModifiedByDeviceProfileId: device.deviceProfileId,
+      ),
+    );
+    final task = CareTaskEntity(
+      taskId: 'existing-task',
+      title: '연결 전 할 일',
+      createdAt: createdAt,
+      createdByAuthorProfileId: author.authorProfileId,
+      createdByDeviceProfileId: device.deviceProfileId,
+    );
+    objectBox.careTaskBox.put(task);
+    objectBox.careTaskOccurrenceBox.put(
+      CareTaskOccurrenceEntity(
+        occurrenceId: 'existing-occurrence',
+        taskId: task.taskId,
+        scheduledAt: createdAt.add(const Duration(hours: 1)),
+      ),
+    );
+    await ObjectBoxAttachmentRepository.fromStore(store).saveAttachment(
+      EventAttachment(
+        attachmentId: 'existing-attachment',
+        recordId: 'existing-activity',
+        attachmentType: AttachmentType.general,
+        fileName: 'before.txt',
+        mimeType: 'text/plain',
+        sourceKind: AttachmentSourceKind.filePicker,
+        managedOriginalUri: 'file:///local-only/before.txt',
+        createdAt: createdAt,
+      ),
+    );
+    objectBox.duplicateReviewEdgeBox.put(
+      DuplicateReviewEdgeEntity(
+        pairKey: 'existing-a|existing-b',
+        recordAId: 'existing-a',
+        recordBId: 'existing-b',
+        status: DuplicateReviewEdgeEntity.statusDistinctEvents,
+        signatureA: 'a',
+        signatureB: 'b',
+        revisionA: 1,
+        revisionB: 1,
+        detectionReasonsJson: '[]',
+        detectedAt: createdAt,
+        detectorVersion: 'test',
+        resolvedByAuthorProfileId: author.authorProfileId,
+        resolvedByDeviceProfileId: device.deviceProfileId,
+        resolvedAt: createdAt.add(const Duration(minutes: 1)),
+      ),
+    );
+    objectBox.duplicateReviewEdgeBox.put(
+      DuplicateReviewEdgeEntity(
+        pairKey: 'pending-a|pending-b',
+        recordAId: 'pending-a',
+        recordBId: 'pending-b',
+        signatureA: 'a',
+        signatureB: 'b',
+        revisionA: 1,
+        revisionB: 1,
+        detectionReasonsJson: '[]',
+        detectedAt: createdAt,
+        detectorVersion: 'test',
+      ),
+    );
+    final customEventBox = Box<SharedCustomEventDefinitionEntity>(store);
+    customEventBox.put(
+      SharedCustomEventDefinitionEntity(
+        customEventTypeId: 'existing-custom-event',
+        familySpaceId: 'local:${device.deviceProfileId}',
+        name: '산책',
+        createdByAuthorProfileId: author.authorProfileId,
+        createdByDeviceProfileId: device.deviceProfileId,
+        lastModifiedByAuthorProfileId: author.authorProfileId,
+        lastModifiedByDeviceProfileId: device.deviceProfileId,
+        createdAt: createdAt,
+        updatedAt: createdAt,
+      ),
+    );
+    repository.enqueue(
+      entityType: FamilySyncPayloads.careTask,
+      entityId: task.taskId,
+      entityRevision: FamilySyncPayloads.revisionAt(task.createdAt),
+      operation: SyncOperation.create,
+      payload: FamilySyncPayloads.forTask(task),
+      occurredAt: task.createdAt,
+    );
+
+    final firstTransport = _FakeTransport(
+      const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+    );
+    await repository.synchronize(
+      firstTransport,
+      applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+    );
+
+    expect(firstTransport.receivedOutgoing, hasLength(7));
+    expect(
+      firstTransport.receivedOutgoing
+          .map((change) => change.entityType)
+          .toSet(),
+      {
+        FamilySyncPayloads.authorProfile,
+        FamilySyncPayloads.customEventDefinition,
+        FamilySyncPayloads.activity,
+        FamilySyncPayloads.careTask,
+        FamilySyncPayloads.careTaskOccurrence,
+        FamilySyncPayloads.attachmentMetadata,
+        FamilySyncPayloads.duplicateDecision,
+      },
+    );
+    expect(
+      firstTransport.receivedOutgoing.where(
+        (change) => change.entityId == task.taskId,
+      ),
+      hasLength(1),
+    );
+    expect(
+      firstTransport.receivedOutgoing.where(
+        (change) => change.entityId == 'pending-a|pending-b',
+      ),
+      isEmpty,
+    );
+    expect(customEventBox.getAll().single.familySpaceId, 'family-1');
+    expect(
+      Box<FamilySpaceEntity>(store).getAll().single.initialBackfillCompletedAt,
+      isNotNull,
+    );
+
+    repository.connect(familySpaceId: 'family-1', displayName: '튼튼이 기록');
+    final secondTransport = _FakeTransport(
+      const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+    );
+    await repository.synchronize(
+      secondTransport,
+      applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+    );
+    expect(
+      secondTransport.receivedOutgoing.map((change) => change.changeId).toSet(),
+      firstTransport.receivedOutgoing.map((change) => change.changeId).toSet(),
+    );
+  });
 
   test(
     'acknowledged changes are removed and the server cursor is saved',
