@@ -1,0 +1,9 @@
+{
+  "snapshotId": "550e8400-e29b-41d4-a716-446655440020",
+  "baseServerSeq": 42,
+  "sourceDeviceId": "11111111-2222-4333-8444-555555555555",
+  "snapshotVersion": 1,
+  "nonce": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "ciphertext": "AAAAAAAAAAAAAAAAAAAAAA",
+  "createdAt": "2026-08-15T06:30:00Z"
+}

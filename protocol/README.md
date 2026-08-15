@@ -13,6 +13,8 @@ Files:
 - `exchange-v1-request.schema.json`: JSON Schema for sync requests
 - `exchange-v1-response.schema.json`: JSON Schema for sync responses
 - `envelope-v1.schema.json`: JSON Schema for the opaque encrypted envelope
+- `snapshot-put-v1-request.schema.json`: owner upload of the latest opaque encrypted state snapshot
+- `snapshot-v1-response.schema.json`: stored snapshot returned to an authenticated family device
 - `invite-create-v1-request.schema.json`: JSON Schema for invite creation requests
 - `invite-create-v1-response.schema.json`: JSON Schema for invite creation responses
 - `invite-consume-v1-request.schema.json`: JSON Schema for invite consumption requests
@@ -41,3 +43,6 @@ Contract notes:
 - A conflict resolution's sorted `parentChangeIds`, local `sourceConflictId`, and selected result are fields of the encrypted `SyncChange` JSON, never plaintext envelope metadata
 - Clients reconcile concurrent resolutions deterministically by the server-assigned sequence, with the change ID as the final fallback; the server does not inspect or resolve them
 - Per-author resolution-notice acknowledgements are ordinary encrypted changes keyed by notice ID, winning change ID, and author profile ID; the server sees only another opaque envelope
+- Snapshot upload uses `PUT /v1/spaces/{spaceId}/snapshot`; only an owner that has reported applying `baseServerSeq` may replace the latest snapshot. Any active device in the space may read it with `GET`.
+- Snapshot XChaCha20-Poly1305 AAD is UTF-8 for `mlmd-sync-snapshot`, snapshot version, family space ID, snapshot ID, source device ID, and decimal base server sequence joined by NUL (`0x00`) bytes.
+- A snapshot ciphertext is capped at `8 MiB` decoded (`12 MiB` HTTP request cap). Storing a snapshot does not compact the change log in protocol v1.

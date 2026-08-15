@@ -66,3 +66,35 @@ func TestApplyMarksExistingInstallationBootstrapConsumed(t *testing.T) {
 		t.Fatalf("unexpected migrated bootstrap identity: %q %q", spaceID, deviceID)
 	}
 }
+
+func TestApplyAddsSyncSnapshotsToExistingInstallation(t *testing.T) {
+	databasePath := filepath.Join(t.TempDir(), "existing-v2.db")
+	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(databasePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := migrations.Apply(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`DROP TABLE sync_snapshots; PRAGMA user_version = 2;`); err != nil {
+		t.Fatal(err)
+	}
+	if err := migrations.Apply(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	var found int
+	if err := db.QueryRow(`
+		SELECT 1 FROM sqlite_schema
+		WHERE type = 'table' AND name = 'sync_snapshots'`,
+	).Scan(&found); err != nil {
+		t.Fatal(err)
+	}
+	var version int
+	if err := db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if found != 1 || version != migrations.CurrentVersion {
+		t.Fatalf("snapshot migration result: found=%d version=%d", found, version)
+	}
+}

@@ -2,6 +2,7 @@ package sqlite_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"os"
@@ -234,5 +235,40 @@ func TestBackupRefusesToOverwriteDestination(t *testing.T) {
 	}
 	if string(contents) != "keep me" {
 		t.Fatalf("existing destination was modified: %q", contents)
+	}
+}
+
+func TestPrepareRestoreMigratesVersionTwoWithoutSnapshotTable(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "version-two.db")
+	store, err := sqlite.Open(ctx, databasePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(databasePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`DROP TABLE sync_snapshots; PRAGMA user_version = 2;`); err != nil {
+		db.Close()
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := sqlite.PrepareRestore(ctx, databasePath); err != nil {
+		t.Fatalf("prepare version-two restore: %v", err)
+	}
+	migrated, err := sqlite.Open(ctx, databasePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer migrated.Close()
+	if err := migrated.Ready(ctx); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -187,6 +187,15 @@ func ValidateDatabase(ctx context.Context, path string) error {
 			return fmt.Errorf("validate MLMD table %q: %w", table, err)
 		}
 	}
+	if userVersion >= 3 {
+		var found int
+		if err := db.QueryRowContext(
+			ctx,
+			`SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'sync_snapshots'`,
+		).Scan(&found); err != nil {
+			return fmt.Errorf("validate MLMD table %q: %w", "sync_snapshots", err)
+		}
+	}
 	rows, err := db.QueryContext(ctx, `PRAGMA foreign_key_check`)
 	if err != nil {
 		return fmt.Errorf("validate backup foreign keys: %w", err)

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmd.local/protocol/snapshot-v1-response.schema.json",
+  "title": "MLMD Encrypted Sync Snapshot v1 Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "snapshotId",
+    "baseServerSeq",
+    "sourceDeviceId",
+    "snapshotVersion",
+    "nonce",
+    "ciphertext",
+    "createdAt"
+  ],
+  "properties": {
+    "snapshotId": { "type": "string", "format": "uuid" },
+    "baseServerSeq": { "type": "integer", "minimum": 0 },
+    "sourceDeviceId": { "type": "string", "format": "uuid" },
+    "snapshotVersion": { "type": "integer", "const": 1 },
+    "nonce": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{32}$",
+      "minLength": 32,
+      "maxLength": 32
+    },
+    "ciphertext": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "minLength": 22,
+      "maxLength": 11184811
+    },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}

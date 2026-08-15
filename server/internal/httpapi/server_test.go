@@ -264,6 +264,60 @@ func TestExchangePaginatesInServerSequenceOrder(t *testing.T) {
 	}
 }
 
+func TestOwnerStoresLatestSnapshotAfterReportingBaseCursor(t *testing.T) {
+	e := newTestEnvironment(t)
+	envelope := validEnvelope(e.deviceID, "550e8400-e29b-41d4-a716-446655440005")
+	first := e.exchange(t, nil, 200, []model.OutgoingEnvelope{envelope})
+	snapshot := map[string]any{
+		"snapshotId":      "550e8400-e29b-41d4-a716-446655440006",
+		"baseServerSeq":   1,
+		"sourceDeviceId":  e.deviceID,
+		"snapshotVersion": 1,
+		"nonce":           base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{4}, 24)),
+		"ciphertext":      base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{5}, 16)),
+	}
+
+	tooEarly := e.request(t, http.MethodPut, "/v1/spaces/"+e.spaceID+"/snapshot", e.deviceToken, snapshot)
+	if tooEarly.StatusCode != http.StatusConflict {
+		t.Fatalf("unreported snapshot status = %d, body = %s", tooEarly.StatusCode, readBody(t, tooEarly))
+	}
+	tooEarly.Body.Close()
+
+	e.exchange(t, &first.NextCursor, 200, nil)
+	created := e.request(t, http.MethodPut, "/v1/spaces/"+e.spaceID+"/snapshot", e.deviceToken, snapshot)
+	if created.StatusCode != http.StatusCreated {
+		t.Fatalf("snapshot create status = %d, body = %s", created.StatusCode, readBody(t, created))
+	}
+	var stored model.SyncSnapshot
+	decodeResponse(t, created, &stored)
+	created.Body.Close()
+	if stored.BaseServerSeq != 1 || stored.CreatedAt.IsZero() {
+		t.Fatalf("unexpected stored snapshot: %#v", stored)
+	}
+
+	retry := e.request(t, http.MethodPut, "/v1/spaces/"+e.spaceID+"/snapshot", e.deviceToken, snapshot)
+	if retry.StatusCode != http.StatusCreated {
+		t.Fatalf("snapshot retry status = %d, body = %s", retry.StatusCode, readBody(t, retry))
+	}
+	var retried model.SyncSnapshot
+	decodeResponse(t, retry, &retried)
+	retry.Body.Close()
+	if !retried.CreatedAt.Equal(stored.CreatedAt) {
+		t.Fatalf("snapshot retry changed creation time: %s != %s", retried.CreatedAt, stored.CreatedAt)
+	}
+
+	fetched := e.request(t, http.MethodGet, "/v1/spaces/"+e.spaceID+"/snapshot", e.deviceToken, nil)
+	if fetched.StatusCode != http.StatusOK {
+		t.Fatalf("snapshot get status = %d, body = %s", fetched.StatusCode, readBody(t, fetched))
+	}
+	var loaded model.SyncSnapshot
+	decodeResponse(t, fetched, &loaded)
+	fetched.Body.Close()
+	if loaded.SnapshotID != stored.SnapshotID || loaded.Ciphertext != stored.Ciphertext {
+		t.Fatalf("unexpected loaded snapshot: %#v", loaded)
+	}
+}
+
 func TestExchangeRejectsDifferentContentForSameChangeID(t *testing.T) {
 	e := newTestEnvironment(t)
 	envelope := validEnvelope(e.deviceID, "550e8400-e29b-41d4-a716-446655440003")

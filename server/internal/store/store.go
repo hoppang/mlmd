@@ -9,16 +9,18 @@ import (
 )
 
 var (
-	ErrNotFound          = errors.New("not found")
-	ErrUnauthorized      = errors.New("unauthorized")
-	ErrForbidden         = errors.New("forbidden")
-	ErrChangeConflict    = errors.New("change id already has different content")
-	ErrInviteExpired     = errors.New("invite expired")
-	ErrInviteConsumed    = errors.New("invite already consumed")
-	ErrInviteRevoked     = errors.New("invite revoked")
-	ErrDeviceExists      = errors.New("device already exists")
-	ErrSpaceExists       = errors.New("family space already exists")
-	ErrBootstrapConsumed = errors.New("bootstrap already consumed")
+	ErrNotFound               = errors.New("not found")
+	ErrUnauthorized           = errors.New("unauthorized")
+	ErrForbidden              = errors.New("forbidden")
+	ErrChangeConflict         = errors.New("change id already has different content")
+	ErrInviteExpired          = errors.New("invite expired")
+	ErrInviteConsumed         = errors.New("invite already consumed")
+	ErrInviteRevoked          = errors.New("invite revoked")
+	ErrDeviceExists           = errors.New("device already exists")
+	ErrSpaceExists            = errors.New("family space already exists")
+	ErrBootstrapConsumed      = errors.New("bootstrap already consumed")
+	ErrSnapshotBaseNotApplied = errors.New("snapshot base cursor was not applied by device")
+	ErrSnapshotStale          = errors.New("snapshot does not advance the retained base")
 )
 
 type Store interface {
@@ -31,4 +33,6 @@ type Store interface {
 	ListDevices(context.Context, string, string) ([]model.Device, error)
 	RevokeDevice(context.Context, string, string, string) (time.Time, error)
 	Exchange(context.Context, string, string, int64, []model.OutgoingEnvelope, int) (model.ExchangeResult, error)
+	PutSnapshot(context.Context, string, string, model.SyncSnapshot) (model.SyncSnapshot, error)
+	GetSnapshot(context.Context, string) (model.SyncSnapshot, error)
 }

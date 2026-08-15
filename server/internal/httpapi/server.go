@@ -24,12 +24,14 @@ import (
 )
 
 const (
-	protocolVersion          = 1
-	defaultLimit             = 200
-	maxIncoming              = 200
-	maxOutgoing              = 100
-	maxCiphertextBytes       = 256 * 1024
-	maxRequestBytes    int64 = 2 * 1024 * 1024
+	protocolVersion                  = 1
+	defaultLimit                     = 200
+	maxIncoming                      = 200
+	maxOutgoing                      = 100
+	maxCiphertextBytes               = 256 * 1024
+	maxRequestBytes            int64 = 2 * 1024 * 1024
+	maxSnapshotCiphertextBytes       = 8 * 1024 * 1024
+	maxSnapshotRequestBytes    int64 = 12 * 1024 * 1024
 )
 
 var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`)
@@ -62,6 +64,8 @@ func New(serverStore store.Store, bootstrapToken string, logger *slog.Logger, ba
 	mux.HandleFunc("GET /v1/spaces/{spaceId}/devices", s.handleListDevices)
 	mux.HandleFunc("DELETE /v1/spaces/{spaceId}/devices/{deviceId}", s.handleRevokeDevice)
 	mux.HandleFunc("POST /v1/spaces/{spaceId}/exchange", s.handleExchange)
+	mux.HandleFunc("PUT /v1/spaces/{spaceId}/snapshot", s.handlePutSnapshot)
+	mux.HandleFunc("GET /v1/spaces/{spaceId}/snapshot", s.handleGetSnapshot)
 	s.handler = s.recoverAndLog(mux)
 	return s
 }
@@ -435,6 +439,52 @@ func (s *Server) handleExchange(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handlePutSnapshot(w http.ResponseWriter, r *http.Request) {
+	device, err := s.authenticate(r)
+	if !s.authorizeSpaceRequest(w, r, device, err) {
+		return
+	}
+	var snapshot model.SyncSnapshot
+	if err := decodeJSONWithLimit(w, r, &snapshot, maxSnapshotRequestBytes); err != nil {
+		writeDecodeError(w, err)
+		return
+	}
+	if snapshot.SourceDeviceID != device.ID || !validateSnapshot(snapshot) {
+		writeError(w, http.StatusBadRequest, "invalid_snapshot")
+		return
+	}
+	stored, err := s.store.PutSnapshot(r.Context(), device.FamilySpaceID, device.ID, snapshot)
+	switch {
+	case errors.Is(err, store.ErrForbidden):
+		writeError(w, http.StatusForbidden, "owner_required")
+	case errors.Is(err, store.ErrSnapshotBaseNotApplied):
+		writeError(w, http.StatusConflict, "snapshot_base_not_applied")
+	case errors.Is(err, store.ErrSnapshotStale):
+		writeError(w, http.StatusConflict, "snapshot_stale")
+	case err != nil:
+		s.internalError(w, err)
+	default:
+		writeJSON(w, http.StatusCreated, stored)
+	}
+}
+
+func (s *Server) handleGetSnapshot(w http.ResponseWriter, r *http.Request) {
+	device, err := s.authenticate(r)
+	if !s.authorizeSpaceRequest(w, r, device, err) {
+		return
+	}
+	snapshot, err := s.store.GetSnapshot(r.Context(), device.FamilySpaceID)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "snapshot_not_found")
+		return
+	}
+	if err != nil {
+		s.internalError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, snapshot)
+}
+
 func (s *Server) authenticate(r *http.Request) (model.Device, error) {
 	token, ok := bearerToken(r)
 	if !ok {
@@ -480,6 +530,21 @@ func validateEnvelope(envelope model.OutgoingEnvelope, authenticatedDeviceID str
 	return nil
 }
 
+func validateSnapshot(snapshot model.SyncSnapshot) bool {
+	if snapshot.SnapshotVersion != 1 || snapshot.BaseServerSeq < 0 ||
+		!uuidPattern.MatchString(snapshot.SnapshotID) ||
+		!uuidPattern.MatchString(snapshot.SourceDeviceID) ||
+		!snapshot.CreatedAt.IsZero() {
+		return false
+	}
+	nonce, err := base64.RawURLEncoding.DecodeString(snapshot.Nonce)
+	if err != nil || len(nonce) != 24 {
+		return false
+	}
+	ciphertext, err := base64.RawURLEncoding.DecodeString(snapshot.Ciphertext)
+	return err == nil && len(ciphertext) >= 16 && len(ciphertext) <= maxSnapshotCiphertextBytes
+}
+
 func parseCursor(cursor *string) (int64, error) {
 	if cursor == nil {
 		return 0, nil
@@ -504,7 +569,11 @@ func bearerToken(r *http.Request) (string, bool) {
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, target any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBytes)
+	return decodeJSONWithLimit(w, r, target, maxRequestBytes)
+}
+
+func decodeJSONWithLimit(w http.ResponseWriter, r *http.Request, target any, limit int64) error {
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {

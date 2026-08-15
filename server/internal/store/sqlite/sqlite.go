@@ -507,6 +507,114 @@ func (s *Store) Exchange(ctx context.Context, spaceID, deviceID string, after in
 	}, nil
 }
 
+func (s *Store) PutSnapshot(ctx context.Context, spaceID, deviceID string, snapshot model.SyncSnapshot) (model.SyncSnapshot, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return model.SyncSnapshot{}, err
+	}
+	defer tx.Rollback()
+	if err := requireOwner(ctx, tx, spaceID, deviceID); err != nil {
+		return model.SyncSnapshot{}, err
+	}
+	var nextSeq int64
+	if err := tx.QueryRowContext(ctx, `SELECT next_seq FROM family_spaces WHERE id = ?`, spaceID).Scan(&nextSeq); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.SyncSnapshot{}, storepkg.ErrNotFound
+		}
+		return model.SyncSnapshot{}, err
+	}
+	var appliedSeq int64
+	if err := tx.QueryRowContext(ctx, `
+		SELECT last_reported_seq FROM device_cursors
+		WHERE family_space_id = ? AND device_id = ?`, spaceID, deviceID,
+	).Scan(&appliedSeq); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.SyncSnapshot{}, storepkg.ErrSnapshotBaseNotApplied
+		}
+		return model.SyncSnapshot{}, err
+	}
+	if snapshot.BaseServerSeq > nextSeq || snapshot.BaseServerSeq > appliedSeq {
+		return model.SyncSnapshot{}, storepkg.ErrSnapshotBaseNotApplied
+	}
+
+	existing, err := snapshotForSpace(ctx, tx, spaceID)
+	if err == nil {
+		if sameSnapshot(existing, snapshot) {
+			return existing, nil
+		}
+		if snapshot.BaseServerSeq <= existing.BaseServerSeq {
+			return model.SyncSnapshot{}, storepkg.ErrSnapshotStale
+		}
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return model.SyncSnapshot{}, err
+	}
+
+	snapshot.FamilySpaceID = spaceID
+	snapshot.SourceDeviceID = deviceID
+	snapshot.CreatedAt = time.Now().UTC()
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO sync_snapshots(
+			family_space_id, snapshot_id, base_server_seq, source_device_id,
+			snapshot_version, nonce, ciphertext, created_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(family_space_id) DO UPDATE SET
+			snapshot_id = excluded.snapshot_id,
+			base_server_seq = excluded.base_server_seq,
+			source_device_id = excluded.source_device_id,
+			snapshot_version = excluded.snapshot_version,
+			nonce = excluded.nonce,
+			ciphertext = excluded.ciphertext,
+			created_at = excluded.created_at`,
+		spaceID, snapshot.SnapshotID, snapshot.BaseServerSeq, deviceID,
+		snapshot.SnapshotVersion, snapshot.Nonce, snapshot.Ciphertext, formatTime(snapshot.CreatedAt),
+	); err != nil {
+		return model.SyncSnapshot{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return model.SyncSnapshot{}, err
+	}
+	return snapshot, nil
+}
+
+func (s *Store) GetSnapshot(ctx context.Context, spaceID string) (model.SyncSnapshot, error) {
+	snapshot, err := snapshotForSpace(ctx, s.db, spaceID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.SyncSnapshot{}, storepkg.ErrNotFound
+	}
+	return snapshot, err
+}
+
+type rowQueryer interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func snapshotForSpace(ctx context.Context, queryer rowQueryer, spaceID string) (model.SyncSnapshot, error) {
+	var snapshot model.SyncSnapshot
+	var createdAt string
+	err := queryer.QueryRowContext(ctx, `
+		SELECT family_space_id, snapshot_id, base_server_seq, source_device_id,
+			snapshot_version, nonce, ciphertext, created_at
+		FROM sync_snapshots WHERE family_space_id = ?`, spaceID,
+	).Scan(
+		&snapshot.FamilySpaceID, &snapshot.SnapshotID, &snapshot.BaseServerSeq,
+		&snapshot.SourceDeviceID, &snapshot.SnapshotVersion, &snapshot.Nonce,
+		&snapshot.Ciphertext, &createdAt,
+	)
+	if err != nil {
+		return model.SyncSnapshot{}, err
+	}
+	snapshot.CreatedAt, err = time.Parse(time.RFC3339Nano, createdAt)
+	return snapshot, err
+}
+
+func sameSnapshot(left, right model.SyncSnapshot) bool {
+	return left.SnapshotID == right.SnapshotID &&
+		left.BaseServerSeq == right.BaseServerSeq &&
+		left.SourceDeviceID == right.SourceDeviceID &&
+		left.SnapshotVersion == right.SnapshotVersion &&
+		left.Nonce == right.Nonce && left.Ciphertext == right.Ciphertext
+}
+
 func existingEnvelope(ctx context.Context, tx *sql.Tx, spaceID, changeID string) (model.OutgoingEnvelope, error) {
 	var envelope model.OutgoingEnvelope
 	err := tx.QueryRowContext(ctx, `

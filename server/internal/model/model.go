@@ -53,3 +53,14 @@ type ExchangeResult struct {
 	NextCursor            int64
 	HasMore               bool
 }
+
+type SyncSnapshot struct {
+	FamilySpaceID   string    `json:"-"`
+	SnapshotID      string    `json:"snapshotId"`
+	BaseServerSeq   int64     `json:"baseServerSeq"`
+	SourceDeviceID  string    `json:"sourceDeviceId"`
+	SnapshotVersion int       `json:"snapshotVersion"`
+	Nonce           string    `json:"nonce"`
+	Ciphertext      string    `json:"ciphertext"`
+	CreatedAt       time.Time `json:"createdAt"`
+}

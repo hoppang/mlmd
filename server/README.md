@@ -43,6 +43,8 @@ Implemented management endpoints:
 - `POST /v1/invites/{inviteId}/consume`
 - `GET /v1/spaces/{spaceId}/devices`
 - `DELETE /v1/spaces/{spaceId}/devices/{deviceId}`
+- `PUT /v1/spaces/{spaceId}/snapshot` (owner only)
+- `GET /v1/spaces/{spaceId}/snapshot`
 
 ## Change-log retention
 
@@ -55,6 +57,11 @@ not have server-side deletion markers.
 Do not add change-log compaction until the protocol has encrypted snapshots and
 tracks the applied cursor of every active device. Backup-file retention is a
 separate policy and never removes rows from the live `changes` table.
+
+The snapshot endpoints currently store and return only an opaque encrypted
+snapshot. Upload is accepted only after the owner has reported applying its
+`baseServerSeq` through exchange. The server does not yet delete any change-log
+rows; clients must first implement authenticated snapshot restore.
 
 ## Create an encrypted SQLite backup
 
