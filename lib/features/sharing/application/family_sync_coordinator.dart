@@ -23,15 +23,28 @@ class FamilySyncRetryController {
 
   final Ref _ref;
   Future<SyncRunResult?>? _activeRun;
+  bool _rerunRequested = false;
 
   Future<SyncRunResult?> retry() {
     final existing = _activeRun;
-    if (existing != null) return existing;
-    final run = _run();
+    if (existing != null) {
+      _rerunRequested = true;
+      return existing;
+    }
+    final run = _runUntilIdle();
     _activeRun = run;
     return run.whenComplete(() {
       if (identical(_activeRun, run)) _activeRun = null;
     });
+  }
+
+  Future<SyncRunResult?> _runUntilIdle() async {
+    SyncRunResult? result;
+    do {
+      _rerunRequested = false;
+      result = await _run();
+    } while (_rerunRequested);
+    return result;
   }
 
   Future<SyncRunResult?> _run() async {
@@ -106,12 +119,19 @@ final familySyncConflictControllerProvider =
       ],
     );
 
-/// Retries on startup, when a connectivity adapter reports availability, and
-/// whenever the application returns to the foreground.
+/// Synchronizes on startup, connectivity recovery, foreground resume, local
+/// outbox growth, and periodically while the application stays foregrounded.
 class FamilySyncLifecycle extends ConsumerStatefulWidget {
-  const FamilySyncLifecycle({required this.child, super.key});
+  const FamilySyncLifecycle({
+    required this.child,
+    this.enqueueDebounce = const Duration(milliseconds: 750),
+    this.foregroundPullInterval = const Duration(seconds: 30),
+    super.key,
+  });
 
   final Widget child;
+  final Duration enqueueDebounce;
+  final Duration foregroundPullInterval;
 
   @override
   ConsumerState<FamilySyncLifecycle> createState() =>
@@ -120,27 +140,65 @@ class FamilySyncLifecycle extends ConsumerStatefulWidget {
 
 class _FamilySyncLifecycleState extends ConsumerState<FamilySyncLifecycle>
     with WidgetsBindingObserver {
+  Timer? _enqueueTimer;
+  Timer? _periodicTimer;
+  bool _isForeground = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _retry());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _startPeriodicPull();
+      _retry();
+    });
   }
 
   @override
   void dispose() {
+    _enqueueTimer?.cancel();
+    _periodicTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _retry();
+    if (state == AppLifecycleState.resumed) {
+      _isForeground = true;
+      _startPeriodicPull();
+      _retry();
+      return;
+    }
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _isForeground = false;
+      _enqueueTimer?.cancel();
+      _enqueueTimer = null;
+      _periodicTimer?.cancel();
+      _periodicTimer = null;
+    }
   }
 
   void _retry() {
-    if (!mounted) return;
+    if (!mounted || !_isForeground) return;
     unawaited(ref.read(familySyncRetryControllerProvider).retry());
+  }
+
+  void _scheduleEnqueueRetry() {
+    if (!_isForeground) return;
+    _enqueueTimer?.cancel();
+    _enqueueTimer = Timer(widget.enqueueDebounce, _retry);
+  }
+
+  void _startPeriodicPull() {
+    _periodicTimer?.cancel();
+    _periodicTimer = Timer.periodic(
+      widget.foregroundPullInterval,
+      (_) => _retry(),
+    );
   }
 
   @override
@@ -150,6 +208,12 @@ class _FamilySyncLifecycleState extends ConsumerState<FamilySyncLifecycle>
       next,
     ) {
       if (next.value == true && previous?.value != true) _retry();
+    });
+    ref.listen<FamilySyncSnapshot>(familySyncStatusProvider, (previous, next) {
+      if (next.isConnected &&
+          next.pendingChangeCount > (previous?.pendingChangeCount ?? 0)) {
+        _scheduleEnqueueRetry();
+      }
     });
     return widget.child;
   }
