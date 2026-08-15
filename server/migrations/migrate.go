@@ -16,7 +16,10 @@ var bootstrapStateSchema string
 //go:embed 003_sync_snapshots.sql
 var syncSnapshotsSchema string
 
-const CurrentVersion = 3
+//go:embed 004_compacted_changes.sql
+var compactedChangesSchema string
+
+const CurrentVersion = 4
 
 func Apply(ctx context.Context, db *sql.DB) error {
 	var version int
@@ -36,6 +39,9 @@ func Apply(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	if _, err := db.ExecContext(ctx, syncSnapshotsSchema); err != nil {
+		return err
+	}
+	if _, err := db.ExecContext(ctx, compactedChangesSchema); err != nil {
 		return err
 	}
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`PRAGMA user_version = %d`, CurrentVersion))

@@ -98,3 +98,35 @@ func TestApplyAddsSyncSnapshotsToExistingInstallation(t *testing.T) {
 		t.Fatalf("snapshot migration result: found=%d version=%d", found, version)
 	}
 }
+
+func TestApplyAddsCompactedChangesToExistingInstallation(t *testing.T) {
+	databasePath := filepath.Join(t.TempDir(), "existing-v3.db")
+	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(databasePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := migrations.Apply(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`DROP TABLE compacted_changes; PRAGMA user_version = 3;`); err != nil {
+		t.Fatal(err)
+	}
+	if err := migrations.Apply(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	var found int
+	if err := db.QueryRow(`
+		SELECT 1 FROM sqlite_schema
+		WHERE type = 'table' AND name = 'compacted_changes'`,
+	).Scan(&found); err != nil {
+		t.Fatal(err)
+	}
+	var version int
+	if err := db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if found != 1 || version != migrations.CurrentVersion {
+		t.Fatalf("compacted changes migration result: found=%d version=%d", found, version)
+	}
+}

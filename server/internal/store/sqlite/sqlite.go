@@ -2,8 +2,10 @@ package sqlite
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/subtle"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -382,6 +384,9 @@ func (s *Store) RevokeDevice(ctx context.Context, spaceID, requesterDeviceID, ta
 	if updated != 1 {
 		return time.Time{}, errors.New("device revoke lost update")
 	}
+	if err := compactChangesForLatestSnapshot(ctx, tx, spaceID); err != nil {
+		return time.Time{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return time.Time{}, err
 	}
@@ -409,14 +414,12 @@ func (s *Store) Exchange(ctx context.Context, spaceID, deviceID string, after in
 		if envelope.SourceDeviceID != deviceID {
 			return model.ExchangeResult{}, storepkg.ErrUnauthorized
 		}
-		duplicate, err := existingEnvelope(ctx, tx, spaceID, envelope.ChangeID)
+		storedFingerprint, err := existingEnvelopeFingerprint(ctx, tx, spaceID, envelope.ChangeID)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return model.ExchangeResult{}, err
 		}
 		if err == nil {
-			if duplicate.EnvelopeVersion != envelope.EnvelopeVersion ||
-				duplicate.SourceDeviceID != envelope.SourceDeviceID ||
-				duplicate.Nonce != envelope.Nonce || duplicate.Ciphertext != envelope.Ciphertext {
+			if subtle.ConstantTimeCompare(storedFingerprint, envelopeFingerprint(envelope)) != 1 {
 				return model.ExchangeResult{}, storepkg.ErrChangeConflict
 			}
 			acknowledged = append(acknowledged, envelope.ChangeID)
@@ -496,6 +499,9 @@ func (s *Store) Exchange(ctx context.Context, spaceID, deviceID string, after in
 	if _, err := tx.ExecContext(ctx, `UPDATE devices SET last_seen_at = ? WHERE id = ?`, formatTime(time.Now()), deviceID); err != nil {
 		return model.ExchangeResult{}, err
 	}
+	if err := compactChangesForLatestSnapshot(ctx, tx, spaceID); err != nil {
+		return model.ExchangeResult{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return model.ExchangeResult{}, err
 	}
@@ -540,6 +546,12 @@ func (s *Store) PutSnapshot(ctx context.Context, spaceID, deviceID string, snaps
 	existing, err := snapshotForSpace(ctx, tx, spaceID)
 	if err == nil {
 		if sameSnapshot(existing, snapshot) {
+			if err := compactChangesForLatestSnapshot(ctx, tx, spaceID); err != nil {
+				return model.SyncSnapshot{}, err
+			}
+			if err := tx.Commit(); err != nil {
+				return model.SyncSnapshot{}, err
+			}
 			return existing, nil
 		}
 		if snapshot.BaseServerSeq <= existing.BaseServerSeq {
@@ -568,6 +580,9 @@ func (s *Store) PutSnapshot(ctx context.Context, spaceID, deviceID string, snaps
 		spaceID, snapshot.SnapshotID, snapshot.BaseServerSeq, deviceID,
 		snapshot.SnapshotVersion, snapshot.Nonce, snapshot.Ciphertext, formatTime(snapshot.CreatedAt),
 	); err != nil {
+		return model.SyncSnapshot{}, err
+	}
+	if err := compactChangesForLatestSnapshot(ctx, tx, spaceID); err != nil {
 		return model.SyncSnapshot{}, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -615,13 +630,110 @@ func sameSnapshot(left, right model.SyncSnapshot) bool {
 		left.Nonce == right.Nonce && left.Ciphertext == right.Ciphertext
 }
 
-func existingEnvelope(ctx context.Context, tx *sql.Tx, spaceID, changeID string) (model.OutgoingEnvelope, error) {
+func compactChangesForLatestSnapshot(ctx context.Context, tx *sql.Tx, spaceID string) error {
+	snapshot, err := snapshotForSpace(ctx, tx, spaceID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	var laggingDevices int
+	if err := tx.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM devices AS d
+		LEFT JOIN device_cursors AS c
+			ON c.family_space_id = d.family_space_id AND c.device_id = d.id
+		WHERE d.family_space_id = ?
+			AND d.revoked_at IS NULL
+			AND COALESCE(c.last_reported_seq, -1) < ?`,
+		spaceID, snapshot.BaseServerSeq,
+	).Scan(&laggingDevices); err != nil {
+		return err
+	}
+	if laggingDevices != 0 {
+		return nil
+	}
+
+	rows, err := tx.QueryContext(ctx, `
+		SELECT envelope_version, change_id, source_device_id, nonce, ciphertext
+		FROM changes
+		WHERE family_space_id = ? AND server_seq <= ?`, spaceID, snapshot.BaseServerSeq)
+	if err != nil {
+		return err
+	}
+	compacted := make([]model.OutgoingEnvelope, 0)
+	for rows.Next() {
+		var envelope model.OutgoingEnvelope
+		if err := rows.Scan(
+			&envelope.EnvelopeVersion, &envelope.ChangeID, &envelope.SourceDeviceID,
+			&envelope.Nonce, &envelope.Ciphertext,
+		); err != nil {
+			rows.Close()
+			return err
+		}
+		compacted = append(compacted, envelope)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, envelope := range compacted {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO compacted_changes(family_space_id, change_id, envelope_fingerprint)
+			VALUES (?, ?, ?)
+			ON CONFLICT(family_space_id, change_id) DO NOTHING`,
+			spaceID, envelope.ChangeID, envelopeFingerprint(envelope),
+		); err != nil {
+			return err
+		}
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		DELETE FROM changes
+		WHERE family_space_id = ? AND server_seq <= ?`, spaceID, snapshot.BaseServerSeq)
+	return err
+}
+
+func existingEnvelopeFingerprint(ctx context.Context, tx *sql.Tx, spaceID, changeID string) ([]byte, error) {
 	var envelope model.OutgoingEnvelope
 	err := tx.QueryRowContext(ctx, `
 		SELECT envelope_version, change_id, source_device_id, nonce, ciphertext
 		FROM changes WHERE family_space_id = ? AND change_id = ?`, spaceID, changeID,
 	).Scan(&envelope.EnvelopeVersion, &envelope.ChangeID, &envelope.SourceDeviceID, &envelope.Nonce, &envelope.Ciphertext)
-	return envelope, err
+	if err == nil {
+		return envelopeFingerprint(envelope), nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	var fingerprint []byte
+	err = tx.QueryRowContext(ctx, `
+		SELECT envelope_fingerprint FROM compacted_changes
+		WHERE family_space_id = ? AND change_id = ?`, spaceID, changeID,
+	).Scan(&fingerprint)
+	return fingerprint, err
+}
+
+func envelopeFingerprint(envelope model.OutgoingEnvelope) []byte {
+	encoded, _ := json.Marshal(struct {
+		EnvelopeVersion int
+		ChangeID        string
+		SourceDeviceID  string
+		Nonce           string
+		Ciphertext      string
+	}{
+		EnvelopeVersion: envelope.EnvelopeVersion,
+		ChangeID:        envelope.ChangeID,
+		SourceDeviceID:  envelope.SourceDeviceID,
+		Nonce:           envelope.Nonce,
+		Ciphertext:      envelope.Ciphertext,
+	})
+	fingerprint := sha256.Sum256(encoded)
+	return fingerprint[:]
 }
 
 func deviceForInviteRetry(ctx context.Context, tx *sql.Tx, spaceID, deviceID string) (model.Device, []byte, error) {
