@@ -1227,7 +1227,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(17, 5283359893795432749),
     name: 'FamilySpaceEntity',
-    lastPropertyId: const obx_int.IdUid(7, 3090972673123884338),
+    lastPropertyId: const obx_int.IdUid(8, 5861927044325050990),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -1270,6 +1270,12 @@ final _entities = <obx_int.ModelEntity>[
       obx_int.ModelProperty(
         id: const obx_int.IdUid(7, 3090972673123884338),
         name: 'initialBackfillCompletedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 5861927044325050990),
+        name: 'childProfileBackfillCompletedAt',
         type: 10,
         flags: 0,
       ),
@@ -3490,7 +3496,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final familySpaceIdOffset = fbb.writeString(object.familySpaceId);
         final displayNameOffset = fbb.writeString(object.displayName);
         final deviceProfileIdOffset = fbb.writeString(object.deviceProfileId);
-        fbb.startTable(8);
+        fbb.startTable(9);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, familySpaceIdOffset);
         fbb.addOffset(2, displayNameOffset);
@@ -3501,6 +3507,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
           6,
           object.initialBackfillCompletedAt?.millisecondsSinceEpoch,
         );
+        fbb.addInt64(
+          7,
+          object.childProfileBackfillCompletedAt?.millisecondsSinceEpoch,
+        );
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -3509,6 +3519,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final rootOffset = buffer.derefObject(0);
         final initialBackfillCompletedAtValue = const fb.Int64Reader()
             .vTableGetNullable(buffer, rootOffset, 16);
+        final childProfileBackfillCompletedAtValue = const fb.Int64Reader()
+            .vTableGetNullable(buffer, rootOffset, 18);
         final idParam = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -3539,6 +3551,12 @@ obx_int.ModelDefinition getObjectBoxModel() {
             : DateTime.fromMillisecondsSinceEpoch(
                 initialBackfillCompletedAtValue,
               );
+        final childProfileBackfillCompletedAtParam =
+            childProfileBackfillCompletedAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(
+                childProfileBackfillCompletedAtValue,
+              );
         final object = FamilySpaceEntity(
           id: idParam,
           familySpaceId: familySpaceIdParam,
@@ -3547,6 +3565,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           isActive: isActiveParam,
           joinedAt: joinedAtParam,
           initialBackfillCompletedAt: initialBackfillCompletedAtParam,
+          childProfileBackfillCompletedAt: childProfileBackfillCompletedAtParam,
         );
 
         return object;
@@ -5221,6 +5240,10 @@ class FamilySpaceEntity_ {
   /// See [FamilySpaceEntity.initialBackfillCompletedAt].
   static final initialBackfillCompletedAt =
       obx.QueryDateProperty<FamilySpaceEntity>(_entities[16].properties[6]);
+
+  /// See [FamilySpaceEntity.childProfileBackfillCompletedAt].
+  static final childProfileBackfillCompletedAt =
+      obx.QueryDateProperty<FamilySpaceEntity>(_entities[16].properties[7]);
 }
 
 /// [SyncConflictEntity] entity fields to define ObjectBox queries.

@@ -8,6 +8,7 @@ import '../data/objectbox_helper.dart';
 import '../features/sharing/application/family_sync_payloads.dart';
 import '../features/sharing/application/family_sync_transport.dart';
 import '../features/sharing/domain/family_sync_models.dart';
+import '../features/children/application/child_profile_repository.dart';
 import '../models/attachment_entity.dart';
 import '../models/duplicate_review_edge_entity.dart';
 import '../models/family_sync_entity.dart';
@@ -58,26 +59,33 @@ abstract interface class FamilySyncRepository {
 }
 
 class FamilySyncRepositoryImpl implements FamilySyncRepository {
-  FamilySyncRepositoryImpl(this._objectBox, this._profiles)
-    : _spaceBox = Box<FamilySpaceEntity>(_objectBox.store),
-      _outbox = Box<SyncOutboxEntity>(_objectBox.store),
-      _cursorBox = Box<SyncCursorEntity>(_objectBox.store),
-      _conflictBox = Box<SyncConflictEntity>(_objectBox.store),
-      _resolutionStateBox = Box<SyncResolutionStateEntity>(_objectBox.store),
-      _resolutionNoticeBox = Box<SyncResolutionNoticeEntity>(_objectBox.store),
-      _resolutionAcknowledgementBox = Box<SyncResolutionAcknowledgementEntity>(
-        _objectBox.store,
-      ) {
+  FamilySyncRepositoryImpl(
+    this._objectBox,
+    this._profiles, [
+    this._childProfiles,
+  ]) : _spaceBox = Box<FamilySpaceEntity>(_objectBox.store),
+       _outbox = Box<SyncOutboxEntity>(_objectBox.store),
+       _cursorBox = Box<SyncCursorEntity>(_objectBox.store),
+       _conflictBox = Box<SyncConflictEntity>(_objectBox.store),
+       _resolutionStateBox = Box<SyncResolutionStateEntity>(_objectBox.store),
+       _resolutionNoticeBox = Box<SyncResolutionNoticeEntity>(_objectBox.store),
+       _resolutionAcknowledgementBox = Box<SyncResolutionAcknowledgementEntity>(
+         _objectBox.store,
+       ) {
     if (_profiles case final ProfileRepositoryImpl profiles) {
       _profileMutationSubscription = profiles.mutations.listen(
         _queueProfileMutation,
       );
     }
+    _childProfileMutationSubscription = _childProfiles?.mutations.listen(
+      _queueChildProfileMutation,
+    );
   }
 
   static const _uuid = Uuid();
   final ObjectBoxHelper _objectBox;
   final ProfileRepository _profiles;
+  final ChildProfileRepository? _childProfiles;
   final Box<FamilySpaceEntity> _spaceBox;
   final Box<SyncOutboxEntity> _outbox;
   final Box<SyncCursorEntity> _cursorBox;
@@ -87,6 +95,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
   final Box<SyncResolutionAcknowledgementEntity> _resolutionAcknowledgementBox;
   final StreamController<void> _changes = StreamController<void>.broadcast();
   StreamSubscription<AuthorProfileMutation>? _profileMutationSubscription;
+  StreamSubscription<ChildProfileMutation>? _childProfileMutationSubscription;
 
   Stream<void> get changes => _changes.stream;
 
@@ -306,6 +315,7 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       throw StateError('A family space must be connected before syncing.');
     }
     _ensureInitialBackfill(space);
+    _ensureChildProfileBackfill(space);
     final cursor = _ensureCursor(space.familySpaceId);
     final pending = _pending(space.familySpaceId);
     late final SyncExchange exchange;
@@ -548,6 +558,59 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
 
       if (pending.isNotEmpty) _outbox.putMany(pending);
       currentSpace.initialBackfillCompletedAt = completedAt;
+      _spaceBox.put(currentSpace);
+      return true;
+    });
+    if (didBackfill) _notifyChanged();
+  }
+
+  void _ensureChildProfileBackfill(FamilySpaceEntity space) {
+    final childProfiles = _childProfiles;
+    if (childProfiles == null ||
+        space.childProfileBackfillCompletedAt != null) {
+      return;
+    }
+    final profiles = childProfiles.associateUnscopedWithFamily(
+      space.familySpaceId,
+    );
+    final source = _profiles.requireCurrentSource();
+    final completedAt = DateTime.now();
+    final didBackfill = _objectBox.store.runInTransaction(TxMode.write, () {
+      final currentSpace = _spaceBox.get(space.id);
+      if (currentSpace == null ||
+          currentSpace.childProfileBackfillCompletedAt != null) {
+        return false;
+      }
+      final queuedEntityIds = _outbox
+          .getAll()
+          .where(
+            (item) =>
+                item.familySpaceId == currentSpace.familySpaceId &&
+                item.entityType == FamilySyncPayloads.childProfile,
+          )
+          .map((item) => item.entityId)
+          .toSet();
+      final pending = profiles
+          .where((profile) => queuedEntityIds.add(profile.childId))
+          .map(
+            (profile) => SyncOutboxEntity(
+              changeId: _uuid.v4(),
+              familySpaceId: currentSpace.familySpaceId,
+              sourceDeviceProfileId: source.deviceProfileId,
+              sourceAuthorProfileId: source.authorProfileId,
+              entityType: FamilySyncPayloads.childProfile,
+              entityId: profile.childId,
+              entityRevision: profile.revision,
+              operation: SyncOperation.create.name,
+              payloadJson: jsonEncode(
+                FamilySyncPayloads.forChildProfile(profile),
+              ),
+              occurredAt: profile.updatedAt,
+            ),
+          )
+          .toList();
+      if (pending.isNotEmpty) _outbox.putMany(pending);
+      currentSpace.childProfileBackfillCompletedAt = completedAt;
       _spaceBox.put(currentSpace);
       return true;
     });
@@ -1184,20 +1247,53 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
     );
   }
 
+  void _queueChildProfileMutation(ChildProfileMutation mutation) {
+    final familySpaceId = activeFamilySpaceId;
+    final childProfiles = _childProfiles;
+    if (familySpaceId == null || childProfiles == null) return;
+    if (mutation.profile.familySpaceId != null &&
+        mutation.profile.familySpaceId != familySpaceId) {
+      return;
+    }
+    final profile = childProfiles.associateWithFamily(
+      mutation.profile.childId,
+      familySpaceId,
+    );
+    enqueue(
+      entityType: FamilySyncPayloads.childProfile,
+      entityId: profile.childId,
+      entityRevision: profile.revision,
+      operation: mutation.kind == ChildProfileMutationKind.create
+          ? SyncOperation.create
+          : SyncOperation.update,
+      payload: FamilySyncPayloads.forChildProfile(profile),
+      occurredAt: profile.updatedAt,
+    );
+  }
+
   void dispose() {
     unawaited(_profileMutationSubscription?.cancel());
+    unawaited(_childProfileMutationSubscription?.cancel());
     _changes.close();
   }
 }
 
-final familySyncRepositoryProvider = Provider<FamilySyncRepository>((ref) {
-  final repository = FamilySyncRepositoryImpl(
-    ref.watch(objectBoxProvider),
-    ref.watch(profileRepositoryProvider),
-  );
-  ref.onDispose(repository.dispose);
-  return repository;
-}, dependencies: [objectBoxProvider, profileRepositoryProvider]);
+final familySyncRepositoryProvider = Provider<FamilySyncRepository>(
+  (ref) {
+    final repository = FamilySyncRepositoryImpl(
+      ref.watch(objectBoxProvider),
+      ref.watch(profileRepositoryProvider),
+      ref.watch(childProfileRepositoryProvider),
+    );
+    ref.onDispose(repository.dispose);
+    return repository;
+  },
+  dependencies: [
+    objectBoxProvider,
+    profileRepositoryProvider,
+    childProfileRepositoryProvider,
+  ],
+);
 
 class FamilySyncStatusNotifier extends Notifier<FamilySyncSnapshot> {
   @override

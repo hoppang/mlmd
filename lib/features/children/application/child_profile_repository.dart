@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,11 +16,18 @@ class ChildProfileRepository {
   static const _selectedChildIdKey = 'selected_child_id';
 
   final SharedPreferences? _prefs;
+  final StreamController<ChildProfileMutation> _mutations =
+      StreamController<ChildProfileMutation>.broadcast();
+  final StreamController<void> _changes = StreamController<void>.broadcast();
   ChildProfileState _state;
 
   ChildProfileState get state => _state;
 
-  List<ChildProfile> get children => List.unmodifiable(_state.children);
+  List<ChildProfile> get children =>
+      List.unmodifiable(_state.children.where((item) => !item.isDeleted));
+  List<ChildProfile> get allChildren => List.unmodifiable(_state.children);
+  Stream<ChildProfileMutation> get mutations => _mutations.stream;
+  Stream<void> get changes => _changes.stream;
   String get selectedChildId => _state.selectedChildId;
   ChildProfile get selectedChild => _state.children.firstWhere(
     (item) => item.childId == _state.selectedChildId,
@@ -38,6 +46,7 @@ class ChildProfileRepository {
     );
     final nextChildren = [..._state.children, profile];
     _updateState(nextChildren, selectedChildId: profile.childId);
+    _notifyMutation(profile, ChildProfileMutationKind.create);
     return profile;
   }
 
@@ -55,24 +64,38 @@ class ChildProfileRepository {
       name: _normalizeName(name),
       birthDate: birthDate,
       clearBirthDate: clearBirthDate,
+      revision: _state.children[index].revision + 1,
+      updatedAt: DateTime.now(),
     );
     final nextChildren = [..._state.children]..[index] = updated;
     _updateState(nextChildren);
+    _notifyMutation(updated, ChildProfileMutationKind.update);
     return updated;
   }
 
   bool delete(String childId) {
     if (_state.children.length <= 1) return false;
     if (childId == ChildProfile.localChildId) return false;
-    final nextChildren = _state.children
-        .where((item) => item.childId != childId)
+    final index = _state.children.indexWhere(
+      (item) => item.childId == childId && !item.isDeleted,
+    );
+    if (index < 0) return false;
+    final deletedAt = DateTime.now();
+    final deleted = _state.children[index].copyWith(
+      revision: _state.children[index].revision + 1,
+      updatedAt: deletedAt,
+      deletedAt: deletedAt,
+    );
+    final nextChildren = [..._state.children]..[index] = deleted;
+    final visibleChildren = nextChildren
+        .where((item) => !item.isDeleted)
         .toList();
-    if (nextChildren.length == _state.children.length) return false;
     final nextSelected =
-        nextChildren.any((item) => item.childId == _state.selectedChildId)
+        visibleChildren.any((item) => item.childId == _state.selectedChildId)
         ? _state.selectedChildId
-        : nextChildren.first.childId;
+        : visibleChildren.first.childId;
     _updateState(nextChildren, selectedChildId: nextSelected);
+    _notifyMutation(deleted, ChildProfileMutationKind.delete);
     return true;
   }
 
@@ -93,6 +116,58 @@ class ChildProfileRepository {
     ], selectedChildId: ChildProfile.localChildId);
   }
 
+  List<ChildProfile> associateUnscopedWithFamily(String familySpaceId) {
+    var changed = false;
+    final associated = _state.children.map((profile) {
+      if (profile.familySpaceId != null) return profile;
+      changed = true;
+      return profile.copyWith(familySpaceId: familySpaceId);
+    }).toList();
+    if (changed) _updateState(associated);
+    return List.unmodifiable(
+      associated.where((item) => item.familySpaceId == familySpaceId),
+    );
+  }
+
+  ChildProfile associateWithFamily(String childId, String familySpaceId) {
+    final index = _state.children.indexWhere((item) => item.childId == childId);
+    if (index < 0) throw StateError('Child profile does not exist.');
+    final existing = _state.children[index];
+    if (existing.familySpaceId == familySpaceId) return existing;
+    if (existing.familySpaceId != null) {
+      throw StateError('Child profile belongs to another family space.');
+    }
+    final associated = existing.copyWith(familySpaceId: familySpaceId);
+    final nextChildren = [..._state.children]..[index] = associated;
+    _updateState(nextChildren);
+    return associated;
+  }
+
+  ChildProfile? findIncludingDeleted(String childId) {
+    for (final profile in _state.children) {
+      if (profile.childId == childId) return profile;
+    }
+    return null;
+  }
+
+  void applyRemote(ChildProfile profile) {
+    final index = _state.children.indexWhere(
+      (item) => item.childId == profile.childId,
+    );
+    final nextChildren = [..._state.children];
+    if (index < 0) {
+      nextChildren.add(profile);
+    } else {
+      nextChildren[index] = profile;
+    }
+    _updateState(nextChildren);
+  }
+
+  void dispose() {
+    _mutations.close();
+    _changes.close();
+  }
+
   void _updateState(List<ChildProfile> children, {String? selectedChildId}) {
     final normalized = _normalize(children);
     final nextSelected = _normalizeSelectedChildId(
@@ -104,6 +179,7 @@ class ChildProfileRepository {
       selectedChildId: nextSelected,
     );
     _persist();
+    if (!_changes.isClosed) _changes.add(null);
   }
 
   void _persist() {
@@ -113,6 +189,12 @@ class ChildProfileRepository {
       jsonEncode(_state.children.map((item) => item.toJson()).toList()),
     );
     _prefs.setString(_selectedChildIdKey, _state.selectedChildId);
+  }
+
+  void _notifyMutation(ChildProfile profile, ChildProfileMutationKind kind) {
+    if (!_mutations.isClosed) {
+      _mutations.add(ChildProfileMutation(profile: profile, kind: kind));
+    }
   }
 
   static ChildProfileState _loadState(SharedPreferences? prefs) {
@@ -173,11 +255,12 @@ class ChildProfileRepository {
     List<ChildProfile> children,
     String? selectedChildId,
   ) {
+    final visible = children.where((item) => !item.isDeleted).toList();
     if (selectedChildId != null &&
-        children.any((item) => item.childId == selectedChildId)) {
+        visible.any((item) => item.childId == selectedChildId)) {
       return selectedChildId;
     }
-    return children.first.childId;
+    return visible.first.childId;
   }
 
   String _normalizeName(String value) {
@@ -187,6 +270,15 @@ class ChildProfileRepository {
     }
     return normalized;
   }
+}
+
+enum ChildProfileMutationKind { create, update, delete }
+
+class ChildProfileMutation {
+  const ChildProfileMutation({required this.profile, required this.kind});
+
+  final ChildProfile profile;
+  final ChildProfileMutationKind kind;
 }
 
 class ChildProfileState {
@@ -200,17 +292,26 @@ class ChildProfileState {
 }
 
 final childProfileRepositoryProvider = Provider<ChildProfileRepository>((ref) {
+  late final ChildProfileRepository repository;
   try {
-    return ChildProfileRepository(ref.watch(sharedPreferencesProvider));
+    repository = ChildProfileRepository(ref.watch(sharedPreferencesProvider));
   } catch (_) {
-    return ChildProfileRepository();
+    repository = ChildProfileRepository();
   }
+  ref.onDispose(repository.dispose);
+  return repository;
 }, dependencies: [sharedPreferencesProvider]);
 
 class ChildProfileListNotifier extends Notifier<List<ChildProfile>> {
   @override
   List<ChildProfile> build() {
-    return ref.watch(childProfileRepositoryProvider).children;
+    final repository = ref.watch(childProfileRepositoryProvider);
+    final subscription = repository.changes.listen((_) {
+      state = repository.children;
+      ref.invalidate(selectedChildIdProvider);
+    });
+    ref.onDispose(subscription.cancel);
+    return repository.children;
   }
 
   void create({required String name, DateTime? birthDate, String? childId}) {

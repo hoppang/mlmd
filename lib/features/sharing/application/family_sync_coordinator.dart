@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/objectbox_helper.dart';
+import '../../children/application/child_profile_repository.dart';
 import '../../../repositories/custom_event_repository.dart';
 import '../../../repositories/family_sync_repository.dart';
 import '../domain/family_sync_models.dart';
@@ -54,6 +55,7 @@ class FamilySyncRetryController {
     final applier = FamilySyncRemoteApplier(
       _ref.read(objectBoxProvider),
       _ref.read(customEventRepositoryProvider),
+      _ref.read(childProfileRepositoryProvider),
     );
     try {
       return await repository.synchronize(
@@ -79,6 +81,7 @@ final familySyncRetryControllerProvider = Provider<FamilySyncRetryController>(
     familySyncTransportProvider,
     objectBoxProvider,
     customEventRepositoryProvider,
+    childProfileRepositoryProvider,
     familySyncStatusProvider,
   ],
 );
@@ -95,6 +98,7 @@ class FamilySyncConflictController {
     final applier = FamilySyncRemoteApplier(
       _ref.read(objectBoxProvider),
       _ref.read(customEventRepositoryProvider),
+      _ref.read(childProfileRepositoryProvider),
     );
     final result = await _ref
         .read(familySyncRepositoryProvider)
@@ -115,6 +119,7 @@ final familySyncConflictControllerProvider =
         familySyncRepositoryProvider,
         objectBoxProvider,
         customEventRepositoryProvider,
+        childProfileRepositoryProvider,
         familySyncStatusProvider,
       ],
     );

@@ -1035,7 +1035,7 @@
     },
     {
       "id": "17:5283359893795432749",
-      "lastPropertyId": "7:3090972673123884338",
+      "lastPropertyId": "8:5861927044325050990",
       "name": "FamilySpaceEntity",
       "properties": [
         {
@@ -1074,6 +1074,11 @@
         {
           "id": "7:3090972673123884338",
           "name": "initialBackfillCompletedAt",
+          "type": 10
+        },
+        {
+          "id": "8:5861927044325050990",
+          "name": "childProfileBackfillCompletedAt",
           "type": 10
         }
       ],

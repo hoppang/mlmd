@@ -5,6 +5,7 @@ import '../../../models/care_task_occurrence_entity.dart';
 import '../../../models/duplicate_review_edge_entity.dart';
 import '../../../models/shared_custom_event_definition_entity.dart';
 import '../../attachments/domain/event_attachment.dart';
+import '../../children/domain/child_profile.dart';
 
 /// Stable entity names and JSON payloads used at the provider-independent sync
 /// boundary. Managed file paths are deliberately excluded from attachment
@@ -12,6 +13,7 @@ import '../../attachments/domain/event_attachment.dart';
 abstract final class FamilySyncPayloads {
   static const activity = 'activity';
   static const authorProfile = 'authorProfile';
+  static const childProfile = 'childProfile';
   static const careTask = 'careTask';
   static const careTaskOccurrence = 'careTaskOccurrence';
   static const attachmentMetadata = 'attachmentMetadata';
@@ -54,6 +56,23 @@ abstract final class FamilySyncPayloads {
     'nickname': value.nickname,
     'colorValue': value.colorValue,
     'createdAt': value.createdAt.toUtc().toIso8601String(),
+  };
+
+  static Map<String, Object?> forChildProfile(ChildProfile value) => {
+    'childId': value.childId,
+    'familySpaceId': value.familySpaceId,
+    'name': value.name,
+    'birthDate': value.birthDate == null
+        ? null
+        : DateTime(
+            value.birthDate!.year,
+            value.birthDate!.month,
+            value.birthDate!.day,
+          ).toIso8601String(),
+    'revision': value.revision,
+    'createdAt': value.createdAt.toUtc().toIso8601String(),
+    'updatedAt': value.updatedAt.toUtc().toIso8601String(),
+    'deletedAt': value.deletedAt?.toUtc().toIso8601String(),
   };
 
   static Map<String, Object?> forTask(CareTaskEntity value) => {

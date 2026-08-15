@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/attachments/domain/event_attachment.dart';
+import 'package:mlmd/features/children/application/child_profile_repository.dart';
 import 'package:mlmd/features/sharing/application/family_sync_remote_applier.dart';
 import 'package:mlmd/features/sharing/application/family_sync_payloads.dart';
 import 'package:mlmd/features/sharing/domain/family_sync_models.dart';
@@ -70,6 +72,7 @@ void main() {
   late _TestObjectBoxHelper objectBox;
   late ProfileRepository profiles;
   late CustomEventRepository customEvents;
+  late ChildProfileRepository childProfiles;
   late FamilySyncRemoteApplier applier;
 
   setUp(() async {
@@ -80,15 +83,20 @@ void main() {
     objectBox = _TestObjectBoxHelper(store);
     profiles = ProfileRepositoryImpl(objectBox);
     profiles.createAuthor(nickname: 'Parent', colorValue: 0xFF00796B);
+    SharedPreferences.setMockInitialValues({});
+    childProfiles = ChildProfileRepository(
+      await SharedPreferences.getInstance(),
+    );
     customEvents = CustomEventRepositoryImpl(
       objectBox,
       profiles,
       familySpaceId: 'family-1',
     );
-    applier = FamilySyncRemoteApplier(objectBox, customEvents);
+    applier = FamilySyncRemoteApplier(objectBox, customEvents, childProfiles);
   });
 
   tearDown(() async {
+    childProfiles.dispose();
     store.close();
     await tempDirectory.delete(recursive: true);
   });
@@ -490,6 +498,88 @@ void main() {
           .isCurrent,
       isFalse,
     );
+  });
+
+  test(
+    'applies child profile updates and tombstones without local echo',
+    () async {
+      final mutations = <ChildProfileMutation>[];
+      final subscription = childProfiles.mutations.listen(mutations.add);
+      final created = applier(
+        _change(
+          entityType: FamilySyncPayloads.childProfile,
+          entityId: 'remote-child',
+          revision: 1,
+          payload: {
+            'childId': 'remote-child',
+            'familySpaceId': 'family-1',
+            'name': 'Remote baby',
+            'birthDate': '2026-01-02T00:00:00.000Z',
+            'revision': 1,
+            'createdAt': '2026-01-01T00:00:00.000Z',
+            'updatedAt': '2026-01-01T00:00:00.000Z',
+            'deletedAt': null,
+          },
+        ),
+      );
+      expect(created.disposition, RemoteApplyDisposition.applied);
+      expect(
+        childProfiles.children
+            .singleWhere((item) => item.childId == 'remote-child')
+            .name,
+        'Remote baby',
+      );
+
+      final deleted = applier(
+        _change(
+          entityType: FamilySyncPayloads.childProfile,
+          entityId: 'remote-child',
+          revision: 2,
+          payload: {
+            'childId': 'remote-child',
+            'familySpaceId': 'family-1',
+            'name': 'Remote baby',
+            'birthDate': '2026-01-02T00:00:00.000Z',
+            'revision': 2,
+            'createdAt': '2026-01-01T00:00:00.000Z',
+            'updatedAt': '2026-01-03T00:00:00.000Z',
+            'deletedAt': '2026-01-03T00:00:00.000Z',
+          },
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(deleted.disposition, RemoteApplyDisposition.applied);
+      expect(
+        childProfiles.children.map((item) => item.childId),
+        isNot(contains('remote-child')),
+      );
+      expect(mutations, isEmpty);
+      await subscription.cancel();
+    },
+  );
+
+  test('preserves a same-revision local child as a conflict', () {
+    final result = applier(
+      _change(
+        entityType: FamilySyncPayloads.childProfile,
+        entityId: 'local-child',
+        revision: 1,
+        payload: {
+          'childId': 'local-child',
+          'familySpaceId': 'family-1',
+          'name': 'Remote primary child',
+          'birthDate': null,
+          'revision': 1,
+          'createdAt': '1970-01-01T00:00:00.000Z',
+          'updatedAt': '1970-01-01T00:00:00.000Z',
+          'deletedAt': null,
+        },
+      ),
+    );
+
+    expect(result.disposition, RemoteApplyDisposition.conflict);
+    expect(result.localRevision, 1);
+    expect(childProfiles.selectedChild.name, 'Local child');
   });
 }
 

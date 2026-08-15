@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mlmd/data/objectbox_helper.dart';
 import 'package:mlmd/features/sharing/application/family_sync_transport.dart';
 import 'package:mlmd/features/sharing/application/family_sync_payloads.dart';
 import 'package:mlmd/features/sharing/domain/family_sync_models.dart';
 import 'package:mlmd/features/attachments/application/attachment_service.dart';
 import 'package:mlmd/features/attachments/domain/event_attachment.dart';
+import 'package:mlmd/features/children/application/child_profile_repository.dart';
 import 'package:mlmd/models/activity_entity.dart';
 import 'package:mlmd/models/ai_summary_entity.dart';
 import 'package:mlmd/models/author_profile_entity.dart';
@@ -775,5 +777,59 @@ void main() {
           .map((change) => change.operation),
       contains(SyncOperation.update),
     );
+  });
+
+  test('backfills child profiles and queues later child mutations', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final childProfiles = ChildProfileRepository(prefs);
+    childProfiles.create(name: 'Baby', childId: 'child-a');
+    final familySpaceBox = Box<FamilySpaceEntity>(store);
+    final existingSpace = familySpaceBox.getAll().single
+      ..initialBackfillCompletedAt = DateTime.utc(2026, 8, 15);
+    familySpaceBox.put(existingSpace);
+    (repository as FamilySyncRepositoryImpl).dispose();
+    repository = FamilySyncRepositoryImpl(objectBox, profiles, childProfiles);
+
+    final firstTransport = _FakeTransport(
+      const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+    );
+    await repository.synchronize(
+      firstTransport,
+      applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+    );
+
+    final childChanges = firstTransport.receivedOutgoing
+        .where((change) => change.entityType == FamilySyncPayloads.childProfile)
+        .toList();
+    expect(childChanges, hasLength(2));
+    expect(
+      childChanges.map((change) => change.payload['familySpaceId']).toSet(),
+      {'family-1'},
+    );
+    expect(
+      familySpaceBox.getAll().single.childProfileBackfillCompletedAt,
+      isNotNull,
+    );
+
+    childProfiles.update(childId: 'child-a', name: 'Baby updated');
+    await Future<void>.delayed(Duration.zero);
+    final secondTransport = _FakeTransport(
+      const SyncExchange(acknowledgedChangeIds: {}, incomingChanges: []),
+    );
+    await repository.synchronize(
+      secondTransport,
+      applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+    );
+    expect(
+      secondTransport.receivedOutgoing.where(
+        (change) =>
+            change.entityType == FamilySyncPayloads.childProfile &&
+            change.entityId == 'child-a' &&
+            change.entityRevision == 2,
+      ),
+      hasLength(1),
+    );
+    childProfiles.dispose();
   });
 }

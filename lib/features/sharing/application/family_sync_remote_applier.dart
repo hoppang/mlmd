@@ -13,14 +13,21 @@ import '../../../models/duplicate_review_edge_entity.dart';
 import '../../../models/shared_custom_event_definition_entity.dart';
 import '../../../repositories/custom_event_repository.dart';
 import '../../attachments/domain/event_attachment.dart';
+import '../../children/application/child_profile_repository.dart';
+import '../../children/domain/child_profile.dart';
 import 'family_sync_payloads.dart';
 import '../domain/family_sync_models.dart';
 
 class FamilySyncRemoteApplier {
-  FamilySyncRemoteApplier(this._objectBox, this._customEvents);
+  FamilySyncRemoteApplier(
+    this._objectBox,
+    this._customEvents, [
+    this._childProfiles,
+  ]);
 
   final ObjectBoxHelper _objectBox;
   final CustomEventRepository _customEvents;
+  final ChildProfileRepository? _childProfiles;
 
   RemoteApplyResult call(SyncChange change) {
     if (change.familySpaceId != _customEvents.familySpaceId ||
@@ -37,6 +44,8 @@ class FamilySyncRemoteApplier {
           return _applyOccurrence(change);
         case 'authorProfile':
           return _applyAuthor(change);
+        case 'childProfile':
+          return _applyChildProfile(change);
         case 'attachmentMetadata':
           return _applyAttachment(change);
         case 'duplicateDecision':
@@ -147,6 +156,51 @@ class FamilySyncRemoteApplier {
       incoming.id = existing.id;
     }
     _objectBox.authorProfileBox.put(incoming);
+    return const RemoteApplyResult.applied();
+  }
+
+  RemoteApplyResult _applyChildProfile(SyncChange change) {
+    final repository = _childProfiles;
+    if (repository == null) return const RemoteApplyResult.ignored();
+    final payload = change.payload;
+    final incoming = ChildProfile(
+      childId: payload['childId']! as String,
+      familySpaceId: payload['familySpaceId']! as String,
+      name: payload['name']! as String,
+      birthDate: payload['birthDate'] == null
+          ? null
+          : DateTime.parse(payload['birthDate']! as String),
+      revision: payload['revision']! as int,
+      createdAt: DateTime.parse(payload['createdAt']! as String),
+      updatedAt: DateTime.parse(payload['updatedAt']! as String),
+      deletedAt: payload['deletedAt'] == null
+          ? null
+          : DateTime.parse(payload['deletedAt']! as String),
+    );
+    final local = repository.findIncludingDeleted(incoming.childId);
+    if (local != null) {
+      if (local.familySpaceId != null &&
+          local.familySpaceId != change.familySpaceId) {
+        return RemoteApplyResult.conflict(
+          localRevision: local.revision,
+          localPayload: FamilySyncPayloads.forChildProfile(local),
+        );
+      }
+      if (local.revision > incoming.revision) {
+        return RemoteApplyResult.conflict(
+          localRevision: local.revision,
+          localPayload: FamilySyncPayloads.forChildProfile(local),
+        );
+      }
+      if (local.revision == incoming.revision) {
+        if (local == incoming) return const RemoteApplyResult.ignored();
+        return RemoteApplyResult.conflict(
+          localRevision: local.revision,
+          localPayload: FamilySyncPayloads.forChildProfile(local),
+        );
+      }
+    }
+    repository.applyRemote(incoming);
     return const RemoteApplyResult.applied();
   }
 
@@ -643,6 +697,16 @@ abstract final class _FamilySyncPayloadValidator {
             _integer(p, 'colorValue', min: 0, max: 0xffffffff) != null &&
             _date(p, 'createdAt') &&
             (p['isCurrent'] == null || p['isCurrent'] is bool);
+      case FamilySyncPayloads.childProfile:
+        return _sameId(p, 'childId', change.entityId) &&
+            p['familySpaceId'] == change.familySpaceId &&
+            _string(p, 'familySpaceId', max: _maxId) &&
+            _string(p, 'name', max: 128) &&
+            _date(p, 'birthDate', optional: true) &&
+            _integer(p, 'revision', min: 1) == change.entityRevision &&
+            _date(p, 'createdAt') &&
+            _date(p, 'updatedAt') &&
+            _date(p, 'deletedAt', optional: true);
       case FamilySyncPayloads.attachmentMetadata:
         return _sameId(p, 'attachmentId', change.entityId) &&
             _string(p, 'recordId', max: _maxId) &&
