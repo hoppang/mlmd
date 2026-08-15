@@ -523,6 +523,7 @@ class HomeServerPairingService {
         familySpaceId: familySpaceId,
         deviceToken: '$deviceId.$deviceSecret',
         familyKey: key.bytes,
+        role: result.role,
       );
       await credentialStore.save(credentials);
       localState.connect(
@@ -583,6 +584,7 @@ class HomeServerPairingService {
         familySpaceId: invite.familySpaceId,
         deviceToken: '$deviceId.$secret',
         familyKey: invite.familyKey,
+        role: invite.role,
       );
       await credentialStore.save(credentials);
     }
@@ -601,6 +603,10 @@ class HomeServerPairingService {
         consumed.deviceId != deviceId ||
         consumed.role != invite.role) {
       throw const FamilySyncUnavailable('invite_identity_mismatch');
+    }
+    if (credentials.role != consumed.role) {
+      credentials = credentials.withRole(consumed.role);
+      await credentialStore.save(credentials);
     }
     localState.connect(
       familySpaceId: invite.familySpaceId,

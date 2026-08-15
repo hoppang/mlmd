@@ -1425,7 +1425,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(19, 1895975585166344645),
     name: 'SyncCursorEntity',
-    lastPropertyId: const obx_int.IdUid(7, 9060830135889035403),
+    lastPropertyId: const obx_int.IdUid(9, 1758557352761634059),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -1472,6 +1472,18 @@ final _entities = <obx_int.ModelEntity>[
         type: 9,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 1562827874257629350),
+        name: 'lastUploadedSnapshotBaseServerSequence',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 1758557352761634059),
+        name: 'lastUploadedSnapshotFingerprint',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
@@ -1479,7 +1491,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(20, 462491011859536736),
     name: 'SyncOutboxEntity',
-    lastPropertyId: const obx_int.IdUid(15, 6715843567616712550),
+    lastPropertyId: const obx_int.IdUid(17, 4409819789399460825),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -1916,7 +1928,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
     retiredIndexUids: const [],
-    retiredPropertyUids: const [],
+    retiredPropertyUids: const [1278751337179830817, 4409819789399460825],
     retiredRelationUids: const [6838825628405302824],
     modelVersion: 5,
     modelVersionParserMinimum: 5,
@@ -3769,7 +3781,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final lastErrorCodeOffset = object.lastErrorCode == null
             ? null
             : fbb.writeString(object.lastErrorCode!);
-        fbb.startTable(8);
+        final lastUploadedSnapshotFingerprintOffset =
+            object.lastUploadedSnapshotFingerprint == null
+            ? null
+            : fbb.writeString(object.lastUploadedSnapshotFingerprint!);
+        fbb.startTable(10);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, cursorKeyOffset);
         fbb.addOffset(2, familySpaceIdOffset);
@@ -3777,6 +3793,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(4, lastAppliedChangeIdOffset);
         fbb.addInt64(5, object.lastSuccessfulAt?.millisecondsSinceEpoch);
         fbb.addOffset(6, lastErrorCodeOffset);
+        fbb.addInt64(7, object.lastUploadedSnapshotBaseServerSequence);
+        fbb.addOffset(8, lastUploadedSnapshotFingerprintOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -3812,6 +3830,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final lastErrorCodeParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 16);
+        final lastUploadedSnapshotBaseServerSequenceParam =
+            const fb.Int64Reader().vTableGetNullable(buffer, rootOffset, 18);
+        final lastUploadedSnapshotFingerprintParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 20);
         final object = SyncCursorEntity(
           id: idParam,
           cursorKey: cursorKeyParam,
@@ -3820,6 +3843,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
           lastAppliedChangeId: lastAppliedChangeIdParam,
           lastSuccessfulAt: lastSuccessfulAtParam,
           lastErrorCode: lastErrorCodeParam,
+          lastUploadedSnapshotBaseServerSequence:
+              lastUploadedSnapshotBaseServerSequenceParam,
+          lastUploadedSnapshotFingerprint: lastUploadedSnapshotFingerprintParam,
         );
 
         return object;
@@ -3853,7 +3879,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
             object.resolutionMetadataJson == null
             ? null
             : fbb.writeString(object.resolutionMetadataJson!);
-        fbb.startTable(16);
+        fbb.startTable(18);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, changeIdOffset);
         fbb.addOffset(2, familySpaceIdOffset);
@@ -5385,6 +5411,14 @@ class SyncCursorEntity_ {
   static final lastErrorCode = obx.QueryStringProperty<SyncCursorEntity>(
     _entities[18].properties[6],
   );
+
+  /// See [SyncCursorEntity.lastUploadedSnapshotBaseServerSequence].
+  static final lastUploadedSnapshotBaseServerSequence =
+      obx.QueryIntegerProperty<SyncCursorEntity>(_entities[18].properties[7]);
+
+  /// See [SyncCursorEntity.lastUploadedSnapshotFingerprint].
+  static final lastUploadedSnapshotFingerprint =
+      obx.QueryStringProperty<SyncCursorEntity>(_entities[18].properties[8]);
 }
 
 /// [SyncOutboxEntity] entity fields to define ObjectBox queries.

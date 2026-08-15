@@ -95,12 +95,25 @@ class _FakeSnapshotTransport
   _FakeSnapshotTransport({
     required this.snapshot,
     required this.exchangeResult,
+    this.allowUpload = false,
+    this.acknowledgeOutgoing = false,
   });
 
   final FamilySyncStateSnapshot? snapshot;
   final SyncExchange exchangeResult;
+  final bool allowUpload;
+  final bool acknowledgeOutgoing;
   int downloadCount = 0;
+  int uploadCount = 0;
   String? receivedCursor;
+  int? uploadedBaseServerSequence;
+  List<SyncChange> uploadedChanges = const [];
+
+  @override
+  Future<bool> canUploadSnapshot({
+    required String familySpaceId,
+    required String deviceProfileId,
+  }) async => allowUpload;
 
   @override
   Future<FamilySyncStateSnapshot?> downloadSnapshot({
@@ -119,6 +132,15 @@ class _FakeSnapshotTransport
     required List<SyncChange> outgoingChanges,
   }) async {
     receivedCursor = afterCursor;
+    if (acknowledgeOutgoing) {
+      return SyncExchange(
+        acknowledgedChangeIds: outgoingChanges
+            .map((change) => change.changeId)
+            .toSet(),
+        incomingChanges: exchangeResult.incomingChanges,
+        nextCursor: exchangeResult.nextCursor,
+      );
+    }
     return exchangeResult;
   }
 
@@ -128,7 +150,17 @@ class _FakeSnapshotTransport
     required String deviceProfileId,
     required int baseServerSequence,
     required List<SyncChange> changes,
-  }) => throw UnimplementedError();
+  }) async {
+    uploadCount++;
+    uploadedBaseServerSequence = baseServerSequence;
+    uploadedChanges = changes;
+    return FamilySyncStateSnapshot(
+      snapshotId: 'uploaded-$uploadCount',
+      baseServerSequence: baseServerSequence,
+      sourceDeviceProfileId: deviceProfileId,
+      changes: changes,
+    );
+  }
 }
 
 void main() {
@@ -227,6 +259,69 @@ void main() {
       );
       expect(transport.downloadCount, 1);
       expect(transport.receivedCursor, '43');
+    },
+  );
+
+  test(
+    'owner uploads deterministic current state once for each applied cursor',
+    () async {
+      final author = profiles.currentAuthor!;
+      final device = profiles.currentDevice;
+      final occurredAt = DateTime.utc(2026, 8, 15, 3);
+      objectBox.activityBox.put(
+        ActivityEntity(
+          recordId: 'snapshot-current-activity',
+          revision: 3,
+          type: '메모',
+          time: occurredAt,
+          details: '스냅샷에 포함',
+          lastModified: occurredAt,
+          createdAt: occurredAt,
+          createdByAuthorProfileId: author.authorProfileId,
+          createdByDeviceProfileId: device.deviceProfileId,
+          lastModifiedByAuthorProfileId: author.authorProfileId,
+          lastModifiedByDeviceProfileId: device.deviceProfileId,
+        ),
+      );
+      final transport = _FakeSnapshotTransport(
+        snapshot: null,
+        allowUpload: true,
+        acknowledgeOutgoing: true,
+        exchangeResult: const SyncExchange(
+          acknowledgedChangeIds: {},
+          incomingChanges: [],
+          nextCursor: '10',
+        ),
+      );
+
+      await repository.synchronize(
+        transport,
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+
+      expect(transport.uploadCount, 1);
+      expect(transport.uploadedBaseServerSequence, 10);
+      expect(
+        transport.uploadedChanges.map((change) => change.entityType),
+        containsAll([
+          FamilySyncPayloads.activity,
+          FamilySyncPayloads.authorProfile,
+        ]),
+      );
+      expect(
+        transport.uploadedChanges
+            .singleWhere(
+              (change) => change.entityType == FamilySyncPayloads.activity,
+            )
+            .payload['details'],
+        '스냅샷에 포함',
+      );
+
+      await repository.synchronize(
+        transport,
+        applyRemoteChange: (_) => const RemoteApplyResult.ignored(),
+      );
+      expect(transport.uploadCount, 1);
     },
   );
 

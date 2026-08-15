@@ -109,6 +109,7 @@ void main() {
       deviceToken:
           '$_deviceId.${base64UrlEncode(List.filled(32, 9)).replaceAll('=', '')}',
       familyKey: familyKey,
+      role: 'owner',
     );
 
     await store.save(credentials);
@@ -117,6 +118,8 @@ void main() {
     expect(restored?.serverUrl, credentials.serverUrl);
     expect(restored?.deviceToken, credentials.deviceToken);
     expect(restored?.familyKey, familyKey);
+    expect(restored?.role, 'owner');
+    expect(restored?.canUploadSnapshots, isTrue);
     await store.delete(_spaceId);
     expect(await store.load(_spaceId), isNull);
   });
@@ -283,8 +286,9 @@ void main() {
         text: 'unused',
       ),
     );
+    final credentialStore = _MemoryCredentialStore(credentials);
     final transport = HomeServerFamilySyncTransport(
-      credentialStore: _MemoryCredentialStore(credentials),
+      credentialStore: credentialStore,
       api: api,
       snapshotCodec: snapshotCodec,
     );
@@ -301,6 +305,7 @@ void main() {
       changes: [privateChange],
     );
     expect(stored.createdAt, DateTime.utc(2026, 8, 15));
+    expect(credentialStore.credentials?.role, 'owner');
     expect(
       api.storedSnapshot!.ciphertext,
       isNot(contains('private snapshot memo')),

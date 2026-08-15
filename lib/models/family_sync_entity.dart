@@ -257,6 +257,9 @@ class SyncCursorEntity {
 
   String? lastErrorCode;
 
+  int? lastUploadedSnapshotBaseServerSequence;
+  String? lastUploadedSnapshotFingerprint;
+
   SyncCursorEntity({
     this.id = 0,
     required this.cursorKey,
@@ -265,6 +268,8 @@ class SyncCursorEntity {
     this.lastAppliedChangeId,
     this.lastSuccessfulAt,
     this.lastErrorCode,
+    this.lastUploadedSnapshotBaseServerSequence,
+    this.lastUploadedSnapshotFingerprint,
   });
 }
 

@@ -665,6 +665,15 @@ class HomeServerFamilySyncTransport
   final FamilySyncSnapshotCodec _snapshotCodec;
 
   @override
+  Future<bool> canUploadSnapshot({
+    required String familySpaceId,
+    required String deviceProfileId,
+  }) async {
+    final credentials = await _credentials(familySpaceId, deviceProfileId);
+    return credentials.canUploadSnapshots;
+  }
+
+  @override
   Future<SyncExchange> exchange({
     required String familySpaceId,
     required String deviceProfileId,
@@ -717,6 +726,9 @@ class HomeServerFamilySyncTransport
     required List<SyncChange> changes,
   }) async {
     final credentials = await _credentials(familySpaceId, deviceProfileId);
+    if (!credentials.canUploadSnapshots) {
+      throw const FamilySyncUnavailable('snapshot_owner_required');
+    }
     final snapshot = FamilySyncStateSnapshot(
       snapshotId: const Uuid().v4(),
       baseServerSequence: baseServerSequence,
@@ -728,11 +740,22 @@ class HomeServerFamilySyncTransport
       snapshot,
       credentials.familyKey,
     );
-    final stored = await _api.putSnapshot(
-      credentials: credentials,
-      deviceProfileId: deviceProfileId,
-      snapshot: encrypted,
-    );
+    late final OpaqueSyncSnapshot stored;
+    try {
+      stored = await _api.putSnapshot(
+        credentials: credentials,
+        deviceProfileId: deviceProfileId,
+        snapshot: encrypted,
+      );
+    } on FamilySyncUnavailable catch (error) {
+      if (credentials.role == null && error.code == 'server_owner_required') {
+        await credentialStore.save(credentials.withRole('member'));
+      }
+      rethrow;
+    }
+    if (credentials.role == null) {
+      await credentialStore.save(credentials.withRole('owner'));
+    }
     return _snapshotCodec.decrypt(
       familySpaceId: familySpaceId,
       snapshot: stored,

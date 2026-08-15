@@ -11,6 +11,7 @@ class FamilySyncCredentials {
     required this.familySpaceId,
     required this.deviceToken,
     required List<int> familyKey,
+    this.role,
   }) : familyKey = List<int>.unmodifiable(familyKey) {
     if ((serverUrl.scheme != 'http' && serverUrl.scheme != 'https') ||
         serverUrl.host.isEmpty ||
@@ -30,12 +31,28 @@ class FamilySyncCredentials {
         'Must be 32 bytes.',
       );
     }
+    if (role != null && role != 'owner' && role != 'member') {
+      throw ArgumentError.value(role, 'role', 'Must be owner or member.');
+    }
   }
 
   final Uri serverUrl;
   final String familySpaceId;
   final String deviceToken;
   final List<int> familyKey;
+  final String? role;
+
+  /// Legacy credentials have no persisted role. They may attempt one upload;
+  /// the authenticated server response then migrates them to owner or member.
+  bool get canUploadSnapshots => role != 'member';
+
+  FamilySyncCredentials withRole(String value) => FamilySyncCredentials(
+    serverUrl: serverUrl,
+    familySpaceId: familySpaceId,
+    deviceToken: deviceToken,
+    familyKey: familyKey,
+    role: value,
+  );
 }
 
 abstract interface class FamilySyncCredentialStore {
@@ -58,9 +75,10 @@ class SecureFamilySyncCredentialStore implements FamilySyncCredentialStore {
       storage.read(key: '$prefix.serverUrl'),
       storage.read(key: '$prefix.deviceToken'),
       storage.read(key: '$prefix.familyKey'),
+      storage.read(key: '$prefix.role'),
     ]);
-    if (values.every((value) => value == null)) return null;
-    if (values.any((value) => value == null)) {
+    if (values.take(3).every((value) => value == null)) return null;
+    if (values.take(3).any((value) => value == null)) {
       throw const FamilySyncUnavailable('credentials_incomplete');
     }
     try {
@@ -70,6 +88,7 @@ class SecureFamilySyncCredentialStore implements FamilySyncCredentialStore {
         familySpaceId: familySpaceId,
         deviceToken: values[1]!,
         familyKey: key,
+        role: values[3],
       );
     } on FormatException {
       throw const FamilySyncUnavailable('credentials_invalid');
@@ -93,6 +112,11 @@ class SecureFamilySyncCredentialStore implements FamilySyncCredentialStore {
       key: '$prefix.familyKey',
       value: base64UrlEncode(credentials.familyKey).replaceAll('=', ''),
     );
+    if (credentials.role == null) {
+      await storage.delete(key: '$prefix.role');
+    } else {
+      await storage.write(key: '$prefix.role', value: credentials.role);
+    }
   }
 
   @override
@@ -102,6 +126,7 @@ class SecureFamilySyncCredentialStore implements FamilySyncCredentialStore {
       storage.delete(key: '$prefix.serverUrl'),
       storage.delete(key: '$prefix.deviceToken'),
       storage.delete(key: '$prefix.familyKey'),
+      storage.delete(key: '$prefix.role'),
     ]);
   }
 

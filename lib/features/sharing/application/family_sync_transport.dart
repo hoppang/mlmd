@@ -11,6 +11,11 @@ abstract interface class FamilySyncTransport {
 
 /// Optional snapshot capability used to bootstrap before incremental exchange.
 abstract interface class FamilySyncSnapshotTransport {
+  Future<bool> canUploadSnapshot({
+    required String familySpaceId,
+    required String deviceProfileId,
+  });
+
   Future<FamilySyncStateSnapshot?> downloadSnapshot({
     required String familySpaceId,
     required String deviceProfileId,

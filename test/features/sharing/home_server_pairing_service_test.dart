@@ -198,6 +198,8 @@ void main() {
     expect(api.bootstrapSpaceIds.toSet(), hasLength(1));
     expect(api.bootstrapSecrets.toSet(), hasLength(1));
     expect(result.familySpaceId, api.bootstrapSpaceIds.first);
+    expect(result.role, 'owner');
+    expect(result.canUploadSnapshots, isTrue);
     expect(await credentials.load(result.familySpaceId), same(result));
     expect(localState.connectedSpaceId, result.familySpaceId);
   });
@@ -233,6 +235,8 @@ void main() {
       expect(api.consumeSecrets, hasLength(3));
       expect(api.consumeSecrets.toSet(), hasLength(1));
       expect(result.deviceToken, '$_deviceId.${api.consumeSecrets.first}');
+      expect(result.role, 'member');
+      expect(result.canUploadSnapshots, isFalse);
       expect(localState.connectedSpaceId, _spaceId);
     },
   );

@@ -1206,7 +1206,7 @@
     },
     {
       "id": "19:1895975585166344645",
-      "lastPropertyId": "7:9060830135889035403",
+      "lastPropertyId": "9:1758557352761634059",
       "name": "SyncCursorEntity",
       "properties": [
         {
@@ -1247,6 +1247,16 @@
         {
           "id": "7:9060830135889035403",
           "name": "lastErrorCode",
+          "type": 9
+        },
+        {
+          "id": "8:1562827874257629350",
+          "name": "lastUploadedSnapshotBaseServerSequence",
+          "type": 6
+        },
+        {
+          "id": "9:1758557352761634059",
+          "name": "lastUploadedSnapshotFingerprint",
           "type": 9
         }
       ],

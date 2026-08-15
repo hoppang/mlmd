@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/objectbox_helper.dart';
 import '../features/sharing/application/family_sync_payloads.dart';
+import '../features/sharing/application/family_sync_state_builder.dart';
 import '../features/sharing/application/family_sync_transport.dart';
 import '../features/sharing/domain/family_sync_models.dart';
 import '../features/children/application/child_profile_repository.dart';
@@ -423,6 +424,9 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       ..lastSuccessfulAt = DateTime.now()
       ..lastErrorCode = null;
     _cursorBox.put(cursor);
+    if (snapshotTransport != null) {
+      await _uploadSnapshotIfReady(snapshotTransport, space, cursor);
+    }
     _notifyChanged();
     return SyncRunResult(
       uploadedCount: acknowledged.length,
@@ -430,6 +434,69 @@ class FamilySyncRepositoryImpl implements FamilySyncRepository {
       conflictCount: conflictCount,
       resolutionCollisionCount: resolutionCollisionCount,
     );
+  }
+
+  Future<void> _uploadSnapshotIfReady(
+    FamilySyncSnapshotTransport transport,
+    FamilySpaceEntity space,
+    SyncCursorEntity cursor,
+  ) async {
+    final baseServerSequence = int.tryParse(cursor.lastAppliedChangeId ?? '');
+    if (baseServerSequence == null ||
+        baseServerSequence <= 0 ||
+        _pending(space.familySpaceId).isNotEmpty ||
+        _conflictBox.getAll().any(
+          (conflict) =>
+              conflict.familySpaceId == space.familySpaceId &&
+              conflict.resolvedAt == null,
+        )) {
+      return;
+    }
+    FamilySyncBuiltState? builtState;
+    try {
+      final deviceProfileId = _profiles.currentDevice.deviceProfileId;
+      if (!await transport.canUploadSnapshot(
+        familySpaceId: space.familySpaceId,
+        deviceProfileId: deviceProfileId,
+      )) {
+        return;
+      }
+      final state = FamilySyncStateBuilder(
+        _objectBox,
+        _profiles,
+        _childProfiles,
+      ).build(space.familySpaceId);
+      builtState = state;
+      if (cursor.lastUploadedSnapshotBaseServerSequence == baseServerSequence &&
+          cursor.lastUploadedSnapshotFingerprint == state.fingerprint) {
+        return;
+      }
+      await transport.uploadSnapshot(
+        familySpaceId: space.familySpaceId,
+        deviceProfileId: deviceProfileId,
+        baseServerSequence: baseServerSequence,
+        changes: state.changes,
+      );
+      cursor
+        ..lastUploadedSnapshotBaseServerSequence = baseServerSequence
+        ..lastUploadedSnapshotFingerprint = state.fingerprint
+        ..lastErrorCode = null;
+      _cursorBox.put(cursor);
+    } on FamilySyncUnavailable catch (error) {
+      if (error.code == 'server_snapshot_stale') {
+        cursor
+          ..lastUploadedSnapshotBaseServerSequence = baseServerSequence
+          ..lastUploadedSnapshotFingerprint = builtState!.fingerprint
+          ..lastErrorCode = null;
+        _cursorBox.put(cursor);
+        return;
+      }
+      cursor.lastErrorCode = 'snapshot_${error.code}';
+      _cursorBox.put(cursor);
+    } catch (_) {
+      cursor.lastErrorCode = 'snapshot_upload_failed';
+      _cursorBox.put(cursor);
+    }
   }
 
   Future<({int appliedCount, int conflictCount, int resolutionCollisionCount})>
