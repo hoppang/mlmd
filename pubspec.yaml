@@ -39,8 +39,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  shared_preferences: ^2.3.2
-  speech_to_text: ^7.3.0
+  shared_preferences: ^2.5.6
+  speech_to_text: ^7.5.0
 
   # 데이터베이스
   objectbox: ^5.3.2
@@ -48,14 +48,14 @@ dependencies:
 
   # 로컬 온디바이스 임베딩
   flutter_embedder: ^0.1.6
-  flutter_rust_bridge: 2.11.1
+  flutter_rust_bridge: 2.13.0
 
   # 온디바이스 LLM (제목 자동 생성 / 추후 파싱)
-  flutter_gemma: 1.3.0
-  flutter_gemma_litertlm: 1.1.0   # Windows + Android + iOS (.litertlm 포맷)
+  flutter_gemma: 1.11.4
+  flutter_gemma_litertlm: 1.8.6   # Windows + Android + iOS (.litertlm 포맷)
 
   # 상태 관리
-  flutter_riverpod: ^3.3.2
+  flutter_riverpod: ^3.4.3
   
   # 보안/암호화
   flutter_secure_storage: ^10.3.1
@@ -63,17 +63,17 @@ dependencies:
   crypto: ^3.0.6
 
   # 동기화 및 유틸
-  shelf: ^1.4.2
+  shelf: ^1.4.3
   qr_flutter: ^4.1.0
-  mobile_scanner: ^7.2.0
+  mobile_scanner: ^7.4.2
   path: ^1.9.0
   path_provider: ^2.1.6
-  share_plus: ^13.2.0
-  url_launcher: ^6.3.2
+  share_plus: ^13.3.1
+  url_launcher: ^6.3.3
   file_picker: 12.0.0-beta.7
   window_manager: ^0.5.2
-  uuid: ^4.5.3
-  logger: ^2.7.0
+  uuid: ^4.6.0
+  logger: ^2.8.0
 
 
 dev_dependencies:
